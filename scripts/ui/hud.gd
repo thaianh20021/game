@@ -10,6 +10,7 @@ var _hp_fill: ColorRect
 var _hp_label: Label
 var _weapon_label: Label
 var _gold_label: Label
+var _floor_label: Label
 var _minimap: Minimap
 
 
@@ -31,6 +32,7 @@ func _ready() -> void:
 	_hp_label = _make_label(Vector2(118, 6))
 	_weapon_label = _make_label(Vector2(8, 24))
 	_gold_label = _make_label(Vector2(8, 40))
+	_floor_label = _make_label(Vector2(8, 56))
 
 	_minimap = Minimap.new()
 	_minimap.position = Vector2(444, 8)
@@ -47,6 +49,9 @@ func bind(player: Player, floor_ctrl: FloorController) -> void:
 	var weapon := player.current_weapon()
 	_on_weapon_changed(weapon.display_name() if weapon != null else "-")
 	_minimap.bind(floor_ctrl)
+	floor_ctrl.state_changed.connect(func() -> void:
+		_floor_label.text = "Floor %d" % floor_ctrl.floor_index)
+	_floor_label.text = "Floor %d" % floor_ctrl.floor_index
 
 
 func _make_label(pos: Vector2) -> Label:

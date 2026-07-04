@@ -10,6 +10,9 @@ extends Node2D
 ## Emitted on room enter and on room clear; the HUD/minimap redraw on it.
 signal state_changed
 
+## Emitted when the player steps on the exit portal after the boss is dead.
+signal floor_completed
+
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const ENEMY_POOL_PATH := "res://data/enemies_ancient_cave.json"
 const ENTER_OFFSET := 24.0  # px the player is placed inside the entry door
@@ -32,11 +35,20 @@ var _pool: Dictionary
 var _transitioning := false
 
 
+## Can be called again with the next floor index: resets all per-floor state.
 func start(p_seed: int, p_floor_index: int, player: Player) -> void:
 	floor_seed = p_seed
 	floor_index = p_floor_index
 	_player = player
-	_pool = EnemySpawner.load_pool(ENEMY_POOL_PATH)
+	cleared_rooms.clear()
+	visited_rooms.clear()
+	current_room = null
+	_transitioning = false
+	if _renderer != null:
+		_renderer.queue_free()
+		_renderer = null
+	if _pool.is_empty():
+		_pool = EnemySpawner.load_pool(ENEMY_POOL_PATH)
 
 	var builder := GraphBuilder.new()
 	rooms = builder.build(floor_seed, floor_index)
@@ -116,6 +128,10 @@ func _enter_room(room: RoomNode, from_room_id: int) -> void:
 	else:
 		_player.global_position = center
 
+	# Re-entering an already-cleared boss room: the portal must still be there.
+	if room.type == RoomNode.RoomType.BOSS and cleared_rooms.has(room.id):
+		_spawn_exit_portal()
+
 	_transitioning = false
 	visited_rooms[room.id] = true
 	state_changed.emit()
@@ -126,6 +142,15 @@ func _on_room_cleared(room: RoomNode) -> void:
 	cleared_rooms[room.id] = true
 	state_changed.emit()
 	if room.type == RoomNode.RoomType.BOSS:
-		print("FLOOR COMPLETE! Boss room cleared (%d/%d rooms visited)" % [
+		print("Boss down! Exit portal opened (%d/%d rooms visited)" % [
 			cleared_rooms.size(), rooms.size(),
 		])
+		_spawn_exit_portal()
+
+
+func _spawn_exit_portal() -> void:
+	var portal := ExitPortal.new()
+	portal.configure(_player)
+	portal.position = _renderer.tile_to_world(Vector2i(_grid.width / 2, _grid.height / 2))
+	portal.entered.connect(func() -> void: floor_completed.emit())
+	_renderer.add_child(portal)
