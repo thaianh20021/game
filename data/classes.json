@@ -1,0 +1,56 @@
+{
+  "comment": "MVP classes. Stats on a 1-10 scale, converted at load time. See docs/gdd/05-classes.md for full templates.",
+  "classes": [
+    {
+      "id": "blade_warden",
+      "name": "Blade Warden",
+      "role": "balanced_melee",
+      "resource": "energy",
+      "stats": { "hp": 6, "armor": 5, "resource": 5, "speed": 6, "damage": 6, "crit": 5 },
+      "preferred_weapons": ["sword_1h", "spear"],
+      "actives": [
+        { "id": "wind_edge", "cost": 20, "cooldown": 6.0, "desc": "360 AoE slash, 130% dmg, light knockback" },
+        { "id": "lunge", "cost": 15, "cooldown": 4.0, "desc": "3-tile pierce dash, 90% dmg" }
+      ],
+      "passives": [
+        { "id": "blade_rhythm", "desc": "3-hit chain -> 4th hit +40% dmg" },
+        { "id": "reflex", "desc": "dash within 0.5s after being hit refunds 50% dash cd" }
+      ],
+      "ultimate": { "id": "phantom_slash", "cost": 100, "desc": "dash through all enemies in a line, 3 hits x 80% each" }
+    },
+    {
+      "id": "arcanist",
+      "name": "Arcanist",
+      "role": "elemental_caster",
+      "resource": "mana",
+      "stats": { "hp": 3, "armor": 2, "resource": 10, "speed": 5, "damage": 8, "crit": 5 },
+      "preferred_weapons": ["staff", "tome", "orb"],
+      "actives": [
+        { "id": "element_orb", "cost": 12, "cooldown": 2.0, "desc": "orb of equipped element, small AoE 120%" },
+        { "id": "null_ring", "cost": 25, "cooldown": 9.0, "desc": "3x3 zone slows enemy projectiles 50% for 4s" }
+      ],
+      "passives": [
+        { "id": "resonance", "desc": "element swap (10s cd) -> +20% spell dmg for 5s" },
+        { "id": "siphon", "desc": "element shard pickup restores 10 mana" }
+      ],
+      "ultimate": { "id": "elemental_fury", "cost": 60, "desc": "12 elemental projectiles rain near cursor over 3s, 100% each" }
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "role": "ranged_precision",
+      "resource": "energy",
+      "stats": { "hp": 5, "armor": 3, "resource": 6, "speed": 7, "damage": 6, "crit": 8 },
+      "preferred_weapons": ["bow", "crossbow"],
+      "actives": [
+        { "id": "arrow_rain", "cost": 25, "cooldown": 8.0, "desc": "7 arcing arrows on target zone, 80% each" },
+        { "id": "snare_trap", "cost": 15, "cooldown": 6.0, "desc": "root trap 1.5s, max 2 placed" }
+      ],
+      "passives": [
+        { "id": "piercer", "desc": "fully charged shots: 50% armor pierce + pass through 1 target" },
+        { "id": "deer_step", "desc": "auto hop-back when enemy closes within 1 tile (3s cd, no dash cost)" }
+      ],
+      "ultimate": { "id": "skypiercer", "cost": 100, "desc": "giant arrow crosses the screen, 500%, drags enemy projectiles along" }
+    }
+  ]
+}

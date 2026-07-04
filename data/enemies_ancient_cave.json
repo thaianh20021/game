@@ -1,0 +1,17 @@
+{
+  "comment": "Ancient Cave (tutorial biome) enemy pool. cost = spawn budget points. weak/resist are element ids.",
+  "biome": "ancient_cave",
+  "enemies": [
+    { "id": "stone_rat", "name": "Chuot Da", "kind": "melee_charger", "cost": 2, "hp": 20, "dmg": 6, "ai": "charge_straight, 0.5s telegraph", "weak": ["fire"], "resist": ["earth"] },
+    { "id": "crystal_bat", "name": "Doi Tinh The", "kind": "flyer", "cost": 2, "hp": 14, "dmg": 5, "ai": "sine_flight, dive_attack", "weak": ["wind"], "resist": [] },
+    { "id": "web_spider", "name": "Nhen Nha To", "kind": "ranged", "cost": 3, "hp": 18, "dmg": 4, "ai": "keep_distance, slow_web_shot", "weak": ["fire"], "resist": ["poison"] },
+    { "id": "rubble_golem", "name": "Golem Vun", "kind": "tanker", "cost": 6, "hp": 80, "dmg": 10, "ai": "slow_walk, aoe_smash; splits into 2 small golems on death", "weak": ["water"], "resist": ["metal"] },
+    { "id": "cave_slime", "name": "Slime Hang", "kind": "melee", "cost": 1, "hp": 12, "dmg": 3, "ai": "hop_toward_player", "weak": ["lightning"], "resist": ["water"] },
+    { "id": "glow_beetle", "name": "Bo Phat Quang", "kind": "exploder", "cost": 3, "hp": 10, "dmg": 14, "ai": "walk_to_player, explode_on_contact, glows brighter before blast", "weak": ["fire"], "resist": [] },
+    { "id": "quartz_shaman", "name": "Phap Su Thach Anh", "kind": "caster", "cost": 5, "hp": 24, "dmg": 7, "ai": "keep_distance, 3-shot crystal volley, buffs nearby golems", "weak": ["dark"], "resist": ["light"] },
+    { "id": "cave_crab", "name": "Cua Hang", "kind": "armored_melee", "cost": 4, "hp": 35, "dmg": 8, "ai": "sidestep_strafe, pincer_grab; front shell blocks projectiles", "weak": ["lightning"], "resist": ["metal", "water"] },
+    { "id": "stalactite_wisp", "name": "Linh Nhu Da", "kind": "ambusher", "cost": 3, "hp": 16, "dmg": 9, "ai": "hides_on_ceiling, drops when player passes below, dust warning decal", "weak": ["light"], "resist": ["earth"] },
+    { "id": "beast_herder", "name": "Ke Chan Thu", "kind": "miniboss", "cost": 0, "hp": 220, "dmg": 12, "ai": "summons biome enemies, berserk_buff_aura below 50% hp", "weak": ["fire"], "resist": [], "note": "miniboss only, not in budget pool" }
+  ],
+  "elite_modifiers": ["burning", "frozen", "armored", "splitter", "summoner", "explosive", "vampiric", "shielded", "teleporting", "berserk"]
+}

@@ -1,0 +1,19 @@
+{
+  "comment": "Rarity weights for in-run drops. Pity: 10 rooms without rare+ forces a rare next room. Cursed rolls separately.",
+  "rarity_weights": {
+    "common": 45,
+    "uncommon": 27,
+    "rare": 15,
+    "epic": 8,
+    "legendary": 3.5,
+    "mythic": 0.5
+  },
+  "cursed_roll_chance": 0.01,
+  "pity": { "rooms_without_rare_plus": 10, "guaranteed_min_rarity": "rare" },
+  "boss_min_rarity": "epic",
+  "room_type_bonus": {
+    "TREASURE": { "min_rarity": "uncommon" },
+    "ELITE": { "min_rarity": "uncommon" },
+    "SECRET": { "min_rarity": "rare" }
+  }
+}
