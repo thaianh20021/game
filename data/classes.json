@@ -1,5 +1,5 @@
 {
-  "comment": "MVP classes. Stats on a 1-10 scale, converted at load time. See docs/gdd/05-classes.md for full templates.",
+  "comment": "Base class roster. Stats use a 1-10 scale, converted at load time. Unique mechanics for non-MVP classes are metadata until their implementation slices land.",
   "classes": [
     {
       "id": "blade_warden",
@@ -19,12 +19,63 @@
       "ultimate": { "id": "phantom_slash", "cost": 100, "desc": "dash through all enemies in a line, 3 hits x 80% each" }
     },
     {
+      "id": "breaker",
+      "name": "Breaker",
+      "role": "heavy_melee_burst",
+      "resource": "energy",
+      "stats": { "hp": 7, "armor": 6, "resource": 4, "speed": 3, "damage": 9, "crit": 4 },
+      "preferred_weapons": ["axe", "hammer"],
+      "actives": [
+        { "id": "earthbreaker", "cost": 30, "cooldown": 8.0, "desc": "ground slam AoE 200%, stun 1s, breaks armored enemies" },
+        { "id": "iron_will", "cost": 20, "cooldown": 10.0, "desc": "3s hyper armor, immune to knockback/interruption" }
+      ],
+      "passives": [
+        { "id": "heavy_windup", "desc": "fully charged strikes +50% dmg and +30% cleave width" },
+        { "id": "iron_skin", "desc": "standing still during heavy swings reduces incoming dmg by 20%" }
+      ],
+      "ultimate": { "id": "skyfall", "cost": 100, "desc": "leap slam target point for 400% AoE and stone waves in four directions" }
+    },
+    {
+      "id": "nightblade",
+      "name": "Nightblade",
+      "role": "crit_mobility",
+      "resource": "energy",
+      "stats": { "hp": 4, "armor": 2, "resource": 7, "speed": 9, "damage": 7, "crit": 9 },
+      "preferred_weapons": ["dagger", "crossbow"],
+      "actives": [
+        { "id": "shadow_step", "cost": 35, "cooldown": 10.0, "desc": "2s stealth, next hit guaranteed crit" },
+        { "id": "poison_knife", "cost": 15, "cooldown": 5.0, "desc": "poison knife for 3s and mark target for +15% dmg taken" }
+      ],
+      "passives": [
+        { "id": "weakpoint", "desc": "back attacks deal +60% dmg" },
+        { "id": "wind_foot", "desc": "free dash for 2s after killing an elite or marked target" }
+      ],
+      "ultimate": { "id": "death_dance", "cost": 100, "desc": "teleport slash 5 random targets for 150% each" }
+    },
+    {
+      "id": "bulwark",
+      "name": "Bulwark",
+      "role": "tank_counter",
+      "resource": "energy",
+      "stats": { "hp": 10, "armor": 9, "resource": 4, "speed": 4, "damage": 4, "crit": 2 },
+      "preferred_weapons": ["shield", "hammer", "spear"],
+      "actives": [
+        { "id": "shield_bastion", "cost": 20, "cooldown": 6.0, "desc": "block 100% front damage for 1.5s and reflect 50% blocked damage" },
+        { "id": "battle_roar", "cost": 25, "cooldown": 12.0, "desc": "taunt enemies in 5 tiles for 3s, +2 temporary armor" }
+      ],
+      "passives": [
+        { "id": "steel_thorns", "desc": "melee attackers take 10% maxHP reflected damage" },
+        { "id": "unyielding", "desc": "below 30% HP gain +30% armor" }
+      ],
+      "ultimate": { "id": "fortress", "cost": 100, "desc": "3s invulnerable taunt, then blast 250% scaled by blocked damage" }
+    },
+    {
       "id": "arcanist",
       "name": "Arcanist",
       "role": "elemental_caster",
       "resource": "mana",
       "stats": { "hp": 3, "armor": 2, "resource": 10, "speed": 5, "damage": 8, "crit": 5 },
-      "preferred_weapons": ["staff", "tome", "orb"],
+      "preferred_weapons": ["staff", "orb"],
       "actives": [
         { "id": "element_orb", "cost": 12, "cooldown": 2.0, "desc": "orb of equipped element, small AoE 120%" },
         { "id": "null_ring", "cost": 25, "cooldown": 9.0, "desc": "3x3 zone slows enemy projectiles 50% for 4s" }
@@ -51,6 +102,74 @@
         { "id": "deer_step", "desc": "auto hop-back when enemy closes within 1 tile (3s cd, no dash cost)" }
       ],
       "ultimate": { "id": "skypiercer", "cost": 100, "desc": "giant arrow crosses the screen, 500%, drags enemy projectiles along" }
+    },
+    {
+      "id": "gunner",
+      "name": "Gunner",
+      "role": "continuous_ranged_dps",
+      "resource": "energy",
+      "stats": { "hp": 5, "armor": 4, "resource": 6, "speed": 6, "damage": 6, "crit": 6 },
+      "preferred_weapons": ["pistol", "crossbow"],
+      "actives": [
+        { "id": "rolling_grenade", "cost": 20, "cooldown": 7.0, "desc": "bouncing grenade, 150% AoE" },
+        { "id": "special_rounds", "cost": 25, "cooldown": 10.0, "desc": "next magazine carries equipped element and pierces" }
+      ],
+      "passives": [
+        { "id": "quick_finger", "desc": "kills grant +15% fire rate for 3s, stacks 3 times" },
+        { "id": "tool_belt", "desc": "can carry a third gun during a run" }
+      ],
+      "ultimate": { "id": "suppressing_fire", "cost": 100, "desc": "5s no reload, +60% fire rate, slight homing rounds" }
+    },
+    {
+      "id": "soulbinder",
+      "name": "Soulbinder",
+      "role": "pet_army",
+      "resource": "mana",
+      "stats": { "hp": 4, "armor": 3, "resource": 9, "speed": 5, "damage": 3, "crit": 3 },
+      "preferred_weapons": ["orb", "staff"],
+      "actives": [
+        { "id": "summon_wisp", "cost": 20, "cooldown": 3.0, "desc": "summon a temporary fighting spirit for 30s" },
+        { "id": "sacrifice", "cost": 0, "cooldown": 8.0, "desc": "detonate one pet for 180% AoE and restore 15 mana" }
+      ],
+      "passives": [
+        { "id": "pack_hunger", "desc": "each living pet grants all pets +4% dmg" },
+        { "id": "soul_tether", "desc": "20% incoming owner dmg is split across pets" }
+      ],
+      "ultimate": { "id": "soul_kingdom", "cost": 70, "desc": "for 8s killed enemies revive as temporary allied spirits" }
+    },
+    {
+      "id": "lightkeeper",
+      "name": "Lightkeeper",
+      "role": "sustain_support",
+      "resource": "mana",
+      "stats": { "hp": 6, "armor": 5, "resource": 8, "speed": 5, "damage": 4, "crit": 3 },
+      "preferred_weapons": ["staff", "hammer"],
+      "actives": [
+        { "id": "light_ray", "cost": 15, "cooldown": 5.0, "desc": "piercing light ray, 110%, blinds 1s" },
+        { "id": "sanctuary", "cost": 30, "cooldown": 14.0, "desc": "3x3 zone heals 3% maxHP/s for 5s and purges debuffs" }
+      ],
+      "passives": [
+        { "id": "prayer", "desc": "after 6s without damage, regenerate 2% maxHP/s" },
+        { "id": "judgement", "desc": "+30% dmg versus undead and shadow enemies" }
+      ],
+      "ultimate": { "id": "verdict", "cost": 60, "desc": "giant light pillar 300%, stuns undead, clears poison/curse zones" }
+    },
+    {
+      "id": "tinkerer",
+      "name": "Tinkerer",
+      "role": "zone_control",
+      "resource": "energy",
+      "stats": { "hp": 5, "armor": 5, "resource": 7, "speed": 5, "damage": 5, "crit": 5 },
+      "preferred_weapons": ["pistol", "orb"],
+      "actives": [
+        { "id": "mini_turret", "cost": 25, "cooldown": 8.0, "desc": "place a 15s turret, max 2" },
+        { "id": "hack", "cost": 20, "cooldown": 6.0, "desc": "disable one trap for 10s or flip it to your side" }
+      ],
+      "passives": [
+        { "id": "repurpose", "desc": "hacked traps have a 30% chance to become allied for the room" },
+        { "id": "scavenge", "desc": "mechanical enemies can drop parts that restore 10 energy" }
+      ],
+      "ultimate": { "id": "mobile_fortress", "cost": 100, "desc": "8s mech shell blocks four directions and fires two cannons, -30% speed" }
     }
   ]
 }

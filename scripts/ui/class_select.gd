@@ -44,15 +44,25 @@ func _ready() -> void:
 	hint.add_theme_font_size_override("font_size", 10)
 	box.add_child(hint)
 
-	var class_row := HBoxContainer.new()
-	class_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	class_row.add_theme_constant_override("separation", 8)
-	box.add_child(class_row)
+	var class_scroll := ScrollContainer.new()
+	class_scroll.name = "ClassScroll"
+	class_scroll.custom_minimum_size = Vector2(420, 112)
+	class_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	class_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	box.add_child(class_scroll)
+
+	var class_grid := GridContainer.new()
+	class_grid.name = "ClassGrid"
+	class_grid.columns = 2
+	class_grid.add_theme_constant_override("h_separation", 8)
+	class_grid.add_theme_constant_override("v_separation", 6)
+	class_scroll.add_child(class_grid)
 	for c in PlayerClassDB.all():
 		var button := Button.new()
 		button.text = str(c["name"])
-		button.pressed.connect(_on_class_pressed.bind(str(c["id"]), button, class_row))
-		class_row.add_child(button)
+		button.custom_minimum_size = Vector2(196, 24)
+		button.pressed.connect(_on_class_pressed.bind(str(c["id"]), button, class_grid))
+		class_grid.add_child(button)
 
 	var element_row := HBoxContainer.new()
 	element_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -77,19 +87,19 @@ func _ready() -> void:
 	_update()
 
 
-func _on_class_pressed(id: String, button: Button, row: HBoxContainer) -> void:
+func _on_class_pressed(id: String, button: Button, row: Container) -> void:
 	_selected_class = id
 	_mark_selected(button, row)
 	_update()
 
 
-func _on_element_pressed(element: String, button: Button, row: HBoxContainer) -> void:
+func _on_element_pressed(element: String, button: Button, row: Container) -> void:
 	_selected_element = element
 	_mark_selected(button, row)
 	_update()
 
 
-func _mark_selected(selected: Button, row: HBoxContainer) -> void:
+func _mark_selected(selected: Button, row: Container) -> void:
 	for child in row.get_children():
 		if child is Button:
 			child.disabled = child == selected

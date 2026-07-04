@@ -6,8 +6,15 @@ extends Node2D
 const MAX_FLOORS := 3
 const STARTER_WEAPONS := {
 	"blade_warden": "warden_sword",
+	"breaker": "pioneer_axe",
+	"nightblade": "bone_knife",
+	"bulwark": "spiked_board",
 	"arcanist": "apprentice_staff",
 	"ranger": "hardwood_bow",
+	"gunner": "scrap_pistol",
+	"soulbinder": "cinder_orb",
+	"lightkeeper": "nightwatch_mace",
+	"tinkerer": "scrap_pistol",
 }
 
 @onready var player: Player = $Player
