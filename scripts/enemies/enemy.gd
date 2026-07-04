@@ -31,6 +31,8 @@ var _time := 0.0
 var _state := "chase"
 var _state_timer := 0.0
 var _dash_dir := Vector2.ZERO
+@onready var _sprite: AnimatedSprite2D = get_node_or_null("Sprite")
+@onready var _body: Polygon2D = get_node_or_null("Body")
 
 
 func _ready() -> void:
@@ -50,8 +52,37 @@ func _physics_process(delta: float) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 	_behave(delta)
+	_update_sprite_anim()
 	if kind != "exploder":
 		_try_contact_damage()
+
+
+func configure_visual(idle_name: String, run_name: String = "") -> void:
+	if _sprite == null or idle_name == "":
+		return
+	var anims := {"idle": idle_name}
+	anims["run"] = run_name if run_name != "" else idle_name
+	var sprite_frames := SpriteDB.build_sprite_frames(anims)
+	if sprite_frames == null:
+		return
+	_sprite.sprite_frames = sprite_frames
+	_sprite.visible = true
+	_sprite.play("idle")
+	if _body != null:
+		_body.visible = false
+
+
+func _update_sprite_anim() -> void:
+	if _sprite == null or not _sprite.visible or _sprite.sprite_frames == null:
+		return
+	var anim := "run" if velocity.length_squared() > 1.0 else "idle"
+	if _sprite.animation != anim:
+		_sprite.play(anim)
+	var face_dir := velocity
+	if face_dir.length_squared() <= 1.0 and target != null and is_instance_valid(target):
+		face_dir = target.global_position - global_position
+	if absf(face_dir.x) > 0.01:
+		_sprite.flip_h = face_dir.x < 0.0
 
 
 func _behave(delta: float) -> void:

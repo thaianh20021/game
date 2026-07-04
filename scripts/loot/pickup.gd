@@ -20,6 +20,7 @@ const RARITY_COLORS := {
 var data: Dictionary = {}
 
 var _player: Node2D
+var _sprite: AnimatedSprite2D
 
 
 func configure(p_data: Dictionary, player: Node2D) -> void:
@@ -28,6 +29,8 @@ func configure(p_data: Dictionary, player: Node2D) -> void:
 
 
 func _ready() -> void:
+	if _try_sprite_visual():
+		return
 	var visual := Polygon2D.new()
 	match str(data.get("type", "gold")):
 		"gold":
@@ -47,6 +50,59 @@ func _ready() -> void:
 			var weapon := WeaponDB.get_weapon(str(data.get("id", "")))
 			visual.color = RARITY_COLORS.get(str(weapon.get("rarity", "common")), Color.WHITE)
 	add_child(visual)
+
+func _try_sprite_visual() -> bool:
+	var type := str(data.get("type", "gold"))
+	_sprite = AnimatedSprite2D.new()
+	var sprite_frames: SpriteFrames
+	match type:
+		"gold":
+			sprite_frames = SpriteDB.build_sprite_frames({"idle": "coin_anim"})
+		"potion":
+			sprite_frames = _single_frame_anim("flask_red")
+		"weapon":
+			var weapon := WeaponDB.get_weapon(str(data.get("id", "")))
+			var group := str(weapon.get("group", ""))
+			var sprite_name := _weapon_sprite_name(group)
+			sprite_frames = _single_frame_anim(sprite_name)
+	if sprite_frames == null:
+		return false
+	_sprite.sprite_frames = sprite_frames
+	_sprite.play("idle")
+	add_child(_sprite)
+	return true
+
+func _single_frame_anim(sprite_name: String) -> SpriteFrames:
+	if sprite_name == "":
+		return null
+	var tex := SpriteDB.texture(sprite_name)
+	if tex == null:
+		return null
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	frames.add_animation("idle")
+	frames.set_animation_loop("idle", true)
+	frames.add_frame("idle", tex)
+	return frames
+
+func _weapon_sprite_name(group: String) -> String:
+	match group:
+		"sword_1h":
+			return SpriteDB.first_existing(["weapon_regular_sword", "weapon_knight_sword"])
+		"bow", "crossbow":
+			return SpriteDB.first_existing(["weapon_bow", "weapon_bow_2"])
+		"staff", "orb", "tome":
+			return SpriteDB.first_existing(["weapon_red_magic_staff", "weapon_green_magic_staff"])
+		"dagger":
+			return SpriteDB.first_existing(["weapon_knife"])
+		"axe":
+			return SpriteDB.first_existing(["weapon_axe", "weapon_waraxe"])
+		"hammer":
+			return SpriteDB.first_existing(["weapon_hammer", "weapon_big_hammer"])
+		"spear":
+			return SpriteDB.first_existing(["weapon_spear"])
+		_:
+			return SpriteDB.first_existing(["weapon_regular_sword"])
 
 
 func _physics_process(delta: float) -> void:

@@ -19,6 +19,23 @@ const TILE_COLORS := {
 }
 const DOOR_OPEN_COLOR := Color(0.55, 0.45, 0.20)
 const DOOR_LOCKED_COLOR := Color(0.45, 0.15, 0.12)
+const FLOOR_SPRITES := [
+	"floor_1", "floor_2", "floor_3", "floor_4",
+	"floor_5", "floor_6", "floor_7", "floor_8",
+]
+const ENEMY_SPRITES := {
+	"stone_rat": {"idle": ["imp_idle_anim"], "run": ["imp_run_anim"]},
+	"crystal_bat": {"idle": ["swampy_anim", "imp_idle_anim"], "run": ["swampy_anim", "imp_run_anim"]},
+	"web_spider": {"idle": ["spider_idle_anim", "skelet_idle_anim"], "run": ["spider_run_anim", "skelet_run_anim"]},
+	"rubble_golem": {"idle": ["ogre_idle_anim", "orc_warrior_idle_anim"], "run": ["ogre_run_anim", "orc_warrior_run_anim"]},
+	"cave_slime": {"idle": ["slug_anim", "tiny_zombie_idle_anim"], "run": ["slug_anim", "tiny_zombie_run_anim"]},
+	"glow_beetle": {"idle": ["necromancer_anim", "imp_idle_anim"], "run": ["necromancer_anim", "imp_run_anim"]},
+	"quartz_shaman": {"idle": ["wogol_idle_anim", "ice_zombie_anim"], "run": ["wogol_run_anim", "ice_zombie_anim"]},
+	"cave_crab": {"idle": ["orc_shaman_idle_anim", "masked_orc_idle_anim"], "run": ["orc_shaman_run_anim", "masked_orc_run_anim"]},
+	"stalactite_wisp": {"idle": ["wraith_idle_anim", "skelet_idle_anim"], "run": ["wraith_run_anim", "skelet_run_anim"]},
+	"beast_herder": {"idle": ["orc_warlord_idle_anim", "big_zombie_idle_anim"], "run": ["orc_warlord_run_anim", "big_zombie_run_anim"]},
+	"cave_golem_boss": {"idle": ["big_demon_idle_anim"], "run": ["big_demon_run_anim"]},
+}
 
 # Placeholder movement speeds per enemy kind (px/s) until real AIs land.
 const SPEED_BY_KIND := {
@@ -71,12 +88,46 @@ func _draw() -> void:
 	for y in grid.height:
 		for x in grid.width:
 			var t := grid.get_tile(x, y)
+			var rect := Rect2(x * TILE, y * TILE, TILE, TILE)
+			if _draw_tile_texture(t, x, y, rect):
+				continue
 			var color: Color
 			if t == TileGrid.Tile.DOOR:
 				color = DOOR_OPEN_COLOR if is_cleared else DOOR_LOCKED_COLOR
 			else:
 				color = TILE_COLORS[t]
-			draw_rect(Rect2(x * TILE, y * TILE, TILE, TILE), color)
+			draw_rect(rect, color)
+
+func _draw_tile_texture(tile: int, x: int, y: int, rect: Rect2) -> bool:
+	var sprite_name := ""
+	var tint := Color.WHITE
+	match tile:
+		TileGrid.Tile.FLOOR:
+			sprite_name = FLOOR_SPRITES[_floor_variant(x, y)]
+		TileGrid.Tile.WALL:
+			sprite_name = "wall_mid"
+		TileGrid.Tile.PILLAR:
+			sprite_name = SpriteDB.first_existing(["column", "column_wall", "wall_mid"])
+		TileGrid.Tile.DOOR:
+			sprite_name = "doors_leaf_open" if is_cleared else "doors_leaf_closed"
+		TileGrid.Tile.GRASS:
+			sprite_name = "floor_1"
+			tint = Color(0.55, 0.95, 0.55)
+		TileGrid.Tile.WATER:
+			sprite_name = "floor_1"
+			tint = Color(0.45, 0.65, 1.0)
+		TileGrid.Tile.PIT:
+			sprite_name = SpriteDB.first_existing(["hole", "edge_down"])
+	if sprite_name == "":
+		return false
+	var tex := SpriteDB.texture(sprite_name)
+	if tex == null:
+		return false
+	draw_texture_rect(tex, rect, false, tint)
+	return true
+
+func _floor_variant(x: int, y: int) -> int:
+	return absi((x * 73856093) ^ (y * 19349663)) % FLOOR_SPRITES.size()
 
 
 func _build_collisions() -> void:
@@ -136,6 +187,7 @@ func _spawn_enemy(entry: Dictionary) -> void:
 	enemy.z_index = 2
 	enemy.died.connect(_on_enemy_died.bind(entry))
 	add_child(enemy)
+	_apply_enemy_sprite(enemy, str(data.get("id", "")))
 
 
 ## Bosses have no scene yet: build the node tree in code.
@@ -152,9 +204,23 @@ func _make_boss() -> Enemy:
 	])
 	body.color = Color(0.55, 0.5, 0.45)
 	boss.add_child(body)
+	var sprite := AnimatedSprite2D.new()
+	sprite.name = "Sprite"
+	sprite.visible = false
+	boss.add_child(sprite)
 	boss.sight_range = 400.0
 	boss.contact_range = 16.0
 	return boss
+
+func _apply_enemy_sprite(enemy: Enemy, enemy_id: String) -> void:
+	var mapping: Dictionary = ENEMY_SPRITES.get(enemy_id, {})
+	if mapping.is_empty():
+		return
+	var idle_name := SpriteDB.first_existing(mapping["idle"])
+	var run_name := SpriteDB.first_existing(mapping["run"])
+	if idle_name == "":
+		return
+	enemy.configure_visual(idle_name, run_name)
 
 
 func _on_enemy_died(enemy: Enemy, entry: Dictionary) -> void:

@@ -9,6 +9,7 @@ const TRIGGER_RADIUS := 12.0
 
 var _player: Node2D
 var _visual: Polygon2D
+var _sprite: Sprite2D
 var _time := 0.0
 var _triggered := false
 
@@ -18,6 +19,13 @@ func configure(player: Node2D) -> void:
 
 
 func _ready() -> void:
+	var ladder := SpriteDB.texture("floor_ladder")
+	if ladder != null:
+		_sprite = Sprite2D.new()
+		_sprite.texture = ladder
+		add_child(_sprite)
+		z_index = 1
+		return
 	_visual = Polygon2D.new()
 	_visual.polygon = PackedVector2Array([
 		Vector2(0, -7), Vector2(7, 0), Vector2(0, 7), Vector2(-7, 0),
@@ -29,7 +37,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	_visual.scale = Vector2.ONE * (1.0 + 0.15 * sin(_time * 4.0))
+	if _visual != null:
+		_visual.scale = Vector2.ONE * (1.0 + 0.15 * sin(_time * 4.0))
 	if _triggered or _player == null or not is_instance_valid(_player):
 		return
 	if global_position.distance_to(_player.global_position) <= TRIGGER_RADIUS:

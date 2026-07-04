@@ -12,6 +12,20 @@ signal resource_changed(current: float, max_value: float)
 
 const MANA_REGEN_PER_S := 4.0  # GDD: mana regens over time
 const ENERGY_PER_HIT := 5.0    # GDD: energy builds on successful hits
+const CLASS_SPRITES := {
+	"blade_warden": {
+		"idle": ["knight_m_idle_anim"],
+		"run": ["knight_m_run_anim"],
+	},
+	"arcanist": {
+		"idle": ["wizzard_m_idle_anim"],
+		"run": ["wizzard_m_run_anim"],
+	},
+	"ranger": {
+		"idle": ["elf_m_idle_anim"],
+		"run": ["elf_m_run_anim"],
+	},
+}
 
 @export var move_speed := 90.0
 @export var dash_speed := 260.0
@@ -40,6 +54,8 @@ var _dash_time_left := 0.0
 var _dash_cd_left := 0.0
 var _iframes_left := 0.0
 var _dash_dir := Vector2.ZERO
+@onready var _sprite: AnimatedSprite2D = get_node_or_null("Sprite")
+@onready var _body: Polygon2D = get_node_or_null("Body")
 
 
 func _ready() -> void:
@@ -71,6 +87,7 @@ func apply_class(data: Dictionary, element: String, starter_weapon_id: String) -
 	add_child(starter)
 	starter.equip(starter_weapon_id)
 	_weapons.append(starter)
+	_apply_class_sprite()
 
 	hp_changed.emit(hp, max_hp)
 	resource_changed.emit(resource, max_resource)
@@ -116,11 +133,58 @@ func _physics_process(delta: float) -> void:
 			weapon.try_attack(global_position, _aim_dir())
 
 	move_and_slide()
+	_update_sprite_anim()
 
 
 func _aim_dir() -> Vector2:
 	var aim := get_global_mouse_position() - global_position
 	return aim.normalized() if aim != Vector2.ZERO else Vector2.RIGHT
+
+
+func _apply_class_sprite() -> void:
+	if _sprite == null:
+		return
+	var mapping: Dictionary = CLASS_SPRITES.get(class_id, {})
+	if mapping.is_empty():
+		_show_placeholder()
+		return
+	var idle_name := SpriteDB.first_existing(mapping["idle"])
+	var run_name := SpriteDB.first_existing(mapping["run"])
+	if idle_name == "" or run_name == "":
+		_show_placeholder()
+		return
+	var sprite_frames := SpriteDB.build_sprite_frames({
+		"idle": idle_name,
+		"run": run_name,
+	})
+	if sprite_frames == null:
+		_show_placeholder()
+		return
+	_sprite.sprite_frames = sprite_frames
+	_sprite.visible = true
+	_sprite.play("idle")
+	if _body != null:
+		_body.visible = false
+
+
+func _show_placeholder() -> void:
+	if _sprite != null:
+		_sprite.visible = false
+	if _body != null:
+		_body.visible = true
+
+
+func _update_sprite_anim() -> void:
+	if _sprite == null or not _sprite.visible or _sprite.sprite_frames == null:
+		return
+	var anim := "run" if velocity.length_squared() > 1.0 else "idle"
+	if _sprite.animation != anim:
+		_sprite.play(anim)
+	var face_dir := velocity
+	if face_dir.length_squared() <= 1.0:
+		face_dir = _aim_dir()
+	if absf(face_dir.x) > 0.01:
+		_sprite.flip_h = face_dir.x < 0.0
 
 
 ## Called by weapons/projectiles when a hit lands (energy classes build up).
