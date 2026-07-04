@@ -56,11 +56,12 @@ static func build_sprite_frames(anims: Dictionary) -> SpriteFrames:
 			sprite_frames.add_frame(anim, frame)
 	return sprite_frames if not sprite_frames.get_animation_names().is_empty() else null
 
-static func first_existing(candidates: Array[String]) -> String:
+static func first_existing(candidates: Array) -> String:
 	_ensure_loaded()
 	for candidate in candidates:
-		if has_sprite(candidate):
-			return candidate
+		var sprite_name := str(candidate)
+		if has_sprite(sprite_name):
+			return sprite_name
 	return ""
 
 static func has_sprite(name: String) -> bool:
