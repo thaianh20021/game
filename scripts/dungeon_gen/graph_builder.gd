@@ -22,6 +22,7 @@ func build(seed_value: int, floor_index: int) -> Array[RoomNode]:
 	var path := _build_critical_path(path_len)
 	_assign_critical_types(path)
 	_attach_branches(path)
+	_assign_door_maps()
 	return rooms
 
 
@@ -128,3 +129,23 @@ func _pick_anchor(path: Array[RoomNode], reward: RoomNode.RoomType, used: Array[
 	if candidates.is_empty():
 		return rng.randi_range(1, path.size() - 3)
 	return rng.pick(candidates)
+
+
+## Assigns each neighbor of a room to a distinct side (max 4 neighbors by
+## construction). Both rooms of an edge always get a door to each other, so
+## transitions can look up "which door leads back to where I came from".
+func _assign_door_maps() -> void:
+	for r in rooms:
+		var dirs: Array[int] = [
+			RoomStamper.Dir.NORTH,
+			RoomStamper.Dir.EAST,
+			RoomStamper.Dir.SOUTH,
+			RoomStamper.Dir.WEST,
+		]
+		for i in range(dirs.size() - 1, 0, -1):
+			var j := rng.randi_range(0, i)
+			var tmp := dirs[i]
+			dirs[i] = dirs[j]
+			dirs[j] = tmp
+		for i in mini(r.neighbors.size(), 4):
+			r.door_map[dirs[i]] = r.neighbors[i]

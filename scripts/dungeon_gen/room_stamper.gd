@@ -18,16 +18,26 @@ const DOOR_CLEARANCE := 3  # Chebyshev distance kept obstacle-free around doors
 const MAX_ATTEMPTS := 5
 
 
-## One door per neighbor, on distinct sides, max 4. Deterministic shuffle.
-func pick_door_dirs(room: RoomNode, rng: SeededRNG) -> Array[int]:
-	var dirs: Array[int] = [Dir.NORTH, Dir.EAST, Dir.SOUTH, Dir.WEST]
-	for i in range(dirs.size() - 1, 0, -1):
-		var j := rng.randi_range(0, i)
-		var tmp := dirs[i]
-		dirs[i] = dirs[j]
-		dirs[j] = tmp
-	var n: int = clampi(room.neighbors.size(), 1, 4)
-	return dirs.slice(0, n)
+## Side of the room a border tile sits on, or -1 for interior tiles.
+static func dir_of_door_tile(grid: TileGrid, tile: Vector2i) -> int:
+	if tile.y == 0:
+		return Dir.NORTH
+	if tile.y == grid.height - 1:
+		return Dir.SOUTH
+	if tile.x == 0:
+		return Dir.WEST
+	if tile.x == grid.width - 1:
+		return Dir.EAST
+	return -1
+
+
+## All door tiles on the given side of the room.
+static func door_tiles(grid: TileGrid, dir: int) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for d in grid.door_positions():
+		if dir_of_door_tile(grid, d) == dir:
+			out.append(d)
+	return out
 
 
 func stamp(room: RoomNode, rng: SeededRNG, door_dirs: Array[int]) -> TileGrid:

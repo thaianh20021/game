@@ -1,7 +1,8 @@
 class_name RoomRenderer
 extends Node2D
 ## Debug renderer for a stamped room: draws tiles as colored rects, builds
-## wall/pillar/pit collisions, and runs the wave spawn flow from a spawn plan.
+## wall/pillar/pit collisions, locks doors (collision + red tint) until the
+## room is cleared, and runs the wave spawn flow from a spawn plan.
 ## Will be replaced by a real TileMapLayer + biome tileset once art exists.
 
 signal room_cleared
@@ -15,8 +16,9 @@ const TILE_COLORS := {
 	TileGrid.Tile.WATER: Color(0.15, 0.30, 0.45),
 	TileGrid.Tile.GRASS: Color(0.18, 0.28, 0.16),
 	TileGrid.Tile.PILLAR: Color(0.47, 0.42, 0.37),
-	TileGrid.Tile.DOOR: Color(0.55, 0.45, 0.20),
 }
+const DOOR_OPEN_COLOR := Color(0.55, 0.45, 0.20)
+const DOOR_LOCKED_COLOR := Color(0.45, 0.15, 0.12)
 
 # Placeholder movement speeds per enemy kind (px/s) until real AIs land.
 const SPEED_BY_KIND := {
@@ -33,12 +35,14 @@ const SPEED_BY_KIND := {
 }
 
 var grid: TileGrid
+var is_cleared := false
 
 var _plan: Array[Dictionary] = []
 var _enemy_scene: PackedScene
 var _player: Node2D
 var _alive := 0
 var _current_wave := 0
+var _door_bodies: Array[StaticBody2D] = []
 
 
 func setup(p_grid: TileGrid, plan: Array[Dictionary], enemy_scene: PackedScene, player: Node2D) -> void:
@@ -56,28 +60,46 @@ func tile_to_world(t: Vector2i) -> Vector2:
 	return Vector2(t.x + 0.5, t.y + 0.5) * TILE
 
 
+func world_to_tile(pos: Vector2) -> Vector2i:
+	return Vector2i(floori(pos.x / TILE), floori(pos.y / TILE))
+
+
 func _draw() -> void:
 	if grid == null:
 		return
 	for y in grid.height:
 		for x in grid.width:
-			var rect := Rect2(x * TILE, y * TILE, TILE, TILE)
-			draw_rect(rect, TILE_COLORS[grid.get_tile(x, y)])
+			var t := grid.get_tile(x, y)
+			var color: Color
+			if t == TileGrid.Tile.DOOR:
+				color = DOOR_OPEN_COLOR if is_cleared else DOOR_LOCKED_COLOR
+			else:
+				color = TILE_COLORS[t]
+			draw_rect(Rect2(x * TILE, y * TILE, TILE, TILE), color)
 
 
 func _build_collisions() -> void:
 	for y in grid.height:
 		for x in grid.width:
-			if not TileGrid.blocking(grid.get_tile(x, y)):
+			var t := grid.get_tile(x, y)
+			var locked_door := t == TileGrid.Tile.DOOR
+			if not TileGrid.blocking(t) and not locked_door:
 				continue
-			var body := StaticBody2D.new()
-			var shape := CollisionShape2D.new()
-			var rect := RectangleShape2D.new()
-			rect.size = Vector2(TILE, TILE)
-			shape.shape = rect
-			body.add_child(shape)
-			body.position = tile_to_world(Vector2i(x, y))
-			add_child(body)
+			var body := _make_tile_body(x, y)
+			if locked_door:
+				_door_bodies.append(body)
+
+
+func _make_tile_body(x: int, y: int) -> StaticBody2D:
+	var body := StaticBody2D.new()
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(TILE, TILE)
+	shape.shape = rect
+	body.add_child(shape)
+	body.position = tile_to_world(Vector2i(x, y))
+	add_child(body)
+	return body
 
 
 func _spawn_wave(wave: int) -> void:
@@ -118,9 +140,21 @@ func _on_enemy_died() -> void:
 func _advance() -> void:
 	if _current_wave == 1 and _has_wave(2):
 		_spawn_wave(2)
-	else:
+		return
+	if is_cleared:
+		return
+	is_cleared = true
+	_unlock_doors()
+	queue_redraw()
+	if not _plan.is_empty():
 		print("Room cleared!")
-		room_cleared.emit()
+	room_cleared.emit()
+
+
+func _unlock_doors() -> void:
+	for body in _door_bodies:
+		body.queue_free()
+	_door_bodies.clear()
 
 
 func _has_wave(wave: int) -> bool:
