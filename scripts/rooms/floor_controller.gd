@@ -7,6 +7,9 @@ extends Node2D
 ## Determinism: each room re-stamps from SeededRNG(seed, 1000 + room.id),
 ## so revisiting an uncleared room reproduces the exact same layout + spawns.
 
+## Emitted on room enter and on room clear; the HUD/minimap redraw on it.
+signal state_changed
+
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const ENEMY_POOL_PATH := "res://data/enemies_ancient_cave.json"
 const ENTER_OFFSET := 24.0  # px the player is placed inside the entry door
@@ -18,6 +21,7 @@ var difficulty_mult := 1.0
 var rooms: Array[RoomNode] = []
 var current_room: RoomNode
 var cleared_rooms := {}  # room_id -> true
+var visited_rooms := {}  # room_id -> true (fog of war for the minimap)
 
 var _player: Player
 var _renderer: RoomRenderer
@@ -113,11 +117,14 @@ func _enter_room(room: RoomNode, from_room_id: int) -> void:
 		_player.global_position = center
 
 	_transitioning = false
+	visited_rooms[room.id] = true
+	state_changed.emit()
 	print("Entered room %02d (%s) | doors: %s" % [room.id, room.type_name(), room.door_map])
 
 
 func _on_room_cleared(room: RoomNode) -> void:
 	cleared_rooms[room.id] = true
+	state_changed.emit()
 	if room.type == RoomNode.RoomType.BOSS:
 		print("FLOOR COMPLETE! Boss room cleared (%d/%d rooms visited)" % [
 			cleared_rooms.size(), rooms.size(),

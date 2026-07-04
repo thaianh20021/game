@@ -3,7 +3,7 @@ extends CharacterBody2D
 ## Placeholder chase AI used by the room demo. Real per-kind behaviors
 ## (charger, flyer, ranged, caster...) come in the enemy AI milestone.
 
-signal died
+signal died(enemy: Enemy)
 
 @export var speed := 55.0
 @export var max_hp := 20
@@ -45,5 +45,5 @@ func take_damage(amount: int) -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color.WHITE, 0.15)
 	if hp <= 0:
-		died.emit()
+		died.emit(self)
 		queue_free()

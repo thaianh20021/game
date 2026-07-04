@@ -6,6 +6,8 @@ extends CharacterBody2D
 
 signal hp_changed(current: int, max_value: int)
 signal died
+signal gold_changed(total: int)
+signal weapon_changed(display_name: String)
 
 ## Pre-run loadout placeholder; later chosen in the hub (GDD section 4).
 const STARTING_WEAPONS: Array[String] = ["warden_sword", "hardwood_bow"]
@@ -18,6 +20,7 @@ const STARTING_WEAPONS: Array[String] = ["warden_sword", "hardwood_bow"]
 @export var max_hp := 100
 
 var hp: int
+var gold := 0
 
 var _weapons: Array[Weapon] = []
 var _active := 0
@@ -58,6 +61,7 @@ func _physics_process(delta: float) -> void:
 
 	if Input.is_action_just_pressed("swap_weapon") and _weapons.size() > 1:
 		_active = (_active + 1) % _weapons.size()
+		weapon_changed.emit(_weapons[_active].display_name())
 		print("Equipped: %s" % _weapons[_active].display_name())
 
 	# Hold to attack; the weapon's own cooldown gates the fire rate.
@@ -90,3 +94,24 @@ func _start_dash(dir: Vector2) -> void:
 	_dash_time_left = dash_duration
 	_iframes_left = dash_iframes
 	_dash_cd_left = dash_cooldown
+
+
+func add_gold(amount: int) -> void:
+	gold += amount
+	gold_changed.emit(gold)
+
+
+func heal(amount: int) -> void:
+	hp = mini(hp + amount, max_hp)
+	hp_changed.emit(hp, max_hp)
+
+
+## Replaces the active weapon slot (in-run pickup; full inventory later).
+func pickup_weapon(id: String) -> void:
+	var weapon := current_weapon()
+	if weapon == null:
+		return
+	var old_name := weapon.display_name()
+	weapon.equip(id)
+	weapon_changed.emit(weapon.display_name())
+	print("Weapon swapped: %s -> %s" % [old_name, weapon.display_name()])

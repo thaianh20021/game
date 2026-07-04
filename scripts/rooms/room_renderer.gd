@@ -127,14 +127,25 @@ func _spawn_enemy(entry: Dictionary) -> void:
 	enemy.target = _player
 	enemy.position = tile_to_world(entry["tile"])
 	enemy.z_index = 2
-	enemy.died.connect(_on_enemy_died)
+	enemy.died.connect(_on_enemy_died.bind(entry))
 	add_child(enemy)
 
 
-func _on_enemy_died() -> void:
+func _on_enemy_died(enemy: Enemy, entry: Dictionary) -> void:
+	_drop_loot(enemy.position, entry)
 	_alive -= 1
 	if _alive <= 0:
 		_advance()
+
+
+func _drop_loot(at: Vector2, entry: Dictionary) -> void:
+	var drops := LootRoller.roll_drops(entry)
+	for i in drops.size():
+		var pickup := Pickup.new()
+		pickup.configure(drops[i], _player)
+		pickup.position = at + Vector2((i - (drops.size() - 1) * 0.5) * 9.0, 5.0)
+		pickup.z_index = 1
+		add_child(pickup)
 
 
 func _advance() -> void:
