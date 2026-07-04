@@ -18,6 +18,7 @@ const COMBAT_ROOM_TYPES: Array[RoomNode.RoomType] = [
 	RoomNode.RoomType.COMBAT,
 	RoomNode.RoomType.ELITE,
 	RoomNode.RoomType.MINIBOSS,
+	RoomNode.RoomType.BOSS,
 ]
 
 
@@ -43,12 +44,13 @@ func roll_spawn_plan(
 	if not COMBAT_ROOM_TYPES.has(room.type):
 		return plan
 
-	# Mini-boss rooms spawn the dedicated mini-boss instead of a budget wave.
-	if room.type == RoomNode.RoomType.MINIBOSS:
-		var miniboss := _find_miniboss(pool_data)
-		if not miniboss.is_empty():
+	# Mini-boss / boss rooms spawn their dedicated enemy instead of a wave.
+	if room.type == RoomNode.RoomType.MINIBOSS or room.type == RoomNode.RoomType.BOSS:
+		var kind := "boss" if room.type == RoomNode.RoomType.BOSS else "miniboss"
+		var special := _find_kind(pool_data, kind)
+		if not special.is_empty():
 			plan.append({
-				"enemy": miniboss,
+				"enemy": special,
 				"wave": 1,
 				"tile": Vector2i(grid.width / 2, grid.height / 2),
 				"elite": false,
@@ -93,9 +95,9 @@ func roll_spawn_plan(
 	return plan
 
 
-func _find_miniboss(pool_data: Dictionary) -> Dictionary:
+func _find_kind(pool_data: Dictionary, kind: String) -> Dictionary:
 	for e in pool_data["enemies"]:
-		if str(e["kind"]) == "miniboss":
+		if str(e["kind"]) == kind:
 			return e
 	return {}
 

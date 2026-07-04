@@ -32,6 +32,7 @@ const SPEED_BY_KIND := {
 	"armored_melee": 45.0,
 	"ambusher": 70.0,
 	"miniboss": 50.0,
+	"boss": 40.0,
 }
 
 var grid: TileGrid
@@ -115,20 +116,45 @@ func _spawn_wave(wave: int) -> void:
 
 
 func _spawn_enemy(entry: Dictionary) -> void:
-	var enemy: Enemy = _enemy_scene.instantiate()
 	var data: Dictionary = entry["enemy"]
+	var kind := str(data["kind"])
+	var enemy: Enemy
+	if kind == "boss":
+		enemy = _make_boss()
+	else:
+		enemy = _enemy_scene.instantiate()
+	enemy.kind = kind
 	enemy.max_hp = int(data["hp"])
 	enemy.contact_damage = int(data["dmg"])
-	enemy.speed = SPEED_BY_KIND.get(str(data["kind"]), 55.0)
+	enemy.speed = SPEED_BY_KIND.get(kind, 55.0)
 	if bool(entry["elite"]):
 		enemy.max_hp *= 3
 		enemy.scale = Vector2(1.4, 1.4)
-		enemy.modulate = Color(1.0, 0.85, 0.4)  # elite tint until real VFX
+		enemy.base_tint = Color(1.0, 0.85, 0.4)  # elite tint until real VFX
 	enemy.target = _player
 	enemy.position = tile_to_world(entry["tile"])
 	enemy.z_index = 2
 	enemy.died.connect(_on_enemy_died.bind(entry))
 	add_child(enemy)
+
+
+## Bosses have no scene yet: build the node tree in code.
+func _make_boss() -> Enemy:
+	var boss := BossGolem.new()
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(20, 20)
+	shape.shape = rect
+	boss.add_child(shape)
+	var body := Polygon2D.new()
+	body.polygon = PackedVector2Array([
+		Vector2(-11, -11), Vector2(11, -11), Vector2(11, 11), Vector2(-11, 11),
+	])
+	body.color = Color(0.55, 0.5, 0.45)
+	boss.add_child(body)
+	boss.sight_range = 400.0
+	boss.contact_range = 16.0
+	return boss
 
 
 func _on_enemy_died(enemy: Enemy, entry: Dictionary) -> void:

@@ -1,23 +1,34 @@
 class_name Projectile
 extends Area2D
-## Player projectile: flies straight, damages the first enemy hit, despawns
-## on walls or when its range is exhausted. Built entirely in code until
-## per-weapon projectile art exists.
+## Player projectile: flies straight, damages the first enemy hit (applying
+## the shooter's element), despawns on walls or when range is exhausted.
 
 var _dir := Vector2.RIGHT
 var _speed := 220.0
 var _damage := 5
 var _range := 140.0
 var _color := Color(1.0, 0.9, 0.55)
+var _element := ""
+var _shooter: Node = null
 var _travelled := 0.0
 
 
-func setup(dir: Vector2, speed: float, damage: int, range_px: float, color: Color) -> void:
+func setup(
+		dir: Vector2,
+		speed: float,
+		damage: int,
+		range_px: float,
+		color: Color,
+		element: String = "",
+		shooter: Node = null,
+) -> void:
 	_dir = dir.normalized()
 	_speed = speed
 	_damage = damage
 	_range = range_px
 	_color = color
+	_element = element
+	_shooter = shooter
 
 
 func _ready() -> void:
@@ -49,7 +60,10 @@ func _physics_process(delta: float) -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is Enemy:
-		body.take_damage(_damage)
+		body.hit(_damage, _element)
+		if _shooter != null and is_instance_valid(_shooter) \
+				and _shooter.has_method("on_hit_landed"):
+			_shooter.on_hit_landed()
 		queue_free()
 	elif body is StaticBody2D:
 		queue_free()

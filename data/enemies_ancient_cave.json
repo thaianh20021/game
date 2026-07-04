@@ -11,7 +11,8 @@
     { "id": "quartz_shaman", "name": "Phap Su Thach Anh", "kind": "caster", "cost": 5, "hp": 24, "dmg": 7, "ai": "keep_distance, 3-shot crystal volley, buffs nearby golems", "weak": ["dark"], "resist": ["light"] },
     { "id": "cave_crab", "name": "Cua Hang", "kind": "armored_melee", "cost": 4, "hp": 35, "dmg": 8, "ai": "sidestep_strafe, pincer_grab; front shell blocks projectiles", "weak": ["lightning"], "resist": ["metal", "water"] },
     { "id": "stalactite_wisp", "name": "Linh Nhu Da", "kind": "ambusher", "cost": 3, "hp": 16, "dmg": 9, "ai": "hides_on_ceiling, drops when player passes below, dust warning decal", "weak": ["light"], "resist": ["earth"] },
-    { "id": "beast_herder", "name": "Ke Chan Thu", "kind": "miniboss", "cost": 0, "hp": 220, "dmg": 12, "ai": "summons biome enemies, berserk_buff_aura below 50% hp", "weak": ["fire"], "resist": [], "note": "miniboss only, not in budget pool" }
+    { "id": "beast_herder", "name": "Ke Chan Thu", "kind": "miniboss", "cost": 0, "hp": 220, "dmg": 12, "ai": "summons biome enemies, berserk_buff_aura below 50% hp", "weak": ["fire"], "resist": [], "note": "miniboss only, not in budget pool" },
+    { "id": "cave_golem_boss", "name": "Golem Thuc Tinh", "kind": "boss", "cost": 0, "hp": 450, "dmg": 16, "ai": "3 phases: telegraphed smash / rock volley / rolling charge", "weak": ["water"], "resist": ["metal"], "note": "floor boss, not in budget pool" }
   ],
   "elite_modifiers": ["burning", "frozen", "armored", "splitter", "summoner", "explosive", "vampiric", "shielded", "teleporting", "berserk"]
 }

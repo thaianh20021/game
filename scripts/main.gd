@@ -1,9 +1,14 @@
 extends Node2D
-## Game flow controller: runs floors 1..MAX_FLOORS, shows death/victory
-## overlays and restarts the run (fresh random seed) on R.
-## Next milestones: hub scene, meta progression save, class loadouts.
+## Game flow: class/element select -> floors 1..MAX_FLOORS -> death/victory
+## overlay, R restarts the scene (fresh seed, back to class select).
+## Next milestones: hub scene, meta progression save, more bosses/biomes.
 
 const MAX_FLOORS := 3
+const STARTER_WEAPONS := {
+	"blade_warden": "warden_sword",
+	"arcanist": "apprentice_staff",
+	"ranger": "hardwood_bow",
+}
 
 @onready var player: Player = $Player
 
@@ -16,8 +21,24 @@ var _overlay: RunOverlay
 
 
 func _ready() -> void:
+	player.hide()
+	player.set_physics_process(false)
+	var select := ClassSelectScreen.new()
+	add_child(select)
+	select.confirmed.connect(_start_run)
+
+
+func _start_run(class_id: String, element: String) -> void:
 	run_seed = randi()
 	print("=== New run | seed %d ===" % run_seed)
+
+	player.apply_class(
+		PlayerClassDB.get_class_data(class_id),
+		element,
+		STARTER_WEAPONS.get(class_id, "warden_sword"))
+	player.show()
+	player.set_physics_process(true)
+	player.died.connect(_on_player_died)
 
 	_floor_ctrl = FloorController.new()
 	add_child(_floor_ctrl)
@@ -31,8 +52,6 @@ func _ready() -> void:
 
 	_overlay = RunOverlay.new()
 	add_child(_overlay)
-
-	player.died.connect(_on_player_died)
 
 
 func _unhandled_input(event: InputEvent) -> void:
