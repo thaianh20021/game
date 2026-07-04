@@ -26,6 +26,7 @@ const CLASS_SPRITES := {
 		"run": ["elf_m_run_anim"],
 	},
 }
+const CAMERA_ZOOM := Vector2(2.0, 2.0)
 
 @export var move_speed := 90.0
 @export var dash_speed := 260.0
@@ -54,12 +55,36 @@ var _dash_time_left := 0.0
 var _dash_cd_left := 0.0
 var _iframes_left := 0.0
 var _dash_dir := Vector2.ZERO
+@onready var _camera: Camera2D = get_node_or_null("Camera2D")
 @onready var _sprite: AnimatedSprite2D = get_node_or_null("Sprite")
 @onready var _body: Polygon2D = get_node_or_null("Body")
 
 
 func _ready() -> void:
 	hp = max_hp
+	_setup_camera()
+
+
+func configure_camera_for_room(bounds: Rect2) -> void:
+	_setup_camera()
+	if _camera == null:
+		return
+	_camera.limit_left = floori(bounds.position.x)
+	_camera.limit_top = floori(bounds.position.y)
+	_camera.limit_right = ceili(bounds.position.x + bounds.size.x)
+	_camera.limit_bottom = ceili(bounds.position.y + bounds.size.y)
+	_camera.reset_smoothing()
+
+
+func _setup_camera() -> void:
+	if _camera == null:
+		_camera = get_node_or_null("Camera2D")
+	if _camera == null:
+		return
+	_camera.enabled = true
+	_camera.zoom = CAMERA_ZOOM
+	_camera.position_smoothing_enabled = false
+	_camera.make_current()
 
 
 ## Applies class stats + starting loadout. Called once before the run starts.
@@ -162,6 +187,8 @@ func _apply_class_sprite() -> void:
 		return
 	_sprite.sprite_frames = sprite_frames
 	_sprite.visible = true
+	_sprite.scale = Vector2.ONE
+	_align_sprite_to_collision()
 	_sprite.play("idle")
 	if _body != null:
 		_body.visible = false
@@ -185,6 +212,33 @@ func _update_sprite_anim() -> void:
 		face_dir = _aim_dir()
 	if absf(face_dir.x) > 0.01:
 		_sprite.flip_h = face_dir.x < 0.0
+
+
+func _align_sprite_to_collision() -> void:
+	if _sprite == null or _sprite.sprite_frames == null:
+		return
+	var frame_height := _sprite_frame_height()
+	if frame_height <= 0.0:
+		return
+	_sprite.offset = Vector2(0.0, _collision_half_height() - frame_height * 0.5)
+
+
+func _sprite_frame_height() -> float:
+	var max_height := 0.0
+	for anim_name in _sprite.sprite_frames.get_animation_names():
+		for i in _sprite.sprite_frames.get_frame_count(anim_name):
+			var frame := _sprite.sprite_frames.get_frame_texture(anim_name, i)
+			if frame != null:
+				max_height = maxf(max_height, frame.get_size().y)
+	return max_height
+
+
+func _collision_half_height() -> float:
+	var collision := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision == null:
+		return 0.0
+	var rect := collision.shape as RectangleShape2D
+	return rect.size.y * 0.5 if rect != null else 0.0
 
 
 ## Called by weapons/projectiles when a hit lands (energy classes build up).

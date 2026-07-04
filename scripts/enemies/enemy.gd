@@ -67,6 +67,8 @@ func configure_visual(idle_name: String, run_name: String = "") -> void:
 		return
 	_sprite.sprite_frames = sprite_frames
 	_sprite.visible = true
+	_sprite.scale = Vector2.ONE
+	_align_sprite_to_collision()
 	_sprite.play("idle")
 	if _body != null:
 		_body.visible = false
@@ -83,6 +85,33 @@ func _update_sprite_anim() -> void:
 		face_dir = target.global_position - global_position
 	if absf(face_dir.x) > 0.01:
 		_sprite.flip_h = face_dir.x < 0.0
+
+
+func _align_sprite_to_collision() -> void:
+	if _sprite == null or _sprite.sprite_frames == null:
+		return
+	var frame_height := _sprite_frame_height()
+	if frame_height <= 0.0:
+		return
+	_sprite.offset = Vector2(0.0, _collision_half_height() - frame_height * 0.5)
+
+
+func _sprite_frame_height() -> float:
+	var max_height := 0.0
+	for anim_name in _sprite.sprite_frames.get_animation_names():
+		for i in _sprite.sprite_frames.get_frame_count(anim_name):
+			var frame := _sprite.sprite_frames.get_frame_texture(anim_name, i)
+			if frame != null:
+				max_height = maxf(max_height, frame.get_size().y)
+	return max_height
+
+
+func _collision_half_height() -> float:
+	var collision := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision == null:
+		return 0.0
+	var rect := collision.shape as RectangleShape2D
+	return rect.size.y * 0.5 if rect != null else 0.0
 
 
 func _behave(delta: float) -> void:

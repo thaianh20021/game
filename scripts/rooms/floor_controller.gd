@@ -120,6 +120,10 @@ func _enter_room(room: RoomNode, from_room_id: int) -> void:
 	# Connect BEFORE setup: empty-plan rooms emit room_cleared during setup.
 	_renderer.room_cleared.connect(_on_room_cleared.bind(room))
 	_renderer.setup(_grid, plan, ENEMY_SCENE, _player)
+	_player.configure_camera_for_room(Rect2(
+		Vector2.ZERO,
+		Vector2(_grid.width, _grid.height) * RoomRenderer.TILE
+	))
 
 	var center := _renderer.tile_to_world(center_tile)
 	if entry_dir != -1:
