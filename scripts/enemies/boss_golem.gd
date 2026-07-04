@@ -31,6 +31,7 @@ func _behave(delta: float) -> void:
 					if to_target.length() <= 44.0 and _attack_cd <= 0.0:
 						_state = "telegraph"
 						_state_timer = 0.6
+						_show_telegraph_fx(to_target.normalized(), 52.0, _state_timer)
 		2:
 			var dist := to_target.length()
 			if dist < 90.0:
@@ -66,6 +67,7 @@ func _behave(delta: float) -> void:
 					if _attack_cd <= 0.0:
 						_state = "telegraph"
 						_state_timer = 0.5
+						_show_telegraph_fx(to_target.normalized(), 56.0, _state_timer)
 	move_and_slide()
 
 

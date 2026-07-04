@@ -12,6 +12,7 @@ signal resource_changed(current: float, max_value: float)
 
 const MANA_REGEN_PER_S := 4.0  # GDD: mana regens over time
 const ENERGY_PER_HIT := 5.0    # GDD: energy builds on successful hits
+const CombatFxScript := preload("res://scripts/fx/combat_fx.gd")
 const CLASS_SPRITES := {
 	"blade_warden": {
 		"idle": ["knight_m_idle_anim"],
@@ -307,6 +308,15 @@ func _start_dash(dir: Vector2) -> void:
 	_dash_time_left = dash_duration
 	_iframes_left = dash_iframes
 	_dash_cd_left = dash_cooldown
+	CombatFxScript.spawn_dash_ghost(_fx_parent(), _sprite, global_position,
+		_sprite.flip_h if _sprite != null else false)
+
+
+func _fx_parent() -> Node:
+	var tree := get_tree()
+	if tree == null:
+		return self
+	return tree.current_scene if tree.current_scene != null else tree.root
 
 
 func add_gold(amount: int) -> void:

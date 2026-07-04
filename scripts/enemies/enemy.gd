@@ -11,6 +11,7 @@ extends CharacterBody2D
 signal died(enemy: Enemy)
 
 const DOT_INTERVAL := 0.5
+const CombatFxScript := preload("res://scripts/fx/combat_fx.gd")
 
 @export var speed := 55.0
 @export var max_hp := 20
@@ -169,6 +170,7 @@ func _charger_behavior(delta: float) -> void:
 				_state = "telegraph"
 				_state_timer = 0.5
 				velocity = Vector2.ZERO
+				_show_telegraph_fx(to_target.normalized(), 28.0, _state_timer)
 			else:
 				velocity = to_target.normalized() * speed * _speed_mult()
 	move_and_slide()
@@ -205,6 +207,7 @@ func _exploder_behavior(delta: float) -> void:
 				_state = "fuse"
 				_state_timer = 0.8
 				velocity = Vector2.ZERO
+				_show_telegraph_fx(to_target.normalized(), 44.0, _state_timer)
 			elif to_target.length() <= sight_range:
 				velocity = to_target.normalized() * speed * _speed_mult()
 			else:
@@ -393,3 +396,15 @@ func _current_tint() -> Color:
 
 func _blink(color: Color) -> void:
 	modulate = color if fmod(_time, 0.2) < 0.1 else _current_tint()
+
+
+func _show_telegraph_fx(dir: Vector2, radius: float, duration: float) -> void:
+	CombatFxScript.spawn_telegraph(_fx_parent(), global_position,
+		dir if dir.length_squared() > 0.0 else Vector2.RIGHT, radius, duration)
+
+
+func _fx_parent() -> Node:
+	var tree := get_tree()
+	if tree == null:
+		return self
+	return tree.current_scene if tree.current_scene != null else tree.root

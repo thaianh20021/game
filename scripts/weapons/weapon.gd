@@ -12,6 +12,7 @@ extends Node2D
 const MELEE_GROUPS := ["sword_1h", "axe", "dagger", "hammer", "spear", "shield"]
 const MAGIC_GROUPS := ["staff", "orb", "tome"]
 const PROJECTILE_SPEED := 220.0
+const CombatFxScript := preload("res://scripts/fx/combat_fx.gd")
 
 var data: Dictionary = {}
 
@@ -56,14 +57,23 @@ func try_attack(origin: Vector2, aim: Vector2) -> bool:
 		return false
 	_cd_left = cooldown()
 	if is_melee():
+		CombatFxScript.spawn_slash(_fx_parent(), origin + aim * melee_reach() * 0.45, aim)
 		_melee_hit(origin, aim)
 	else:
+		CombatFxScript.spawn_muzzle_flash(_fx_parent(), origin + aim * 10.0, aim)
 		_fire_projectile(origin, aim)
 	return true
 
 
 func _player() -> Player:
 	return get_parent() as Player
+
+
+func _fx_parent() -> Node:
+	var tree := get_tree()
+	if tree == null:
+		return self
+	return tree.current_scene if tree.current_scene != null else tree.root
 
 
 func _roll_damage() -> int:
