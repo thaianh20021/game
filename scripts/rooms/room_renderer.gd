@@ -61,9 +61,11 @@ var _player: Node2D
 var _alive := 0
 var _current_wave := 0
 var _door_bodies: Array[StaticBody2D] = []
+var _door_markers: Array[Node2D] = []
 
 
 func setup(p_grid: TileGrid, plan: Array[Dictionary], enemy_scene: PackedScene, player: Node2D) -> void:
+	clear_door_markers()
 	grid = p_grid
 	_plan = plan
 	_enemy_scene = enemy_scene
@@ -80,6 +82,29 @@ func tile_to_world(t: Vector2i) -> Vector2:
 
 func world_to_tile(pos: Vector2) -> Vector2i:
 	return Vector2i(floori(pos.x / TILE), floori(pos.y / TILE))
+
+
+func clear_door_markers() -> void:
+	for marker in _door_markers:
+		if is_instance_valid(marker):
+			marker.queue_free()
+	_door_markers.clear()
+
+
+func show_door_markers(door_targets: Dictionary) -> void:
+	clear_door_markers()
+	if grid == null:
+		return
+	for dir in door_targets.keys():
+		var tiles := RoomStamper.door_tiles(grid, int(dir))
+		if tiles.is_empty():
+			continue
+		var marker := DoorMarker.new()
+		marker.configure(int(door_targets[dir]))
+		marker.position = _door_marker_position(int(dir), tiles)
+		add_child(marker)
+		marker.add_to_group("door_markers")
+		_door_markers.append(marker)
 
 
 func _draw() -> void:
@@ -105,7 +130,7 @@ func _draw_tile_texture(tile: int, x: int, y: int, rect: Rect2) -> bool:
 		TileGrid.Tile.FLOOR:
 			sprite_name = FLOOR_SPRITES[_floor_variant(x, y)]
 		TileGrid.Tile.WALL:
-			sprite_name = "wall_mid"
+			sprite_name = wall_sprite_name_for_tile(grid, x, y)
 		TileGrid.Tile.PILLAR:
 			sprite_name = SpriteDB.first_existing(["column", "column_wall", "wall_mid"])
 		TileGrid.Tile.DOOR:
@@ -125,6 +150,35 @@ func _draw_tile_texture(tile: int, x: int, y: int, rect: Rect2) -> bool:
 		return false
 	draw_texture_rect(tex, rect, false, tint)
 	return true
+
+
+func wall_sprite_name_for_tile(p_grid: TileGrid, x: int, y: int) -> String:
+	if p_grid == null:
+		return "wall_mid"
+	var below_is_floor := y + 1 < p_grid.height and p_grid.get_tile(x, y + 1) == TileGrid.Tile.FLOOR
+	if below_is_floor and SpriteDB.has_sprite("wall_top_mid"):
+		return "wall_top_mid"
+	if SpriteDB.has_sprite("wall_mid"):
+		return "wall_mid"
+	return SpriteDB.first_existing(["wall_top_mid", "wall_side_mid_left", "wall_side_mid_right"])
+
+
+func _door_marker_position(dir: int, tiles: Array[Vector2i]) -> Vector2:
+	var pos := Vector2.ZERO
+	for tile in tiles:
+		pos += tile_to_world(tile)
+	pos /= maxf(float(tiles.size()), 1.0)
+	match dir:
+		RoomStamper.Dir.NORTH:
+			return pos + Vector2(0, TILE)
+		RoomStamper.Dir.SOUTH:
+			return pos + Vector2(0, -TILE)
+		RoomStamper.Dir.WEST:
+			return pos + Vector2(TILE, 0)
+		RoomStamper.Dir.EAST:
+			return pos + Vector2(-TILE, 0)
+	return pos
+
 
 func _floor_variant(x: int, y: int) -> int:
 	return absi((x * 73856093) ^ (y * 19349663)) % FLOOR_SPRITES.size()

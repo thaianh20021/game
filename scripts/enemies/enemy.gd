@@ -31,6 +31,8 @@ var _time := 0.0
 var _state := "chase"
 var _state_timer := 0.0
 var _dash_dir := Vector2.ZERO
+var _hp_bar: Node2D
+var _hp_fill: ColorRect
 @onready var _sprite: AnimatedSprite2D = get_node_or_null("Sprite")
 @onready var _body: Polygon2D = get_node_or_null("Body")
 
@@ -258,6 +260,7 @@ func take_damage(amount: int) -> void:
 	if _statuses.has("vulnerable"):  # Plasma combo
 		amount = ceili(amount * 1.25)
 	hp -= amount
+	_show_hit_feedback(amount)
 	modulate = Color(1.0, 0.4, 0.4)
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", _current_tint(), 0.15)
@@ -313,9 +316,55 @@ func _tick_statuses(delta: float) -> bool:
 
 func _dot_damage(amount: int) -> void:
 	hp -= amount
+	_show_hit_feedback(amount)
 	if hp <= 0:
 		died.emit(self)
 		queue_free()
+
+
+func _show_hit_feedback(amount: int) -> void:
+	_update_hp_bar()
+	_spawn_damage_number(amount)
+
+
+func _update_hp_bar() -> void:
+	if _hp_bar == null or not is_instance_valid(_hp_bar):
+		_hp_bar = Node2D.new()
+		_hp_bar.name = "HpBar"
+		_hp_bar.position = Vector2(-10, -18)
+		add_child(_hp_bar)
+		var bg := ColorRect.new()
+		bg.name = "Background"
+		bg.position = Vector2.ZERO
+		bg.size = Vector2(20, 3)
+		bg.color = Color(0.02, 0.02, 0.02, 0.8)
+		_hp_bar.add_child(bg)
+		_hp_fill = ColorRect.new()
+		_hp_fill.name = "Fill"
+		_hp_fill.position = Vector2(1, 1)
+		_hp_fill.size = Vector2(18, 1)
+		_hp_fill.color = Color(0.9, 0.18, 0.14)
+		_hp_bar.add_child(_hp_fill)
+	if _hp_fill != null:
+		var ratio := clampf(float(maxi(hp, 0)) / maxf(float(max_hp), 1.0), 0.0, 1.0)
+		_hp_fill.size.x = 18.0 * ratio
+
+
+func _spawn_damage_number(amount: int) -> void:
+	var old := get_node_or_null("DamageNumber")
+	if old != null:
+		old.queue_free()
+	var label := Label.new()
+	label.name = "DamageNumber"
+	label.text = str(amount)
+	label.position = Vector2(-8, -30)
+	label.add_theme_font_size_override("font_size", 8)
+	label.modulate = Color(1.0, 0.82, 0.28)
+	add_child(label)
+	var tween := create_tween()
+	tween.tween_property(label, "position", label.position + Vector2(0, -10), 0.35)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.35)
+	tween.tween_callback(label.queue_free)
 
 
 func _speed_mult() -> float:

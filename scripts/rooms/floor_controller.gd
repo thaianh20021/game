@@ -144,12 +144,24 @@ func _enter_room(room: RoomNode, from_room_id: int) -> void:
 
 func _on_room_cleared(room: RoomNode) -> void:
 	cleared_rooms[room.id] = true
+	_show_door_markers(room)
 	state_changed.emit()
 	if room.type == RoomNode.RoomType.BOSS:
 		print("Boss down! Exit portal opened (%d/%d rooms visited)" % [
 			cleared_rooms.size(), rooms.size(),
 		])
 		_spawn_exit_portal()
+
+
+func _show_door_markers(room: RoomNode) -> void:
+	if _renderer == null:
+		return
+	var door_targets := {}
+	for dir in room.door_map.keys():
+		var target_id := int(room.door_map[dir])
+		if target_id >= 0 and target_id < rooms.size():
+			door_targets[int(dir)] = rooms[target_id].type
+	_renderer.show_door_markers(door_targets)
 
 
 func _spawn_exit_portal() -> void:
