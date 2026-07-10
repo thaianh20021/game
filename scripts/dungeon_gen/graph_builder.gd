@@ -4,7 +4,7 @@ extends RefCounted
 ## docs/gdd/10-dungeon-gen.md). The critical path is generated FIRST, so the
 ## floor can never be blocked. Deterministic for a given (seed, floor_index).
 
-const BRANCH_MIN := 2
+const BRANCH_MIN := 3
 const BRANCH_MAX := 4
 const BRANCH_LEN_MIN := 1
 const BRANCH_LEN_MAX := 3
@@ -25,6 +25,17 @@ func build(seed_value: int, floor_index: int) -> Array[RoomNode]:
 	_assign_door_maps()
 	return rooms
 
+
+func build_boss_rush(seed_value: int, floor_index: int) -> Array[RoomNode]:
+	rng = SeededRNG.new(seed_value, 9000 + floor_index)
+	rooms = []
+
+	var path := _build_critical_path(3)
+	path[0].type = RoomNode.RoomType.ENTRANCE
+	path[1].type = RoomNode.RoomType.HEAL
+	path[2].type = RoomNode.RoomType.BOSS
+	_assign_door_maps()
+	return rooms
 
 func _new_room() -> RoomNode:
 	var r := RoomNode.new()

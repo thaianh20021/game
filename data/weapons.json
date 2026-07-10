@@ -1,17 +1,21 @@
 {
   "comment": "MVP weapon pool (early game). dmg/speed/range on a 1-10 scale. sockets = rune slots.",
   "weapons": [
-    { "id": "warden_sword", "name": "Kiem Ve Binh", "group": "sword_1h", "rarity": "common", "dmg": 5, "speed": 7, "range": 2, "sockets": 1, "effect": "3rd hit light knockback" },
-    { "id": "pioneer_axe", "name": "Riu Khai Hoang", "group": "axe", "rarity": "common", "dmg": 7, "speed": 4, "range": 2, "sockets": 1, "effect": "+50% dmg vs props/crates" },
-    { "id": "bone_knife", "name": "Dao Xuong", "group": "dagger", "rarity": "common", "dmg": 3, "speed": 9, "range": 1, "sockets": 1, "effect": "+30% dmg from behind" },
-    { "id": "hardwood_bow", "name": "Cung Go Cung", "group": "bow", "rarity": "common", "dmg": 5, "speed": 6, "range": 8, "sockets": 1, "effect": "hold to charge; full charge pierces 1 target" },
-    { "id": "scrap_pistol", "name": "Luc Tu Che", "group": "pistol", "rarity": "common", "dmg": 4, "speed": 7, "range": 7, "sockets": 1, "effect": "last round in magazine +50% dmg" },
-    { "id": "apprentice_staff", "name": "Gay Hoc Do", "group": "staff", "rarity": "common", "dmg": 5, "speed": 5, "range": 7, "mana_cost": 5, "sockets": 1, "effect": "projectiles lightly home toward targets" },
-    { "id": "spiked_board", "name": "Khien Go Dinh", "group": "shield", "rarity": "common", "dmg": 3, "speed": 3, "range": 1, "sockets": 1, "effect": "front block reduces dmg 50%" },
-    { "id": "hunting_crossbow", "name": "No San", "group": "crossbow", "rarity": "uncommon", "dmg": 6, "speed": 5, "range": 8, "sockets": 2, "effect": "+20% dmg while standing still" },
-    { "id": "nightwatch_mace", "name": "Chuy Tuan Dem", "group": "hammer", "rarity": "uncommon", "dmg": 6, "speed": 5, "range": 2, "sockets": 2, "effect": "10% chance to stun 0.5s" },
-    { "id": "cinder_orb", "name": "Orb Tro Tan", "group": "orb", "rarity": "uncommon", "dmg": 4, "speed": 6, "range": 6, "mana_cost": 4, "sockets": 2, "effect": "innate Fire element rank 1" },
-    { "id": "twin_fang", "name": "Song Nhan", "group": "dagger", "rarity": "uncommon", "dmg": 4, "speed": 9, "range": 1, "sockets": 2, "effect": "alternating strikes ramp attack speed up to +15%" },
-    { "id": "cave_javelin", "name": "Thuong Hang Da", "group": "spear", "rarity": "uncommon", "dmg": 6, "speed": 5, "range": 3, "sockets": 2, "effect": "thrust pierces enemies in a line" }
+    { "id": "warden_sword", "name": "Kiem Ve Binh", "group": "sword_1h", "rarity": "common", "dmg": 5, "speed": 7, "range": 2, "combo_knockback_every": 3, "knockback_distance": 14, "sockets": 1, "effect": "3rd hit light knockback" },
+    { "id": "pioneer_axe", "name": "Riu Khai Hoang", "group": "axe", "rarity": "common", "dmg": 7, "speed": 4, "range": 2, "full_charge_time": 0.55, "prop_damage_mult": 1.5, "sockets": 1, "effect": "+50% dmg vs props/crates; Breaker full charge empowers heavy windup" },
+    { "id": "bone_knife", "name": "Dao Xuong", "group": "dagger", "rarity": "common", "dmg": 3, "speed": 9, "range": 1, "backstab_damage_mult": 1.3, "sockets": 1, "effect": "+30% dmg from behind" },
+    { "id": "hardwood_bow", "name": "Cung Go Cung", "group": "bow", "rarity": "common", "dmg": 5, "speed": 6, "range": 8, "full_charge_time": 0.45, "full_charge_pierce_bonus": 1, "sockets": 1, "effect": "hold to charge; full charge pierces 1 target" },
+    { "id": "scrap_pistol", "name": "Luc Tu Che", "group": "pistol", "rarity": "common", "dmg": 4, "speed": 7, "range": 7, "magazine_size": 6, "last_round_damage_mult": 1.5, "sockets": 1, "effect": "last round in magazine +50% dmg" },
+    { "id": "apprentice_staff", "name": "Gay Hoc Do", "group": "staff", "rarity": "common", "dmg": 5, "speed": 5, "range": 7, "mana_cost": 5, "homing": 2.0, "sockets": 1, "effect": "projectiles lightly home toward targets" },
+    { "id": "spiked_board", "name": "Khien Go Dinh", "group": "shield", "rarity": "common", "dmg": 3, "speed": 3, "range": 1, "front_block_damage_mult": 0.5, "front_block_dot_min": 0.0, "sockets": 1, "effect": "front block reduces dmg 50%" },
+    { "id": "hunting_crossbow", "name": "No San", "group": "crossbow", "rarity": "uncommon", "dmg": 6, "speed": 5, "range": 8, "stationary_damage_mult": 1.2, "stationary_speed_threshold": 1.0, "sockets": 2, "effect": "+20% dmg while standing still" },
+    { "id": "nightwatch_mace", "name": "Chuy Tuan Dem", "group": "hammer", "rarity": "uncommon", "dmg": 6, "speed": 5, "range": 2, "stun_chance": 0.1, "stun_duration": 0.5, "sockets": 2, "effect": "10% chance to stun 0.5s" },
+    { "id": "cinder_orb", "name": "Orb Tro Tan", "group": "orb", "rarity": "uncommon", "dmg": 4, "speed": 6, "range": 6, "mana_cost": 4, "sockets": 2, "element": "fire", "effect": "innate Fire element rank 1" },
+    { "id": "twin_fang", "name": "Song Nhan", "group": "dagger", "rarity": "uncommon", "dmg": 4, "speed": 9, "range": 1, "attack_speed_ramp_per_hit": 0.05, "attack_speed_ramp_max": 0.15, "sockets": 2, "effect": "alternating strikes ramp attack speed up to +15%" },
+    { "id": "cave_javelin", "name": "Thuong Hang Da", "group": "spear", "rarity": "uncommon", "dmg": 6, "speed": 5, "range": 3, "line_pierce_range": 84, "line_pierce_width": 12, "sockets": 2, "effect": "thrust pierces enemies in a line" },
+    { "id": "storm_scepter", "name": "Truong Bao Set", "group": "staff", "rarity": "rare", "dmg": 7, "speed": 6, "range": 8, "mana_cost": 7, "element": "lightning", "chain_count": 1, "chain_radius": 76, "chain_damage_mult": 0.55, "sockets": 3, "effect": "lightning shots arc once to a nearby enemy" },
+    { "id": "ember_cannon", "name": "Phao Than Hong", "group": "pistol", "rarity": "rare", "dmg": 8, "speed": 4, "range": 7, "element": "fire", "fire_patch_damage": 4, "fire_patch_radius": 18, "fire_patch_duration": 2.0, "fire_patch_tick": 0.45, "sockets": 3, "effect": "slow shots leave a short fire patch" },
+    { "id": "void_halberd", "name": "Kich Hu Khong", "group": "spear", "rarity": "epic", "dmg": 9, "speed": 5, "range": 4, "shadow_wave_every": 3, "shadow_wave_damage_mult": 0.65, "shadow_wave_range": 150, "shadow_wave_pierce": 3, "sockets": 4, "effect": "third thrust fires a piercing shadow wave" },
+    { "id": "star_orb", "name": "Orb Sao Roi", "group": "orb", "rarity": "epic", "dmg": 7, "speed": 7, "range": 8, "mana_cost": 8, "split_count": 2, "split_angle_deg": 28, "split_damage_mult": 0.55, "sockets": 4, "effect": "projectiles split after first hit" }
   ]
 }

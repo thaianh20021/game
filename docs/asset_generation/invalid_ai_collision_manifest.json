@@ -1,0 +1,9 @@
+{
+  "asset_id": "broken_collision_ai",
+  "asset_kind": "collision",
+  "license": "project_owned_ai_generated",
+  "generation_tool": "gpt-image",
+  "shape_ok": true,
+  "polygon_ok": false,
+  "polygon_points": 2
+}

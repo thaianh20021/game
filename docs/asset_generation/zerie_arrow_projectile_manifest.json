@@ -1,0 +1,23 @@
+{
+	"asset_id": "zerie_arrow_projectile",
+	"asset_kind": "sprite",
+	"license": "Zerie Tiny RPG Character Asset Pack free license; free version Soldier and Orc; no redistribution, resell, or re-upload",
+	"source_url": "https://zerie.itch.io/tiny-rpg-character-asset-pack",
+	"source_path": "E:/AI/asset/Tiny RPG Character Asset Pack 01 v2.0 -Free Soldier&Orc/Arrow(Projectile)/Arrow01(32x32).png",
+	"provenance_reviewed": true,
+	"image_path": "E:/AI/asset/Tiny RPG Character Asset Pack 01 v2.0 -Free Soldier&Orc/Arrow(Projectile)/Arrow01(32x32).png",
+	"frame_grid_ok": true,
+	"frame_count": 1,
+	"frame_size": [32, 32],
+	"expected_frame_size": [32, 32],
+	"sheet_size": [32, 32],
+	"columns": 1,
+	"rows": 1,
+	"stable_size": true,
+	"fps": 8.0,
+	"animation_stability_reviewed": true,
+	"motion_reviewed": true,
+	"origin_alignment_reviewed": true,
+	"origin_px": [16, 16],
+	"review_notes": "Local Zerie free-pack Arrow 32x32 PNG reviewed as a one-frame projectile sprite with stable grid, centered origin, and no fanmade runtime copy."
+}

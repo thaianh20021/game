@@ -10,6 +10,7 @@
   },
   "cursed_roll_chance": 0.01,
   "pity": { "rooms_without_rare_plus": 10, "guaranteed_min_rarity": "rare" },
+  "silver_key": { "elite_chance": 0.25, "miniboss": 1, "boss": 1 },
   "boss_min_rarity": "epic",
   "room_type_bonus": {
     "TREASURE": { "min_rarity": "uncommon" },

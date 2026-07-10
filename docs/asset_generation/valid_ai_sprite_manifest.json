@@ -1,0 +1,23 @@
+{
+  "asset_id": "blade_idle_ai",
+  "asset_kind": "sprite",
+  "license": "project_owned_ai_generated",
+  "generation_tool": "gpt-image",
+  "source_url": "",
+  "image_path": "res://docs/asset_generation/valid_ai_sprite_sheet.png",
+  "prompt_summary": "16x16 four-frame blade idle placeholder sprite, project-owned generation.",
+  "review_notes": "Grid is 4x1, each frame is 16x16, fps and origin alignment reviewed.",
+  "frame_grid_ok": true,
+  "frame_count": 4,
+  "frame_size": [16, 16],
+  "expected_frame_size": [16, 16],
+  "stable_size": true,
+  "fps": 8.0,
+  "animation_stability_reviewed": true,
+  "motion_reviewed": true,
+  "origin_alignment_reviewed": true,
+  "origin_px": [8, 8],
+  "sheet_size": [64, 16],
+  "columns": 4,
+  "rows": 1
+}

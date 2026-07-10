@@ -1,7 +1,8 @@
 # Godot 4
 .godot/
-export_presets.cfg
+export_credentials.cfg
 *.translation
+build/
 
 # OS
 .DS_Store

@@ -1,0 +1,17 @@
+{
+  "comment": "Fungal Depths enemy pool. Uses existing enemy kinds with biome-specific identities and elemental affinities.",
+  "biome": "fungal_depths",
+  "enemies": [
+    { "id": "sporeling", "name": "Sporeling", "kind": "melee", "cost": 1, "hp": 16, "dmg": 4, "ai": "small swarm enemy; applies pressure in groups", "weak": ["fire"], "resist": ["poison"] },
+    { "id": "gloom_moth", "name": "Gloom Moth", "kind": "flyer", "cost": 2, "hp": 18, "dmg": 6, "ai": "sine flight; dives through spores", "weak": ["lightning"], "resist": ["poison"] },
+    { "id": "mycelium_archer", "name": "Mycelium Archer", "kind": "ranged", "cost": 3, "hp": 26, "dmg": 6, "ai": "keeps distance and fires sticky spores", "weak": ["fire"], "resist": ["water"] },
+    { "id": "puffcap_bomber", "name": "Puffcap Bomber", "kind": "exploder", "cost": 3, "hp": 18, "dmg": 15, "ai": "walks in, blooms, detonates", "weak": ["fire"], "resist": ["poison"] },
+    { "id": "mold_shambler", "name": "Mold Shambler", "kind": "tanker", "cost": 5, "hp": 90, "dmg": 11, "ai": "slow tank that anchors rooms", "weak": ["fire"], "resist": ["earth", "poison"] },
+    { "id": "bracket_crab", "name": "Bracket Crab", "kind": "armored_melee", "cost": 4, "hp": 44, "dmg": 9, "ai": "armored side-walker with fungal shell", "weak": ["lightning"], "resist": ["earth"] },
+    { "id": "spore_oracle", "name": "Spore Oracle", "kind": "caster", "cost": 5, "hp": 30, "dmg": 8, "ai": "casts spore volleys and supports tanks", "weak": ["fire"], "resist": ["poison", "water"] },
+    { "id": "ceiling_puff", "name": "Ceiling Puff", "kind": "ambusher", "cost": 3, "hp": 20, "dmg": 10, "ai": "ceiling ambusher that drops in close range", "weak": ["lightning"], "resist": ["poison"] },
+    { "id": "spore_matriarch", "name": "Spore Matriarch", "kind": "miniboss", "cost": 0, "hp": 280, "dmg": 15, "ai": "summons sporelings and enrages under half hp", "weak": ["fire"], "resist": ["poison"], "note": "fungal miniboss only" },
+    { "id": "spore_golem_boss", "name": "Spore Golem", "kind": "boss", "cost": 0, "hp": 2600, "dmg": 20, "ai": "three-phase fungal golem variant with trap bloom pressure", "weak": ["fire"], "resist": ["poison"], "note": "fungal floor boss" }
+  ],
+  "elite_modifiers": ["burning", "frozen", "splitter", "summoner", "explosive", "vampiric", "shielded", "teleporting", "berserk"]
+}

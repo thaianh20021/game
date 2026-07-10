@@ -1,0 +1,17 @@
+{
+  "comment": "Ember Forge enemy pool. Uses existing enemy kinds with forge-specific identities and higher pressure.",
+  "biome": "ember_forge",
+  "enemies": [
+    { "id": "coal_imp", "name": "Coal Imp", "kind": "melee_charger", "cost": 2, "hp": 24, "dmg": 8, "ai": "telegraphed hot-foot charge", "weak": ["water"], "resist": ["fire"] },
+    { "id": "cinder_wisp", "name": "Cinder Wisp", "kind": "flyer", "cost": 2, "hp": 20, "dmg": 7, "ai": "fast drifting flyer with ember trails", "weak": ["water"], "resist": ["fire"] },
+    { "id": "slag_thrower", "name": "Slag Thrower", "kind": "ranged", "cost": 4, "hp": 32, "dmg": 9, "ai": "keeps distance and lobs molten shots", "weak": ["water"], "resist": ["fire", "metal"] },
+    { "id": "blast_keg", "name": "Blast Keg", "kind": "exploder", "cost": 3, "hp": 22, "dmg": 18, "ai": "short fuse explosive forge hazard", "weak": ["ice"], "resist": ["fire"] },
+    { "id": "anvil_guard", "name": "Anvil Guard", "kind": "tanker", "cost": 6, "hp": 115, "dmg": 13, "ai": "slow armored tank", "weak": ["lightning"], "resist": ["metal", "fire"] },
+    { "id": "forge_crab", "name": "Forge Crab", "kind": "armored_melee", "cost": 4, "hp": 52, "dmg": 11, "ai": "hot shell front guard", "weak": ["water"], "resist": ["fire", "metal"] },
+    { "id": "ember_acolyte", "name": "Ember Acolyte", "kind": "caster", "cost": 5, "hp": 36, "dmg": 10, "ai": "casts ember volleys and pressures lanes", "weak": ["water"], "resist": ["fire"] },
+    { "id": "chain_hook", "name": "Chain Hook", "kind": "ambusher", "cost": 4, "hp": 34, "dmg": 12, "ai": "hides in rafters then drops into melee", "weak": ["lightning"], "resist": ["metal"] },
+    { "id": "forge_captain", "name": "Forge Captain", "kind": "miniboss", "cost": 0, "hp": 340, "dmg": 18, "ai": "buffs forge guards and charges when wounded", "weak": ["water"], "resist": ["fire", "metal"], "note": "ember forge miniboss only" },
+    { "id": "forge_golem_boss", "name": "Forge Golem", "kind": "boss", "cost": 0, "hp": 2700, "dmg": 24, "ai": "three-phase forge golem variant with bullet hell and traps", "weak": ["water"], "resist": ["fire", "metal"], "note": "ember forge floor boss" }
+  ],
+  "elite_modifiers": ["burning", "armored", "splitter", "summoner", "explosive", "vampiric", "shielded", "teleporting", "berserk"]
+}

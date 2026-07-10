@@ -1,0 +1,17 @@
+{
+  "asset_id": "broken_object_visual_ai",
+  "asset_kind": "object_visual",
+  "license": "project_owned_ai_generated",
+  "generation_tool": "gpt-image",
+  "runtime_object_sprite_ok": false,
+  "frame_grid_ok": true,
+  "frame_count": 4,
+  "frame_size": [32, 32],
+  "expected_frame_size": [32, 32],
+  "stable_size": true,
+  "sheet_size": [64, 64],
+  "columns": 2,
+  "rows": 2,
+  "polygon_ok": false,
+  "fallback_polygon_points": 2
+}

@@ -21,6 +21,79 @@ const DURATIONS := {
 	"lightning": 2.5,  # combo window; the stun itself is 0.3s
 	"poison": 5.0,
 }
+const PREVIEWS := {
+	"fire": {"name": "Fire", "status": "Burn DoT", "effect": "Damage over time"},
+	"ice": {"name": "Ice", "status": "Slow", "effect": "Movement and attack slow"},
+	"lightning": {"name": "Lightning", "status": "Stun", "effect": "Short interrupt window"},
+	"poison": {"name": "Poison", "status": "Long DoT", "effect": "Long damage over time"},
+}
+const ICON_SPRITES := {
+	"fire": "flask_red",
+	"ice": "flask_blue",
+	"lightning": "flask_yellow",
+	"poison": "flask_green",
+}
+const COMBO_DEFS := {
+	"fire+ice": {
+		"id": "thermal_shock",
+		"name": "Thermal Shock",
+		"effect": "Instant burst damage",
+	},
+	"fire+lightning": {
+		"id": "plasma",
+		"name": "Plasma",
+		"effect": "Vulnerability window",
+	},
+	"fire+poison": {
+		"id": "burning_smog",
+		"name": "Burning Smog",
+		"effect": "Area damage cloud",
+	},
+	"ice+lightning": {
+		"id": "deep_freeze",
+		"name": "Deep Freeze",
+		"effect": "Short freeze",
+	},
+	"ice+poison": {
+		"id": "frostbane",
+		"name": "Frostbane",
+		"effect": "Slow plus poison",
+	},
+	"lightning+poison": {
+		"id": "toxic_current",
+		"name": "Toxic Current",
+		"effect": "Poison chain",
+	},
+}
+
+static func combo_codex_entries() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for key in ["fire+ice", "fire+lightning", "fire+poison", "ice+lightning", "ice+poison", "lightning+poison"]:
+		entries.append(combo_info_from_key(key))
+	return entries
+
+static func element_preview(element: String) -> Dictionary:
+	var data: Dictionary = PREVIEWS.get(element, {
+		"name": element.capitalize(),
+		"status": "Status",
+		"effect": "",
+	})
+	var preview := data.duplicate(true)
+	preview["id"] = element
+	preview["duration"] = status_duration(element)
+	preview["combos"] = combos_for_element(element)
+	return preview
+
+static func element_icon_sprite(element: String) -> String:
+	return str(ICON_SPRITES.get(element, "flask_red"))
+
+static func combos_for_element(element: String) -> Array[Dictionary]:
+	var combos: Array[Dictionary] = []
+	for combo in combo_codex_entries():
+		var elements: Array = combo.get("elements", [])
+		if elements.has(element):
+			combos.append(combo)
+	return combos
 
 
 static func is_element(status_name: String) -> bool:
@@ -31,11 +104,28 @@ static func status_duration(element: String) -> float:
 	return DURATIONS.get(element, 3.0)
 
 
+static func combo_info(a: String, b: String) -> Dictionary:
+	var pair := [a, b]
+	pair.sort()
+	return combo_info_from_key("%s+%s" % [pair[0], pair[1]])
+
+
+static func combo_info_from_key(key: String) -> Dictionary:
+	var raw: Dictionary = COMBO_DEFS.get(key, {})
+	if raw.is_empty():
+		return {}
+	var info := raw.duplicate(true)
+	info["elements"] = key.split("+")
+	return info
+
+
 ## [param enemy] is untyped to avoid a cyclic reference with Enemy.
 static func trigger_combo(enemy, a: String, b: String) -> void:
 	var pair := [a, b]
 	pair.sort()
 	var key := "%s+%s" % [pair[0], pair[1]]
+	if enemy.has_method("show_combo_feedback"):
+		enemy.call("show_combo_feedback", combo_info_from_key(key))
 	match key:
 		"fire+ice":  # Thermal Shock
 			enemy.take_damage(18)

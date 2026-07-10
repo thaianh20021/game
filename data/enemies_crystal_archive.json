@@ -1,0 +1,17 @@
+{
+  "comment": "Crystal Archive enemy pool. Late-run biome focused on chill, prism shots, and high-pressure ranged lanes.",
+  "biome": "crystal_archive",
+  "enemies": [
+    { "id": "archive_mite", "name": "Archive Mite", "kind": "melee", "cost": 1, "hp": 18, "dmg": 5, "ai": "small archive swarm enemy", "weak": ["fire"], "resist": ["ice"] },
+    { "id": "prism_bat", "name": "Prism Bat", "kind": "flyer", "cost": 2, "hp": 22, "dmg": 8, "ai": "fast drifting flyer with angular dives", "weak": ["lightning"], "resist": ["ice"] },
+    { "id": "index_lancer", "name": "Index Lancer", "kind": "melee_charger", "cost": 3, "hp": 32, "dmg": 10, "ai": "telegraphed line charge through shelves", "weak": ["fire"], "resist": ["metal"] },
+    { "id": "glyph_archer", "name": "Glyph Archer", "kind": "ranged", "cost": 4, "hp": 36, "dmg": 10, "ai": "keeps distance and fires narrow prism lanes", "weak": ["dark"], "resist": ["light"] },
+    { "id": "mirror_acolyte", "name": "Mirror Acolyte", "kind": "caster", "cost": 5, "hp": 42, "dmg": 11, "ai": "casts delayed shard volleys", "weak": ["fire"], "resist": ["ice", "light"] },
+    { "id": "crystal_warden", "name": "Crystal Warden", "kind": "tanker", "cost": 6, "hp": 114, "dmg": 14, "ai": "slow heavy guard that anchors lanes", "weak": ["earth"], "resist": ["ice", "metal"] },
+    { "id": "glass_bomber", "name": "Glass Bomber", "kind": "exploder", "cost": 3, "hp": 26, "dmg": 20, "ai": "short fuse glass burst", "weak": ["fire"], "resist": ["ice"] },
+    { "id": "shelf_stalker", "name": "Shelf Stalker", "kind": "ambusher", "cost": 4, "hp": 38, "dmg": 13, "ai": "drops from archive shelves near the player", "weak": ["lightning"], "resist": ["dark"] },
+    { "id": "archive_curator", "name": "Archive Curator", "kind": "miniboss", "cost": 0, "hp": 390, "dmg": 20, "ai": "summons archive constructs and chills lanes under half hp", "weak": ["fire"], "resist": ["ice", "light"], "note": "crystal archive miniboss only" },
+    { "id": "archive_golem_boss", "name": "Archive Golem", "kind": "boss", "cost": 0, "hp": 2900, "dmg": 27, "ai": "three-phase archive golem variant with prism bullet hell and chill lattice traps", "weak": ["fire"], "resist": ["ice", "light"], "note": "floor four boss" }
+  ],
+  "elite_modifiers": ["frozen", "shielded", "teleporting", "splitter", "summoner", "armored", "vampiric", "berserk"]
+}

@@ -1,0 +1,11 @@
+{
+  "asset_id": "blade_cast_audio_ai",
+  "asset_kind": "audio",
+  "license": "project_owned_ai_generated",
+  "generation_tool": "gpt-audio",
+  "source_url": "",
+  "prompt_summary": "Short blade cast placeholder SFX with reviewed waveform and duration.",
+  "review_notes": "Waveform envelope and duration reviewed for a short cast cue.",
+  "waveform_ok": true,
+  "duration": 0.08
+}

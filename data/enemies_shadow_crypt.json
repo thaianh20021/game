@@ -1,0 +1,17 @@
+{
+  "comment": "Shadow Crypt enemy pool. Endless/post-finale biome focused on curse pressure, ambush lanes, and late-run survivability checks.",
+  "biome": "shadow_crypt",
+  "enemies": [
+    { "id": "crypt_rat", "name": "Crypt Rat", "kind": "melee", "cost": 1, "hp": 20, "dmg": 6, "ai": "small shadow swarm enemy", "weak": ["light"], "resist": ["dark"] },
+    { "id": "shade_bat", "name": "Shade Bat", "kind": "flyer", "cost": 2, "hp": 24, "dmg": 9, "ai": "fast drifting flyer with late dives", "weak": ["lightning"], "resist": ["dark"] },
+    { "id": "bone_lancer", "name": "Bone Lancer", "kind": "melee_charger", "cost": 3, "hp": 34, "dmg": 11, "ai": "telegraphed centerline charge", "weak": ["fire"], "resist": ["dark"] },
+    { "id": "grave_archer", "name": "Grave Archer", "kind": "ranged", "cost": 4, "hp": 38, "dmg": 11, "ai": "keeps distance and fires cursed bolts", "weak": ["light"], "resist": ["dark"] },
+    { "id": "hex_scribe", "name": "Hex Scribe", "kind": "caster", "cost": 5, "hp": 44, "dmg": 12, "ai": "casts delayed curse volleys", "weak": ["lightning"], "resist": ["dark", "poison"] },
+    { "id": "tomb_guard", "name": "Tomb Guard", "kind": "tanker", "cost": 6, "hp": 108, "dmg": 15, "ai": "slow shield guard that holds narrow lanes", "weak": ["fire"], "resist": ["dark", "metal"] },
+    { "id": "soul_bomber", "name": "Soul Bomber", "kind": "exploder", "cost": 3, "hp": 28, "dmg": 22, "ai": "short fuse curse burst", "weak": ["light"], "resist": ["dark"] },
+    { "id": "veil_stalker", "name": "Veil Stalker", "kind": "ambusher", "cost": 4, "hp": 40, "dmg": 14, "ai": "drops from darkness near the player", "weak": ["lightning"], "resist": ["dark"] },
+    { "id": "crypt_revenant", "name": "Crypt Revenant", "kind": "miniboss", "cost": 0, "hp": 420, "dmg": 22, "ai": "summons shadow enemies and curses lanes under half hp", "weak": ["light"], "resist": ["dark", "poison"], "note": "shadow crypt miniboss only" },
+    { "id": "void_golem_boss", "name": "Void Golem", "kind": "boss", "cost": 0, "hp": 2800, "dmg": 28, "ai": "endless void golem variant with curse bullet hell and collapsing lanes", "weak": ["light"], "resist": ["dark"], "note": "endless/post-finale boss" }
+  ],
+  "elite_modifiers": ["teleporting", "vampiric", "shielded", "splitter", "summoner", "armored", "berserk", "frozen"]
+}

@@ -81,18 +81,33 @@ func roll_spawn_plan(
 		budget -= float(e["cost"])
 		picks.append(e)
 
-	var wave1_count: int = maxi(1, ceili(picks.size() * WAVE1_SHARE))
+	var wave_count := 3 if floor_index >= 2 or room.type == RoomNode.RoomType.ELITE else 2
 	for i in picks.size():
 		var e: Dictionary = picks[i]
 		var is_elite: bool = room.type == RoomNode.RoomType.ELITE and i == 0
+		var tile := _pick_spawn_tile(grid, rng, entry, str(e["kind"]))
+		if tile.x < 0:
+			continue
 		plan.append({
 			"enemy": e,
-			"wave": 1 if i < wave1_count else 2,
-			"tile": _pick_spawn_tile(grid, rng, entry, str(e["kind"])),
+			"wave": _wave_for_pick(i, picks.size(), wave_count),
+			"tile": tile,
 			"elite": is_elite,
 			"modifier": rng.pick(pool_data["elite_modifiers"]) if is_elite else "",
 		})
 	return plan
+
+func _wave_for_pick(index: int, total: int, wave_count: int) -> int:
+	if wave_count <= 2 or total < 3:
+		var wave1_count: int = maxi(1, ceili(total * WAVE1_SHARE))
+		return 1 if index < wave1_count else 2
+	var wave1_end := maxi(1, ceili(total * 0.5))
+	var wave2_end := clampi(ceili(total * 0.8), wave1_end + 1, total - 1)
+	if index < wave1_end:
+		return 1
+	if index < wave2_end:
+		return 2
+	return 3
 
 
 func _find_kind(pool_data: Dictionary, kind: String) -> Dictionary:
@@ -118,5 +133,22 @@ func _pick_spawn_tile(grid: TileGrid, rng: SeededRNG, entry: Vector2i, kind: Str
 		if Vector2(p - entry).length() < min_dist:
 			continue
 		return p
-	# Fallback: room center (always kept clear of the entry by room sizes).
-	return Vector2i(grid.width / 2, grid.height / 2)
+	return _fallback_spawn_tile(grid, entry, min_dist)
+
+func _fallback_spawn_tile(grid: TileGrid, entry: Vector2i, min_dist: float) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_dist := -1.0
+	for y in range(1, grid.height - 1):
+		for x in range(1, grid.width - 1):
+			if not grid.is_walkable_at(x, y):
+				continue
+			if grid.get_tile(x, y) == TileGrid.Tile.DOOR:
+				continue
+			var p := Vector2i(x, y)
+			var dist := Vector2(p - entry).length()
+			if dist < min_dist:
+				continue
+			if dist > best_dist:
+				best = p
+				best_dist = dist
+	return best
