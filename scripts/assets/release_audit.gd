@@ -2270,6 +2270,8 @@ static func release_candidate_manual_recording_plan(meta_data: Dictionary = {}) 
 			"status": "recorded" if recorded else "missing",
 			"launch_command": _manual_scenario_launch_command(scenario_index),
 			"launch_dry_run_command": _manual_scenario_launch_dry_run_command(scenario_index),
+			"suggested_screenshot_path": _manual_scenario_screenshot_path(scenario_index),
+			"capture_helper_command": _manual_scenario_capture_helper_command(scenario_index),
 			"command": command,
 			"dry_run_command": dry_run_command,
 			"issue_command": issue_command,
@@ -2339,6 +2341,8 @@ static func release_candidate_playtest_packet(meta_data: Dictionary = {}) -> Dic
 			"status": str(status.get("status", "")),
 			"launch_command": str(status.get("launch_command", "")),
 			"launch_dry_run_command": str(status.get("launch_dry_run_command", "")),
+			"suggested_screenshot_path": str(status.get("suggested_screenshot_path", "")),
+			"capture_helper_command": str(status.get("capture_helper_command", "")),
 			"record_command": str(status.get("command", "")),
 			"record_dry_run_command": str(status.get("dry_run_command", "")),
 			"record_issue_command": _manual_scenario_issue_record_command(
@@ -2508,7 +2512,7 @@ static func _playtest_notes_draft_command(
 		"pace_boss_sec": "<boss sec>",
 		"asset_animation_notes": "<human animation notes>",
 		"polygon_collision_notes": "<human polygon notes>",
-		"wave_hud_audio_notes": "<human wave HUD audio notes>",
+		"wave_hud_audio_notes": "<human wave hud audio notes>",
 		"blocker_screenshot_or_seed": "<screenshot or seed>",
 		"release_decision": "<hold or ready>",
 	}
@@ -2530,10 +2534,25 @@ static func _manual_scenario_issue_resolve_command(scenario_index: int) -> Strin
 	return "godot --headless --path . --script res://scripts/tools/resolve_manual_playtest_issue.gd -- --scenario-index=%d --issue_type=<issue_type> --resolution_result=fixed_retest_pass --evidence_source=manual_playtest --confirm-human-retest=true --resolution_notes=<human retest notes> --screenshot_or_seed=<screenshot or seed>" % scenario_index
 
 static func _manual_scenario_launch_command(scenario_index: int) -> String:
-	return "powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex %d" % scenario_index
+	return "powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex %d -Detached" % scenario_index
 
 static func _manual_scenario_launch_dry_run_command(scenario_index: int) -> String:
 	return "%s -DryRun" % _manual_scenario_launch_command(scenario_index)
+
+static func _manual_scenario_screenshot_path(scenario_index: int) -> String:
+	var temp_dir := OS.get_environment("TEMP")
+	if temp_dir.strip_edges() == "":
+		temp_dir = OS.get_environment("TMP")
+	if temp_dir.strip_edges() == "":
+		temp_dir = ProjectSettings.globalize_path("user://")
+	temp_dir = temp_dir.replace("\\", "/")
+	while temp_dir.ends_with("/"):
+		temp_dir = temp_dir.substr(0, temp_dir.length() - 1)
+	return "%s/dungeon_core_manual_scenario_%d.png" % [temp_dir, scenario_index]
+
+static func _manual_scenario_capture_helper_command(scenario_index: int) -> String:
+	var path := _manual_scenario_screenshot_path(scenario_index).replace("'", "''")
+	return "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $bounds=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp=New-Object System.Drawing.Bitmap $bounds.Width,$bounds.Height; $g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bmp.Save('%s',[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $bmp.Dispose(); Write-Output '%s'\"" % [path, path]
 
 static func _release_candidate_playtest_packet_markdown(packet: Dictionary) -> String:
 	var lines: Array[String] = [
@@ -2565,7 +2584,7 @@ static func _release_candidate_playtest_packet_markdown(packet: Dictionary) -> S
 	lines += [
 		"",
 		"Notes Skeleton:",
-		"asset_animation_notes=<human animation notes> | polygon_collision_notes=<human polygon notes> | wave_hud_audio_notes=<human wave HUD audio notes>",
+		"asset_animation_notes=<human animation notes> | polygon_collision_notes=<human polygon notes> | wave_hud_audio_notes=<human wave hud audio notes>",
 	]
 	if not notes_draft.is_empty():
 		lines += [
@@ -2639,6 +2658,16 @@ static func _release_candidate_playtest_packet_markdown(packet: Dictionary) -> S
 			"- Class: %s" % str(draft.get("class_id", "")),
 			"- Goal: %s" % str(draft.get("goal", "")),
 			"- Status: %s" % str(draft.get("status", "")),
+			"",
+			"Suggested Screenshot:",
+			"```text",
+			str(draft.get("suggested_screenshot_path", "")),
+			"```",
+			"",
+			"Capture Screenshot:",
+			"```powershell",
+			str(draft.get("capture_helper_command", "")),
+			"```",
 			"",
 			"Launch Dry Run:",
 			"```powershell",

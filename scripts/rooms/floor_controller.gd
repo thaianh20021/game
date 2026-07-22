@@ -55,6 +55,7 @@ var cleared_rooms := {}  # room_id -> true
 var room_mastery := {}  # room_id -> clear performance context
 var reward_claimed_rooms := {}  # room_id -> true once the reward overlay is resolved
 var interactable_claimed_rooms := {}  # room_id -> true once a one-shot room object is resolved
+var trap_room_survived_rooms := {}  # room_id -> true once an event cache survival gate is cleared
 var visited_rooms := {}  # room_id -> true (fog of war for the minimap)
 var loot_pity_rooms_without_rare_plus := 0
 
@@ -99,6 +100,7 @@ func start(
 	room_mastery.clear()
 	reward_claimed_rooms.clear()
 	interactable_claimed_rooms.clear()
+	trap_room_survived_rooms.clear()
 	visited_rooms.clear()
 	_room_enter_hp.clear()
 	_room_enter_ticks_msec.clear()
@@ -215,10 +217,14 @@ func _enter_room(room: RoomNode, from_room_id: int) -> void:
 	if _renderer.has_signal("objective_context_changed"):
 		_renderer.connect("objective_context_changed", func(_context: Dictionary) -> void:
 			state_changed.emit())
+	if _renderer.has_signal("trap_room_survived"):
+		_renderer.connect("trap_room_survived", func() -> void:
+			_on_trap_room_survived(room))
 	var room_affix := RoomAffixDBScript.roll_for_room(room.type, floor_seed, room.id, floor_index)
 	_renderer.setup(_grid, plan, ENEMY_SCENE, _player, room.type, room_affix,
 		current_biome, loot_pity_rooms_without_rare_plus, {
 			"interactables_claimed": interactable_claimed_rooms.has(room.id),
+			"trap_room_survived": trap_room_survived_rooms.has(room.id),
 		})
 	_player.configure_camera_for_room(Rect2(
 		Vector2.ZERO,
@@ -266,6 +272,12 @@ func _on_shop_choice_requested(shop: RoomInteractable, choices: Array) -> void:
 func _on_interactable_completed(_kind: String, _payload: Dictionary, room: RoomNode) -> void:
 	if room != null:
 		interactable_claimed_rooms[room.id] = true
+
+func _on_trap_room_survived(room: RoomNode) -> void:
+	if room == null:
+		return
+	trap_room_survived_rooms[room.id] = true
+	state_changed.emit()
 
 func _on_loot_pity_changed(rooms_without_rare_plus: int) -> void:
 	loot_pity_rooms_without_rare_plus = rooms_without_rare_plus

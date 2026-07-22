@@ -53,6 +53,7 @@ func _check_class_data(failures: Array[String]) -> void:
 			failures.append("missing class id %s" % id)
 
 func _check_apply_class(failures: Array[String]) -> void:
+	var runtime_heights := {}
 	for id in EXPECTED_IDS:
 		var player_scene: PackedScene = load("res://scenes/player.tscn")
 		var player: Player = player_scene.instantiate()
@@ -69,19 +70,20 @@ func _check_apply_class(failures: Array[String]) -> void:
 			failures.append("%s produced invalid hp" % id)
 		if player.current_weapon() == null:
 			failures.append("%s did not equip a starter weapon" % id)
-		_assert_class_sprite_contract(player, id, failures)
+		runtime_heights[id] = _assert_class_sprite_contract(player, id, failures)
 		player.free()
+	_assert_class_sprite_height_parity(runtime_heights, failures)
 
 func _assert_class_sprite_contract(
 		player: Player,
 		class_id: String,
 		failures: Array[String],
-) -> void:
+) -> float:
 	var sprite := player.get_node_or_null("Sprite") as AnimatedSprite2D
 	var body := player.get_node_or_null("Body") as Polygon2D
 	if sprite == null:
 		failures.append("%s should expose AnimatedSprite2D Sprite" % class_id)
-		return
+		return 0.0
 	if body == null:
 		failures.append("%s should expose polygon fallback Body" % class_id)
 	if not sprite.visible:
@@ -90,7 +92,7 @@ func _assert_class_sprite_contract(
 		failures.append("%s should hide polygon fallback when class sprite exists" % class_id)
 	if sprite.sprite_frames == null:
 		failures.append("%s should assign class SpriteFrames" % class_id)
-		return
+		return 0.0
 	for anim_name in ["idle", "run"]:
 		if not sprite.sprite_frames.has_animation(anim_name):
 			failures.append("%s class sprite should have %s animation" % [class_id, anim_name])
@@ -100,12 +102,44 @@ func _assert_class_sprite_contract(
 		failures.append("%s class sprite should store idle sprite metadata" % class_id)
 	if str(sprite.get_meta("class_run_sprite", "")) == "":
 		failures.append("%s class sprite should store run sprite metadata" % class_id)
-	if str(sprite.get_meta("asset_source", "")) != "atlas":
-		failures.append("%s class sprite should use licensed 0x72 atlas art" % class_id)
+	if not ["atlas", "user_local_assets"].has(str(sprite.get_meta("asset_source", ""))):
+		failures.append("%s class sprite should use reviewed runtime art" % class_id)
 	if str(sprite.get_meta("release_decision", "")) != "public_ok":
 		failures.append("%s class sprite should be public release reviewed" % class_id)
 	if not bool(sprite.get_meta("frame_grid_ok", false)):
 		failures.append("%s class sprite should expose stable frame-grid metadata" % class_id)
+	var idle_texture := sprite.sprite_frames.get_frame_texture("idle", 0)
+	var content_rect := _texture_content_rect(idle_texture)
+	var scaled_content_height := float(content_rect.size.y) * sprite.scale.y
+	if scaled_content_height < 30.0 or scaled_content_height > 32.5:
+		failures.append("%s runtime sprite visible height should match other classes, got %.2f from %s scale %s" % [
+			class_id,
+			scaled_content_height,
+			content_rect,
+			sprite.scale,
+		])
+	return scaled_content_height
+
+func _assert_class_sprite_height_parity(heights: Dictionary, failures: Array[String]) -> void:
+	if heights.size() != EXPECTED_IDS.size():
+		return
+	var min_height := 999.0
+	var max_height := 0.0
+	for raw_height in heights.values():
+		var height := float(raw_height)
+		min_height = minf(min_height, height)
+		max_height = maxf(max_height, height)
+	if max_height - min_height > 2.0:
+		failures.append("runtime class sprite heights should stay visually even, got %.2f..%.2f" % [
+			min_height,
+			max_height,
+		])
+	var blade_height := float(heights.get("blade_warden", 0.0))
+	if blade_height < max_height - 1.5:
+		failures.append("blade_warden/Blackwarden sprite should not read smaller than other classes, got %.2f vs %.2f" % [
+			blade_height,
+			max_height,
+		])
 
 func _check_class_select_layout(failures: Array[String]) -> void:
 	var screen := ClassSelectScreen.new()
@@ -117,7 +151,7 @@ func _check_class_select_layout(failures: Array[String]) -> void:
 	if controls == null:
 		failures.append("class select should expose a ControlsLegendLabel onboarding hint")
 	else:
-		for token in ["WASD", "Mouse", "Space", "E", "C", "Q cycle", "V ultimate", "1-4", "Esc/P", "R"]:
+		for token in ["WASD", "Mouse", "Space", "E", "C", "Q cycle", "V ultimate", "1-4", "Esc/P", "R", "F4 clean HUD"]:
 			if not controls.text.contains(token):
 				failures.append("ControlsLegendLabel missing token %s" % token)
 		if str(controls.get_meta("control_legend_scope", "")) != "gameplay":
@@ -140,6 +174,7 @@ func _check_class_select_layout(failures: Array[String]) -> void:
 	screen.free()
 
 func _check_class_button_icons(screen: ClassSelectScreen, failures: Array[String]) -> void:
+	var icon_heights := {}
 	for class_id in EXPECTED_IDS:
 		var button := screen.find_child("Class_%s" % class_id, true, false) as Button
 		if button == null:
@@ -153,12 +188,33 @@ func _check_class_button_icons(screen: ClassSelectScreen, failures: Array[String
 			failures.append("%s class button should store class id metadata" % class_id)
 		if str(button.get_meta("class_idle_sprite", "")) != idle_sprite:
 			failures.append("%s class button should store idle sprite metadata" % class_id)
-		if str(button.get_meta("asset_source", "")) != "atlas":
-			failures.append("%s class button should use licensed 0x72 atlas art" % class_id)
+		if not ["atlas", "user_local_assets"].has(str(button.get_meta("asset_source", ""))):
+			failures.append("%s class button should use reviewed runtime art" % class_id)
 		if str(button.get_meta("release_decision", "")) != "public_ok":
 			failures.append("%s class button should be public release reviewed" % class_id)
 		if not bool(button.get_meta("frame_grid_ok", false)):
 			failures.append("%s class button should expose stable frame-grid metadata" % class_id)
+		if str(button.get_meta("class_icon_target_size", "")) != "(32.0, 32.0)":
+			failures.append("%s class button should normalize icon into a 32x32 UI frame" % class_id)
+		elif button.icon != null and button.icon.get_size() != Vector2(32, 32):
+			failures.append("%s class button icon texture should be exactly 32x32, got %s" % [
+				class_id,
+				button.icon.get_size(),
+			])
+		elif button.icon != null:
+			var content_rect := _texture_content_rect(button.icon)
+			icon_heights[class_id] = float(content_rect.size.y)
+			if content_rect.size.y < 28.0:
+				failures.append("%s class button icon visible sprite should fill the shared UI frame, got %s" % [
+					class_id,
+					content_rect,
+				])
+		if class_id == "blade_warden":
+			_assert_class_preview_texture_size(
+				button.icon,
+				"blade_warden class button",
+				32.0,
+				failures)
 		var index := EXPECTED_IDS.find(class_id)
 		var key_label := "0" if index == 9 else str(index + 1)
 		var hotkey := KEY_0 if index == 9 else KEY_1 + index
@@ -168,9 +224,24 @@ func _check_class_button_icons(screen: ClassSelectScreen, failures: Array[String
 			failures.append("%s class button should expose key label %s" % [class_id, key_label])
 		if int(button.get_meta("class_hotkey", 0)) != hotkey:
 			failures.append("%s class button should expose hotkey %d" % [class_id, hotkey])
-		if not button.tooltip_text.contains(key_label) or not button.tooltip_text.contains(str(button.text)):
+		var input_hint := str(button.get_meta("class_input_hint", ""))
+		if not input_hint.contains(key_label) or not input_hint.contains(str(button.text)):
 			failures.append("%s class button should expose readable key tooltip" % class_id)
 		_check_class_button_tooltip(class_id, button, key_label, failures)
+	_assert_class_icon_height_parity(icon_heights, failures)
+
+func _assert_class_icon_height_parity(icon_heights: Dictionary, failures: Array[String]) -> void:
+	if icon_heights.size() != EXPECTED_IDS.size():
+		return
+	var max_height := 0.0
+	for raw_height in icon_heights.values():
+		max_height = maxf(max_height, float(raw_height))
+	var blade_height := float(icon_heights.get("blade_warden", 0.0))
+	if blade_height < max_height - 1.0:
+		failures.append("blade_warden/Blackwarden class-select icon should match other class icon height, got %.2f vs %.2f" % [
+			blade_height,
+			max_height,
+		])
 
 func _check_element_button_icons(screen: ClassSelectScreen, failures: Array[String]) -> void:
 	var expected := {
@@ -230,8 +301,12 @@ func _check_class_button_tooltip(
 			required_tokens.append(_readable_id(str((active as Dictionary).get("id", ""))))
 	if not ultimate.is_empty():
 		required_tokens.append(_readable_id(str(ultimate.get("id", ""))))
+	var searchable_tooltip := "%s\n%s" % [
+		str(button.get_meta("class_input_hint", "")),
+		str(button.get_meta("class_tooltip_detail", "")),
+	]
 	for token in required_tokens:
-		if token.strip_edges() != "" and not button.tooltip_text.contains(token):
+		if token.strip_edges() != "" and not searchable_tooltip.contains(token):
 			failures.append("%s class tooltip missing %s" % [class_id, token])
 
 func _check_class_select_detail_panel(failures: Array[String]) -> void:
@@ -250,6 +325,20 @@ func _check_class_select_detail_panel(failures: Array[String]) -> void:
 	if breaker_button == null:
 		failures.append("class select should expose Breaker button")
 	else:
+		var blade_button := screen.find_child("Class_blade_warden", true, false) as Button
+		if blade_button != null:
+			blade_button.emit_signal("pressed")
+			await process_frame
+			var blade_preview := screen.find_child(
+				"ClassDetailSpritePreview", true, false) as TextureRect
+			if blade_preview != null:
+				if blade_preview.custom_minimum_size != Vector2(32, 32):
+					failures.append("blade_warden detail preview should use the same 32x32 UI frame as other class previews")
+				_assert_class_preview_texture_size(
+					blade_preview.texture,
+					"blade_warden detail preview",
+					32.0,
+					failures)
 		breaker_button.emit_signal("pressed")
 		await process_frame
 		_expect_class_select_sfx(
@@ -276,6 +365,8 @@ func _check_class_select_detail_panel(failures: Array[String]) -> void:
 		else:
 			if preview.texture == null:
 				failures.append("class detail sprite preview should assign a texture")
+			if preview.custom_minimum_size != Vector2(32, 32):
+				failures.append("class detail sprite preview should use a readable 32x32 frame")
 			if str(preview.get_meta("class_id", "")) != "breaker":
 				failures.append("class detail sprite preview should store selected class id")
 			if str(preview.get_meta("class_idle_sprite", "")) != "dwarf_m_idle_anim":
@@ -319,6 +410,9 @@ func _check_class_select_detail_panel(failures: Array[String]) -> void:
 		if gameplan_label == null:
 			failures.append("class detail should expose a class gameplan label")
 		else:
+			_check_compact_detail_lines(gameplan_label, "class gameplan", failures)
+			if not str(gameplan_label.get_meta("class_detail_full_text", "")).contains("Upgrade Tags"):
+				failures.append("class gameplan should preserve full detail in metadata")
 			for token in ["Ease: Medium", "Plan:", "Risk:", "Upgrade Tags:", "slam", "slow windup"]:
 				if not gameplan_label.text.contains(token):
 					failures.append("class gameplan missing token %s" % token)
@@ -338,10 +432,14 @@ func _check_class_select_detail_panel(failures: Array[String]) -> void:
 				or not skills_label.text.contains("Cost 30") \
 				or not skills_label.text.contains("CD 8.0s"):
 			failures.append("class detail should show primary and secondary skills")
-		elif not skills_label.text.contains("Passives") \
-				or not skills_label.text.contains("Heavy Windup") \
-				or not skills_label.text.contains("Iron Skin"):
-			failures.append("class detail should preview class passives")
+		else:
+			_check_compact_detail_lines(skills_label, "class skills", failures)
+			if not skills_label.text.contains("Passives") \
+					or not skills_label.text.contains("Heavy Windup") \
+					or not skills_label.text.contains("Iron Skin"):
+				failures.append("class detail should preview class passives")
+			if not str(skills_label.get_meta("class_detail_full_text", "")).contains("Passives"):
+				failures.append("class skills should preserve full detail in metadata")
 		screen.call("_select_element", "fire")
 		await process_frame
 		screen.call("_select_run_mode", "boss_rush")
@@ -359,7 +457,7 @@ func _check_class_select_detail_panel(failures: Array[String]) -> void:
 			_check_start_button_run_contract(start_button, failures)
 		var loadout_preview := screen.find_child("RunLoadoutPreviewLabel", true, false) as Label
 		if loadout_preview == null:
-			failures.append("class select should expose a visible run loadout preview")
+			failures.append("class select should expose run loadout metadata")
 		else:
 			_check_loadout_preview_contract(loadout_preview, failures)
 		var element_preview := screen.find_child("ElementPreviewLabel", true, false) as Label
@@ -406,9 +504,53 @@ func _check_start_button_run_contract(button: Button, failures: Array[String]) -
 	if str(button.get_meta("start_disabled_reason", "")) != "":
 		failures.append("ready start button should clear disabled reason")
 
+func _assert_class_preview_texture_size(
+		texture: Texture2D,
+		label: String,
+		max_height: float,
+		failures: Array[String],
+) -> void:
+	if texture == null:
+		failures.append("%s should assign a normalized preview texture" % label)
+		return
+	var size := texture.get_size()
+	if size.y > max_height:
+		failures.append("%s should crop transparent padding before UI scaling, got %s" % [
+			label,
+			size,
+		])
+	var content_rect := _texture_content_rect(texture)
+	if content_rect.size.y < 28.0:
+		failures.append("%s visible sprite should fill the normalized UI frame, got %s" % [
+			label,
+			content_rect,
+		])
+
+func _texture_content_rect(texture: Texture2D) -> Rect2i:
+	if texture == null:
+		return Rect2i()
+	var image := texture.get_image()
+	if image == null or image.is_empty():
+		return Rect2i()
+	var min_x := image.get_width()
+	var min_y := image.get_height()
+	var max_x := -1
+	var max_y := -1
+	for y in image.get_height():
+		for x in image.get_width():
+			if image.get_pixel(x, y).a <= 0.01:
+				continue
+			min_x = mini(min_x, x)
+			min_y = mini(min_y, y)
+			max_x = maxi(max_x, x)
+			max_y = maxi(max_y, y)
+	if max_x < min_x or max_y < min_y:
+		return Rect2i()
+	return Rect2i(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
+
 func _check_loadout_preview_contract(label: Label, failures: Array[String]) -> void:
-	if not label.visible:
-		failures.append("loadout preview should stay visible on the class select screen")
+	if label.visible:
+		failures.append("loadout preview should stay hidden on the compact class select screen")
 	for token in ["Ready", "Breaker", "Fire", "Boss Rush", "20260707", "Riu Khai Hoang"]:
 		if not label.text.contains(token):
 			failures.append("loadout preview should include %s" % token)
@@ -424,6 +566,15 @@ func _check_loadout_preview_contract(label: Label, failures: Array[String]) -> v
 		failures.append("loadout preview should store starter weapon")
 	if not bool(label.get_meta("loadout_ready", false)):
 		failures.append("loadout preview should mark the ready state")
+
+func _check_compact_detail_lines(label: Label, label_name: String, failures: Array[String]) -> void:
+	for line in label.text.split("\n"):
+		var line_text := str(line)
+		if line_text.length() > 72:
+			failures.append("%s visible line should stay compact, got %d chars" % [
+				label_name,
+				line_text.length(),
+			])
 
 func _expect_class_select_sfx(
 		screen: ClassSelectScreen,

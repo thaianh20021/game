@@ -4,7 +4,8 @@ extends Area2D
 ## the shooter's element), despawns on walls or when range is exhausted.
 
 const FirePatchScript := preload("res://scripts/weapons/fire_patch.gd")
-
+# ponytail: current reviewed projectile art faces left; move offsets into SpriteDB if mixed arrow art ships.
+const ARROW_VISUAL_FORWARD_OFFSET := PI
 var _dir := Vector2.RIGHT
 var _speed := 220.0
 var _damage := 5
@@ -40,7 +41,7 @@ func setup(
 		critical: bool = false,
 		homing_strength: float = 0.0,
 ) -> void:
-	_dir = dir.normalized()
+	_dir = dir.normalized() if dir.length_squared() > 0.0 else Vector2.RIGHT
 	_speed = speed
 	_damage = damage
 	_range = range_px
@@ -71,6 +72,7 @@ func configure_fire_patch(damage: int, radius: float, duration: float, tick_inte
 
 
 func _ready() -> void:
+	set_meta("arrow_visual_forward_offset_rad", ARROW_VISUAL_FORWARD_OFFSET)
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = 3.0
@@ -86,7 +88,7 @@ func _ready() -> void:
 		body.set_meta("sprite_fallback", "polygon")
 		add_child(body)
 
-	rotation = _dir.angle()
+	_sync_visual_rotation()
 	z_index = 3
 	body_entered.connect(_on_body_entered)
 
@@ -99,7 +101,6 @@ func _add_sprite_visual() -> bool:
 	sprite.name = "ProjectileSprite"
 	sprite.sprite_frames = frames
 	sprite.centered = true
-	sprite.rotation = PI / 2.0
 	sprite.modulate = _color
 	sprite.z_index = 1
 	sprite.play("idle")
@@ -110,6 +111,7 @@ func _add_sprite_visual() -> bool:
 
 func _physics_process(delta: float) -> void:
 	_apply_homing(delta)
+	_sync_visual_rotation()
 	var step := _dir * _speed * delta
 	position += step
 	_travelled += step.length()
@@ -130,6 +132,9 @@ func _apply_homing(delta: float) -> void:
 	if desired.length_squared() <= 0.0:
 		return
 	_dir = _dir.lerp(desired.normalized(), minf(delta * strength, 0.35)).normalized()
+
+func _sync_visual_rotation() -> void:
+	rotation = _dir.angle() + ARROW_VISUAL_FORWARD_OFFSET
 
 func _nearest_enemy() -> Enemy:
 	var best: Enemy = null

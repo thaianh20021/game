@@ -37,6 +37,7 @@ func _check_reward_overlay_actions(failures: Array[String]) -> void:
 		},
 	], RoomNode.RoomType.COMBAT, {}, true)
 	await process_frame
+	_assert_reward_overlay_fits_viewport(overlay, failures)
 	_press_action(overlay, "menu_next")
 	await process_frame
 	if int(overlay.get_meta("controller_selection_index", -1)) != 1:
@@ -219,3 +220,14 @@ func _press_action(overlay: RunOverlay, action: String) -> void:
 	event.pressed = true
 	if overlay.has_method("_unhandled_input"):
 		overlay.call("_unhandled_input", event)
+
+func _assert_reward_overlay_fits_viewport(overlay: RunOverlay, failures: Array[String]) -> void:
+	for name in ["OverlayTitle", "OverlaySubtitle", "ChoiceScroll"]:
+		var control := overlay.find_child(name, true, false) as Control
+		if control == null:
+			failures.append("reward overlay should expose %s" % name)
+			continue
+		var rect := control.get_global_rect()
+		if rect.position.x < 0.0 or rect.end.x > 640.0 \
+				or rect.position.y < 0.0 or rect.end.y > 360.0:
+			failures.append("%s should fit inside the 640x360 viewport" % name)

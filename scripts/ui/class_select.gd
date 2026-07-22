@@ -12,6 +12,7 @@ const RunModifierDBScript := preload("res://scripts/progression/run_modifier_db.
 const AudioCueDBScript := preload("res://scripts/audio/audio_cue_db.gd")
 const ReleaseAuditScript := preload("res://scripts/assets/release_audit.gd")
 const AccessibilitySettingsScript := preload("res://scripts/ui/accessibility_settings.gd")
+const CLASS_ICON_TARGET_SIZE := Vector2i(32, 32)
 const ELEMENT_LABELS := {
 	"fire": "Fire", "ice": "Ice", "lightning": "Lightning", "poison": "Poison",
 }
@@ -130,12 +131,12 @@ func _ready() -> void:
 
 	var controls := Label.new()
 	controls.name = "ControlsLegendLabel"
-	controls.text = "WASD move | Mouse aim/attack | Space dash | E skill | C alt | Q cycle | V ultimate | 1-4 route/reward | Esc/P pause | R restart | Pad: LS move, RS aim, RB attack, A dash, X/Y skills, RT ultimate | Pad menu: LB/RB class, D-pad element, A confirm, B back"
+	controls.text = "WASD move | Mouse aim/attack | Space dash | E skill | C alt | Q cycle | V ultimate | 1-4 route/reward | Esc/P pause | R restart | F4 clean HUD | Pad: LS move, RS aim, RB attack, A dash, X/Y skills, RT ultimate | Pad menu: LB/RB class, D-pad element, A confirm, B back"
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls.add_theme_font_size_override("font_size", 8)
 	controls.add_theme_color_override("font_color", Color(0.72, 0.78, 0.86))
 	controls.set_meta("control_legend_scope", "gameplay")
-	controls.set_meta("control_legend_action_count", 13)
+	controls.set_meta("control_legend_action_count", 14)
 	controls.visible = false
 	box.add_child(controls)
 	_add_accessibility_settings_controls(box)
@@ -322,7 +323,8 @@ func _ready() -> void:
 
 	var class_scroll := ScrollContainer.new()
 	class_scroll.name = "ClassScroll"
-	class_scroll.custom_minimum_size = Vector2(400, 110)
+	class_scroll.custom_minimum_size = Vector2(400, 88)
+	class_scroll.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	class_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	class_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	box.add_child(class_scroll)
@@ -334,7 +336,7 @@ func _ready() -> void:
 	class_grid.custom_minimum_size = Vector2(388, 0)
 	class_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	class_grid.add_theme_constant_override("h_separation", 8)
-	class_grid.add_theme_constant_override("v_separation", 6)
+	class_grid.add_theme_constant_override("v_separation", 2)
 	class_scroll.add_child(class_grid)
 	for c in PlayerClassDB.all():
 		var class_id := str(c["id"])
@@ -342,8 +344,9 @@ func _ready() -> void:
 		var button := Button.new()
 		button.name = "Class_%s" % class_id
 		button.text = str(c["name"])
-		button.custom_minimum_size = Vector2(388, 20)
+		button.custom_minimum_size = Vector2(388, 18)
 		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		button.add_theme_font_size_override("font_size", 9)
 		_apply_class_button_icon(button, class_id)
 		_apply_class_button_input_hint(button, class_index, str(c["name"]), str(c.get("role", "")))
 		_class_buttons.append(button)
@@ -352,7 +355,7 @@ func _ready() -> void:
 
 	var detail := PanelContainer.new()
 	detail.name = "ClassDetailPanel"
-	detail.custom_minimum_size = Vector2(400, 82)
+	detail.custom_minimum_size = Vector2(400, 52)
 	box.add_child(detail)
 
 	var detail_box := VBoxContainer.new()
@@ -365,14 +368,14 @@ func _ready() -> void:
 	detail_box.add_child(preview_row)
 	_class_detail_sprite = TextureRect.new()
 	_class_detail_sprite.name = "ClassDetailSpritePreview"
-	_class_detail_sprite.custom_minimum_size = Vector2(24, 24)
+	_class_detail_sprite.custom_minimum_size = Vector2(32, 32)
 	_class_detail_sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_class_detail_sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_class_detail_sprite.visible = false
 	preview_row.add_child(_class_detail_sprite)
 	_class_detail_weapon_sprite = TextureRect.new()
 	_class_detail_weapon_sprite.name = "ClassDetailWeaponPreview"
-	_class_detail_weapon_sprite.custom_minimum_size = Vector2(24, 24)
+	_class_detail_weapon_sprite.custom_minimum_size = Vector2(32, 32)
 	_class_detail_weapon_sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_class_detail_weapon_sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_class_detail_weapon_sprite.visible = false
@@ -384,6 +387,7 @@ func _ready() -> void:
 	_class_detail_role = Label.new()
 	_class_detail_role.name = "ClassDetailRole"
 	_class_detail_role.add_theme_font_size_override("font_size", 9)
+	_class_detail_role.visible = false
 	detail_box.add_child(_class_detail_role)
 	_class_detail_weapon_summary = Label.new()
 	_class_detail_weapon_summary.name = "ClassDetailWeaponSummary"
@@ -402,11 +406,13 @@ func _ready() -> void:
 	_class_detail_stats = Label.new()
 	_class_detail_stats.name = "ClassDetailStats"
 	_class_detail_stats.add_theme_font_size_override("font_size", 9)
+	_class_detail_stats.visible = false
 	detail_box.add_child(_class_detail_stats)
 	_class_detail_skills = Label.new()
 	_class_detail_skills.name = "ClassDetailSkills"
 	_class_detail_skills.add_theme_font_size_override("font_size", 9)
 	_class_detail_skills.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_class_detail_skills.visible = false
 	detail_box.add_child(_class_detail_skills)
 	_class_detail_gameplan = Label.new()
 	_class_detail_gameplan.name = "ClassDetailGameplan"
@@ -478,6 +484,15 @@ func _ready() -> void:
 	box.move_child(run_mode_row, 10)
 	box.move_child(_run_mode_preview_label, 11)
 
+	var classes := PlayerClassDB.all()
+	if _selected_class == "" and not classes.is_empty() and not _class_buttons.is_empty():
+		_selected_class = str(classes[0].get("id", ""))
+		_mark_selected(_class_buttons[0], _class_grid)
+	if _selected_element == "" and not ElementSystem.ELEMENTS.is_empty():
+		_selected_element = str(ElementSystem.ELEMENTS[0])
+		var element_button := _element_buttons.get(_selected_element) as Button
+		if element_button != null:
+			_mark_selected(element_button, _element_row)
 	_update()
 	_set_hub_service_status("DungeonGate")
 
@@ -574,14 +589,38 @@ func _apply_class_button_icon(button: Button, class_id: String) -> void:
 	if sprite_names.is_empty():
 		return
 	var idle_name := str(sprite_names.get("idle", ""))
-	var frames := SpriteDB.frames(idle_name)
-	if frames.is_empty():
+	var texture := SpriteDB.preview_texture(idle_name)
+	if texture == null:
 		return
-	button.icon = frames[0]
+	button.icon = _normalized_ui_icon_texture(texture, CLASS_ICON_TARGET_SIZE)
 	button.expand_icon = true
 	SpriteDB.apply_sprite_metadata(button, idle_name)
 	button.set_meta("class_idle_sprite", idle_name)
 	button.set_meta("class_run_sprite", str(sprite_names.get("run", "")))
+	button.set_meta("class_preview_texture_size", button.icon.get_size())
+	button.set_meta("class_icon_target_size", Vector2(CLASS_ICON_TARGET_SIZE))
+
+func _normalized_ui_icon_texture(texture: Texture2D, target_size: Vector2i) -> Texture2D:
+	var source := texture.get_image()
+	if source == null or source.is_empty():
+		return texture
+	var target_w := maxi(target_size.x, 1)
+	var target_h := maxi(target_size.y, 1)
+	var src_w := maxi(source.get_width(), 1)
+	var src_h := maxi(source.get_height(), 1)
+	var scale := minf(float(target_w) / float(src_w), float(target_h) / float(src_h))
+	var scaled_size := Vector2i(
+		maxi(1, roundi(float(src_w) * scale)),
+		maxi(1, roundi(float(src_h) * scale)))
+	var scaled := source.duplicate()
+	if scaled.get_format() != Image.FORMAT_RGBA8:
+		scaled.convert(Image.FORMAT_RGBA8)
+	scaled.resize(scaled_size.x, scaled_size.y, Image.INTERPOLATE_NEAREST)
+	var canvas := Image.create(target_w, target_h, false, Image.FORMAT_RGBA8)
+	canvas.fill(Color(0, 0, 0, 0))
+	var dst := Vector2i((target_w - scaled_size.x) / 2, (target_h - scaled_size.y) / 2)
+	canvas.blit_rect(scaled, Rect2i(Vector2i.ZERO, scaled_size), dst)
+	return ImageTexture.create_from_image(canvas)
 
 
 func _apply_class_button_input_hint(
@@ -596,14 +635,15 @@ func _apply_class_button_input_hint(
 	button.set_meta("class_key_label", key_label)
 	button.set_meta("class_hotkey", hotkey)
 	var short_tooltip := "Select %s [%s]" % [class_label, key_label]
-	if role.strip_edges() != "":
-		short_tooltip += " | %s" % role
-	button.tooltip_text = short_tooltip
+	button.set_meta("class_input_hint", short_tooltip)
+	button.tooltip_text = ""
 	var class_id := str(button.get_meta("class_id", ""))
 	var data := PlayerClassDB.get_class_data(class_id)
 	if data.is_empty():
 		return
 	var parts: Array[String] = [short_tooltip]
+	if role.strip_edges() != "":
+		parts.append("Role: %s" % role)
 	parts.append("Resource: %s" % str(data.get("resource", "-")))
 	parts.append("Weapons: %s" % ", ".join(data.get("preferred_weapons", [])))
 	var weapon_id := WeaponDB.starter_weapon_for_class(class_id)
@@ -1343,7 +1383,9 @@ func _update_class_detail() -> void:
 			_class_detail_weapon_summary.text = "Starter: -"
 		_class_detail_record.text = "Record: -"
 		_class_detail_stats.text = "HP - | ARM - | RES - | SPD - | DMG - | CRIT -"
-		_class_detail_skills.text = "E - | C - | Ult -"
+		_class_detail_skills.text = "E - | C - | Ult - | Passives -"
+		_class_detail_skills.set_meta("class_detail_full_text", _class_detail_skills.text)
+		_class_detail_skills.tooltip_text = _class_detail_skills.text
 		_update_class_gameplan({})
 		return
 	var data := PlayerClassDB.get_class_data(_selected_class)
@@ -1369,11 +1411,20 @@ func _update_class_detail() -> void:
 		int(stats.get("damage", 0)),
 		int(stats.get("crit", 0)),
 	]
-	_class_detail_skills.text = "E %s | C %s | Ult %s" % [
-		_readable_id(str(skill_e.get("id", "-"))),
-		_readable_id(str(skill_c.get("id", "-"))),
-		_readable_id(str(ultimate.get("id", "-"))),
+	var skill_full_text := "%s | %s | %s | %s" % [
+		_skill_preview("E", skill_e),
+		_skill_preview("C", skill_c),
+		_ultimate_preview(ultimate),
+		_passives_preview(passives),
 	]
+	_class_detail_skills.text = "%s\n%s\n%s | %s" % [
+		_skill_preview("E", skill_e),
+		_skill_preview("C", skill_c),
+		_ultimate_preview(ultimate),
+		_passives_preview(passives),
+	]
+	_class_detail_skills.set_meta("class_detail_full_text", skill_full_text)
+	_class_detail_skills.tooltip_text = skill_full_text
 	_update_class_gameplan(data)
 
 func _update_class_gameplan(data: Dictionary) -> void:
@@ -1381,6 +1432,8 @@ func _update_class_gameplan(data: Dictionary) -> void:
 		return
 	if data.is_empty():
 		_class_detail_gameplan.text = "Gameplan: choose a class"
+		_class_detail_gameplan.set_meta("class_detail_full_text", _class_detail_gameplan.text)
+		_class_detail_gameplan.tooltip_text = _class_detail_gameplan.text
 		_class_detail_gameplan.set_meta("class_id", "")
 		_class_detail_gameplan.set_meta("class_role", "")
 		_class_detail_gameplan.set_meta("class_ease", "")
@@ -1389,12 +1442,20 @@ func _update_class_gameplan(data: Dictionary) -> void:
 	var role := str(data.get("role", ""))
 	var guide := _class_gameplan_for_role(role)
 	var tags := str(guide.get("tags", ""))
-	_class_detail_gameplan.text = "Ease: %s | Plan: %s | Risk: %s | Upgrade Tags: %s" % [
+	var full_text := "Ease: %s | Plan: %s | Risk: %s | Upgrade Tags: %s" % [
 		str(guide.get("ease", "Medium")),
 		str(guide.get("plan", "Play around your cooldown window")),
 		str(guide.get("risk", "Poor positioning")),
 		tags,
 	]
+	_class_detail_gameplan.text = "Ease: %s | Plan: %s\nRisk: %s | Upgrade Tags: %s" % [
+		str(guide.get("ease", "Medium")),
+		str(guide.get("plan", "Play around your cooldown window")),
+		str(guide.get("risk", "Poor positioning")),
+		tags,
+	]
+	_class_detail_gameplan.set_meta("class_detail_full_text", full_text)
+	_class_detail_gameplan.tooltip_text = full_text
 	_class_detail_gameplan.set_meta("class_id", str(data.get("id", "")))
 	_class_detail_gameplan.set_meta("class_role", role)
 	_class_detail_gameplan.set_meta("class_ease", str(guide.get("ease", "Medium")))
@@ -1456,16 +1517,18 @@ func _update_class_sprite_preview(class_id: String) -> void:
 		_clear_class_sprite_preview()
 		return
 	var idle_name := str(sprite_names["idle"])
-	var frames := SpriteDB.frames(idle_name)
-	if frames.is_empty():
+	var texture := SpriteDB.preview_texture(idle_name)
+	if texture == null:
 		_clear_class_sprite_preview()
 		return
-	_class_detail_sprite.texture = frames[0]
+	_class_detail_sprite.texture = _normalized_ui_icon_texture(texture, CLASS_ICON_TARGET_SIZE)
 	_class_detail_sprite.visible = true
 	SpriteDB.apply_sprite_metadata(_class_detail_sprite, idle_name)
 	_class_detail_sprite.set_meta("class_id", class_id)
 	_class_detail_sprite.set_meta("class_idle_sprite", idle_name)
 	_class_detail_sprite.set_meta("class_run_sprite", str(sprite_names["run"]))
+	_class_detail_sprite.set_meta("class_preview_texture_size", _class_detail_sprite.texture.get_size())
+	_class_detail_sprite.set_meta("class_icon_target_size", Vector2(CLASS_ICON_TARGET_SIZE))
 
 func _update_class_weapon_preview(class_id: String) -> void:
 	if _class_detail_weapon_sprite == null:

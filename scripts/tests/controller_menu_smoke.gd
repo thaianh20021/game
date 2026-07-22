@@ -31,20 +31,32 @@ func _check_class_select_menu_actions(failures: Array[String]) -> void:
 	var screen := ClassSelectScreen.new()
 	root.add_child(screen)
 	await process_frame
+	var classes := PlayerClassDB.all()
+	var first_class := str(classes[0].get("id", ""))
+	var second_class := str(classes[1].get("id", ""))
+	var last_class := str(classes[classes.size() - 1].get("id", ""))
+
+	if str(screen.get("_selected_class")) != first_class:
+		failures.append("class select should default to the first class for controller confirm")
 
 	_press_action(screen, "menu_next")
 	await process_frame
-	if str(screen.get("_selected_class")) != "blade_warden":
-		failures.append("menu_next should select the first class when no class is selected")
+	if str(screen.get("_selected_class")) != second_class:
+		failures.append("menu_next should select the next class from the default class")
 
 	_press_action(screen, "menu_prev")
 	await process_frame
-	if str(screen.get("_selected_class")) != "tinkerer":
+	if str(screen.get("_selected_class")) != first_class:
+		failures.append("menu_prev should return from second class to the first class")
+
+	_press_action(screen, "menu_prev")
+	await process_frame
+	if str(screen.get("_selected_class")) != last_class:
 		failures.append("menu_prev should wrap from first class to the last class")
 
 	_press_action(screen, "menu_next")
 	await process_frame
-	if str(screen.get("_selected_class")) != "blade_warden":
+	if str(screen.get("_selected_class")) != first_class:
 		failures.append("menu_next should wrap from last class to the first class")
 
 	_press_action(screen, "route_choice_2")
@@ -67,7 +79,7 @@ func _check_class_select_menu_actions(failures: Array[String]) -> void:
 	await process_frame
 	if int(emitted["count"]) != 1:
 		failures.append("menu_confirm should start once class and element are selected")
-	if str(emitted["class"]) != "blade_warden" or str(emitted["element"]) != "poison":
+	if str(emitted["class"]) != first_class or str(emitted["element"]) != "poison":
 		failures.append("menu_confirm should emit selected class and element")
 	if str(emitted["mode"]) != "normal":
 		failures.append("menu_confirm should preserve selected run mode")

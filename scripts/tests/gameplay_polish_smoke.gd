@@ -30,6 +30,13 @@ func _check_door_markers(failures: Array[String]) -> void:
 		failures.append("treasure door marker label should be LOOT")
 	if DoorMarker.label_for_type(RoomNode.RoomType.SECRET) != "SECRET":
 		failures.append("secret door marker label should be SECRET")
+	var viewport_w := float(ProjectSettings.get_setting("display/window/size/viewport_width", 640))
+	var window_w := float(ProjectSettings.get_setting("display/window/size/window_width_override", 1280))
+	var debug_window_scale := window_w / maxf(viewport_w, 1.0)
+	var camera_zoom := 2.2
+	var physical_marker_w := DoorMarker.CLICK_RECT.size.x * camera_zoom * debug_window_scale
+	if physical_marker_w > 170.0:
+		failures.append("door marker panel should stay compact after camera/window upscale, got %.1f px" % physical_marker_w)
 
 	var grid := TileGrid.new(7, 7, TileGrid.Tile.FLOOR)
 	for x in grid.width:
@@ -40,6 +47,7 @@ func _check_door_markers(failures: Array[String]) -> void:
 		grid.set_tile(grid.width - 1, y, TileGrid.Tile.WALL)
 	grid.set_tile(3, 0, TileGrid.Tile.DOOR)
 	grid.set_tile(6, 3, TileGrid.Tile.DOOR)
+	grid.set_tile(3, grid.height - 1, TileGrid.Tile.DOOR)
 
 	var renderer := RoomRenderer.new()
 	root.add_child(renderer)
@@ -63,19 +71,51 @@ func _check_door_markers(failures: Array[String]) -> void:
 			"choice_index": 2,
 			"input_action": "route_choice_2",
 		},
+		RoomStamper.Dir.SOUTH: {
+			"type": RoomNode.RoomType.SHOP,
+			"route": "SIDE",
+			"preview": "3 BUY",
+			"choice_index": 3,
+			"input_action": "route_choice_3",
+		},
 	})
 	await process_frame
 	var marker_count := get_nodes_in_group("door_markers").size()
-	if marker_count != 2:
-		failures.append("expected 2 door markers, got %d" % marker_count)
-	if not _has_label_text(renderer, "MAIN"):
-		failures.append("main-path door marker should show route hint")
-	if not _has_label_text(renderer, "SIDE"):
-		failures.append("side-branch door marker should show route hint")
+	if marker_count != 3:
+		failures.append("expected 3 door markers, got %d" % marker_count)
+	if _has_label_text(renderer, "MAIN") or _has_label_text(renderer, "SIDE"):
+		failures.append("world door markers should keep route role text out of the playfield")
 	if not _has_label_text(renderer, "R+") or not _has_label_text(renderer, "CHEST"):
 		failures.append("door marker should show compact reward/threat preview hints")
-	if not _has_label_text(renderer, "1 MAIN") or not _has_label_text(renderer, "2 SIDE"):
-		failures.append("door marker should show route hotkey index beside route hint")
+	if not _has_label_text(renderer, "1") or not _has_label_text(renderer, "2"):
+		failures.append("door marker should show route hotkey index")
+	var north_marker := _door_marker_by_choice(renderer, 1)
+	if north_marker == null:
+		failures.append("north door marker should render with a route choice")
+	else:
+		var north_tiles := RoomStamper.door_tiles(grid, RoomStamper.Dir.NORTH)
+		if not north_tiles.is_empty():
+			var door_y := renderer.tile_to_world(north_tiles[0]).y
+			if north_marker.position.y < door_y + RoomRenderer.TILE * 1.5:
+				failures.append("north door marker should sit safely inside the room, not on the top edge")
+	var south_marker := _door_marker_by_choice(renderer, 3)
+	if south_marker == null:
+		failures.append("south door marker should render with a route choice")
+	else:
+		var south_tiles := RoomStamper.door_tiles(grid, RoomStamper.Dir.SOUTH)
+		if not south_tiles.is_empty():
+			var door_y := renderer.tile_to_world(south_tiles[0]).y
+			if south_marker.position.y > door_y - RoomRenderer.TILE * 1.5:
+				failures.append("south door marker should sit safely inside the room, not on the bottom edge")
+	var east_marker := _door_marker_by_choice(renderer, 2)
+	if east_marker == null:
+		failures.append("east door marker should render with a route choice")
+	else:
+		var east_tiles := RoomStamper.door_tiles(grid, RoomStamper.Dir.EAST)
+		if not east_tiles.is_empty():
+			var door_x := renderer.tile_to_world(east_tiles[0]).x
+			if east_marker.position.x > door_x - RoomRenderer.TILE * 1.5:
+				failures.append("east door marker should sit safely inside the room, not on the right edge")
 	var preview_marker := _first_door_marker(renderer)
 	if preview_marker != null and str(preview_marker.get_meta("preview_hint", "")) == "":
 		failures.append("door marker should expose preview_hint metadata")
@@ -87,6 +127,12 @@ func _check_door_markers(failures: Array[String]) -> void:
 			failures.append("door marker should expose route choice input action metadata")
 		if str(main_marker.get_meta("route_hotkey_label", "")) != "1":
 			failures.append("door marker should expose route hotkey label metadata")
+		if str(main_marker.get_meta("route_hint", "")) != "MAIN":
+			failures.append("door marker should preserve route role in metadata")
+		if not str(main_marker.get_meta("full_route_label", "")).contains("MAIN"):
+			failures.append("door marker should preserve full route label outside visible text")
+		if _first_label_text(main_marker).contains("\n"):
+			failures.append("door marker visible text should stay one-line to avoid top-edge clipping")
 		main_marker.request_route_choice()
 		if not bool(main_marker.get_meta("route_press_feedback", false)):
 			failures.append("door marker press should expose immediate click/touch feedback")
@@ -387,6 +433,11 @@ func _has_label_text(parent: Node, text: String) -> bool:
 		if str(label.text).contains(text):
 			return true
 	return false
+
+func _first_label_text(parent: Node) -> String:
+	for label in parent.find_children("*", "Label", true, false):
+		return str(label.text)
+	return ""
 
 func _first_door_marker(parent: Node) -> DoorMarker:
 	for child in parent.get_children():

@@ -4,10 +4,11 @@ extends Control
 ## the current room. Critical path is drawn as a row (x = depth); each side
 ## branch hangs as a vertical chain off its anchor.
 
-const GAP := 14.0
-const NODE := 8.0
+const GAP := 10.0
+const NODE := 6.0
 
-const COLOR_BG := Color(0, 0, 0, 0.55)
+const COLOR_BG := Color(0, 0, 0, 0.78)
+const COLOR_BORDER := Color(0.92, 0.86, 0.58, 0.72)
 const COLOR_EDGE := Color(0.5, 0.5, 0.5, 0.8)
 const COLOR_MAIN_PATH := Color(0.95, 0.78, 0.24, 0.95)
 const COLOR_KNOWN := Color(0.35, 0.35, 0.38)
@@ -21,6 +22,12 @@ const COLOR_TEXT := Color(0.92, 0.9, 0.78)
 var _ctrl: FloorController
 var _layout := {}  # room_id -> Vector2 (abstract grid coords)
 var _legend: Control
+
+func _init() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	set_meta("readability_panel", true)
+	set_meta("background_alpha", COLOR_BG.a)
+	set_meta("border_alpha", COLOR_BORDER.a)
 
 func bind(ctrl: FloorController) -> void:
 	_ctrl = ctrl
@@ -145,23 +152,30 @@ func _ensure_legend() -> void:
 		return
 	_legend = Control.new()
 	_legend.name = "MinimapLegend"
-	_legend.position = Vector2(8, 56)
-	_legend.size = Vector2(172, 38)
+	_legend.position = Vector2(6, 34)
+	_legend.size = Vector2(84, 16)
+	_legend.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var help := "C Current | V Visited | P Main | B Boss | $ Shop | T Loot"
+	_legend.tooltip_text = help
+	_legend.set_meta("legend_help", help)
 	add_child(_legend)
 	var rows := [
-		{"text": "C Current", "pos": Vector2(0, 0), "color": COLOR_CURRENT_BORDER},
-		{"text": "V Visited", "pos": Vector2(66, 0), "color": COLOR_VISITED},
-		{"text": "P Main", "pos": Vector2(0, 13), "color": COLOR_MAIN_PATH},
-		{"text": "B Boss", "pos": Vector2(66, 13), "color": COLOR_BOSS},
-		{"text": "$ Shop", "pos": Vector2(0, 26), "color": COLOR_SPECIAL},
-		{"text": "T Loot", "pos": Vector2(66, 26), "color": COLOR_SPECIAL},
+		{"text": "C", "meaning": "Current", "pos": Vector2(0, 0), "color": COLOR_CURRENT_BORDER},
+		{"text": "V", "meaning": "Visited", "pos": Vector2(24, 0), "color": COLOR_VISITED},
+		{"text": "P", "meaning": "Main", "pos": Vector2(48, 0), "color": COLOR_MAIN_PATH},
+		{"text": "B", "meaning": "Boss", "pos": Vector2(0, 8), "color": COLOR_BOSS},
+		{"text": "$", "meaning": "Shop", "pos": Vector2(24, 8), "color": COLOR_SPECIAL},
+		{"text": "T", "meaning": "Loot", "pos": Vector2(48, 8), "color": COLOR_SPECIAL},
 	]
 	for row in rows:
 		var label := Label.new()
 		label.text = str(row["text"])
 		label.position = row["pos"]
-		label.add_theme_font_size_override("font_size", 8)
+		label.add_theme_font_size_override("font_size", 7)
 		label.modulate = row["color"]
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.tooltip_text = "%s %s" % [str(row["text"]), str(row["meaning"])]
+		label.set_meta("legend_meaning", str(row["meaning"]))
 		_legend.add_child(label)
 
 func _compute_layout(rooms: Array[RoomNode]) -> Dictionary:
@@ -192,6 +206,7 @@ func _compute_layout(rooms: Array[RoomNode]) -> Dictionary:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), COLOR_BG)
+	draw_rect(Rect2(Vector2.ZERO, size), COLOR_BORDER, false, 1.0)
 	if _ctrl == null or _ctrl.rooms.is_empty():
 		return
 
@@ -266,4 +281,4 @@ func _draw_glyph(text: String, pos: Vector2) -> void:
 	var font := ThemeDB.fallback_font
 	if font == null:
 		return
-	draw_string(font, pos, text.left(1), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 7, COLOR_TEXT)
+	draw_string(font, pos, text.left(1), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 6, COLOR_TEXT)

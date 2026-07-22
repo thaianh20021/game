@@ -114,12 +114,14 @@ const CLASS_SPRITES := {
 		"run": ["dwarf_f_run_anim"],
 	},
 }
-const PLAYER_VISUAL_TARGET_HEIGHT := 68.0
-const CAMERA_ZOOM := Vector2(2.25, 2.25)
+const PLAYER_VISUAL_TARGET_HEIGHT := 32.0
+const CAMERA_ZOOM := Vector2(2.2, 2.2)
 const CAMERA_IMPACT_MIN_STRENGTH := 1.0
 const CAMERA_IMPACT_MAX_STRENGTH := 5.0
 const CONTROLLER_AIM_DEADZONE := 0.25
 const CONTROLLER_AIM_TARGET_DISTANCE := 96.0
+const AUTO_AIM_RADIUS := 190.0
+const RECENT_MOUSE_AIM_MS := 900
 
 static func class_sprite_names(class_id: String) -> Dictionary:
 	var mapping: Dictionary = CLASS_SPRITES.get(class_id, {})
@@ -233,6 +235,8 @@ var _accessibility_hit_pause_scale := 1.0
 var _sprite_action_left := 0.0
 var _sprite_action := ""
 var _dead := false
+var _last_move_dir := Vector2.RIGHT
+var _last_mouse_motion_msec := -999999
 @onready var _camera: Camera2D = get_node_or_null("Camera2D")
 @onready var _sprite: AnimatedSprite2D = get_node_or_null("Sprite")
 @onready var _body: Polygon2D = get_node_or_null("Body")
@@ -247,6 +251,10 @@ func _exit_tree() -> void:
 	var sfx := get_node_or_null("SkillCastSfx")
 	if sfx != null:
 		_release_skill_cast_sfx(sfx, false)
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and (event as InputEventMouseMotion).relative.length_squared() > 0.25:
+		_last_mouse_motion_msec = Time.get_ticks_msec()
 
 
 func configure_camera_for_room(bounds: Rect2) -> void:
@@ -550,6 +558,8 @@ func _physics_process(delta: float) -> void:
 		velocity = _dash_dir * dash_speed
 	else:
 		var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		if input_dir.length_squared() > 0.01:
+			_last_move_dir = input_dir.normalized()
 		velocity = input_dir * current_move_speed()
 		if Input.is_action_just_pressed("dash"):
 			_try_dash(input_dir)
@@ -607,21 +617,77 @@ func _aim_dir() -> Vector2:
 		set_meta("last_aim_input_source", "controller")
 		set_meta("last_aim_dir", controller_aim)
 		return controller_aim
-	if is_inside_tree():
-		var mouse_aim := get_global_mouse_position() - global_position
-		if mouse_aim != Vector2.ZERO:
-			var mouse_dir := mouse_aim.normalized()
+	if _recent_mouse_aim_active():
+		var mouse_dir := _mouse_aim_dir()
+		if mouse_dir != Vector2.ZERO:
 			set_meta("last_aim_input_source", "mouse")
 			set_meta("last_aim_dir", mouse_dir)
 			return mouse_dir
+	var auto_dir := _nearest_enemy_aim_dir()
+	if auto_dir != Vector2.ZERO:
+		set_meta("last_aim_input_source", "auto_target")
+		set_meta("last_aim_dir", auto_dir)
+		return auto_dir
+	var movement_dir := _movement_aim_dir()
+	if movement_dir != Vector2.ZERO:
+		set_meta("last_aim_input_source", "movement")
+		set_meta("last_aim_dir", movement_dir)
+		return movement_dir
+	var mouse_dir := _mouse_aim_dir()
+	if mouse_dir != Vector2.ZERO:
+		set_meta("last_aim_input_source", "mouse")
+		set_meta("last_aim_dir", mouse_dir)
+		return mouse_dir
 	set_meta("last_aim_input_source", "fallback")
 	set_meta("last_aim_dir", Vector2.RIGHT)
 	return Vector2.RIGHT
+
+func _mouse_aim_dir() -> Vector2:
+	if is_inside_tree():
+		var mouse_aim := get_global_mouse_position() - global_position
+		if mouse_aim != Vector2.ZERO:
+			return mouse_aim.normalized()
+	return Vector2.ZERO
+
+func _recent_mouse_aim_active() -> bool:
+	return Time.get_ticks_msec() - _last_mouse_motion_msec <= RECENT_MOUSE_AIM_MS
+
+func _nearest_enemy_aim_dir() -> Vector2:
+	if not is_inside_tree():
+		return Vector2.ZERO
+	var best: Node2D = null
+	var best_dist := AUTO_AIM_RADIUS * AUTO_AIM_RADIUS
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node is Node2D and is_instance_valid(node) and not node.is_queued_for_deletion():
+			var enemy := node as Node2D
+			var dist := global_position.distance_squared_to(enemy.global_position)
+			if dist <= best_dist:
+				best_dist = dist
+				best = enemy
+	if best == null:
+		return Vector2.ZERO
+	var to_enemy := best.global_position - global_position
+	return to_enemy.normalized() if to_enemy.length_squared() > 0.0 else Vector2.ZERO
+
+func _movement_aim_dir() -> Vector2:
+	if velocity.length_squared() > 1.0:
+		return velocity.normalized()
+	return _last_move_dir if _last_move_dir.length_squared() > 0.0 else Vector2.ZERO
 
 func _aim_target_position() -> Vector2:
 	var controller_aim := _controller_aim_dir()
 	if controller_aim != Vector2.ZERO:
 		return global_position + controller_aim * CONTROLLER_AIM_TARGET_DISTANCE
+	if _recent_mouse_aim_active():
+		var mouse_dir := _mouse_aim_dir()
+		if mouse_dir != Vector2.ZERO:
+			return global_position + mouse_dir * CONTROLLER_AIM_TARGET_DISTANCE
+	var auto_target := _nearest_enemy_within(AUTO_AIM_RADIUS)
+	if auto_target != null:
+		return auto_target.global_position
+	var movement_dir := _movement_aim_dir()
+	if movement_dir != Vector2.ZERO:
+		return global_position + movement_dir * CONTROLLER_AIM_TARGET_DISTANCE
 	if is_inside_tree():
 		return get_global_mouse_position()
 	return global_position + Vector2.RIGHT * CONTROLLER_AIM_TARGET_DISTANCE
@@ -656,7 +722,7 @@ func _apply_class_sprite() -> void:
 		return
 	_sprite.sprite_frames = sprite_frames
 	_sprite.visible = true
-	_sprite.scale = SpriteDB.visual_scale(idle_name, PLAYER_VISUAL_TARGET_HEIGHT)
+	_sprite.scale = SpriteDB.visual_scale(idle_name, PLAYER_VISUAL_TARGET_HEIGHT, true, 2.4)
 	SpriteDB.apply_sprite_metadata(_sprite, idle_name)
 	_sprite.set_meta("class_idle_sprite", idle_name)
 	_sprite.set_meta("class_run_sprite", run_name)

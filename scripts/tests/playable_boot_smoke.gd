@@ -83,7 +83,7 @@ func _check_main_scene_boots_into_playable_run(failures: Array[String]) -> void:
 		if not bool(readiness.get("control_hint_visible", false)):
 			failures.append("first_run_readiness should confirm in-run control hint is visible")
 		var control_hint := str(readiness.get("control_hint_text", ""))
-		for token in ["Esc/P", "1-4", "E/C skills", "Q cycle", "V ultimate", "Mouse"]:
+		for token in ["Esc/P", "1-4", "E/C skills", "Q cycle", "V ultimate", "Mouse", "F4 clean HUD"]:
 			if not control_hint.contains(token):
 				failures.append("first_run_readiness control hint missing token: %s" % token)
 		if int(readiness.get("run_seed", 0)) <= 0:
@@ -101,6 +101,43 @@ func _check_main_scene_boots_into_playable_run(failures: Array[String]) -> void:
 			failures.append("HUD should expose ControlsHintLabel during first run")
 		elif not control_hint_label.visible or not control_hint_label.text.contains("1-4"):
 			failures.append("HUD ControlsHintLabel should stay visible with route hotkey hint")
+		if not main.has_method("_toggle_clean_playtest_hud"):
+			failures.append("Main should expose F4 clean HUD toggle helper")
+		else:
+			var clean_event := InputEventKey.new()
+			clean_event.keycode = KEY_F4
+			clean_event.pressed = true
+			main.call("_unhandled_input", clean_event)
+			await process_frame
+			if not bool(hud.get_meta("clean_playtest_mode", false)):
+				failures.append("F4 should enable clean playtest HUD mode")
+			if control_hint_label != null and control_hint_label.visible:
+				failures.append("F4 clean HUD should hide visible control hint text")
+			var minimap := hud.get_node_or_null("Minimap") as Minimap
+			if minimap == null or not minimap.visible:
+				failures.append("F4 clean HUD should keep minimap visible")
+			clean_event = InputEventKey.new()
+			clean_event.keycode = KEY_F4
+			clean_event.pressed = true
+			main.call("_unhandled_input", clean_event)
+			await process_frame
+			await process_frame
+			if bool(hud.get_meta("clean_playtest_mode", true)):
+				failures.append("second F4 should disable clean playtest HUD mode")
+			if control_hint_label != null and (not control_hint_label.visible or not control_hint_label.text.contains("1-4")):
+				failures.append("second F4 should restore compact control hint text")
+	var transition_card := main.find_child("FloorTransitionCard", true, false) as Label
+	if transition_card == null:
+		failures.append("run start should show a floor transition card")
+	else:
+		if transition_card.text.contains("\n") or transition_card.text.length() > 72:
+			failures.append("run start floor transition card should stay one-line compact")
+		if transition_card.position.y > 76.0:
+			failures.append("run start floor transition card should stay in the upper HUD band")
+		var full_text := str(transition_card.get_meta("floor_transition_full_text", ""))
+		for token in ["Build:", "Gold", "Keys", "HP"]:
+			if not full_text.contains(token):
+				failures.append("compact floor transition card should preserve %s detail in metadata" % token)
 	if _first_class_select(main) != null:
 		failures.append("class select should be removed after confirming run start")
 	var floor_ctrl := main.get("_floor_ctrl") as FloorController

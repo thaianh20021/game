@@ -14,6 +14,7 @@ func _init() -> void:
 	await _check_reward_decision_context(failures)
 	await _check_upgrade_best_fit_skips_unavailable(failures)
 	await _check_reward_choice_numbering_and_socket_cue(failures)
+	await _check_reward_choice_visible_text_is_compact(failures)
 	await _check_reward_choice_input_metadata(failures)
 	await _check_reward_flow_cue(failures)
 	await _check_reward_overlay_challenge_goal_context(failures)
@@ -511,9 +512,11 @@ func _check_reward_gate_blocks_door_transition(failures: Array[String]) -> void:
 	else:
 		if str(reward_marker.get_meta("gate_state", "")) == "reward_locked":
 			failures.append("claimed reward door marker should clear reward_locked gate state")
-		if not _node_has_label_text(reward_marker, "MAIN") \
-				and not _node_has_label_text(reward_marker, "SIDE"):
-			failures.append("claimed reward door marker should return to route hint")
+		if str(reward_marker.get_meta("route_hint", "")) == "":
+			failures.append("claimed reward door marker should preserve route hint metadata")
+		if _node_has_label_text(reward_marker, "MAIN") \
+				or _node_has_label_text(reward_marker, "SIDE"):
+			failures.append("claimed reward door marker should keep route role out of visible playfield text")
 	ctrl.reward_claimed_rooms.erase(combat.id)
 	ctrl.call("_show_door_markers", combat)
 	await process_frame
@@ -1327,12 +1330,77 @@ func _check_reward_choice_numbering_and_socket_cue(failures: Array[String]) -> v
 			failures.append("rune/socket cue should summarize socket usage and runes")
 		split = overlay.find_child("Upgrade_split_socket", true, false) as Button
 		if split != null:
-			if not str(split.text).contains("Socket Plan: Sockets 1/3"):
-				failures.append("socket upgrade choices should show current socket pressure")
+			if str(split.text).contains("Socket Plan:"):
+				failures.append("socket upgrade choices should keep socket pressure in tooltip/meta, not visible button text")
 			if str(split.get_meta("socket_context", "")) != "Sockets 1/3 | Runes Fire x1":
 				failures.append("socket upgrade choices should store socket context metadata")
 			if not str(split.tooltip_text).contains("Socket Plan: Sockets 1/3"):
 				failures.append("socket upgrade tooltip should include socket pressure")
+	overlay.queue_free()
+	await process_frame
+
+func _check_reward_choice_visible_text_is_compact(failures: Array[String]) -> void:
+	var overlay := RunOverlay.new()
+	root.add_child(overlay)
+	await process_frame
+	var choices := [
+		{
+			"id": "split_socket",
+			"name": "Split Socket",
+			"desc": "+1 projectile",
+			"rarity": "epic",
+			"tags": ["projectile", "socket"],
+		},
+		{
+			"id": "ember_rune",
+			"name": "Ember Rune",
+			"desc": "+15% fire damage",
+			"rarity": "rare",
+			"tags": ["damage", "fire", "element"],
+		},
+		{
+			"id": "dash_spring",
+			"name": "Dash Spring",
+			"desc": "-10% dash cooldown",
+			"rarity": "rare",
+			"tags": ["mobility", "dash"],
+		},
+	]
+	overlay.callv("show_room_upgrade_choices", [
+		choices,
+		RoomNode.RoomType.TREASURE,
+		{"split_socket": 1},
+		true,
+		["projectile", "socket", "fire"],
+		"reroll_ready",
+		"Power Rune -> Ember Rune -> Dash Spring",
+		{"split_socket": "Projectiles 2 -> 3"},
+		"Sockets 1/3 | Runes Fire x1",
+		"Socket Engineer",
+		"5 picks | Tier II | Socket Engineer | Projectile / Socket",
+		"Glass Edges: Enemies scale +12%",
+		"Next: Tier III in 1 pick",
+		{"projectile": 2, "socket": 1},
+	])
+	await process_frame
+	var split := overlay.find_child("Upgrade_split_socket", true, false) as Button
+	if split == null:
+		failures.append("compact reward text check should keep split socket button")
+	else:
+		var visible := str(split.text)
+		if visible.split("\n", false).size() > 3:
+			failures.append("reward choice visible text should stay within 3 lines, got: %s" % visible)
+		for noisy in ["Preview:", "Tags:", "Synergy:", "Recommended:", "Set:", "Fit:", "Socket Plan:", "Owned"]:
+			if visible.contains(noisy):
+				failures.append("reward choice visible text should move %s detail into tooltip/meta" % noisy)
+		for token in ["Choice 1/3", "Split Socket", "+1 projectile"]:
+			if not visible.contains(token):
+				failures.append("compact reward choice visible text should still include %s" % token)
+		for token in ["Projectiles 2 -> 3", "Socket Plan: Sockets 1/3", "Fit:", "Set Progress:"]:
+			if not str(split.tooltip_text).contains(token):
+				failures.append("compact reward choice tooltip should preserve %s" % token)
+		if str(split.get_meta("visible_text_contract", "")) != "compact_reward_choice":
+			failures.append("compact reward choice should tag its visible text contract")
 	overlay.queue_free()
 	await process_frame
 

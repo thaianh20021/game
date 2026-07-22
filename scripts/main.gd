@@ -4,6 +4,9 @@ extends Node2D
 ## Next milestones: hub scene, meta progression save, more bosses/biomes.
 
 const MAX_FLOORS := 4
+const DEBUG_WINDOW_SIZE := Vector2i(1280, 720)
+const DEBUG_CONTENT_SCALE_SIZE := Vector2i(640, 360)
+const DEBUG_CONTENT_SCALE_FACTOR := 1.0
 const UpgradeDBScript := preload("res://scripts/progression/upgrade_db.gd")
 const MetaProgressionScript := preload("res://scripts/progression/meta_progression.gd")
 const RunSummaryScript := preload("res://scripts/ui/run_summary.gd")
@@ -54,6 +57,7 @@ var _accessibility_settings := {
 
 
 func _ready() -> void:
+	_apply_debug_window_scale()
 	_accessibility_settings = AccessibilitySettingsScript.load_data()
 	player.hide()
 	player.set_physics_process(false)
@@ -72,6 +76,32 @@ func _ready() -> void:
 			int(launch_request.get("seed", -1)),
 			str(launch_request.get("mode", "normal")))
 		_show_manual_playtest_overlay(launch_request)
+
+func _apply_debug_window_scale(dry_run: bool = false) -> Dictionary:
+	var state := {
+		"window_size": DEBUG_WINDOW_SIZE,
+		"content_scale_size": DEBUG_CONTENT_SCALE_SIZE,
+		"content_scale_mode": Window.CONTENT_SCALE_MODE_VIEWPORT,
+		"content_scale_aspect": Window.CONTENT_SCALE_ASPECT_KEEP,
+		"content_scale_factor": DEBUG_CONTENT_SCALE_FACTOR,
+		"dry_run": dry_run,
+	}
+	if dry_run or DisplayServer.get_name() == "headless":
+		set_meta("debug_window_scale_state", state.duplicate(true))
+		return state
+	var window := get_window()
+	if window == null:
+		state["error"] = "window_missing"
+		set_meta("debug_window_scale_state", state.duplicate(true))
+		return state
+	window.content_scale_size = DEBUG_CONTENT_SCALE_SIZE
+	window.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	window.content_scale_factor = DEBUG_CONTENT_SCALE_FACTOR
+	window.size = DEBUG_WINDOW_SIZE
+	DisplayServer.window_set_size(DEBUG_WINDOW_SIZE)
+	set_meta("debug_window_scale_state", state.duplicate(true))
+	return state
 
 func _manual_playtest_launch_request_from_args(args: Array) -> Dictionary:
 	var scenario_index := _manual_playtest_arg_int(args, "--manual-scenario=")
@@ -120,20 +150,26 @@ func _manual_playtest_overlay_text(request: Dictionary) -> String:
 	if request.is_empty():
 		return ""
 	var scenario_index := int(request.get("scenario_index", 0))
-	return "Scenario %d | seed %d | %s | %s | element %s\nGoal: %s\nCheck: animation, collision, wave HUD/audio\nRoom: %s | Evidence: %s\nF1 hide | record after human pass" % [
+	var screenshot_name := _manual_playtest_overlay_screenshot_path(scenario_index).get_file()
+	return "Scenario %d | seed %d | %s | %s | element %s\nGoal: %s\nCheck: anim, collision, wave, HUD | %s\nF2 Capture: %s | %s\nF1 hide | F3 copy | human-only" % [
 		scenario_index,
 		int(request.get("seed", 0)),
 		str(request.get("mode", "")),
 		str(request.get("class_id", "")),
 		str(request.get("element", "")),
 		str(request.get("goal", "")),
-		_manual_playtest_overlay_room_context(),
-		_manual_playtest_overlay_evidence_hint(request),
+		_manual_playtest_overlay_compact_room_context(),
+		screenshot_name,
+		_manual_playtest_overlay_compact_evidence_hint(request),
 	]
 
 func _manual_playtest_overlay_evidence_hint(request: Dictionary) -> String:
 	var evidence_seed := run_seed if run_seed > 0 else int(request.get("seed", 0))
 	return "screenshot or seed_%d" % evidence_seed if evidence_seed > 0 else "screenshot or seed"
+
+func _manual_playtest_overlay_compact_evidence_hint(request: Dictionary) -> String:
+	var evidence_seed := run_seed if run_seed > 0 else int(request.get("seed", 0))
+	return "seed_%d" % evidence_seed if evidence_seed > 0 else "seed"
 
 func _manual_playtest_overlay_room_context() -> String:
 	if _floor_ctrl == null or not is_instance_valid(_floor_ctrl) or _floor_ctrl.current_room == null:
@@ -150,6 +186,14 @@ func _manual_playtest_overlay_room_context() -> String:
 	if next_action == "":
 		return "%s #%d | rooms %s" % [room_type.capitalize(), room_id, progress]
 	return "%s #%d | rooms %s | %s" % [room_type.capitalize(), room_id, progress, next_action]
+
+func _manual_playtest_overlay_compact_room_context() -> String:
+	var context := _manual_playtest_overlay_room_context()
+	context = context.replace("Entrance", "Ent")
+	context = context.replace("Combat", "Fight")
+	if context.length() <= 34:
+		return context
+	return "%s..." % context.left(31)
 
 func _manual_playtest_issue_type_summary() -> String:
 	return ReleaseAuditScript.manual_playtest_issue_type_summary()
@@ -170,10 +214,126 @@ func _manual_playtest_overlay_asset_review_hints() -> String:
 	]
 
 func _manual_playtest_overlay_notes_skeleton() -> String:
-	return "asset_animation_notes=<human animation notes> | polygon_collision_notes=<human polygon notes> | wave_hud_audio_notes=<human wave HUD audio notes>"
+	return "asset_animation_notes=<human animation notes> | polygon_collision_notes=<human polygon notes> | wave_hud_audio_notes=<human wave hud audio notes>"
+
+func _manual_playtest_overlay_screenshot_path(scenario_index: int) -> String:
+	var temp_dir := OS.get_environment("TEMP")
+	if temp_dir.strip_edges() == "":
+		temp_dir = OS.get_environment("TMP")
+	if temp_dir.strip_edges() == "":
+		temp_dir = ProjectSettings.globalize_path("user://")
+	temp_dir = temp_dir.replace("\\", "/")
+	while temp_dir.ends_with("/"):
+		temp_dir = temp_dir.substr(0, temp_dir.length() - 1)
+	return "%s/dungeon_core_manual_scenario_%d.png" % [temp_dir, scenario_index]
+
+func _manual_playtest_overlay_capture_command(scenario_index: int) -> String:
+	var path := _manual_playtest_overlay_screenshot_path(scenario_index).replace("'", "''")
+	return "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $bounds=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp=New-Object System.Drawing.Bitmap $bounds.Width,$bounds.Height; $g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bmp.Save('%s',[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $bmp.Dispose(); Write-Output '%s'\"" % [path, path]
+
+func _capture_manual_playtest_screenshot(dry_run: bool = false) -> Dictionary:
+	var scenario_index := int(_manual_playtest_overlay_request.get("scenario_index", 0))
+	var path := _manual_playtest_overlay_screenshot_path(scenario_index)
+	var result := {
+		"path": path,
+		"dry_run": dry_run,
+		"saved": false,
+		"records_release_evidence": false,
+		"policy": "human_only_no_auto_evidence",
+	}
+	if scenario_index <= 0:
+		result["error"] = "manual_scenario_missing"
+		_update_manual_capture_metadata(result)
+		return result
+	if dry_run:
+		_update_manual_capture_metadata(result)
+		return result
+	var image := get_viewport().get_texture().get_image()
+	if image == null or image.is_empty():
+		result["error"] = "viewport_image_empty"
+		_update_manual_capture_metadata(result)
+		_show_manual_capture_feedback(result)
+		return result
+	var dir_error := DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+	if dir_error != OK:
+		result["error"] = "mkdir_failed:%d" % dir_error
+		_update_manual_capture_metadata(result)
+		_show_manual_capture_feedback(result)
+		return result
+	var save_error := image.save_png(path)
+	if save_error != OK:
+		result["error"] = "save_failed:%d" % save_error
+	else:
+		result["saved"] = true
+	_update_manual_capture_metadata(result)
+	_show_manual_capture_feedback(result)
+	return result
+
+func _update_manual_capture_metadata(result: Dictionary) -> void:
+	var label := find_child("ManualPlaytestScenarioLabel", true, false) as Label
+	if label == null:
+		return
+	label.set_meta("manual_last_capture_path", str(result.get("path", "")))
+	label.set_meta("manual_last_capture_saved", bool(result.get("saved", false)))
+	label.set_meta("manual_last_capture_dry_run", bool(result.get("dry_run", false)))
+	label.set_meta("manual_last_capture_error", str(result.get("error", "")))
+
+func _show_manual_capture_feedback(result: Dictionary) -> void:
+	var path := str(result.get("path", ""))
+	var saved := bool(result.get("saved", false))
+	var text := "Screenshot saved | %s" % path.get_file() if saved \
+		else "Screenshot failed | F2"
+	_show_floating_toast(
+		"ManualScenarioCaptureToast",
+		text,
+		Vector2(22, 154),
+		Color(0.72, 1.0, 0.82) if saved else Color(1.0, 0.56, 0.36),
+		result)
+
+func _copy_manual_playtest_record_command(dry_run: bool = false) -> Dictionary:
+	var scenario_index := int(_manual_playtest_overlay_request.get("scenario_index", 0))
+	var path := _manual_playtest_overlay_screenshot_path(scenario_index)
+	var command := _manual_playtest_overlay_pass_command(scenario_index)
+	if scenario_index > 0:
+		command = command.replace("<screenshot or seed>", path)
+	var result := {
+		"command": command,
+		"path": path,
+		"dry_run": dry_run,
+		"copied": false,
+		"records_release_evidence": false,
+		"policy": "human_only_no_auto_evidence",
+	}
+	if scenario_index <= 0:
+		result["error"] = "manual_scenario_missing"
+		_update_manual_copy_metadata(result)
+		return result
+	if not dry_run:
+		DisplayServer.clipboard_set(command)
+		result["copied"] = true
+		_show_manual_copy_feedback(result)
+	_update_manual_copy_metadata(result)
+	return result
+
+func _update_manual_copy_metadata(result: Dictionary) -> void:
+	var label := find_child("ManualPlaytestScenarioLabel", true, false) as Label
+	if label == null:
+		return
+	label.set_meta("manual_last_copied_command", str(result.get("command", "")))
+	label.set_meta("manual_last_copy_dry_run", bool(result.get("dry_run", false)))
+	label.set_meta("manual_last_copy_copied", bool(result.get("copied", false)))
+	label.set_meta("manual_last_copy_error", str(result.get("error", "")))
+
+func _show_manual_copy_feedback(result: Dictionary) -> void:
+	_show_floating_toast(
+		"ManualScenarioCopyToast",
+		"Record command copied | human notes required",
+		Vector2(22, 154),
+		Color(0.72, 1.0, 0.82),
+		result)
 
 func _manual_playtest_overlay_final_notes_command(request: Dictionary) -> String:
-	return "godot --headless --path . --script res://scripts/tools/record_playtest_notes_evidence.gd -- --seed=%d --class_id=%s --mode=%s --replay_last_run_result=<human result> --daily_fingerprint_hash=<daily hash> --pace_avg_sec=<avg sec> --pace_boss_sec=<boss sec> --asset_animation_notes=<human animation notes> --polygon_collision_notes=<human polygon notes> --wave_hud_audio_notes=<human wave HUD audio notes> --blocker_screenshot_or_seed=<screenshot or seed> --release_decision=<hold or ready>" % [
+	return "godot --headless --path . --script res://scripts/tools/record_playtest_notes_evidence.gd -- --seed=%d --class_id=%s --mode=%s --replay_last_run_result=<human result> --daily_fingerprint_hash=<daily hash> --pace_avg_sec=<avg sec> --pace_boss_sec=<boss sec> --asset_animation_notes=<human animation notes> --polygon_collision_notes=<human polygon notes> --wave_hud_audio_notes=<human wave hud audio notes> --blocker_screenshot_or_seed=<screenshot or seed> --release_decision=<hold or ready>" % [
 		int(request.get("seed", 0)),
 		str(request.get("class_id", "")),
 		str(request.get("mode", "")),
@@ -205,13 +365,14 @@ func _show_manual_playtest_overlay(request: Dictionary) -> void:
 	if label == null:
 		label = Label.new()
 		label.name = "ManualPlaytestScenarioLabel"
-		label.position = Vector2(18, 94)
-		label.size = Vector2(440, 112)
+		label.position = Vector2(154, 64)
+		label.size = Vector2(304, 78)
+		label.scale = Vector2(0.5, 0.5)
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.add_theme_font_size_override("font_size", 9)
+		label.add_theme_font_size_override("font_size", 7)
 		label.add_theme_color_override("font_color", Color(1.0, 0.93, 0.62))
-		label.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.03, 0.9))
-		label.add_theme_constant_override("outline_size", 2)
+		label.add_theme_color_override("font_outline_color", Color(0.02, 0.015, 0.01, 1.0))
+		label.add_theme_constant_override("outline_size", 4)
 		layer.add_child(label)
 	label.text = text
 	label.visible = false
@@ -223,11 +384,16 @@ func _show_manual_playtest_overlay(request: Dictionary) -> void:
 	label.set_meta("manual_scenario_goal", str(request.get("goal", "")))
 	label.set_meta("manual_scenario_evidence_source", "manual_playtest")
 	label.set_meta("manual_overlay_toggle_key", "F1")
+	label.set_meta("manual_capture_key", "F2")
+	label.set_meta("manual_copy_key", "F3")
 	label.set_meta("records_release_evidence", false)
 	label.set_meta("manual_asset_review_hints", _manual_playtest_overlay_asset_review_hints())
 	label.set_meta("manual_evidence_notes_skeleton", _manual_playtest_overlay_notes_skeleton())
 	label.set_meta("manual_issue_type_summary", _manual_playtest_issue_type_summary())
 	label.set_meta("manual_issue_alias_summary", ReleaseAuditScript.manual_playtest_issue_type_alias_summary())
+	label.set_meta("manual_screenshot_path", _manual_playtest_overlay_screenshot_path(int(request.get("scenario_index", 0))))
+	label.set_meta("manual_capture_command", _manual_playtest_overlay_capture_command(int(request.get("scenario_index", 0))))
+	label.set_meta("manual_recording_policy", "human_only_no_auto_evidence")
 	label.set_meta("manual_final_notes_command", _manual_playtest_overlay_final_notes_command(request))
 	label.set_meta("manual_pass_command", _manual_playtest_overlay_pass_command(int(request.get("scenario_index", 0))))
 	label.set_meta("manual_issue_command", _manual_playtest_overlay_issue_command(int(request.get("scenario_index", 0))))
@@ -336,7 +502,14 @@ func _first_run_readiness_status(player_ready: bool, floor_ready: bool) -> Dicti
 	var route_summary := str(_floor_ctrl.call("current_room_route_options_summary")) \
 		if floor_ready and _floor_ctrl.has_method("current_room_route_options_summary") else ""
 	var objective_text := str(objective_label.text).strip_edges() if objective_label != null else ""
-	var control_hint_text := str(controls_label.text).strip_edges() if controls_label != null else ""
+	var visible_control_hint_text := str(controls_label.text).strip_edges() \
+		if controls_label != null else ""
+	var control_hint_text := ""
+	if controls_label != null:
+		control_hint_text = str(controls_label.get_meta(
+			"full_control_hint",
+			controls_label.tooltip_text if controls_label.tooltip_text != "" else visible_control_hint_text
+		)).strip_edges()
 	var mode_text := str(mode_label.text).strip_edges() if mode_label != null else _run_mode_label()
 	var readiness := {
 		"player_ready": player_ready,
@@ -349,7 +522,8 @@ func _first_run_readiness_status(player_ready: bool, floor_ready: bool) -> Dicti
 		"route_options_count": route_options.size(),
 		"route_options_summary": route_summary,
 		"route_label_text": str(route_label.text).strip_edges() if route_label != null else "",
-		"control_hint_visible": controls_label != null and controls_label.visible and control_hint_text != "",
+		"control_hint_visible": controls_label != null and controls_label.visible \
+			and visible_control_hint_text != "",
 		"control_hint_text": control_hint_text,
 		"run_seed": int(seed_label.get_meta("run_seed", run_seed)) if seed_label != null else run_seed,
 		"run_seed_label": str(seed_label.get_meta("run_seed_label", "Seed")) \
@@ -374,6 +548,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_manual_playtest_overlay()
 			get_viewport().set_input_as_handled()
 			return
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F2:
+			if not _manual_playtest_overlay_request.is_empty():
+				_capture_manual_playtest_screenshot()
+				get_viewport().set_input_as_handled()
+				return
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F3:
+			if not _manual_playtest_overlay_request.is_empty():
+				_copy_manual_playtest_record_command()
+				get_viewport().set_input_as_handled()
+				return
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_F4:
+			_toggle_clean_playtest_hud()
+			get_viewport().set_input_as_handled()
+			return
 	if event.is_action_pressed("pause_menu"):
 		_toggle_pause_menu()
 		get_viewport().set_input_as_handled()
@@ -383,6 +571,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _handle_route_choice_input(event):
 		get_viewport().set_input_as_handled()
+
+func _toggle_clean_playtest_hud() -> void:
+	if _hud == null or not is_instance_valid(_hud) \
+			or not _hud.has_method("set_clean_playtest_mode"):
+		return
+	var enabled := not bool(_hud.get_meta("clean_playtest_mode", false))
+	_hud.call("set_clean_playtest_mode", enabled)
+	set_meta("clean_playtest_hud_enabled", enabled)
+	set_meta("clean_playtest_hud_toggle_key", "F4")
 
 func _handle_route_choice_input(event: InputEvent) -> bool:
 	for i in range(1, 5):
@@ -1236,11 +1433,27 @@ func _show_floor_transition_card(initial: bool = false) -> void:
 		text += "\nChallenge: %s" % modifier
 	if not initial and _last_floor_summary != "":
 		text += "\nLast floor: %s" % _last_floor_summary
+	var compact_text := "%s F%d | %s | HP %d/%d | Gold %d Keys %d" % [
+		prefix,
+		current_floor,
+		_floor_ctrl.current_biome_label(),
+		player.hp,
+		player.max_hp,
+		player.gold,
+		player.silver_keys,
+	]
+	var metadata := {
+		"floor_transition_full_text": text,
+		"floor_transition_initial": initial,
+		"floor_transition_floor": current_floor,
+		"floor_transition_biome": _floor_ctrl.current_biome_label(),
+	}
 	_show_floating_toast(
 		"FloorTransitionCard",
-		text,
-		Vector2(22, 116),
-		Color(0.78, 0.9, 1.0))
+		compact_text,
+		Vector2(22, 54 if initial else 74),
+		Color(0.78, 0.9, 1.0),
+		metadata)
 
 func _play_floor_transition_sfx(initial: bool) -> void:
 	var cue: Dictionary = AudioCueDBScript.floor_transition_cue(initial)

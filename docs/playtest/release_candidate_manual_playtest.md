@@ -33,16 +33,16 @@ Fields:
 - release_decision
 
 Notes Skeleton:
-asset_animation_notes=<human animation notes> | polygon_collision_notes=<human polygon notes> | wave_hud_audio_notes=<human wave HUD audio notes>
+asset_animation_notes=<human animation notes> | polygon_collision_notes=<human polygon notes> | wave_hud_audio_notes=<human wave hud audio notes>
 
 Final Notes:
 ```powershell
-godot --headless --path . --script res://scripts/tools/record_playtest_notes_evidence.gd -- --seed=420101 --class_id=blade_warden --mode=normal --replay_last_run_result=<human result> --daily_fingerprint_hash=<daily hash> --pace_avg_sec=<avg sec> --pace_boss_sec=<boss sec> --asset_animation_notes=<human animation notes> --polygon_collision_notes=<human polygon notes> --wave_hud_audio_notes=<human wave HUD audio notes> --blocker_screenshot_or_seed=<screenshot or seed> --release_decision=<hold or ready>
+godot --headless --path . --script res://scripts/tools/record_playtest_notes_evidence.gd -- --seed=420101 --class_id=blade_warden --mode=normal --replay_last_run_result=<human result> --daily_fingerprint_hash=<daily hash> --pace_avg_sec=<avg sec> --pace_boss_sec=<boss sec> --asset_animation_notes=<human animation notes> --polygon_collision_notes=<human polygon notes> --wave_hud_audio_notes=<human wave hud audio notes> --blocker_screenshot_or_seed=<screenshot or seed> --release_decision=<hold or ready>
 ```
 
 Playtest Notes Draft:
 ```powershell
-godot --headless --path . --script res://scripts/tools/record_playtest_notes_evidence.gd -- --seed=420101 --class_id=blade_warden --mode=normal --replay_last_run_result=<human result> --daily_fingerprint_hash=<daily hash> --pace_avg_sec=<avg sec> --pace_boss_sec=<boss sec> --asset_animation_notes=<human animation notes> --polygon_collision_notes=<human polygon notes> --wave_hud_audio_notes=<human wave HUD audio notes> --blocker_screenshot_or_seed=<screenshot or seed> --release_decision=<hold or ready>
+godot --headless --path . --script res://scripts/tools/record_playtest_notes_evidence.gd -- --seed=420101 --class_id=blade_warden --mode=normal --replay_last_run_result=<human result> --daily_fingerprint_hash=<daily hash> --pace_avg_sec=<avg sec> --pace_boss_sec=<boss sec> --asset_animation_notes=<human animation notes> --polygon_collision_notes=<human polygon notes> --wave_hud_audio_notes=<human wave hud audio notes> --blocker_screenshot_or_seed=<screenshot or seed> --release_decision=<hold or ready>
 ```
 Draft scenario: 1 | seed 420101 | mode normal | class blade_warden | clear floor 1 and choose one upgrade
 
@@ -92,14 +92,24 @@ Manual Progress
 - Goal: clear floor 1 and choose one upgrade
 - Status: missing
 
+Suggested Screenshot:
+```text
+C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_1.png
+```
+
+Capture Screenshot:
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $bounds=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp=New-Object System.Drawing.Bitmap $bounds.Width,$bounds.Height; $g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bmp.Save('C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_1.png',[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $bmp.Dispose(); Write-Output 'C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_1.png'"
+```
+
 Launch Dry Run:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 1 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 1 -Detached -DryRun
 ```
 
 Launch:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 1
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 1 -Detached
 ```
 
 Dry Run before recording:
@@ -145,14 +155,24 @@ Human notes placeholder: actual human result, blockers, screenshot path or seed,
 - Goal: survive boss phase shift and enrage
 - Status: missing
 
+Suggested Screenshot:
+```text
+C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_2.png
+```
+
+Capture Screenshot:
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $bounds=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp=New-Object System.Drawing.Bitmap $bounds.Width,$bounds.Height; $g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bmp.Save('C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_2.png',[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $bmp.Dispose(); Write-Output 'C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_2.png'"
+```
+
 Launch Dry Run:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 2 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 2 -Detached -DryRun
 ```
 
 Launch:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 2
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 2 -Detached
 ```
 
 Dry Run before recording:
@@ -198,14 +218,24 @@ Human notes placeholder: actual human result, blockers, screenshot path or seed,
 - Goal: reach post-finale biome transition
 - Status: missing
 
+Suggested Screenshot:
+```text
+C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_3.png
+```
+
+Capture Screenshot:
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $bounds=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp=New-Object System.Drawing.Bitmap $bounds.Width,$bounds.Height; $g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bmp.Save('C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_3.png',[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $bmp.Dispose(); Write-Output 'C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_3.png'"
+```
+
 Launch Dry Run:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 3 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 3 -Detached -DryRun
 ```
 
 Launch:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 3
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 3 -Detached
 ```
 
 Dry Run before recording:
@@ -251,14 +281,24 @@ Human notes placeholder: actual human result, blockers, screenshot path or seed,
 - Goal: verify lethal damage/readability feels fair
 - Status: missing
 
+Suggested Screenshot:
+```text
+C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_4.png
+```
+
+Capture Screenshot:
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $bounds=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp=New-Object System.Drawing.Bitmap $bounds.Width,$bounds.Height; $g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bmp.Save('C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_4.png',[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $bmp.Dispose(); Write-Output 'C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_4.png'"
+```
+
 Launch Dry Run:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 4 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 4 -Detached -DryRun
 ```
 
 Launch:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 4
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 4 -Detached
 ```
 
 Dry Run before recording:
@@ -304,14 +344,24 @@ Human notes placeholder: actual human result, blockers, screenshot path or seed,
 - Goal: verify element swaps and combo feedback
 - Status: missing
 
+Suggested Screenshot:
+```text
+C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_5.png
+```
+
+Capture Screenshot:
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $bounds=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp=New-Object System.Drawing.Bitmap $bounds.Width,$bounds.Height; $g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bmp.Save('C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_5.png',[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $bmp.Dispose(); Write-Output 'C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_5.png'"
+```
+
 Launch Dry Run:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 5 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 5 -Detached -DryRun
 ```
 
 Launch:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 5
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 5 -Detached
 ```
 
 Dry Run before recording:
@@ -357,14 +407,24 @@ Human notes placeholder: actual human result, blockers, screenshot path or seed,
 - Goal: record TTK/pace notes for weapon and economy tuning
 - Status: missing
 
+Suggested Screenshot:
+```text
+C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_6.png
+```
+
+Capture Screenshot:
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $bounds=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp=New-Object System.Drawing.Bitmap $bounds.Width,$bounds.Height; $g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bmp.Save('C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_6.png',[System.Drawing.Imaging.ImageFormat]::Png); $g.Dispose(); $bmp.Dispose(); Write-Output 'C:/Users/ADMIN/AppData/Local/Temp/dungeon_core_manual_scenario_6.png'"
+```
+
 Launch Dry Run:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 6 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 6 -Detached -DryRun
 ```
 
 Launch:
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 6
+powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex 6 -Detached
 ```
 
 Dry Run before recording:

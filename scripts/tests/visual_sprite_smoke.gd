@@ -38,8 +38,9 @@ func _init() -> void:
 		failures.append("blade_warden should prefer reviewed Zerie Soldier walk when local asset exists")
 	if str(player_sprite.get_meta("asset_source", "")) != "user_local_assets":
 		failures.append("blade_warden runtime sprite should expose user_local_assets metadata")
-	if player_sprite.scale.x < 0.6 or player_sprite.scale.x > 0.75:
-		failures.append("blade_warden Zerie Soldier sprite should be readable without filling the camera, got %s" % player_sprite.scale)
+	var player_content_height := _sprite_content_height(player_sprite)
+	if player_content_height < 30.5 or player_content_height > 32.5:
+		failures.append("blade_warden Zerie Soldier visible height should match other classes, got %.2f" % player_content_height)
 	if player_sprite.offset.y < -24.0 or player_sprite.offset.y > -6.0:
 		failures.append("blade_warden Zerie Soldier sprite should align reviewed origin, got offset %s" % player_sprite.offset)
 
@@ -199,3 +200,22 @@ func _assert_sprite_metadata(node: Node, label: String, sprite_name: String, fai
 		failures.append("%s should store replacement gate metadata for %s" % [label, sprite_name])
 	if bool(sprite.get_meta("frame_grid_ok", false)) != bool(entry.get("frame_grid_ok", false)):
 		failures.append("%s should store frame_grid_ok metadata for %s" % [label, sprite_name])
+
+func _sprite_content_height(sprite: AnimatedSprite2D) -> float:
+	if sprite == null or sprite.sprite_frames == null:
+		return 0.0
+	var texture := sprite.sprite_frames.get_frame_texture("idle", 0)
+	if texture == null:
+		return 0.0
+	var image := texture.get_image()
+	if image == null or image.is_empty():
+		return 0.0
+	var min_y := image.get_height()
+	var max_y := -1
+	for y in image.get_height():
+		for x in image.get_width():
+			if image.get_pixel(x, y).a <= 0.01:
+				continue
+			min_y = mini(min_y, y)
+			max_y = maxi(max_y, y)
+	return 0.0 if max_y < min_y else float(max_y - min_y + 1) * sprite.scale.y

@@ -451,9 +451,55 @@ func _check_arrow_rain_behavior(failures: Array[String]) -> void:
 			failures.append("arrow_rain telegraph should expose delayed impact timing")
 		if str(telegraph.get_meta("element", "")) != "fire":
 			failures.append("arrow_rain telegraph should expose element metadata")
+		if int(telegraph.get_meta("arrow_count", 0)) != 7:
+			failures.append("arrow_rain telegraph should expose 7-arrow impact count")
+		if int(telegraph.get_meta("damage_per_arrow", 0)) <= 0:
+			failures.append("arrow_rain telegraph should expose per-arrow damage")
+	var arrows := scene.find_children("ArrowRainArrow*", "AnimatedSprite2D", true, false)
+	if arrows.size() != 7:
+		failures.append("arrow_rain should show the 7 falling arrows promised by class data, got %d" % arrows.size())
+	for raw_arrow in arrows:
+		var arrow := raw_arrow as AnimatedSprite2D
+		if arrow == null:
+			continue
+		if int(arrow.get_meta("arrow_count", 0)) != 7:
+			failures.append("arrow_rain falling arrows should expose total volley count metadata")
+		if int(arrow.get_meta("arrow_index", 0)) < 1 or int(arrow.get_meta("arrow_index", 0)) > 7:
+			failures.append("arrow_rain falling arrows should expose stable 1..7 volley index")
+		if int(arrow.get_meta("damage_per_arrow", 0)) <= 0:
+			failures.append("arrow_rain falling arrows should expose per-arrow damage")
+		var expected_down_rotation := Vector2.DOWN.angle() + PI
+		var down_delta := absf(wrapf(arrow.rotation - expected_down_rotation + PI, 0.0, TAU) - PI)
+		if down_delta > 0.05:
+			failures.append("arrow_rain falling arrows should rotate the left-facing arrow art downward")
+		if not is_equal_approx(float(arrow.get_meta("arrow_visual_forward_offset_rad", 0.0)), PI):
+			failures.append("arrow_rain falling arrows should expose the reviewed left-facing art rotation offset")
+		if str(arrow.get_meta("skill_id", "")) != "arrow_rain":
+			failures.append("arrow_rain falling arrows should tag skill_id")
+		if str(arrow.get_meta("sprite_name", "")) != "zerie_arrow_projectile":
+			failures.append("arrow_rain falling arrows should use the reviewed Zerie arrow sprite")
 	await create_timer(0.6).timeout
 	if enemy.hp >= 100:
 		failures.append("arrow_rain should still damage enemies near cursor zone")
+	scene.queue_free()
+	await process_frame
+
+	scene = _make_scene("SkillArrowRainDamageContractScene")
+	player = await _make_player(scene, "ranger")
+	var target_pos := player.global_position + Vector2(64, 0)
+	enemy = await _make_enemy(scene, target_pos, 200)
+	SkillRunnerScript.execute("arrow_rain", {
+		"player": player,
+		"skill": {"id": "arrow_rain", "cost": 0, "cooldown": 0.1},
+		"base_damage": 30,
+		"aim_dir": Vector2.RIGHT,
+		"target_position": target_pos,
+		"element": "fire",
+		"scene": scene,
+	})
+	await create_timer(0.6).timeout
+	if enemy.hp < 30 or enemy.hp > 32:
+		failures.append("arrow_rain should deal 7 impacts at 80%% each from class data, allowing one fire tick, expected hp 30..32 got %d" % enemy.hp)
 	scene.queue_free()
 	await process_frame
 

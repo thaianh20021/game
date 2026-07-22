@@ -17,8 +17,8 @@ func _init() -> void:
 			str(scenario.get("class_id", "")),
 			str(scenario.get("goal", "")),
 		])
-		print("  Launch: powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex %d" % index)
-		print("  Launch Dry Run: powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex %d -DryRun" % index)
+		print("  Launch: powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex %d -Detached" % index)
+		print("  Launch Dry Run: powershell -ExecutionPolicy Bypass -File scripts/tools/launch_manual_scenario.ps1 -ScenarioIndex %d -Detached -DryRun" % index)
 		print("  Record Pass: godot --headless --path . --script res://scripts/tools/record_manual_scenario_evidence.gd -- --scenario-index=%d --result=pass --evidence_source=manual_playtest --confirm-human-playtest=true --notes=<human notes> --screenshot_or_seed=<screenshot or seed>" % index)
 		print("  Record Issue: godot --headless --path . --script res://scripts/tools/record_manual_playtest_issue.gd -- --scenario-index=%d --result=blocked --issue_type=<issue_type> --evidence_source=manual_playtest --confirm-human-playtest=true --notes=<human issue notes> --screenshot_or_seed=<screenshot or seed>" % index)
 		print("  Resolve Issue: godot --headless --path . --script res://scripts/tools/resolve_manual_playtest_issue.gd -- --scenario-index=%d --issue_type=<issue_type> --resolution_result=fixed_retest_pass --evidence_source=manual_playtest --confirm-human-retest=true --resolution_notes=<human retest notes> --screenshot_or_seed=<screenshot or seed>" % index)

@@ -13,7 +13,7 @@ shape = SubResource("RectangleShape2D_body")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 enabled = true
-zoom = Vector2(2.25, 2.25)
+zoom = Vector2(2.2, 2.2)
 
 [node name="Body" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-6, -6, 6, -6, 6, 6, -6, 6)

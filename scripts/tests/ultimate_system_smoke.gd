@@ -573,8 +573,8 @@ func _check_hud_ultimate_charge(failures: Array[String]) -> void:
 	else:
 		hud.call("_on_ultimate_charge_changed", 40.0, 100.0)
 		await process_frame
-		if not _has_label_containing(hud, "Ultimate"):
-			failures.append("HUD should show ultimate charge text")
+		if not _has_label_containing(hud, "V Phantom Slash"):
+			failures.append("HUD should show compact ultimate charge text")
 		hud.call("_on_ultimate_charge_changed", 100.0, 100.0)
 		await process_frame
 		var flash := hud.get_node_or_null("SkillCastFlashLabel") as Label

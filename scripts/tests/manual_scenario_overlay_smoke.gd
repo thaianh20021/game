@@ -16,6 +16,10 @@ func _init() -> void:
 			failures.append("Main should expose manual scenario overlay renderer")
 		if not main.has_method("_toggle_manual_playtest_overlay"):
 			failures.append("Main should expose manual scenario overlay toggle")
+		if not main.has_method("_capture_manual_playtest_screenshot"):
+			failures.append("Main should expose manual scenario screenshot capture helper")
+		if not main.has_method("_copy_manual_playtest_record_command"):
+			failures.append("Main should expose manual scenario command copy helper")
 		if failures.is_empty():
 			var request: Dictionary = main.call(
 				"_manual_playtest_launch_request_from_args", ["--manual-scenario=2"])
@@ -28,8 +32,14 @@ func _init() -> void:
 				"element fire",
 				"survive boss phase shift and enrage",
 				"Check:",
+				"Capture:",
+				"dungeon_core_manual_scenario_2.png",
 				"F1",
 				"hide",
+				"F2",
+				"F3",
+				"copy",
+				"human-only",
 			]:
 				if not text.contains(token):
 					failures.append("manual scenario overlay text missing token: %s" % token)
@@ -62,16 +72,69 @@ func _init() -> void:
 					failures.append("manual scenario overlay should not record release evidence")
 				if str(label.get_meta("manual_overlay_toggle_key", "")) != "F1":
 					failures.append("manual scenario overlay should store F1 toggle metadata")
-				if label.size.x > 460.0 or label.size.y > 120.0:
+				if str(label.get_meta("manual_capture_key", "")) != "F2":
+					failures.append("manual scenario overlay should store F2 capture metadata")
+				if str(label.get_meta("manual_copy_key", "")) != "F3":
+					failures.append("manual scenario overlay should store F3 copy metadata")
+				if label.position.x < 140.0 or label.position.x > 180.0:
+					failures.append("manual scenario overlay should use compact upper-right logical x, got %s" % label.position)
+				if label.position.y > 76.0:
+					failures.append("manual scenario overlay should stay above the player combat lane")
+				if label.scale.x > 0.6 or label.scale.y > 0.6:
+					failures.append("manual scenario overlay should downscale visual text, got %s" % label.scale)
+				if label.size.x > 320.0 or label.size.y > 84.0:
 					failures.append("manual scenario overlay label should stay compact, got %s" % label.size)
-				if label.get_theme_font_size("font_size") > 10:
+				if label.get_theme_font_size("font_size") > 7:
 					failures.append("manual scenario overlay font should not dominate playtest view")
+				if label.get_theme_constant("outline_size") < 4:
+					failures.append("manual scenario overlay should use enough outline for dungeon contrast")
+				for line in label.text.split("\n"):
+					if str(line).length() > 76:
+						failures.append("manual scenario overlay line should stay short enough for the compact panel")
 				if not str(label.get_meta("manual_asset_review_hints", "")).contains(
 						"review_asset_candidate.gd"):
 					failures.append("manual scenario overlay should store asset review hints metadata")
 				if not str(label.get_meta("manual_evidence_notes_skeleton", "")).contains(
 						"asset_animation_notes="):
 					failures.append("manual scenario overlay should store notes skeleton metadata")
+				if not str(label.get_meta("manual_screenshot_path", "")).contains(
+						"dungeon_core_manual_scenario_2.png"):
+					failures.append("manual scenario overlay should store deterministic screenshot path metadata")
+				if not str(label.get_meta("manual_capture_command", "")).contains(
+						"dungeon_core_manual_scenario_2.png"):
+					failures.append("manual scenario overlay should store capture helper command metadata")
+				if str(label.get_meta("manual_recording_policy", "")) != "human_only_no_auto_evidence":
+					failures.append("manual scenario overlay should tag human-only recording policy")
+				var capture_result: Dictionary = main.call(
+					"_capture_manual_playtest_screenshot", true)
+				if not bool(capture_result.get("dry_run", false)):
+					failures.append("manual scenario capture dry-run should mark dry_run")
+				if bool(capture_result.get("records_release_evidence", true)):
+					failures.append("manual scenario capture should not record release evidence")
+				if not str(capture_result.get("path", "")).contains(
+						"dungeon_core_manual_scenario_2.png"):
+					failures.append("manual scenario capture should target deterministic screenshot path")
+				if str(label.get_meta("manual_last_capture_path", "")) != str(capture_result.get("path", "")):
+					failures.append("manual scenario capture should store last capture path metadata")
+				var copy_result: Dictionary = main.call(
+					"_copy_manual_playtest_record_command", true)
+				if not bool(copy_result.get("dry_run", false)):
+					failures.append("manual scenario command copy dry-run should mark dry_run")
+				if bool(copy_result.get("copied", true)):
+					failures.append("manual scenario command copy dry-run should not touch clipboard")
+				if bool(copy_result.get("records_release_evidence", true)):
+					failures.append("manual scenario command copy should not record release evidence")
+				var copied_command := str(copy_result.get("command", ""))
+				for command_token in [
+					"record_manual_scenario_evidence.gd",
+					"--scenario-index=2",
+					"--notes=<human notes>",
+					"dungeon_core_manual_scenario_2.png",
+				]:
+					if not copied_command.contains(command_token):
+						failures.append("manual scenario copied command missing token: %s" % command_token)
+				if str(label.get_meta("manual_last_copied_command", "")) != copied_command:
+					failures.append("manual scenario copy should store last copied command metadata")
 				if not str(label.get_meta("manual_pass_command", "")).contains(
 						"record_manual_scenario_evidence.gd"):
 					failures.append("manual scenario overlay should store pass command metadata")

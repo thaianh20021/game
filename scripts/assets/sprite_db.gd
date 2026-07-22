@@ -58,6 +58,22 @@ static func _texture(name: String, quiet: bool) -> Texture2D:
 static func frames(name: String) -> Array[Texture2D]:
 	return _frames(name, false)
 
+static func preview_texture(name: String) -> Texture2D:
+	var anim_frames := frames(name)
+	if anim_frames.is_empty():
+		return null
+	var report := animation_report(name)
+	var bounds_list: Array = report.get("frame_content_bounds_px", [])
+	if bounds_list.is_empty():
+		return anim_frames[0]
+	var bounds: Rect2i = bounds_list[0]
+	var frame_size: Vector2 = report.get("frame_size", anim_frames[0].get_size())
+	if bounds.size.x <= 0 or bounds.size.y <= 0:
+		return anim_frames[0]
+	if bounds.size.x >= int(frame_size.x) and bounds.size.y >= int(frame_size.y):
+		return anim_frames[0]
+	return _cropped_texture(anim_frames[0], bounds)
+
 static func _frames(name: String, quiet: bool) -> Array[Texture2D]:
 	_ensure_loaded()
 	var result: Array[Texture2D] = []
@@ -264,14 +280,27 @@ static func has_sprite(name: String) -> bool:
 		or (_is_local_manifest_sprite(name) and not _local_manifest_frames(name).is_empty()) \
 		or not _entry_for(name).is_empty()
 
-static func visual_scale(name: String, target_height: float = 24.0) -> Vector2:
+static func visual_scale(
+		name: String,
+		target_height: float = 24.0,
+		use_content_bounds: bool = false,
+		max_scale: float = 1.0,
+) -> Vector2:
 	var report := animation_report(name)
-	if str(report.get("source", "")) != "user_local_assets":
+	if not use_content_bounds and str(report.get("source", "")) != "user_local_assets":
 		return Vector2.ONE
 	var frame_size: Vector2 = report.get("frame_size", Vector2.ZERO)
-	if frame_size.y <= 0.0:
+	var source_height := frame_size.y
+	if use_content_bounds:
+		var content_height := 0.0
+		for raw_bounds in report.get("frame_content_bounds_px", []):
+			if raw_bounds is Rect2i:
+				content_height = maxf(content_height, float((raw_bounds as Rect2i).size.y))
+		if content_height > 0.0:
+			source_height = content_height
+	if source_height <= 0.0:
 		return Vector2.ONE
-	var scale_value := clampf(target_height / frame_size.y, 0.1, 1.0)
+	var scale_value := clampf(target_height / source_height, 0.1, max_scale)
 	return Vector2(scale_value, scale_value)
 
 static func _ensure_loaded() -> void:
@@ -584,6 +613,26 @@ static func _texture_size(texture: Texture2D) -> Vector2:
 	if texture is AtlasTexture:
 		return (texture as AtlasTexture).region.size
 	return texture.get_size() if texture != null else Vector2.ZERO
+
+static func _cropped_texture(texture: Texture2D, bounds: Rect2i) -> Texture2D:
+	if texture == null:
+		return null
+	if texture is AtlasTexture:
+		var atlas_texture := texture as AtlasTexture
+		if atlas_texture.atlas == null:
+			return texture
+		var cropped := AtlasTexture.new()
+		cropped.atlas = atlas_texture.atlas
+		cropped.region = Rect2(
+			atlas_texture.region.position + Vector2(bounds.position),
+			Vector2(bounds.size))
+		return cropped
+	var image := texture.get_image()
+	if image == null:
+		return texture
+	var cropped_image := Image.create(bounds.size.x, bounds.size.y, false, image.get_format())
+	cropped_image.blit_rect(image, bounds, Vector2i.ZERO)
+	return ImageTexture.create_from_image(cropped_image)
 
 static func _frame_content_report(texture: Texture2D) -> Dictionary:
 	var size := Vector2i(_texture_size(texture))

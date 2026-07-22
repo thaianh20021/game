@@ -7,7 +7,7 @@ const REWARD_LOCK_PULSE_SCALE := 1.08
 const REWARD_LOCK_PULSE_SECONDS := 0.32
 const SECRET_DOOR_CUE := "cracked_wall"
 const SECRET_WALL_PATTERN := "cracked_wall_lines"
-const CLICK_RECT := Rect2(-24, -10, 48, 20)
+const CLICK_RECT := Rect2(-19, -8, 38, 16)
 const PRESS_PULSE_SCALE := 0.94
 const PRESS_PULSE_SECONDS := 0.12
 
@@ -120,10 +120,11 @@ func _ready() -> void:
 	_ensure_click_shape()
 	_label = Label.new()
 	_label.name = "Label"
-	_label.position = Vector2(-29, -18)
-	_label.size = Vector2(58, 20)
+	_label.position = Vector2(-20, -14)
+	_label.size = Vector2(40, 16)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.add_theme_font_size_override("font_size", 7)
+	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_label.add_theme_font_size_override("font_size", 5)
 	add_child(_label)
 	_apply_label()
 	_update_reward_lock_pulse()
@@ -154,15 +155,15 @@ func _apply_label() -> void:
 	if _label == null:
 		return
 	if gate_state == "reward_locked":
-		var locked_top := "REWARD" if route_hotkey_label == "" else "%s REWARD" % route_hotkey_label
-		_label.text = "%s\nPICK" % locked_top
+		_label.text = "REWARD" if route_hotkey_label == "" else "%s REWARD" % route_hotkey_label
 	else:
-		var detail := _route_detail_text()
-		if preview_hint != "":
-			detail = preview_hint if detail == "" else "%s %s" % [detail, preview_hint]
-		_label.text = label_for_type(room_type) if detail == "" \
-			else "%s\n%s" % [label_for_type(room_type), detail]
+		var top := route_hotkey_label if route_hotkey_label != "" else label_for_type(room_type)
+		var bottom := preview_hint if preview_hint != "" else label_for_type(room_type)
+		_label.text = top if top == bottom else "%s %s" % [top, bottom]
 	_label.modulate = _marker_color()
+	var full_label := _full_route_label()
+	set_meta("full_route_label", full_label)
+	_label.tooltip_text = full_label
 
 func _route_detail_text() -> String:
 	if route_hotkey_label == "":
@@ -170,6 +171,19 @@ func _route_detail_text() -> String:
 	if route_hint == "":
 		return route_hotkey_label
 	return "%s %s" % [route_hotkey_label, route_hint]
+
+func _full_route_label() -> String:
+	var parts: Array[String] = []
+	if route_hotkey_label != "":
+		parts.append(route_hotkey_label)
+	if route_hint != "":
+		parts.append(route_hint)
+	parts.append(label_for_type(room_type))
+	if preview_hint != "":
+		parts.append(preview_hint)
+	if gate_state != "":
+		parts.append(gate_state)
+	return " ".join(parts)
 
 func _marker_color() -> Color:
 	if gate_state == "reward_locked":

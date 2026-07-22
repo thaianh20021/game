@@ -969,15 +969,13 @@ func _check_hud_cooldown_icon(failures: Array[String]) -> void:
 	hud.call("_on_skill_cooldown_changed", "wind_edge", 3.0, 6.0)
 	await process_frame
 	if skill_label != null:
-		if not skill_label.text.contains("Cost 20") or not skill_label.text.contains("CD 6.0s"):
-			failures.append("primary skill label should show skill cost and cooldown contract")
+		_assert_tooltip_tokens(skill_label, ["Cost 20", "CD 6.0s"], failures)
 		_assert_skill_cooldown_label_contract(
 			skill_label, "wind_edge", "primary", "E", 20, 3.0, 6.0, false, failures)
 	hud.call("_on_skill_cooldown_changed", "lunge", 0.0, 4.0)
 	await process_frame
 	if alt_skill_label != null:
-		if not alt_skill_label.text.contains("READY") or not alt_skill_label.text.contains("Cost 15"):
-			failures.append("secondary skill label should show ready state and skill cost")
+		_assert_tooltip_tokens(alt_skill_label, ["READY", "Cost 15"], failures)
 		_assert_skill_cooldown_label_contract(
 			alt_skill_label, "lunge", "secondary", "C", 15, 0.0, 4.0, true, failures)
 	hud.call("_on_skill_cooldown_changed", "earthbreaker", 1.0, 2.0)
@@ -1091,6 +1089,20 @@ func _check_hud_cooldown_icon(failures: Array[String]) -> void:
 	for node in [dash_icon, dash_fill]:
 		if node != null:
 			_assert_tooltip_tokens(node, ["Space", "Dash", "0.5s"], failures)
+			if str(node.get_meta("cooldown_state", "")) != "cooling":
+				failures.append("%s should tag dash cooling state" % node.name)
+			if str(node.get_meta("dash_input_action", "")) != "dash":
+				failures.append("%s should tag dash input action" % node.name)
+			if str(node.get_meta("dash_key_label", "")) != "Space":
+				failures.append("%s should tag dash key label" % node.name)
+			if str(node.get_meta("dash_ready_text", "")) != "0.5s":
+				failures.append("%s should expose readable dash cooldown text" % node.name)
+			if not is_equal_approx(float(node.get_meta("dash_cooldown_left", -1.0)), 0.5):
+				failures.append("%s should tag dash cooldown left" % node.name)
+			if not is_equal_approx(float(node.get_meta("dash_cooldown_total", -1.0)), 1.0):
+				failures.append("%s should tag dash cooldown total" % node.name)
+			if not is_equal_approx(float(node.get_meta("cooldown_ratio", -1.0)), 0.5):
+				failures.append("%s should tag dash cooldown ratio" % node.name)
 	hud.queue_free()
 	player.queue_free()
 	ctrl.queue_free()

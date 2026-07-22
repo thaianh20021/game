@@ -91,7 +91,10 @@ func _init() -> void:
 	await _check_optional_locked_chest_spawn(failures)
 	await _check_trap_room_features(failures)
 	await _check_trap_entered_body_arms_and_triggers(failures)
+	await _check_trap_room_survival_persists_on_reenter(failures)
+	await _check_floor_remembers_trap_room_survival_before_cache_claim(failures)
 	await _check_claimed_room_interactables_do_not_respawn(failures)
+	await _check_claimed_optional_combat_chest_does_not_respawn(failures)
 	await _check_event_interactable_variants(failures)
 	await _check_blood_altar_low_hp_gate(failures)
 	await _check_interactable_used_markers(failures)
@@ -899,6 +902,93 @@ func _check_trap_entered_body_arms_and_triggers(failures: Array[String]) -> void
 	parent.queue_free()
 	await process_frame
 
+func _check_trap_room_survival_persists_on_reenter(failures: Array[String]) -> void:
+	var renderer := RoomRenderer.new()
+	root.add_child(renderer)
+	var dummy := DummyPlayer.new()
+	root.add_child(dummy)
+	var plan: Array[Dictionary] = []
+	renderer.setup(_basic_grid(), plan, null, dummy, RoomNode.RoomType.EVENT, {}, {}, 0, {
+		"trap_room_survived": true,
+	})
+	await process_frame
+	if not bool(renderer.get_meta("trap_room_survived", false)):
+		failures.append("re-entered survived trap room should restore survived metadata")
+	var timer := renderer.get_node_or_null("TrapRoomSurvivalTimer") as Timer
+	if timer != null and not timer.is_stopped():
+		failures.append("re-entered survived trap room should not restart the survival timer")
+	var countdown := renderer.get_node_or_null("TrapRoomSurvivalCountdown") as Label
+	if countdown == null:
+		failures.append("re-entered survived trap room should still show cache-unlocked status")
+	elif not countdown.text.contains("Cache unlocked") \
+			or str(countdown.get_meta("objective_state", "")) != "complete":
+		failures.append("re-entered survived trap room should restore complete countdown state")
+	var cache := _first_interactable(renderer)
+	if cache == null:
+		failures.append("re-entered survived trap room should keep its cache available")
+	elif bool(cache.get_meta("interaction_locked", false)):
+		failures.append("re-entered survived trap cache should stay unlocked before claim")
+	var live: Dictionary = renderer.call("live_objective_context")
+	if bool(live.get("reward_locked", true)):
+		failures.append("re-entered survived trap room live context should mark cache reward unlocked")
+	if str(live.get("next_action_key", "")) != "interact":
+		failures.append("re-entered survived trap room should direct player to open cache")
+	renderer.queue_free()
+	dummy.queue_free()
+	await process_frame
+
+func _check_floor_remembers_trap_room_survival_before_cache_claim(failures: Array[String]) -> void:
+	var ctrl := FloorController.new()
+	root.add_child(ctrl)
+	var player_scene: PackedScene = load("res://scenes/player.tscn")
+	var player: Player = player_scene.instantiate()
+	root.add_child(player)
+	await process_frame
+	player.apply_class(PlayerClassDB.get_class_data("blade_warden"), "fire", "warden_sword")
+
+	var entrance := RoomNode.new()
+	entrance.id = 0
+	entrance.type = RoomNode.RoomType.ENTRANCE
+	entrance.door_map = {RoomStamper.Dir.NORTH: 1}
+	var event := RoomNode.new()
+	event.id = 1
+	event.type = RoomNode.RoomType.EVENT
+	event.door_map = {RoomStamper.Dir.SOUTH: 0}
+	ctrl.rooms = [entrance, event]
+	ctrl.floor_seed = 5551313
+	ctrl.floor_index = 1
+	ctrl._player = player
+	ctrl.call("_enter_room", event, entrance.id)
+	await process_frame
+	var first_renderer := ctrl.get("_renderer") as RoomRenderer
+	if first_renderer == null:
+		failures.append("floor-level event room should create a renderer")
+	else:
+		first_renderer.complete_trap_room_survival()
+		await process_frame
+	var survived_rooms = ctrl.get("trap_room_survived_rooms")
+	if not (survived_rooms is Dictionary) or not (survived_rooms as Dictionary).has(event.id):
+		failures.append("FloorController should remember survived trap room before cache claim")
+	ctrl.call("_enter_room", entrance, event.id)
+	await process_frame
+	ctrl.call("_enter_room", event, entrance.id)
+	await process_frame
+	var revisited_renderer := ctrl.get("_renderer") as RoomRenderer
+	if revisited_renderer == null:
+		failures.append("floor-level re-entered event room should create a renderer")
+	else:
+		var timer := revisited_renderer.get_node_or_null("TrapRoomSurvivalTimer") as Timer
+		if timer != null and not timer.is_stopped():
+			failures.append("floor-level re-entered survived trap room should not restart timer")
+		var cache := _first_interactable(revisited_renderer)
+		if cache == null:
+			failures.append("floor-level re-entered survived trap room should keep cache available")
+		elif bool(cache.get_meta("interaction_locked", false)):
+			failures.append("floor-level re-entered survived trap cache should stay unlocked")
+	ctrl.queue_free()
+	player.queue_free()
+	await process_frame
+
 func _check_claimed_room_interactables_do_not_respawn(failures: Array[String]) -> void:
 	var renderer := RoomRenderer.new()
 	root.add_child(renderer)
@@ -923,6 +1013,102 @@ func _check_claimed_room_interactables_do_not_respawn(failures: Array[String]) -
 		failures.append("FloorController should pass claimed interactable state into RoomRenderer")
 	renderer.queue_free()
 	dummy.queue_free()
+	await process_frame
+
+	var ctrl := FloorController.new()
+	root.add_child(ctrl)
+	var player_scene: PackedScene = load("res://scenes/player.tscn")
+	var player: Player = player_scene.instantiate()
+	root.add_child(player)
+	await process_frame
+	player.apply_class(PlayerClassDB.get_class_data("blade_warden"), "fire", "warden_sword")
+
+	var entrance := RoomNode.new()
+	entrance.id = 0
+	entrance.type = RoomNode.RoomType.ENTRANCE
+	entrance.door_map = {RoomStamper.Dir.NORTH: 1}
+	var treasure := RoomNode.new()
+	treasure.id = 1
+	treasure.type = RoomNode.RoomType.TREASURE
+	treasure.door_map = {RoomStamper.Dir.SOUTH: 0}
+	ctrl.rooms = [entrance, treasure]
+	ctrl.floor_seed = 5551212
+	ctrl.floor_index = 1
+	ctrl._player = player
+	ctrl.call("_enter_room", treasure, entrance.id)
+	await process_frame
+	var first_renderer := ctrl.get("_renderer") as RoomRenderer
+	var first_chest := _first_interactable(first_renderer)
+	if first_chest == null:
+		failures.append("floor-level treasure room should spawn its first chest")
+	elif not first_chest.use():
+		failures.append("floor-level treasure chest should be claimable")
+	await process_frame
+	if not ctrl.interactable_claimed_rooms.has(treasure.id):
+		failures.append("FloorController should record claimed treasure room id")
+	ctrl.call("_enter_room", entrance, treasure.id)
+	await process_frame
+	ctrl.call("_enter_room", treasure, entrance.id)
+	await process_frame
+	var revisited_renderer := ctrl.get("_renderer") as RoomRenderer
+	if _first_interactable(revisited_renderer) != null:
+		failures.append("re-entered claimed treasure room should not spawn another chest")
+	if _child_group_count(revisited_renderer, "room_interactables") != 0:
+		failures.append("re-entered claimed treasure room should have no reclaimable interactables")
+	if revisited_renderer != null and not revisited_renderer.is_cleared:
+		failures.append("re-entered claimed treasure room should stay cleared")
+	ctrl.queue_free()
+	player.queue_free()
+	await process_frame
+
+func _check_claimed_optional_combat_chest_does_not_respawn(failures: Array[String]) -> void:
+	var ctrl := FloorController.new()
+	root.add_child(ctrl)
+	var player_scene: PackedScene = load("res://scenes/player.tscn")
+	var player: Player = player_scene.instantiate()
+	root.add_child(player)
+	await process_frame
+	player.apply_class(PlayerClassDB.get_class_data("blade_warden"), "fire", "warden_sword")
+	player.silver_keys = 1
+
+	var entrance := RoomNode.new()
+	entrance.id = 0
+	entrance.type = RoomNode.RoomType.ENTRANCE
+	entrance.door_map = {RoomStamper.Dir.NORTH: 1}
+	var combat := RoomNode.new()
+	combat.id = 1
+	combat.type = RoomNode.RoomType.COMBAT
+	combat.door_map = {RoomStamper.Dir.SOUTH: 0}
+	ctrl.rooms = [entrance, combat]
+	ctrl.floor_seed = 5551414
+	ctrl.floor_index = 1
+	ctrl.current_biome = {"id": "locked_chest_smoke", "locked_chest": true}
+	ctrl._player = player
+	ctrl.cleared_rooms[combat.id] = true
+	ctrl.call("_enter_room", combat, entrance.id)
+	await process_frame
+	var first_renderer := ctrl.get("_renderer") as RoomRenderer
+	var first_chest := _first_interactable(first_renderer)
+	if first_chest == null or str(first_chest.kind) != "locked_chest":
+		failures.append("combat room with optional chest should spawn its first locked chest")
+	elif not first_chest.use():
+		failures.append("combat optional locked chest should be claimable once")
+	await process_frame
+	if not ctrl.interactable_claimed_rooms.has(combat.id):
+		failures.append("FloorController should record claimed optional combat chest room id")
+	ctrl.call("_enter_room", entrance, combat.id)
+	await process_frame
+	ctrl.call("_enter_room", combat, entrance.id)
+	await process_frame
+	var revisited_renderer := ctrl.get("_renderer") as RoomRenderer
+	if _first_interactable(revisited_renderer) != null:
+		failures.append("re-entered combat room should not respawn claimed optional locked chest")
+	if _child_group_count(revisited_renderer, "room_interactables") != 0:
+		failures.append("re-entered combat room should have no reclaimable optional chest")
+	if _child_group_count(revisited_renderer, "room_traps") < 2:
+		failures.append("re-entered combat room should keep non-claim room features after optional chest claim")
+	ctrl.queue_free()
+	player.queue_free()
 	await process_frame
 
 func _check_event_interactable_variants(failures: Array[String]) -> void:

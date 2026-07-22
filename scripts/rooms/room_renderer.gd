@@ -13,6 +13,7 @@ signal boss_attack_cued(status: Dictionary)
 signal route_choice_requested(choice_index: int)
 signal objective_context_changed(context: Dictionary)
 signal interactable_completed(kind: String, payload: Dictionary)
+signal trap_room_survived
 
 const TILE := 16
 
@@ -160,7 +161,8 @@ func setup(
 	_loot_pity_rooms_without_rare_plus = maxi(loot_pity_rooms_without_rare_plus, 0)
 	_room_dropped_rare_plus = false
 	_trap_room_cache = null
-	_trap_room_survival_complete = false
+	_trap_room_survival_complete = bool(room_state.get("trap_room_survived", false))
+	set_meta("trap_room_survived", _trap_room_survival_complete)
 	_trap_room_countdown_label = null
 	_interactables_claimed = bool(room_state.get("interactables_claimed", false))
 	_objective_pending = _room_requires_objective() and not _interactables_claimed
@@ -314,13 +316,13 @@ func _door_marker_position(dir: int, tiles: Array[Vector2i]) -> Vector2:
 	pos /= maxf(float(tiles.size()), 1.0)
 	match dir:
 		RoomStamper.Dir.NORTH:
-			return pos + Vector2(0, TILE)
+			return pos + Vector2(0, TILE * 2.0)
 		RoomStamper.Dir.SOUTH:
-			return pos + Vector2(0, -TILE)
+			return pos + Vector2(0, -TILE * 2.0)
 		RoomStamper.Dir.WEST:
-			return pos + Vector2(TILE, 0)
+			return pos + Vector2(TILE * 2.0, 0)
 		RoomStamper.Dir.EAST:
-			return pos + Vector2(-TILE, 0)
+			return pos + Vector2(-TILE * 2.0, 0)
 	return pos
 
 
@@ -454,6 +456,11 @@ func _spawn_trap_room_warning(trap_count: int) -> void:
 func _start_trap_room_survival_gate() -> void:
 	if _room_type != RoomNode.RoomType.EVENT or _trap_room_cache == null:
 		return
+	if _trap_room_survival_complete:
+		_trap_room_cache.set_interaction_locked(false)
+		_complete_trap_room_survival_countdown()
+		_emit_objective_context_changed()
+		return
 	_trap_room_cache.set_interaction_locked(true,
 		"Survive traps %.0fs | Cache locked" % TRAP_ROOM_SURVIVE_SECONDS)
 	_show_trap_room_survival_countdown(TRAP_ROOM_SURVIVE_SECONDS)
@@ -485,6 +492,8 @@ func complete_trap_room_survival() -> void:
 	_complete_trap_room_survival_countdown()
 	_show_trap_room_survived_feedback()
 	_play_trap_room_survived_sfx()
+	trap_room_survived.emit()
+	_emit_objective_context_changed()
 
 func _show_trap_room_survival_countdown(time_left: float) -> void:
 	var old := get_node_or_null("TrapRoomSurvivalCountdown")

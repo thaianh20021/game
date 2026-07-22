@@ -7,6 +7,7 @@ func _init() -> void:
 
 	await _check_direct_fx_spawns(failures)
 	await _check_weapon_and_dash_hooks(failures)
+	await _check_arrow_projectile_visual_aim(failures)
 	await _check_weapon_identity_feedback_hooks(failures)
 	await _check_local_sprite_action_hooks(failures)
 	await _check_enemy_telegraph_hook(failures)
@@ -141,6 +142,57 @@ func _check_weapon_and_dash_hooks(failures: Array[String]) -> void:
 			failures.append("dash cooldown feedback should emit ready state")
 
 	scene.free()
+
+func _check_arrow_projectile_visual_aim(failures: Array[String]) -> void:
+	var scene := Node2D.new()
+	scene.name = "ArrowProjectileVisualAimScene"
+	root.add_child(scene)
+	current_scene = scene
+
+	var player_projectile := Projectile.new()
+	player_projectile.setup(Vector2.DOWN, 120.0, 1, 80.0, Color.WHITE, "fire")
+	scene.add_child(player_projectile)
+	await process_frame
+	var player_sprite := player_projectile.get_node_or_null("ProjectileSprite") as AnimatedSprite2D
+	_assert_arrow_visual_rotation(player_projectile, player_sprite, Vector2.DOWN, "player", failures)
+	var player_before := player_projectile.global_position
+	player_projectile.call("_physics_process", 0.1)
+	if player_projectile.global_position.y <= player_before.y \
+			or absf(player_projectile.global_position.x - player_before.x) > 0.01:
+		failures.append("player arrow projectile should move along the requested vertical aim")
+
+	var enemy_projectile := EnemyProjectile.new()
+	enemy_projectile.setup(Vector2.UP, 120.0, 1, 80.0)
+	scene.add_child(enemy_projectile)
+	await process_frame
+	var enemy_sprite := enemy_projectile.get_node_or_null("EnemyProjectileSprite") as AnimatedSprite2D
+	_assert_arrow_visual_rotation(enemy_projectile, enemy_sprite, Vector2.UP, "enemy", failures)
+	var enemy_before := enemy_projectile.global_position
+	enemy_projectile.call("_physics_process", 0.1)
+	if enemy_projectile.global_position.y >= enemy_before.y \
+			or absf(enemy_projectile.global_position.x - enemy_before.x) > 0.01:
+		failures.append("enemy arrow projectile should move along the requested vertical aim")
+
+	scene.free()
+
+func _assert_arrow_visual_rotation(
+		projectile: Node2D,
+		sprite: AnimatedSprite2D,
+		dir: Vector2,
+		label: String,
+		failures: Array[String],
+) -> void:
+	if sprite == null:
+		failures.append("%s arrow projectile should expose a sprite for visual aim checks" % label)
+		return
+	var expected := dir.normalized().angle() + PI
+	var delta := absf(wrapf(sprite.global_rotation - expected + PI, 0.0, TAU) - PI)
+	if delta > 0.05:
+		failures.append("%s arrow sprite should rotate the left-facing arrow art into its travel direction" % label)
+	if absf(wrapf(projectile.rotation - expected + PI, 0.0, TAU) - PI) > 0.05:
+		failures.append("%s arrow projectile root should rotate with its visual travel direction" % label)
+	if not is_equal_approx(float(projectile.get_meta("arrow_visual_forward_offset_rad", 0.0)), PI):
+		failures.append("%s arrow projectile should expose the reviewed left-facing art rotation offset" % label)
 
 func _first_projectile(parent: Node) -> Projectile:
 	for child in parent.get_children():

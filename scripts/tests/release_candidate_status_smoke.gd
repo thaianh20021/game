@@ -33,6 +33,7 @@ func _check_status_output(failures: Array[String]) -> void:
 		"Manual Scenario List",
 		"launch_manual_scenario.ps1 -List",
 		"Next Missing Manual Launch Dry Run",
+		"launch_manual_scenario.ps1 -ScenarioIndex 1 -Detached",
 		"Asset Replacement Plans",
 		"polygon_collision_notes",
 		"wave_hud_audio_notes",

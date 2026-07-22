@@ -151,6 +151,7 @@ func _ready() -> void:
 		"flask_big_blue", "resource_icon_sprite")
 
 	_hp_label = _make_label(Vector2(134, 6))
+	_hp_label.name = "HpLabel"
 	_low_hp_label = _make_label(Vector2(172, 30))
 	_low_hp_label.name = "LowHpWarningLabel"
 	_low_hp_label.text = "LOW HP"
@@ -172,6 +173,7 @@ func _ready() -> void:
 	_revive_flash_label.add_theme_color_override("font_color", Color(0.66, 1.0, 0.86))
 	_weapon_label = _make_label(Vector2(8, 34))
 	_weapon_label.name = "WeaponLabel"
+	_weapon_label.visible = false
 	_weapon_flash_label = _make_label(Vector2(172, 42))
 	_weapon_flash_label.name = "WeaponSwapFlashLabel"
 	_weapon_flash_label.visible = false
@@ -211,10 +213,13 @@ func _ready() -> void:
 	_gold_label.name = "GoldLabel"
 	_floor_label = _make_label(Vector2(8, 66))
 	_floor_label.name = "FloorLabel"
+	_floor_label.visible = false
 	_room_label = _make_label(Vector2(8, 82))
 	_room_label.name = "RoomLabel"
+	_room_label.visible = false
 	_objective_label = _make_label(Vector2(8, 98))
 	_objective_label.name = "ObjectiveLabel"
+	_objective_label.visible = false
 	_objective_next_label = _make_label(Vector2(172, 122))
 	_objective_next_label.name = "ObjectiveNextActionLabel"
 	_objective_next_label.add_theme_color_override("font_color", Color(0.82, 0.94, 1.0))
@@ -242,6 +247,7 @@ func _ready() -> void:
 	add_child(_skill_cd_fill)
 	_skill_label = _make_label(Vector2(24, 112))
 	_skill_label.name = "SkillLabel"
+	_skill_label.visible = false
 	var skill_alt_icon := ColorRect.new()
 	skill_alt_icon.name = "SecondarySkillCooldownIcon"
 	skill_alt_icon.position = Vector2(8, 132)
@@ -258,6 +264,7 @@ func _ready() -> void:
 	add_child(_skill_alt_cd_fill)
 	_skill_alt_label = _make_label(Vector2(24, 128))
 	_skill_alt_label.name = "SecondarySkillLabel"
+	_skill_alt_label.visible = false
 	var dash_icon := ColorRect.new()
 	dash_icon.name = "DashCooldownIcon"
 	dash_icon.position = Vector2(8, 148)
@@ -272,6 +279,8 @@ func _ready() -> void:
 	_dash_cd_fill.color = Color(0.85, 0.85, 1.0, 0.85)
 	add_child(_dash_cd_fill)
 	_dash_label = _make_label(Vector2(24, 144))
+	_dash_label.name = "DashLabel"
+	_dash_label.visible = false
 	_skill_cast_flash_label = _make_label(Vector2(8, 162))
 	_skill_cast_flash_label.name = "SkillCastFlashLabel"
 	_skill_cast_flash_label.visible = false
@@ -299,6 +308,7 @@ func _ready() -> void:
 	add_child(_ultimate_charge_fill)
 	_ultimate_label = _make_label(Vector2(24, 176))
 	_ultimate_label.name = "UltimateLabel"
+	_ultimate_label.visible = false
 	_build_label = _make_label(Vector2(8, 194))
 	_build_label.name = "BuildLabel"
 	_build_label.visible = false
@@ -341,19 +351,29 @@ func _ready() -> void:
 	_run_modifier_goal_label.name = "RunModifierGoalLabel"
 	_run_modifier_goal_label.visible = false
 	_run_modifier_goal_label.add_theme_color_override("font_color", Color(0.9, 0.88, 0.58))
-	_controls_hint_label = _make_label(Vector2(320, 322))
+	_controls_hint_label = _make_label(Vector2(444, 106))
 	_controls_hint_label.name = "ControlsHintLabel"
-	_controls_hint_label.text = "Mouse | E/C skills | Q cycle | V ultimate | Space | 1-4 | Esc/P"
+	var full_controls_hint := "Mouse1 attack | E/C skills | Q cycle element | V ultimate | Space dash | 1-4 doors | Esc/P pause | F4 clean HUD | Pad: LS move, RS aim, RB attack, A dash, X/Y skills, RT ultimate"
+	_controls_hint_label.text = "M1 atk | E/C | Sp | 1-4"
+	_controls_hint_label.tooltip_text = full_controls_hint
+	_controls_hint_label.visible = true
+	_controls_hint_label.size = Vector2(188, 12)
+	_controls_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_controls_hint_label.add_theme_font_size_override("font_size", 8)
 	_controls_hint_label.add_theme_color_override("font_color", Color(0.72, 0.82, 0.94))
 	_controls_hint_label.set_meta("control_hint_scope", "in_run")
-	_controls_hint_label.set_meta("control_hint_action_count", 5)
+	_controls_hint_label.set_meta("control_hint_action_count", 6)
+	_controls_hint_label.set_meta("full_control_hint", full_controls_hint)
+	_controls_hint_label.set_meta(
+			"gamepad_hint",
+			"Pad: LS move, RS aim, RB attack, A dash, X/Y skills, RT ultimate")
 	_class_resource_label = _make_label(Vector2(8, 290))
 	_class_resource_label.name = "ClassResourceLabel"
 	_class_resource_label.visible = false
 	_class_resource_label.add_theme_color_override("font_color", Color(0.58, 0.95, 1.0))
-	_status_label = _make_label(Vector2(8, 370))
+	_status_label = _make_label(Vector2(8, 338))
 	_status_label.name = "StatusEffectsLabel"
+	_status_label.visible = false
 	_status_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.42))
 	_element_combo_counter_label = _make_label(Vector2(8, 386))
 	_element_combo_counter_label.name = "ElementComboCounterLabel"
@@ -405,15 +425,18 @@ func _ready() -> void:
 
 	_minimap = Minimap.new()
 	_minimap.name = "Minimap"
-	_minimap.position = Vector2(444, 8)
-	_minimap.size = Vector2(188, 96)
+	_minimap.position = Vector2(536, 8)
+	_minimap.size = Vector2(96, 52)
 	add_child(_minimap)
 
 
 func set_clean_playtest_mode(enabled: bool) -> void:
 	_clean_playtest_mode = enabled
 	set_meta("clean_playtest_mode", _clean_playtest_mode)
-	_apply_clean_playtest_visibility()
+	if _clean_playtest_mode:
+		_apply_clean_playtest_visibility()
+	else:
+		_restore_compact_playtest_visibility()
 
 
 func apply_accessibility_settings(settings: Dictionary) -> void:
@@ -679,15 +702,26 @@ func _apply_clean_playtest_visibility() -> void:
 	if not _clean_playtest_mode:
 		return
 	for label in [
+		_hp_label,
+		_low_hp_label,
+		_damage_flash_label,
+		_revive_flash_label,
 		_weapon_label,
+		_weapon_flash_label,
+		_gold_flash_label,
+		_key_flash_label,
+		_meta_currency_flash_label,
 		_gold_label,
 		_floor_label,
 		_room_label,
 		_objective_label,
 		_objective_next_label,
+		_objective_flash_label,
+		_room_mastery_flash_label,
 		_skill_label,
 		_skill_alt_label,
 		_dash_label,
+		_skill_cast_flash_label,
 		_ultimate_label,
 		_build_label,
 		_reward_path_label,
@@ -703,6 +737,10 @@ func _apply_clean_playtest_visibility() -> void:
 		_class_resource_label,
 		_status_label,
 		_element_combo_counter_label,
+		_element_combo_flash_label,
+		_meta_bonus_flash_label,
+		_biome_mastery_flash_label,
+		_power_tier_flash_label,
 	]:
 		if label != null:
 			label.visible = false
@@ -714,6 +752,16 @@ func _apply_clean_playtest_visibility() -> void:
 			icon.visible = false
 	if _minimap != null:
 		_minimap.visible = true
+
+func _restore_compact_playtest_visibility() -> void:
+	if _controls_hint_label != null:
+		_controls_hint_label.visible = true
+	if _floor_ctrl != null and is_instance_valid(_floor_ctrl):
+		_update_room_objective(_floor_ctrl)
+		_update_route_label()
+		_update_loot_pity_label()
+	_update_status_effects()
+	_update_class_resource_summary()
 
 func _make_label(pos: Vector2) -> Label:
 	var label := Label.new()
@@ -757,23 +805,31 @@ func _make_sprite_icon(
 func _floor_label_text(floor_ctrl: FloorController) -> String:
 	var difficulty := ""
 	if floor_ctrl.has_method("current_difficulty_label"):
-		difficulty = " | %s" % str(floor_ctrl.call("current_difficulty_label"))
+		difficulty = str(floor_ctrl.call("current_difficulty_label"))
 	var threat := ""
 	if floor_ctrl.has_method("current_threat_label"):
-		threat = " | %s" % str(floor_ctrl.call("current_threat_label"))
+		threat = str(floor_ctrl.call("current_threat_label"))
 	if _compact_gameplay_hud:
-		return "F%d %s%s%s" % [
+		return "F%d %s %s %s" % [
 			floor_ctrl.floor_index,
-			_compact_name(floor_ctrl.current_biome_label(), 16),
-			difficulty.replace(" | Difficulty ", " "),
-			threat,
+			_compact_name(floor_ctrl.current_biome_label(), 10),
+			_compact_difficulty_label(difficulty),
+			_compact_threat_label(threat),
 		]
 	return "Floor %d: %s%s%s" % [
 		floor_ctrl.floor_index,
 		floor_ctrl.current_biome_label(),
-		difficulty,
-		threat,
+		" | %s" % difficulty if difficulty != "" else "",
+		" | %s" % threat if threat != "" else "",
 	]
+
+func _compact_difficulty_label(text: String) -> String:
+	var clean := text.replace("Difficulty ", "").strip_edges()
+	return clean if clean != "" else "x1.00"
+
+func _compact_threat_label(text: String) -> String:
+	var clean := text.replace("Threat x", "T").replace("Threat ", "T").strip_edges()
+	return clean if clean != "" else "T1.00"
 
 func _on_hp_changed(current: int, max_value: int) -> void:
 	var safe_max := maxi(max_value, 1)
@@ -1114,17 +1170,21 @@ func _on_weapon_changed(weapon_name: String) -> void:
 	var sockets := ""
 	if _player != null and _player.has_method("socket_upgrade_count") \
 			and _player.has_method("socket_capacity"):
-		sockets = "  Sockets: %d/%d" % [
+		sockets = " S%d/%d" % [
 			int(_player.call("socket_upgrade_count")),
 			int(_player.call("socket_capacity")),
 		]
-	_weapon_label.text = "%s [%s]%s" % [
-		_compact_name(weapon_name, 18),
-		element,
+	_weapon_label.text = "%s %s%s" % [
+		_compact_name(weapon_name, 16),
+		_compact_element_label(element),
 		sockets,
 	] if _compact_gameplay_hud else "Weapon: %s  [%s]%s" % [weapon_name, element, sockets]
 	_set_weapon_label_contract(weapon_name, element)
 	_show_weapon_flash("Equipped: %s" % weapon_name)
+
+func _compact_element_label(element: String) -> String:
+	var clean := element.strip_edges()
+	return "[%s]" % clean if clean != "" else "[-]"
 
 func _set_weapon_label_contract(weapon_name: String, element: String) -> void:
 	if _weapon_label == null:
@@ -1337,8 +1397,8 @@ func _on_skill_cooldown_changed(skill_id: String, left: float, total: float) -> 
 	var ready_text := "R" if left <= 0.0 else "%.1fs" % left
 	label.text = "%s %s %s" % [
 		slot_text,
-		_compact_name(_readable_id(skill_id), 14),
-		"READY" if left <= 0.0 else ready_text,
+		_compact_name(_readable_id(skill_id), 12),
+		"R" if left <= 0.0 else ready_text,
 	] if _compact_gameplay_hud else "%s: %s %s | Cost %d | CD %.1fs" % [
 		slot_text,
 		_readable_id(skill_id),
@@ -1777,10 +1837,23 @@ func _on_dash_cooldown_changed(left: float, total: float) -> void:
 	var was_cooling := _dash_was_cooling
 	var dash_icon := get_node_or_null("DashCooldownIcon") as ColorRect
 	_update_cooldown_sprite_icon(dash_icon, "dash")
-	_dash_label.text = "Dash: %s" % ("READY" if left <= 0.0 else "%.1fs" % left) \
+	_dash_label.text = "Dash %s" % ("R" if left <= 0.0 else "%.1fs" % left) \
 		if _compact_gameplay_hud else "Dash: %s" % ("READY" if left <= 0.0 else "%.1fs" % left)
 	_dash_cd_fill.size.y = 12.0 * (1.0 - ratio)
 	_dash_cd_fill.position.y = 148.0 + 12.0 * ratio
+	var ready_text := "READY" if left <= 0.0 else "%.1fs" % left
+	for node in [_dash_label, _dash_cd_fill, dash_icon]:
+		if node == null:
+			continue
+		node.set_meta("cooldown_state", "ready" if left <= 0.0 else "cooling")
+		node.set_meta("cooldown_left", left)
+		node.set_meta("cooldown_ratio", ratio)
+		node.set_meta("dash_input_action", "dash")
+		node.set_meta("dash_key_label", "Space")
+		node.set_meta("dash_ready_text", ready_text)
+		node.set_meta("dash_cooldown_left", left)
+		node.set_meta("dash_cooldown_total", total)
+		node.set_meta("dash_ready", left <= 0.0)
 	_set_hud_tooltip([_dash_label, _dash_cd_fill, dash_icon], "Dash [Space] %s | CD %.1fs" % [
 		"READY" if left <= 0.0 else "%.1fs" % left,
 		total,
@@ -1918,8 +1991,8 @@ func _on_ultimate_charge_changed(current: float, max_value: float) -> void:
 	_apply_ultimate_charge_profile(ultimate_id)
 	var cost := float(_player.ultimate.get("cost", max_value)) if _player != null else max_value
 	var ready_text := "READY" if ratio >= 1.0 else "%d%%" % int(round(ratio * 100.0))
-	_ultimate_label.text = "Ult %s %s" % [
-		_compact_name(_readable_id(ultimate_id), 16),
+	_ultimate_label.text = "V %s %s" % [
+		_compact_name(_readable_id(ultimate_id), 13),
 		"R" if ratio >= 1.0 else "%d%%" % int(round(ratio * 100.0)),
 	] if _compact_gameplay_hud else "Ultimate: %s %s | Cost %d" % [
 		_readable_id(ultimate_id),
@@ -2604,7 +2677,7 @@ func _setup_route_choice_labels() -> void:
 		var column_x := 68.0 + i * 128.0
 		var icon := _make_sprite_icon(
 			"RouteChoiceIcon%d" % (i + 1),
-			Vector2(column_x, 302),
+			Vector2(column_x, 276),
 			Vector2(10, 10),
 			"floor_ladder",
 			"route_choice_icon_sprite")
@@ -2612,7 +2685,7 @@ func _setup_route_choice_labels() -> void:
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.visible = false
 		_route_choice_icons.append(icon)
-		var label := _make_label(Vector2(column_x + 14.0, 300))
+		var label := _make_label(Vector2(column_x + 14.0, 274))
 		label.name = "RouteChoiceLabel%d" % (i + 1)
 		label.visible = false
 		label.add_theme_font_size_override("font_size", 8)
@@ -2735,6 +2808,7 @@ func _update_status_effects() -> void:
 		return
 	if _player == null or not is_instance_valid(_player):
 		_status_label.text = ""
+		_status_label.visible = false
 		return
 	var parts: Array[String] = []
 	for status in [
@@ -2755,6 +2829,7 @@ func _update_status_effects() -> void:
 	if not buff_parts.is_empty():
 		sections.append("Buffs: %s" % " / ".join(buff_parts))
 	_status_label.text = " | ".join(sections)
+	_status_label.visible = _status_label.text != "" and not _clean_playtest_mode
 	_status_label.set_meta("element_altar_boon_element",
 		str(_player.get_meta("element_altar_boon_element", "")))
 	_status_label.set_meta("element_altar_damage_bonus",

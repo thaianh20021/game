@@ -7,6 +7,7 @@ func _init() -> void:
 	_check_aim_actions(failures)
 	_check_aim_hints(failures)
 	await _check_player_uses_right_stick_aim(failures)
+	await _check_player_keyboard_auto_aim_fallback(failures)
 	_release_aim_actions()
 	if failures.is_empty():
 		print("Controller aim smoke OK")
@@ -62,6 +63,44 @@ func _check_player_uses_right_stick_aim(failures: Array[String]) -> void:
 		failures.append("player aim should read aim_up as upward controller aim")
 
 	player.queue_free()
+
+func _check_player_keyboard_auto_aim_fallback(failures: Array[String]) -> void:
+	var scene := Node2D.new()
+	root.add_child(scene)
+	current_scene = scene
+	var player := Player.new()
+	player.global_position = Vector2.ZERO
+	scene.add_child(player)
+	await process_frame
+
+	var enemy_scene: PackedScene = load("res://scenes/enemy.tscn")
+	var near_enemy: Enemy = enemy_scene.instantiate()
+	scene.add_child(near_enemy)
+	near_enemy.global_position = Vector2.UP * 48.0
+	var far_enemy: Enemy = enemy_scene.instantiate()
+	scene.add_child(far_enemy)
+	far_enemy.global_position = Vector2.RIGHT * 120.0
+	await process_frame
+
+	_release_aim_actions()
+	var auto_aim := Vector2(player.call("_aim_dir"))
+	if auto_aim.dot(Vector2.UP) < 0.98:
+		failures.append("keyboard/mouse-idle aim should auto-target the nearest enemy instead of sticking sideways")
+	if str(player.get_meta("last_aim_input_source", "")) != "auto_target":
+		failures.append("player should tag auto_target as the last aim input source")
+
+	near_enemy.queue_free()
+	far_enemy.queue_free()
+	await process_frame
+	player.velocity = Vector2.UP * 80.0
+	var movement_aim := Vector2(player.call("_aim_dir"))
+	if movement_aim.dot(Vector2.UP) < 0.98:
+		failures.append("keyboard aim should fall back to recent movement direction when no target exists")
+	if str(player.get_meta("last_aim_input_source", "")) != "movement":
+		failures.append("player should tag movement as the last aim input source")
+
+	scene.queue_free()
+	await process_frame
 
 func _action_has_gamepad_motion(action: String) -> bool:
 	for event in InputMap.action_get_events(action):

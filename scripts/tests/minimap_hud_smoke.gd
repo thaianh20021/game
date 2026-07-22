@@ -44,19 +44,31 @@ func _check_minimap_legend_and_room_semantics(failures: Array[String]) -> void:
 	ctrl.cleared_rooms[ctrl.current_room.id] = true
 
 	var minimap := Minimap.new()
-	minimap.size = Vector2(188, 96)
+	minimap.size = Vector2(96, 52)
 	root.add_child(minimap)
 	minimap.bind(ctrl)
 	await process_frame
 
-	if minimap.get_node_or_null("MinimapLegend") == null:
+	var legend := minimap.get_node_or_null("MinimapLegend") as Control
+	if legend == null:
 		failures.append("minimap should expose a compact legend")
-	if not _has_label_containing(minimap, "Current"):
-		failures.append("minimap legend should label the current room state")
-	if not _has_label_containing(minimap, "Visited"):
-		failures.append("minimap legend should label visited rooms")
-	if not _has_label_containing(minimap, "Main"):
-		failures.append("minimap legend should label the main path")
+	else:
+		if legend.size.x > 96.0 or legend.size.y > 24.0:
+			failures.append("minimap legend should stay tiny enough to avoid covering gameplay")
+		var legend_help := str(legend.get_meta("legend_help", "")).strip_edges()
+		for token in ["Current", "Visited", "Main", "Boss", "Shop", "Loot"]:
+			if not legend_help.contains(token):
+				failures.append("minimap legend metadata should explain %s" % token)
+		for node in legend.find_children("*", "Label", true, false):
+			var label := node as Label
+			if label != null and label.text.length() > 3:
+				failures.append("minimap legend visible labels should use compact symbols")
+	if not _has_label_containing(minimap, "C"):
+		failures.append("minimap legend should show current-room symbol")
+	if not _has_label_containing(minimap, "V"):
+		failures.append("minimap legend should show visited-room symbol")
+	if not _has_label_containing(minimap, "P"):
+		failures.append("minimap legend should show main-path symbol")
 	if not minimap.has_method("known_room_ids"):
 		failures.append("minimap should expose known_room_ids for fog-of-war verification")
 	else:
@@ -136,6 +148,8 @@ func _check_hud_clean_playtest_mode(failures: Array[String]) -> void:
 	await process_frame
 	player.apply_class(PlayerClassDB.get_class_data("blade_warden"), "fire", "warden_sword")
 	hud.bind(player, ctrl)
+	hud.show_meta_bonus_summary("Training HP +20", {"upgrades": {"training_hp": 1}})
+	hud.show_biome_mastery_feedback("Ancient Cave", 0.03)
 	if not hud.has_method("set_clean_playtest_mode"):
 		failures.append("HUD should expose set_clean_playtest_mode for uncluttered manual playtests")
 	else:
@@ -175,6 +189,40 @@ func _check_hud_clean_playtest_mode(failures: Array[String]) -> void:
 	var minimap := hud.get_node_or_null("Minimap") as Minimap
 	if minimap == null or not minimap.visible:
 		failures.append("clean playtest HUD should keep minimap visible")
+	else:
+		var rect := minimap.get_global_rect()
+		if rect.size.x > 104.0 or rect.size.y > 56.0:
+			failures.append("clean playtest minimap should stay small after 2x window upscale, got %s" % rect.size)
+		if rect.position.x < 440.0 or rect.position.y > 12.0 \
+				or rect.end.x > 640.0 or rect.end.y > 120.0:
+			failures.append("clean playtest minimap should stay in the top-right safe HUD band")
+		if minimap.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+			failures.append("clean playtest minimap should never block combat input")
+		if not bool(minimap.get_meta("readability_panel", false)):
+			failures.append("clean playtest minimap should expose a readability panel contract")
+		if float(minimap.get_meta("background_alpha", 0.0)) < 0.72:
+			failures.append("clean playtest minimap background should be opaque enough over dungeon tiles")
+		if float(minimap.get_meta("border_alpha", 0.0)) < 0.6:
+			failures.append("clean playtest minimap should draw a readable border")
+		var legend := minimap.get_node_or_null("MinimapLegend") as Control
+		if legend == null or not legend.visible:
+			failures.append("clean playtest minimap should keep its compact legend visible")
+	for flash_name in ["MetaBonusFlashLabel", "BiomeMasteryFlashLabel"]:
+		var flash := hud.get_node_or_null(flash_name) as Label
+		if flash != null and flash.visible:
+			failures.append("clean playtest HUD should hide verbose %s" % flash_name)
+	var hp_label := hud.get_node_or_null("HpLabel") as Label
+	if hp_label == null:
+		failures.append("HUD should expose HpLabel for clean-mode visibility control")
+	elif hp_label.visible:
+		failures.append("clean playtest HUD should hide HP number text and keep the bar/icon instead")
+	for node in hud.find_children("*", "Label", true, false):
+		var label := node as Label
+		if label == null or not label.visible:
+			continue
+		var text := label.text.strip_edges()
+		if text.contains("HP") or text.contains("/") or text.contains("Damage"):
+			failures.append("clean playtest HUD should not show verbose health/damage text: %s" % label.name)
 	if not bool(hud.get_meta("clean_playtest_mode", false)):
 		failures.append("clean playtest HUD should store clean_playtest_mode metadata")
 	hud.queue_free()
@@ -224,26 +272,78 @@ func _check_hud_playable_compact_layout(failures: Array[String]) -> void:
 		"ObjectiveNextActionLabel",
 		"SkillLabel",
 		"SecondarySkillLabel",
+		"DashCooldownIcon",
+		"DashLabel",
 		"UltimateLabel",
 		"ControlsHintLabel",
 	]:
-		var label := hud.get_node_or_null(name) as Label
-		if label == null:
+		var node := hud.get_node_or_null(name)
+		if node == null:
 			failures.append("playable HUD should expose %s" % name)
 			continue
-		if label.visible and label.get_global_rect().end.y > 360.0:
+		var control := node as Control
+		if control != null and control.visible and control.get_global_rect().end.y > 360.0:
 			failures.append("playable HUD %s should fit inside the 640x360 viewport" % name)
-		if label.visible and label.text.length() > 64:
+		var label := node as Label
+		if label != null and label.visible and label.text.length() > 28:
 			failures.append("playable HUD %s should use compact visible text" % name)
+	var visible_text_heavy := []
+	for name in [
+		"WeaponLabel",
+		"FloorLabel",
+		"RoomLabel",
+		"ObjectiveLabel",
+		"ObjectiveNextActionLabel",
+		"SkillLabel",
+		"SecondarySkillLabel",
+		"DashLabel",
+		"UltimateLabel",
+	]:
+		var label := hud.get_node_or_null(name) as Label
+		if label != null and label.visible and label.text.strip_edges() != "":
+			visible_text_heavy.append(name)
+	if not visible_text_heavy.is_empty():
+		failures.append("playable HUD should hide text-heavy default labels: %s" % ", ".join(visible_text_heavy))
+	var weapon_label := hud.get_node_or_null("WeaponLabel") as Label
+	if weapon_label != null and not weapon_label.tooltip_text.contains("Mouse1"):
+		failures.append("compact weapon label should preserve full weapon details in tooltip")
+	var controls_hint := hud.get_node_or_null("ControlsHintLabel") as Label
+	if controls_hint != null:
+		if not controls_hint.text.contains("1-4"):
+			failures.append("compact controls hint should keep route hotkeys visible")
+		if not controls_hint.tooltip_text.contains("Pad:"):
+			failures.append("compact controls hint should preserve gamepad controls in tooltip")
+		if not controls_hint.tooltip_text.contains("F4 clean HUD"):
+			failures.append("compact controls hint should advertise F4 clean HUD toggle")
 	var minimap := hud.get_node_or_null("Minimap") as Minimap
 	if minimap == null:
 		failures.append("playable HUD should keep minimap")
-	elif minimap.get_global_rect().end.x > 640.0 or minimap.get_global_rect().end.y > 120.0:
-		failures.append("playable HUD minimap should stay compact in the top-right")
+	else:
+		var rect := minimap.get_global_rect()
+		if rect.size.x > 104.0 or rect.size.y > 56.0:
+			failures.append("playable HUD minimap should stay compact after 2x window upscale, got %s" % rect.size)
+		if rect.end.x > 640.0 or rect.end.y > 120.0:
+			failures.append("playable HUD minimap should stay compact in the top-right")
+	_assert_visible_hud_controls_fit_viewport(hud, failures)
 	hud.queue_free()
 	player.queue_free()
 	ctrl.queue_free()
 	await process_frame
+
+func _assert_visible_hud_controls_fit_viewport(hud: HUD, failures: Array[String]) -> void:
+	var viewport := Rect2(Vector2.ZERO, Vector2(640.0, 360.0))
+	for node in hud.find_children("*", "Control", true, false):
+		var control := node as Control
+		if control == null or not control.visible:
+			continue
+		var rect := control.get_global_rect()
+		if rect.size == Vector2.ZERO:
+			if not viewport.has_point(rect.position):
+				failures.append("visible HUD control %s should not sit outside the viewport" % control.name)
+			continue
+		if rect.position.x < 0.0 or rect.position.y < 0.0 \
+				or rect.end.x > 640.0 or rect.end.y > 360.0:
+			failures.append("visible HUD control %s should fit inside the 640x360 viewport" % control.name)
 
 func _check_hud_element_combo_feedback(failures: Array[String]) -> void:
 	var ctrl := FloorController.new()
@@ -389,8 +489,8 @@ func _check_hud_player_status_feedback(failures: Array[String]) -> void:
 	UpgradeDBScript.apply_upgrade(player, "ember_rune")
 	hud.call("_on_weapon_changed", player.current_weapon().display_name())
 	await process_frame
-	if not _has_label_containing(hud, "Sockets: 1/3"):
-		failures.append("HUD weapon label should show socket usage")
+	if not _has_label_containing(hud, "S1/3"):
+		failures.append("HUD weapon label should show compact socket usage")
 	if not _has_label_containing(hud, "Sockets 1/3"):
 		failures.append("HUD build label should show rune/socket socket usage")
 	if not _has_label_containing(hud, "Fire x1"):
@@ -839,8 +939,8 @@ func _check_hud_dash_cooldown_feedback(failures: Array[String]) -> void:
 	else:
 		hud.call("_on_dash_cooldown_changed", 0.6, 1.2)
 		await process_frame
-		if not _has_label_containing(hud, "Dash: 0.6s"):
-			failures.append("HUD should show active dash cooldown text")
+		if not _has_label_containing(hud, "Dash 0.6s"):
+			failures.append("HUD should show compact active dash cooldown text")
 		hud.call("_on_dash_cooldown_changed", 0.0, 1.2)
 		await process_frame
 		var flash := hud.get_node_or_null("SkillCastFlashLabel") as Label
@@ -960,10 +1060,20 @@ func _check_hud_run_stats_feedback(failures: Array[String]) -> void:
 				var player_center_safe_zone := Rect2(Vector2(240, 130), Vector2(160, 120))
 				for route_choice in [route_choice_1, route_choice_2]:
 					var rect: Rect2 = route_choice.get_global_rect()
-					if rect.position.y < 292.0 or rect.end.y > 318.0:
-						failures.append("route choice labels should sit in the bottom HUD band")
+					if rect.position.y < 268.0 or rect.end.y > 296.0:
+						failures.append("route choice labels should sit above the bottom edge in a safe HUD band")
 					if rect.intersects(player_center_safe_zone):
 						failures.append("route choice labels should not overlap the player action zone")
+				var controls_hint := hud.get_node_or_null("ControlsHintLabel") as Label
+				if controls_hint != null and controls_hint.visible:
+					var hint_rect := controls_hint.get_global_rect()
+					if hint_rect.position.y >= 292.0:
+						failures.append("controls hint should not share the bottom route choice band")
+					for node in hud.find_children("RouteChoice*", "Control", true, false):
+						var route_control := node as Control
+						if route_control != null and route_control.visible \
+								and route_control.get_global_rect().intersects(hint_rect):
+							failures.append("%s should not overlap controls hint" % route_control.name)
 			var route_icon_1 := hud.get_node_or_null("RouteChoiceIcon1") as TextureRect
 			var route_icon_2 := hud.get_node_or_null("RouteChoiceIcon2") as TextureRect
 			if route_icon_1 == null or route_icon_2 == null:
@@ -983,8 +1093,8 @@ func _check_hud_run_stats_feedback(failures: Array[String]) -> void:
 					failures.append("route choice icons should preserve main route metadata")
 				for route_icon in [route_icon_1, route_icon_2]:
 					var rect: Rect2 = route_icon.get_global_rect()
-					if rect.position.y < 292.0 or rect.end.y > 318.0:
-						failures.append("route choice icons should sit in the bottom HUD band")
+					if rect.position.y < 268.0 or rect.end.y > 296.0:
+						failures.append("route choice icons should sit above the bottom edge in a safe HUD band")
 					if rect.intersects(Rect2(Vector2(240, 130), Vector2(160, 120))):
 						failures.append("route choice icons should not overlap the player action zone")
 			var route_choice_3 := hud.get_node_or_null("RouteChoiceLabel3") as Label
@@ -1074,8 +1184,8 @@ func _check_hud_floor_difficulty_feedback(failures: Array[String]) -> void:
 	await process_frame
 	if not _has_label_containing(hud, "x1.56"):
 		failures.append("HUD floor label should show effective difficulty multiplier")
-	if not _has_label_containing(hud, "Threat x2.34"):
-		failures.append("HUD floor label should show floor threat multiplier")
+	if not _has_label_containing(hud, "T2.34"):
+		failures.append("HUD floor label should show compact floor threat multiplier")
 	hud.queue_free()
 	player.queue_free()
 	ctrl.queue_free()

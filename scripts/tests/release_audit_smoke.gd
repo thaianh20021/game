@@ -1293,6 +1293,9 @@ func _check_release_candidate_summary(script: Variant, failures: Array[String]) 
 		if not str(empty_plan.get("next_missing_manual_launch_command", "")).contains(
 				"ScenarioIndex 1"):
 			failures.append("manual recording plan should expose the next missing scenario launch command")
+		if not str(empty_plan.get("next_missing_manual_launch_command", "")).contains(
+				"-Detached"):
+			failures.append("manual recording plan should launch visible scenarios detached")
 		if not str(empty_plan.get("next_missing_manual_launch_dry_run_command", "")).contains(
 				"-DryRun"):
 			failures.append("manual recording plan should expose launcher dry-run command")
@@ -1320,8 +1323,11 @@ func _check_release_candidate_summary(script: Variant, failures: Array[String]) 
 		elif not str(Dictionary(scenario_statuses[0]).get("launch_command", "")).contains(
 				"launch_manual_scenario.ps1"):
 			failures.append("manual recording plan should use the manual scenario launcher script")
+		elif not str(Dictionary(scenario_statuses[0]).get("launch_command", "")).contains(
+				"-Detached"):
+			failures.append("manual scenario launch command should detach visible Godot")
 		elif not str(Dictionary(scenario_statuses[0]).get("launch_dry_run_command", "")).contains(
-				"-ScenarioIndex 1 -DryRun"):
+				"-ScenarioIndex 1 -Detached -DryRun"):
 			failures.append("manual recording plan should include scenario launcher dry-run command")
 	var launcher_path := "res://scripts/tools/launch_manual_scenario.ps1"
 	if not FileAccess.file_exists(launcher_path):

@@ -156,8 +156,24 @@ func _check_class_select_hotkeys(failures: Array[String]) -> void:
 		emitted["mode"] = mode)
 	_press_key(screen, KEY_ENTER)
 	await process_frame
-	if int(emitted["count"]) != 0:
-		failures.append("Enter should not start without class and element")
+	if int(emitted["count"]) != 1:
+		failures.append("Enter should start with default class and element")
+	if str(emitted["class"]) != "blade_warden" or str(emitted["element"]) != "fire":
+		failures.append("default Enter should emit default class and element")
+	if is_instance_valid(screen):
+		screen.queue_free()
+	await process_frame
+
+	screen = ClassSelectScreen.new()
+	root.add_child(screen)
+	await process_frame
+	emitted = {"count": 0, "class": "", "element": "", "seed": -2, "mode": ""}
+	screen.confirmed.connect(func(class_id: String, element: String, seed: int, mode: String) -> void:
+		emitted["count"] = int(emitted["count"]) + 1
+		emitted["class"] = class_id
+		emitted["element"] = element
+		emitted["seed"] = seed
+		emitted["mode"] = mode)
 
 	_press_key(screen, KEY_1)
 	await process_frame
@@ -236,9 +252,10 @@ func _check_class_select_hotkeys(failures: Array[String]) -> void:
 	if focused_seed != null:
 		focused_seed.grab_focus()
 		await process_frame
-	_press_key(screen, KEY_1)
+	var before_class := str(screen.get("_selected_class"))
+	_press_key(screen, KEY_0)
 	await process_frame
-	if str(screen.get("_selected_class")) != "":
+	if str(screen.get("_selected_class")) != before_class:
 		failures.append("class hotkeys should not trigger while seed input has focus")
 	screen.queue_free()
 	await process_frame

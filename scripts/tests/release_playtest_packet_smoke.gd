@@ -45,7 +45,8 @@ func _check_packet(packet: Dictionary, failures: Array[String]) -> void:
 		"launch_manual_scenario.ps1 -Next",
 		"launch_manual_scenario.ps1 -Next -DryRun",
 		"launch_manual_scenario.ps1 -ScenarioIndex 1",
-		"launch_manual_scenario.ps1 -ScenarioIndex 1 -DryRun",
+		"launch_manual_scenario.ps1 -ScenarioIndex 1 -Detached",
+		"launch_manual_scenario.ps1 -ScenarioIndex 1 -Detached -DryRun",
 		"record_manual_scenario_evidence.gd",
 		"record_manual_playtest_issue.gd",
 		"resolve_manual_playtest_issue.gd",
@@ -54,11 +55,15 @@ func _check_packet(packet: Dictionary, failures: Array[String]) -> void:
 		"--issue_type=<issue_type>",
 		"--resolution_result=fixed_retest_pass",
 		"Notes Skeleton:",
+		"Suggested Screenshot:",
+		"dungeon_core_manual_scenario_1.png",
+		"Capture Screenshot:",
+		"--screenshot_or_seed=",
 		"Final Notes:",
 		"asset_animation_notes",
 		"polygon_collision_notes",
 		"wave_hud_audio_notes",
-		"wave_hud_audio_notes=<human wave HUD audio notes>",
+		"wave_hud_audio_notes=<human wave hud audio notes>",
 		"fanmade",
 		"CalvinWan0101/soul-knight",
 		"leoyin1127/Soul-knights",
@@ -109,6 +114,12 @@ func _check_packet(packet: Dictionary, failures: Array[String]) -> void:
 			failures.append("scenario draft should include launcher dry-run command")
 		elif not launch_dry_run.contains("-DryRun"):
 			failures.append("scenario draft launcher dry-run command should include -DryRun")
+		if not str(draft.get("suggested_screenshot_path", "")).contains(
+				"dungeon_core_manual_scenario_%d.png" % int(draft.get("index", 0))):
+			failures.append("scenario %d should expose a deterministic screenshot path" % int(draft.get("index", 0)))
+		if not str(draft.get("capture_helper_command", "")).contains(
+				str(draft.get("suggested_screenshot_path", ""))):
+			failures.append("scenario %d capture helper should write its suggested screenshot path" % int(draft.get("index", 0)))
 		if not str(draft.get("record_command", "")).contains(
 				"--screenshot_or_seed=<screenshot or seed>"):
 			failures.append("scenario draft should require screenshot/seed for manual pass")

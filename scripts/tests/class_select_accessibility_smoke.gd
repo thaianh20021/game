@@ -34,6 +34,15 @@ func _check_class_select_settings_controls(failures: Array[String]) -> void:
 			viewport_size.y + panel.offset_bottom - panel.offset_top)
 		if expected_size.x < 560.0 or expected_size.y < 320.0:
 			failures.append("class select main panel should fit the 640x360 viewport")
+	var initial_detail := screen.find_child("ClassDetailName", true, false) as Label
+	var initial_start := screen.find_child("StartRunButton", true, false) as Button
+	if initial_detail == null or initial_start == null:
+		failures.append("class select should expose initial detail and start controls")
+	else:
+		if initial_detail.text == "Select a class":
+			failures.append("class select should default to the first playable class")
+		if initial_start.disabled:
+			failures.append("class select should be ready to start with default class and element")
 	if screen.has_method("_select_class_by_index"):
 		screen.call("_select_class_by_index", 0)
 		await process_frame
@@ -54,21 +63,51 @@ func _check_class_select_settings_controls(failures: Array[String]) -> void:
 			failures.append("class select should use one stable class column until the two-column layout is rebuilt")
 		if class_scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
 			failures.append("class select should not show a horizontal scrollbar in the class list")
+		if class_scroll.size_flags_vertical != Control.SIZE_SHRINK_CENTER:
+			failures.append("class list should keep fixed vertical height so start controls stay onscreen")
 		if class_scroll.custom_minimum_size.x > 420.0:
 			failures.append("class list should stay inside the 640x360 viewport")
 		var first_button := screen.find_child("Class_*", true, false) as Button
 		if first_button != null and first_button.custom_minimum_size.x > 400.0:
 			failures.append("class buttons should not stretch offscreen in the 640x360 viewport")
+		if first_button != null and first_button.custom_minimum_size.y > 18.0:
+			failures.append("class buttons should stay dense enough to show several choices")
+		if first_button != null and first_button.get_theme_font_size("font_size") > 10:
+			failures.append("class button font should stay compact on the 640x360 screen")
+		var class_gap := class_grid.get_theme_constant("v_separation")
+		if class_gap > 3:
+			failures.append("class list vertical spacing should fit at least four choices without crowding the start button")
+		if first_button != null:
+			var visible_capacity := floori(class_scroll.custom_minimum_size.y / maxf(
+				first_button.custom_minimum_size.y + float(class_gap), 1.0))
+			if visible_capacity < 4:
+				failures.append("class list should fit at least four class rows before scrolling")
 		for node in screen.find_children("Class_*", "Button", true, false):
 			var button := node as Button
 			if button == null:
 				continue
-			if button.tooltip_text.contains("\n") or button.tooltip_text.length() > 56:
-				failures.append("class button tooltips should stay one-line compact popups")
+			if button.tooltip_text.strip_edges() != "":
+				failures.append("class button hover tooltips should stay hidden on the upscaled class select screen")
+			var input_hint := str(button.get_meta("class_input_hint", "")).strip_edges()
+			if input_hint == "" or input_hint.length() > 28 or input_hint.contains("_"):
+				failures.append("class button input hints should stay compact in metadata")
 			if str(button.get_meta("class_tooltip_detail", "")).strip_edges() == "":
 				failures.append("class buttons should store full detail in metadata instead of large tooltip popups")
 		var title := screen.find_child("ClassSelectTitle", true, false) as Label
 		var detail := screen.find_child("ClassDetailPanel", true, false) as PanelContainer
+		if detail != null and detail.custom_minimum_size.y > 56.0:
+			failures.append("class detail panel should stay compact enough for the start button after 2x scaling")
+		for label_name in [
+			"ClassDetailRole",
+			"ClassDetailWeaponSummary",
+			"ClassDetailRecord",
+			"ClassDetailStats",
+			"ClassDetailSkills",
+			"ClassDetailGameplan",
+		]:
+			var detail_label := screen.find_child(label_name, true, false) as Label
+			if detail_label != null and detail_label.visible:
+				failures.append("%s should keep verbose class detail hidden on the primary class-pick screen" % label_name)
 		for control in [title, class_scroll, detail, start]:
 			if control == null:
 				continue

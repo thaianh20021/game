@@ -64,29 +64,32 @@ func _ready() -> void:
 
 	_title = Label.new()
 	_title.name = "OverlayTitle"
-	_title.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_title.position = Vector2(-300, 76)
-	_title.custom_minimum_size = Vector2(600, 44)
+	_title.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_title.position = Vector2(20, 42)
+	_title.custom_minimum_size = Vector2(600, 34)
+	_title.size = _title.custom_minimum_size
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_title.add_theme_font_size_override("font_size", 28)
+	_title.add_theme_font_size_override("font_size", 20)
 	add_child(_title)
 
 	_subtitle = Label.new()
 	_subtitle.name = "OverlaySubtitle"
-	_subtitle.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_subtitle.position = Vector2(-300, 126)
-	_subtitle.custom_minimum_size = Vector2(600, 24)
+	_subtitle.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_subtitle.position = Vector2(20, 78)
+	_subtitle.custom_minimum_size = Vector2(600, 20)
+	_subtitle.size = _subtitle.custom_minimum_size
 	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_subtitle.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_subtitle.add_theme_font_size_override("font_size", 12)
+	_subtitle.add_theme_font_size_override("font_size", 10)
 	add_child(_subtitle)
 
 	_choice_scroll = ScrollContainer.new()
 	_choice_scroll.name = "ChoiceScroll"
-	_choice_scroll.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_choice_scroll.position = Vector2(-190, 164)
-	_choice_scroll.custom_minimum_size = Vector2(380, 390)
+	_choice_scroll.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_choice_scroll.position = Vector2(130, 104)
+	_choice_scroll.custom_minimum_size = Vector2(380, 236)
+	_choice_scroll.size = _choice_scroll.custom_minimum_size
 	_choice_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_choice_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	add_child(_choice_scroll)
@@ -344,7 +347,7 @@ func _populate_upgrade_choices(
 			choice, matching_tags, recommendation, effect_preview, disabled_reason,
 			"", socket_context, set_progress)
 		var best_fit := i == best_fit_index
-		button.text = "Choice %d/%d | %s%s\n%s%s%s%s" % [
+		var full_choice_text := "Choice %d/%d | %s%s\n%s%s%s%s" % [
 			i + 1,
 			choices.size(),
 			label,
@@ -357,7 +360,11 @@ func _populate_upgrade_choices(
 				+ _fit_score_preview(fit_score, fit_reasons, best_fit) + _disabled_preview(disabled_reason),
 			_socket_context_preview(socket_context),
 		]
+		button.text = _reward_choice_visible_text(
+			full_choice_text, choice, i + 1, choices.size(), label, fit_score,
+			fit_reasons, best_fit, socket_context)
 		_prepare_choice_button(button)
+		button.set_meta("full_visible_text", full_choice_text)
 		button.set_meta("choice_index", i + 1)
 		button.set_meta("choice_count", choices.size())
 		_set_choice_input_meta(
@@ -377,6 +384,9 @@ func _populate_upgrade_choices(
 		button.set_meta("fit_score", fit_score)
 		button.set_meta("fit_reasons", _fit_reasons_text(fit_reasons))
 		button.set_meta("best_fit", best_fit)
+		button.set_meta(
+			"visible_text_contract",
+			"compact_reward_choice" if button.text != full_choice_text else "full_reward_choice")
 		button.set_meta("disabled_reason", disabled_reason)
 		button.set_meta("socket_context", socket_context)
 		_apply_set_progress_meta(button, set_progress)
@@ -1536,6 +1546,38 @@ func _rarity_label(rarity: String) -> String:
 		return ""
 	return "[%s] " % rarity.to_upper()
 
+func _reward_choice_visible_text(
+		full_text: String,
+		choice: Dictionary,
+		index: int,
+		count: int,
+		rarity_label: String,
+		fit_score: int,
+		fit_reasons: Array,
+		best_fit: bool,
+		socket_context: String = "",
+) -> String:
+	var too_many_lines := full_text.split("\n", false).size() > 10
+	if socket_context.strip_edges() == "" and not too_many_lines:
+		return full_text
+	var title := "Choice %d/%d | %s%s" % [
+		index,
+		count,
+		rarity_label,
+		str(choice.get("name", "?")),
+	]
+	var desc := str(choice.get("desc", "")).strip_edges()
+	var reasons := _fit_reasons_text(fit_reasons)
+	var score := "%d%%" % clampi(fit_score, 0, 100)
+	var summary := "%s | %s" % ["Best Fit" if best_fit else "Score", score]
+	if reasons != "" and reasons != "Baseline":
+		summary += " | %s" % _compact_text(reasons, 28)
+	return "\n".join([title, desc, summary] if desc != "" else [title, summary])
+
+func _compact_text(text: String, max_chars: int) -> String:
+	var clean := text.strip_edges()
+	return clean if clean.length() <= max_chars else "%s..." % clean.left(maxi(max_chars - 3, 1))
+
 func _stack_preview(choice_or_id, stack_counts: Dictionary) -> String:
 	var upgrade_id := str(choice_or_id.get("id", "") if choice_or_id is Dictionary else choice_or_id)
 	var max_stack := int(choice_or_id.get("max_stack", 0)) if choice_or_id is Dictionary else 0
@@ -1563,10 +1605,11 @@ func _disabled_preview(reason: String) -> String:
 
 func _choice_button_size(text: String) -> Vector2:
 	var line_count := text.split("\n", false).size()
-	return Vector2(360, maxf(42.0, 18.0 + float(line_count) * 14.0))
+	return Vector2(360, maxf(34.0, 14.0 + float(line_count) * 11.0))
 
 func _prepare_choice_button(button: Button) -> void:
 	button.custom_minimum_size = _choice_button_size(button.text)
+	button.add_theme_font_size_override("font_size", 9)
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.clip_text = false
 
