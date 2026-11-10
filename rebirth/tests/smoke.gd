@@ -194,6 +194,10 @@ func _init() -> void:
 	# death path
 	g.start_run()
 	g.p.mount = null
+	g.p.relics = []
+	g.p.feather = false
+	g.p.wind2 = false
+	g.p.inv = 0.0
 	g.hurt_player(99)
 	await step(5)
 	check(g.state == "dead", "lethal hit should end the run")

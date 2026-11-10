@@ -13,6 +13,14 @@ static var tracks = {}
 # when hosting a LAN game, sounds are also listed here and sent to the guest
 static var log = []
 static var logging = false
+static var vol_sfx = 1.0
+static var vol_music = 1.0
+
+static func set_volume(sfx: float, mus: float) -> void:
+	vol_sfx = sfx
+	vol_music = mus
+	if music != null:
+		music.volume_db = -15.0 + linear_to_db(maxf(mus, 0.0001))
 
 # name: [duration, freq start, freq end, wave (0 square, 1 saw, 2 sine), volume, noise mix]
 const DEFS = {
@@ -84,7 +92,7 @@ static func synth(a: Array) -> AudioStreamWAV:
 static func play(name: String, pitch: float = 1.0, db: float = 0.0) -> void:
 	if logging and log.size() < 24 and not log.has(name):
 		log.append(name)
-	if not S.has(name) or pool.is_empty():
+	if not S.has(name) or pool.is_empty() or vol_sfx <= 0.0:
 		return
 	var now = Time.get_ticks_msec()
 	if now - int(last.get(name, -1000)) < 45:
@@ -94,7 +102,7 @@ static func play(name: String, pitch: float = 1.0, db: float = 0.0) -> void:
 	pi = (pi + 1) % pool.size()
 	a.stream = S[name]
 	a.pitch_scale = pitch * randf_range(0.93, 1.07)
-	a.volume_db = db - 7.0
+	a.volume_db = db - 7.0 + linear_to_db(vol_sfx)
 	a.play()
 
 # track: 0..2 biomes, 3 boss, 4 title

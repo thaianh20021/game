@@ -31,7 +31,7 @@ Open this `rebirth` folder in Godot 4.7 and press F5, or:
 | Space | Dash (invulnerable) |
 | Q | Swap weapon |
 | E | Talk, open, pick up, buy, enter |
-| Esc | Pause (reaction cheat sheet, foe cunning) |
+| Esc | Pause (reaction cheat sheet, foe cunning). O in pause: settings |
 
 ## Gamepad
 
@@ -93,6 +93,13 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
 - Secrets: a cat, a jukebox, a wishing fountain, an old grave, a training dummy, a hollow wall
   and a code on the arrow keys.
 
+## Saving and settings
+
+- A solo run is saved at the start of every floor after the first. Close the game and pick
+  "Continue saved run" at the Run Board later. Dying, winning or starting a new run erases it.
+- Settings (O on the pause screen): music and sound volume, fullscreen, screen shake.
+- First-time hints explain weapon swapping, reactions, the Burst bar and armor.
+
 ## In the dungeon
 
 - Carry 2 weapons, each with an element (fire, ice, storm, venom). Two different elements on one foe
@@ -137,5 +144,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

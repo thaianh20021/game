@@ -213,6 +213,7 @@ static func defaults() -> Dictionary:
 		gen_seed = 0, weaves = 0, codex = {}, heat = 0, heat_max = 0, daily = {}, boons = {hp = 0, relic = 0},
 		garden = [{kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}], last_seed = 0,
 		stats = {}, quests = {day = 0, list = []}, trophies = {}, dyes = [], dye = -1, gift_day = 0, streak = 0,
+		opts = {music = 4, sfx = 4, full = false, shake = true}, tips = {}, run = {},
 		ai = {cunning = 0.25, lead = [2.0, 1.0, 2.0, 1.0], bw = {}},
 	}
 

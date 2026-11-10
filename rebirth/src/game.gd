@@ -130,6 +130,7 @@ var pad_used = false
 var p1_pad = false
 var sim_p2 = null
 var pending_coop = false
+var pending_resume = false
 var buff_sel = 0
 var buff_turn = 0
 var pending_start = null
@@ -217,11 +218,56 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	tin.on = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile")
 	Meta.load_save()
+	apply_opts()
 	multiplayer.connected_to_server.connect(func(): Net.on_connected(self))
 	multiplayer.connection_failed.connect(func(): Net.on_failed(self))
 	multiplayer.server_disconnected.connect(func(): Net.on_peer_left(self))
 	multiplayer.peer_disconnected.connect(func(_id): Net.on_peer_left(self))
 	goto_title()
+
+func apply_opts() -> void:
+	var o = Meta.S.opts
+	Sfx.set_volume(int(o.get("sfx", 4)) / 4.0, int(o.get("music", 4)) / 4.0)
+	if DisplayServer.get_name() != "headless":
+		var want = DisplayServer.WINDOW_MODE_FULLSCREEN if o.get("full", false) else DisplayServer.WINDOW_MODE_WINDOWED
+		if DisplayServer.window_get_mode() != want:
+			DisplayServer.window_set_mode(want)
+
+# One-time hint shown the first time something happens.
+func tip(id: String, text: String, sub: String) -> void:
+	if in_lobby or Meta.S.tips.has(id):
+		return
+	Meta.S.tips[id] = true
+	banner = {text = text, sub = sub, t = 4.5}
+
+# Picks up the run saved at the start of its last floor.
+func resume_run() -> void:
+	var r = Meta.S.run
+	var pl = str_to_var(str(r.player))
+	if not (pl is Dictionary):
+		Meta.S.run = {}
+		return
+	in_lobby = false
+	local2 = false
+	pl.idx = 0
+	pl.down = false
+	pl.spr = Art.look(pl.look)
+	players = [pl]
+	me = 0
+	bind(pl)
+	calc_stats()
+	run_seed = int(r.seed)
+	run_daily = bool(r.daily)
+	run_heat = int(r.heat)
+	floor_i = int(r.floor)
+	kills = int(r.kills)
+	boss_kills = int(r.bk)
+	run_time = float(r.time)
+	world.visible = true
+	post.visible = true
+	new_floor()
+	set_state("play")
+	Sfx.play("portal")
 
 func set_state(s: String) -> void:
 	state = s
@@ -303,6 +349,7 @@ func update_menu() -> void:
 
 # Ends a run: converts what you did into gems and teaches the foes a little.
 func end_run(won: bool) -> void:
+	Meta.S.run = {}
 	if net.mode == "host" and players.size() > 1 and players[1].get("remote", false):
 		rpc("net_event", "end", {floor = floor_i, won = won})
 	gems_won = int((floor_i * 8 + kills / 5 + boss_kills * 20 + (60 if won else 0)) * (1.0 + 0.3 * run_heat))
@@ -404,7 +451,9 @@ func _process(dt: float) -> void:
 				update_fx(dt)
 		"pause":
 			var tq = tin.on and jpk("m1") and state_t > 0.2
-			if jpk(KEY_ESCAPE) or (tq and not Rect2(250, 226, 110, 20).has_point(mouse())):
+			if jpk(KEY_O) or jpk(KEY_E) or (tq and Rect2(185, 204, 110, 18).has_point(mouse())):
+				open_menu("opts")
+			elif jpk(KEY_ESCAPE) or (tq and not Rect2(250, 226, 110, 20).has_point(mouse())):
 				set_state("play")
 			elif jpk(KEY_Q) or tq:
 				if in_lobby:
@@ -644,6 +693,7 @@ func start_run(seed: int = 0, daily: bool = false) -> void:
 	prism_next = false
 	run_seed = seed if seed != 0 else rng.randi_range(1, 99999999)
 	run_daily = daily
+	Meta.S.run = {}
 	run_heat = 0 if daily else Meta.S.heat
 	Meta.S.last_seed = run_seed
 	if run_heat >= 5:
@@ -791,6 +841,10 @@ func new_floor() -> void:
 	Sfx.play_music(bi)
 	if net.mode == "host" and players.size() > 1 and players[1].get("remote", false):
 		rpc("net_event", "floor", {floor = floor_i, boss = dg.boss_id})
+	# solo runs are saved at the start of every floor after the first
+	if players.size() == 1 and net.mode == "" and floor_i > 0:
+		Meta.S.run = {seed = run_seed, daily = run_daily, heat = run_heat, floor = floor_i, kills = kills, bk = boss_kills, time = run_time, player = var_to_str(players[0])}
+		Meta.save()
 
 func random_weapon() -> Dictionary:
 	var ids = []
@@ -881,6 +935,8 @@ func pick_buff(i: int) -> void:
 
 func charge_res(mult: float = 1.0) -> void:
 	p.res = minf(1.0, p.res + 0.2 * mult * st.res * (2.0 if p.sk.cat else 1.0))
+	if p.res >= 1.0:
+		tip("burst", "BURST READY", "PRESS R (R3 ON A PAD) TO HIT EVERYTHING ON SCREEN")
 
 # Where an enemy should shoot. arm 1 leads the target using the player's velocity.
 func aim_dir(from: Vector2, spd: float, arm: int) -> Vector2:
@@ -1299,6 +1355,7 @@ func interact(it: Dictionary) -> void:
 			if p.weapons[1] == null:
 				p.weapons[1] = it.w
 				p.wi = 1
+				tip("swap", "TWO WEAPONS", "Q SWAPS. TWO ELEMENTS ON ONE FOE REACT.")
 				Meta.record("weapons", it.w.id)
 				it.gone = true
 			else:
@@ -2036,6 +2093,7 @@ func react(e: Dictionary, key: String) -> void:
 	Sfx.play("react")
 	charge_res()
 	Meta.record("reactions", key)
+	tip("react", "REACTION: " + info[0], "REACTIONS FILL THE BURST BAR")
 	Meta.stat("reacts")
 	hitstop = maxf(hitstop, 0.04)
 	shake_add(3.0)
@@ -2183,6 +2241,7 @@ func hurt_player(dmg: int, el: String = "") -> void:
 	p.ar_t = 3.5
 	p.flash = 0.2
 	dmg_flash = 1.0 if d > 0 else 0.5
+	tip("armor", "ARMOR GROWS BACK", "AVOID HITS FOR A FEW SECONDS. HEALTH DOES NOT.")
 	shake_add(5.0)
 	hitstop = maxf(hitstop, 0.05)
 	Sfx.play("hurt")
@@ -2455,6 +2514,8 @@ func flash(pos: Vector2, r: float, col: Color, dur: float) -> void:
 	flashes.append({pos = pos, r = r, col = col, t = dur, max = dur})
 
 func shake_add(v: float) -> void:
+	if not Meta.S.opts.get("shake", true):
+		return
 	shake = minf(9.0, maxf(shake, v))
 
 func update_fx(dt: float) -> void:

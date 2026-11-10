@@ -25,7 +25,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - FREEZE, +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - SPREADS TO ALL NEARBY"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS"}
 
 static func buff_rect(i: int) -> Rect2:
 	return Rect2(55 + i * 127, 84, 116, 112)
@@ -499,8 +499,10 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 		Px.ctext(ci, Vector2(175, 233), "RESUME", Color("a6e84e"))
 		panel(ci, Rect2(250, 226, 110, 20), Color(0.2, 0.08, 0.08, 0.95), Color("ff6a6a"))
 		Px.ctext(ci, Vector2(305, 233), "QUIT TO TITLE" if g.in_lobby else "ABANDON RUN", Color("ff6a6a"))
+		panel(ci, Rect2(185, 204, 110, 18), Color(0.1, 0.1, 0.2, 0.95), PALE)
+		Px.ctext(ci, Vector2(240, 210), "SETTINGS", PALE)
 	else:
-		Px.ctext(ci, Vector2(240, 236), "ESC RESUME      Q " + ("QUIT TO TITLE" if g.in_lobby else "ABANDON RUN"), GOLD)
+		Px.ctext(ci, Vector2(240, 236), "ESC RESUME    O SETTINGS    Q " + ("QUIT TO TITLE" if g.in_lobby else "ABANDON RUN"), GOLD)
 
 static func draw_buff(g, ci: CanvasItem) -> void:
 	ci.draw_rect(Rect2(0, 0, VW, VH), Color(0.02, 0.01, 0.05, 0.8))

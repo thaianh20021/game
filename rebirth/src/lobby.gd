@@ -36,7 +36,7 @@ static func build(g) -> void:
 	g.code_i = 0
 	populate(g)
 	g.spawn_enemy("dummy", tp(21, 12))
-	g.banner = {text = "THE HEARTH", sub = "STEP INTO THE GATE WHEN READY", t = 3.0}
+	g.banner = {text = "THE HEARTH", sub = "STEP INTO THE GATE WHEN READY" if Meta.S.run.is_empty() else "A SAVED RUN WAITS AT THE RUN BOARD", t = 3.0 if Meta.S.run.is_empty() else 5.0}
 	Sfx.play_music(4)
 
 static func rebake(g) -> void:
@@ -254,6 +254,15 @@ static func update(g, dt: float) -> void:
 # A row: {name, desc, cost, state, fn}. state: buy | owned | on | locked
 
 static func rows(g, kind: String) -> Array:
+	if kind == "opts":
+		var o = Meta.S.opts
+		var rs = []
+		for k in [["MUSIC VOLUME", "music"], ["SOUND VOLUME", "sfx"]]:
+			rs.append({name = "%s: %d%%" % [k[0], int(o[k[1]]) * 25], desc = "0 TO 100 IN STEPS OF 25", cost = 0, state = "owned", tag = "CHANGE",
+				fn = func(): o[k[1]] = (int(o[k[1]]) + 1) % 5})
+		rs.append({name = "FULLSCREEN: " + ("ON" if o.full else "OFF"), desc = "SWITCH BETWEEN WINDOW AND FULL SCREEN", cost = 0, state = "owned", tag = "CHANGE", fn = func(): o.full = not o.full})
+		rs.append({name = "SCREEN SHAKE: " + ("ON" if o.shake else "OFF"), desc = "TURN OFF IF THE SHAKING BOTHERS YOU", cost = 0, state = "owned", tag = "CHANGE", fn = func(): o.shake = not o.shake})
+		return rs
 	if Hub.KINDS.has(kind):
 		return Hub.rows(g, kind)
 	var out = []
@@ -329,6 +338,10 @@ static func rows(g, kind: String) -> Array:
 				out.append({name = "A SINGLE GAMEPAD PLAYS: " + ("PLAYER 2" if g.pad_p2_first else "PLAYER 1"), desc = "KEYBOARD AND MOUSE ARE PLAYER 1", cost = 0, state = "owned", tag = "CHANGE",
 					fn = func(): g.pad_p2_first = not g.pad_p2_first})
 		"board":
+			if not Meta.S.run.is_empty():
+				var rf = int(Meta.S.run.floor)
+				out.append({name = "CONTINUE SAVED RUN", desc = "FROM THE START OF FLOOR %d-%d. A NEW RUN ERASES IT." % [rf / 2 + 1, rf % 2 + 1], cost = 0, state = "owned", tag = "CONTINUE",
+					fn = func(): g.pending_resume = true})
 			out.append({name = "NORMAL RUN", desc = "A FRESH RANDOM DUNGEON AT HEAT %d" % Meta.S.heat, cost = 0, state = "owned", tag = "START",
 				fn = func(): g.pending_start = [0, false]})
 			var tk = str(Meta.today())
@@ -413,6 +426,11 @@ static func activate(g, row: Dictionary) -> void:
 		g.set_state("play")
 		Net.start(g)
 		return
+	if g.pending_resume:
+		g.pending_resume = false
+		g.set_state("play")
+		g.resume_run()
+		return
 	if g.pending_start != null:
 		var ps = g.pending_start
 		g.pending_start = null
@@ -429,6 +447,10 @@ static func activate(g, row: Dictionary) -> void:
 		return
 	Sfx.play("pick")
 	g.menu.msg = ""
+	if g.menu.kind == "opts":
+		g.apply_opts()
+		g.menu.rows = rows(g, "opts")
+		return
 	refresh_player(g)
 	if g.menu.kind == "loom":
 		populate(g)
