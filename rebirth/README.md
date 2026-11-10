@@ -119,6 +119,9 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
   move outside its usual routine: slimes leap, shooters fire a double volley, chargers quake, and so on.
   Elites do it twice as often.
 - Nine bosses, three per biome, picked per floor. At half health a boss enrages.
+- Health is scarce on purpose. Foes drop energy and gold, never hearts. Hearts come from smashing
+  crates (about 1 in 7; a few crates hide an ambush instead), from the single potion each shop sells
+  (heals 2), and one heart after a boss. Armor still regenerates.
 - Shrines trade 1 max health for a blessing. Shops sell weapons, potions and tomes.
 - Talk to the peddler, smith and alchemist: they comment on your gold, health and elements, and the
   peddler tells you the weakness of the boss ahead.
@@ -155,5 +158,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

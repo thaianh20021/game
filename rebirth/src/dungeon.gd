@@ -214,7 +214,7 @@ static func _pillars(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -
 
 static func _props(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -> void:
 	var taken = {}
-	var n_crate = 2 + rng.randi() % 4
+	var n_crate = 3 + rng.randi() % 4
 	var n_barrel = rng.randi() % 3
 	for i in n_crate + n_barrel:
 		for attempt in 20:

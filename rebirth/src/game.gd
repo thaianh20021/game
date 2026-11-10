@@ -822,13 +822,12 @@ func new_floor() -> void:
 			"shop":
 				inter.append({kind = "talk", who = "merchant", spr = "npc_merchant", name = "TALK", pos = c + Vector2(0, -34)})
 				var items = [{type = "weapon", w = random_weapon()}, {type = "potion"}, {type = "tome", buff = D.BUFFS[rng.randi() % D.BUFFS.size()]}]
-				if rng.randf() < 0.4:
-					items[1] = {type = "cell"}
+				items.append({type = "cell"})
 				if rng.randf() < 0.4:
 					items[2] = {type = "relic", id = More.random_relic(self)}
-				for i in 3:
+				for i in 4:
 					var it = items[i]
-					var price = 14 + floor_i * 3
+					var price = 18 + floor_i * 4
 					if it.type == "weapon":
 						price = 24 + D.WEAPONS[it.w.id].rar * 18 + floor_i * 4
 					elif it.type == "tome":
@@ -837,7 +836,7 @@ func new_floor() -> void:
 						price = 9 + floor_i * 2
 					elif it.type == "relic":
 						price = 55 + floor_i * 6
-					inter.append({kind = "shop", pos = c + Vector2((i - 1) * 44, -4), item = it, price = price})
+					inter.append({kind = "shop", pos = c + Vector2((i - 1.5) * 40, -4), item = it, price = price})
 	for pl in players:
 		if pl.pet != null:
 			pl.pet.pos = pl.pos
@@ -1360,8 +1359,6 @@ func interact(it: Dictionary) -> void:
 				if rng.randf() < 0.3:
 					drop("key", it.pos, 1)
 				drop("orb", it.pos, 4 + rng.randi() % 3)
-				if rng.randf() < 0.35:
-					drop("heart", it.pos, 1)
 		"weapon":
 			if p.weapons[1] == null:
 				p.weapons[1] = it.w
@@ -1392,8 +1389,8 @@ func interact(it: Dictionary) -> void:
 					More.take_relic(self, it.item.id)
 					it.gone = true
 				"potion":
-					p.hp = min(p.mhp, p.hp + 3)
-					label(p.pos + Vector2(0, -22), "+3 HEALTH", Color("ff6a7a"))
+					p.hp = min(p.mhp, p.hp + 2)
+					label(p.pos + Vector2(0, -22), "+2 HEALTH", Color("ff6a7a"))
 					it.gone = true
 				"cell":
 					p.en = float(p.men)
@@ -1606,7 +1603,6 @@ func clear_room(r: Dictionary) -> void:
 	Meta.add_cunning(0.02 if hits == 0 else (-0.015 if hits >= 3 else 0.0))
 	if r.elite or run_heat >= 4:
 		drop("coin", rc(r), 10)
-		drop("heart", rc(r), 1)
 		if rng.randf() < 0.6:
 			drop("key", rc(r), 1)
 		else:
@@ -1623,7 +1619,7 @@ func clear_room(r: Dictionary) -> void:
 		inter.append({kind = "relic", id = More.random_relic(self), pos = c + Vector2(0, 34)})
 		inter.append({kind = "chest", pos = c + Vector2(-40, 10), loot = "weapon", open = false})
 		inter.append({kind = "chest", pos = c + Vector2(40, 10), loot = "reward", open = false})
-		drop("heart", c, 3)
+		drop("heart", c, 1)
 		Sfx.play_music(floor_i / 2)
 	else:
 		var cp = c
@@ -2184,10 +2180,7 @@ func kill(e: Dictionary) -> void:
 	shake_add(2.0)
 	var d = e.d
 	drop("coin", c, d.cost + rng.randi() % 2)
-	if rng.randf() < 0.6:
-		drop("orb", c, 1 + rng.randi() % 2)
-	if rng.randf() < 0.04:
-		drop("heart", c, 1)
+	drop("orb", c, 1 + (1 if rng.randf() < 0.35 else 0))
 	if d.has("child"):
 		for i in 2:
 			var ch = spawn_enemy(d.child, e.pos + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)))
@@ -2308,9 +2301,17 @@ func hurt_prop(pr: Dictionary, dmg: float) -> void:
 	burst(pr.pos + Vector2(0, -5), 10, Color("c99b5c") if pr.kind == "crate" else D.EL_COL[pr.el], 80.0, 0.4)
 	Sfx.play("hit", 0.6)
 	if pr.kind == "crate":
-		if rng.randf() < 0.5:
+		Meta.stat("crates")
+		var roll = rng.randf()
+		if roll < 0.14:
+			drop("heart", pr.pos, 1)
+			label(pr.pos + Vector2(0, -16), "LUCKY!", Color("ff6a7a"))
+		elif roll < 0.20 and not in_lobby and lock != null:
+			spawn_tele(D.BIOMES[floor_i / 2].roster[0], pr.pos, 0.5)
+			label(pr.pos + Vector2(0, -16), "AMBUSH!", Color("ff6a6a"))
+		elif roll < 0.60:
 			drop("coin", pr.pos, 1 + rng.randi() % 2)
-		if rng.randf() < 0.4:
+		elif roll < 0.85:
 			drop("orb", pr.pos, 1)
 	else:
 		after(0.08, func():
@@ -2973,7 +2974,7 @@ func draw_prompt(ci: CanvasItem) -> void:
 					"weapon":
 						txt = wname(near.item.w)
 						col = D.EL_COL[near.item.w.el]
-					"potion": txt = "HEAL 3"
+					"potion": txt = "HEAL 2"
 					"cell": txt = "FULL ENERGY"
 					"tome": txt = near.item.buff.name
 					"relic":
