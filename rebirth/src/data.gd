@@ -207,4 +207,15 @@ const SEEDS = {
 	"bloom": {name = "EMBER BLOOM", desc = "HARVEST: NEXT RUN STARTS WITH +1 MAX HEALTH", cost = 10, sw = {"c": "r", "C": "o"}},
 	"vine": {name = "COIN VINE", desc = "HARVEST: +25 GEMS", cost = 8, sw = {"c": "y", "C": "Y"}},
 	"root": {name = "RELIC ROOT", desc = "HARVEST: NEXT RUN STARTS WITH A RANDOM RELIC", cost = 20, sw = {"c": "p", "C": "m"}},
+	"berry": {name = "PET BERRY", desc = "HARVEST: 2 TREATS FOR THE PET BOWL", cost = 8, sw = {"c": "r", "C": "m"}},
+	"gleam": {name = "GLEAM MOSS", desc = "HARVEST: 4 ESSENCE FOR THE WORKBENCH", cost = 8, sw = {"c": "m", "C": "Y"}},
+	"flax": {name = "IRON FLAX", desc = "HARVEST: 3 ORE AND 3 FIBER", cost = 8, sw = {"c": "g", "C": "G"}},
+}
+
+# ---- crafting materials -----------------------------------------------------------
+const MATS = {"ore": "ORE", "ess": "ESSENCE", "fib": "FIBER"}
+# what a blueprint weapon costs at the hub workbench, on top of scrap
+const RECIPES = {
+	"stormcaller": {"ess": 5, "ore": 2}, "sunlance": {"ess": 6, "fib": 1}, "swarm": {"ess": 4, "fib": 3},
+	"phoenix": {"fib": 6, "ess": 2}, "quake": {"ore": 7, "fib": 1}, "voidring": {"ore": 4, "ess": 3},
 }

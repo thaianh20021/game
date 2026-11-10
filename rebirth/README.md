@@ -2,6 +2,7 @@
 | `src/hub.gd` | South wing: bounties, trophies, quartermaster, cook, tailor, capsule machine, boons || `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
 | `src/pad.gd` | Gamepad input and local player two |
 | `src/touch.gd` | Touch sticks and buttons |
+| `src/pets.gd` | Pet skills, hearts, exclusive passives, the pet bowl |
 | `src/reso.gd` | Elemental resonance: stacks, the four bursts, attunement |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
@@ -129,6 +130,16 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
   after bosses (40%) and elite rooms (30%), and are kept forever. Foes drop scrap (kept between runs).
   The Workbench in the Hearth's south wing spends 15 scrap to pack a blueprint weapon for the next
   run; the bench in a workshop room builds a random known one on the spot for 50 gold.
+- Materials: foes sometimes leave ore (ground foes), fiber (flyers) or essence (elemental foes);
+  reward chests always hold one or two; elites and bosses leave more. Blueprint weapons at the hub
+  Workbench now cost 15 scrap plus a recipe of materials.
+- Seeds: chests (25%), foes (rarely) and every boss leave a seed. A found seed is planted for free;
+  seeds can still be bought with gems. The garden has five plots (three in the hall, two in the
+  south wing) and three new plants: Pet Berry (2 treats), Gleam Moss (4 essence), Iron Flax (3 ore, 3 fiber).
+- Pets cast their own skill when a foe is near (9 second cooldown): Flame Pounce, Frost Gust,
+  Overcharge, Spore Belch. Feed treats at the pet bowl by the Keeper to earn hearts: each heart
+  cuts the cooldown by 10%, and at 3 hearts the pet unlocks its exclusive passive (pup: shots
+  explode; owl: blocks one hit per room; mote: kills restore energy; toad: venom cloud when you are hurt).
 - Traps: floor spikes everywhere, plus one trap per biome: spore vents (venom cloud) in the Ancient
   Cave, flame jets in the Ember Forge, storm runes (triggered by stepping close) in the Crystal
   Archive. Traps also hurt foes and apply their element, so luring foes in can start a reaction.
@@ -176,5 +187,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

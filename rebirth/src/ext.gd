@@ -398,7 +398,8 @@ static func update_pet(g, dt: float) -> void:
 			pet.t = 0.55 if p.buffs.has("pack") else 1.1
 			var dir = (g.center(e) - pet.pos).normalized()
 			pet.face = 1 if dir.x >= 0.0 else -1
-			g.add_bullet(pet.pos + Vector2(0, -3), dir * 230.0, {dmg = 2.0 + g.floor_i * 0.8, el = Meta.PETS[pet.id].el, r = 2.0, life = 0.7, pierce = 2 if p.syn.has("beastlord") else 0})
+			g.add_bullet(pet.pos + Vector2(0, -3), dir * 230.0, {dmg = 2.0 + g.floor_i * 0.8, el = Meta.PETS[pet.id].el, r = 2.0, life = 0.7, pierce = 2 if p.syn.has("beastlord") else 0,
+				aoe = 12.0 if (pet.id == "pup" and int(pet.get("hearts", 0)) >= 3) else 0.0})
 		else:
 			pet.face = p.face
 

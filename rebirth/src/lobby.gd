@@ -8,6 +8,7 @@ const Sfx = preload("res://src/sfx.gd")
 const Dungeon = preload("res://src/dungeon.gd")
 const Net = preload("res://src/net.gd")
 const Hub = preload("res://src/hub.gd")
+const Pets = preload("res://src/pets.gd")
 
 const TRACKS = ["CAVE THEME", "FORGE THEME", "ARCHIVE THEME", "BOSS THEME", "HEARTH THEME"]
 const CRACK = Vector2i(29, 11)
@@ -67,6 +68,9 @@ static func populate(g) -> void:
 	g.inter.append({kind = "npc", menu = "codex", spr = "shelf", name = "ARCHIVE: CODEX", pos = tp(7, 5.2), notalk = true})
 	for i in 3:
 		g.inter.append({kind = "plot", i = i, pos = tp(21 + i * 2, 5.5)})
+	for i in 2:
+		g.inter.append({kind = "plot", i = 3 + i, pos = tp(17.5 + i * 2, 29.6)})
+	g.inter.append({kind = "egg", egg = "bowl", spr = "bowl", name = "PET BOWL: FEED A TREAT", pos = tp(22.2, 16.6)})
 	g.inter.append({kind = "npc", menu = "quest", spr = "board", name = "BOUNTY BOARD: DAILY TASKS", pos = tp(8, 22.4), notalk = true})
 	g.inter.append({kind = "npc", menu = "trophy", spr = "trophy", name = "TROPHY CASE", pos = tp(12, 22.4), notalk = true})
 	g.inter.append({kind = "egg", egg = "mail", spr = "mailbox", name = "MAILBOX: DAILY GIFT", pos = tp(23.5, 22.4)})
@@ -150,10 +154,20 @@ static func interact(g, it: Dictionary) -> void:
 			elif int(pl.left) > 0:
 				g.label(g.p.pos + Vector2(0, -24), "STILL GROWING. FINISH A RUN.", Color("a9e150"))
 			else:
+				var msg: String = D.SEEDS[pl.kind].name + ": READY FOR YOUR NEXT RUN"
 				match pl.kind:
 					"bloom": Meta.S.boons.hp = int(Meta.S.boons.get("hp", 0)) + 1
 					"root": Meta.S.boons.relic = int(Meta.S.boons.get("relic", 0)) + 1
-				var what: String = D.SEEDS[pl.kind].name
+					"berry":
+						Meta.S.treats = int(Meta.S.treats) + 2
+						msg = "+2 TREATS. TAKE THEM TO THE PET BOWL."
+					"gleam":
+						Meta.add_mat("ess", 4)
+						msg = "+4 ESSENCE"
+					"flax":
+						Meta.add_mat("ore", 3)
+						Meta.add_mat("fib", 3)
+						msg = "+3 ORE, +3 FIBER"
 				var vine = pl.kind == "vine"
 				pl.kind = ""
 				if vine:
@@ -161,11 +175,14 @@ static func interact(g, it: Dictionary) -> void:
 				else:
 					Meta.save()
 					Sfx.play("chest")
-					g.label(g.p.pos + Vector2(0, -24), what + ": READY FOR YOUR NEXT RUN", Color("a9e150"))
+					g.label(g.p.pos + Vector2(0, -24), msg, Color("a9e150"))
 		"egg":
 			egg(g, it)
 
 static func egg(g, it: Dictionary) -> void:
+	if it.egg == "bowl":
+		Pets.feed(g, it)
+		return
 	if it.egg in ["capsule", "mail"]:
 		Hub.egg(g, it)
 		return
@@ -381,10 +398,17 @@ static func rows(g, kind: String) -> Array:
 		"garden":
 			for id in D.SEEDS:
 				var sd = D.SEEDS[id]
-				out.append({name = sd.name, desc = sd.desc, cost = sd.cost, state = "buy", icon = "plant_" + id,
-					fn = func():
+				var have = int(Meta.S.seeds.get(id, 0))
+				var row = {name = sd.name, desc = sd.desc, cost = sd.cost, state = "buy", icon = "plant_" + id}
+				if have > 0:
+					row.state = "owned"
+					row.tag = "PLANT (%d)" % have
+				out.append(row)
+				row.fn = (func():
+						if have > 0:
+							Meta.S.seeds[id] = have - 1
 						Meta.S.garden[g.menu_plot] = {kind = id, left = 1}
-						g.menu_close = true})
+						g.menu_close = true)
 		"loom":
 			var cost = 0 if Meta.S.weaves == 0 else Meta.LOOM_COST
 			out.append({name = "WEAVE A NEW SOUL", desc = "REPLACES THE CURRENT WOVEN HERO", cost = cost, state = "buy",

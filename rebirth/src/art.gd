@@ -1199,6 +1199,43 @@ gGGGGGGg
 gGGkkGGg
 .GGGGGG.
 g.gg.g..""",
+	"m_ore": """
+..gGg..
+.gGGGg.
+gGcGGGg
+gGGGcGg
+.gGGGg.""",
+	"m_ess": """
+..m..
+.mYm.
+mYwYm
+.mYm.
+..m..""",
+	"m_fib": """
+n...n.
+.n.n..
+.lnl..
+..n...
+.eee..
+..e...""",
+	"seed": """
+..n..
+.ee..
+eeTe.
+eTee.
+.ee..""",
+	"bowl": """
+..rrrr....
+.rmrrmr...
+gggggggggg
+.gGGGGGGg.
+..gggggg..""",
+	"treat": """
+.n...
+rrr..
+rmrr.
+rrrr.
+.rr..""",
 	"pedestal": """
 .GGGGGGGGGG.
 GwGGGGGGGGGG
@@ -1264,7 +1301,7 @@ static func build() -> void:
 		make("relic_" + id, MAPS["relic"], {"c": sw[0], "C": sw[1], "b": sw[2]})
 	for id in D.SEEDS:
 		make("plant_" + id, MAPS["plant"], D.SEEDS[id].sw)
-	for n in ["bench", "blueprint", "scrap", "trophy", "capsule", "rack", "mailbox", "mannequin"]:
+	for n in ["m_ore", "m_ess", "m_fib", "seed", "bowl", "treat", "bench", "blueprint", "scrap", "trophy", "capsule", "rack", "mailbox", "mannequin"]:
 		make(n, MAPS[n])
 	make("npc_cook", MAPS["goblin"], {"t": "w", "e": "G", "T": "g"})
 	make("npc_tailor", MAPS["mage"], {"p": "m", "P": "p"})

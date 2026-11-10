@@ -8,6 +8,7 @@ const Meta = preload("res://src/meta.gd")
 const Touch = preload("res://src/touch.gd")
 const Hub = preload("res://src/hub.gd")
 const Reso = preload("res://src/reso.gd")
+const Pets = preload("res://src/pets.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -177,6 +178,19 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		sx += 10.0
 	if p.noregen > 0.0:
 		big(ci, Art.T["ic_tox"], Vector2(sx, 5), 1.0)
+	if p.pet != null:
+		# pet: skill cooldown and hearts
+		big(ci, Art.T["pet_" + p.pet.id], Vector2(111, 16), 1.0)
+		var ph = int(p.pet.get("hearts", 0))
+		var pk = clampf(1.0 - float(p.pet.get("sk", 0.0)) / (Pets.CD * (1.0 - 0.1 * ph)), 0.0, 1.0)
+		ci.draw_rect(Rect2(122, 17, 22, 4), INK)
+		ci.draw_rect(Rect2(123, 18, 20.0 * pk, 2), D.EL_COL[Meta.PETS[p.pet.id].el] if pk < 1.0 else Color.WHITE)
+		for i in Pets.MAX_HEARTS:
+			ci.draw_rect(Rect2(122 + i * 6, 23, 5, 4), INK)
+			ci.draw_rect(Rect2(123 + i * 6, 24, 3, 2), Color("ff6a7a") if i < ph else Color("3a3346"))
+		if g.in_lobby:
+			big(ci, Art.T["treat"], Vector2(146, 21), 1.0)
+			Px.text(ci, Vector2(153, 22), str(int(Meta.S.treats)), Color("ff6a7a"))
 
 	if g.in_lobby:
 		big(ci, Art.T["gem"], Vector2(5, 42), 1.0)

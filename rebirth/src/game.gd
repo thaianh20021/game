@@ -22,6 +22,7 @@ const Fx = preload("res://src/fx.gd")
 const Foes = preload("res://src/foes.gd")
 const Arms = preload("res://src/arms.gd")
 const Reso = preload("res://src/reso.gd")
+const Pets = preload("res://src/pets.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -580,7 +581,7 @@ func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
 	}
 	pl.sk = Meta.calc_sk(tkey)
 	if Meta.S.pet != "" and Meta.PETS.has(Meta.S.pet):
-		pl.pet = {id = Meta.S.pet, pos = Vector2.ZERO, t = 1.0, face = 1, moving = false}
+		pl.pet = {id = Meta.S.pet, pos = Vector2.ZERO, t = 1.0, face = 1, moving = false, sk = 4.0, guard = true, hearts = Pets.hearts(Meta.S.pet)}
 	if Meta.S.mount != "" and Meta.MOUNTS.has(Meta.S.mount):
 		var md = Meta.MOUNTS[Meta.S.mount]
 		pl.mount = {id = Meta.S.mount, hp = md.hp, mhp = md.hp, spd = md.spd}
@@ -1065,6 +1066,9 @@ func update_play(dt: float) -> void:
 		if state != "play":
 			return
 		Ext.update_pet(self, dt)
+		Pets.update(self, dt)
+		if state != "play":
+			return
 		p.syn_t -= dt
 		if p.syn_t <= 0.0:
 			p.syn_t = 0.5
@@ -1404,6 +1408,9 @@ func interact(it: Dictionary) -> void:
 				if rng.randf() < 0.3:
 					drop("key", it.pos, 1)
 				drop("orb", it.pos, 4 + rng.randi() % 3)
+				drop(["m_ore", "m_ess", "m_fib"][rng.randi() % 3], it.pos, 1 + rng.randi() % 2)
+				if rng.randf() < 0.25:
+					drop("seed", it.pos, 1)
 		"weapon":
 			if p.weapons[1] == null:
 				p.weapons[1] = it.w
@@ -1473,6 +1480,15 @@ func update_pickups(dt: float) -> void:
 				"scrap":
 					Meta.S.scrap = int(Meta.S.scrap) + 1
 					Sfx.play("coin", 0.7)
+				"m_ore", "m_ess", "m_fib":
+					Meta.add_mat(k.kind.substr(2), 1)
+					Sfx.play("coin", 0.8)
+					label(p.pos + Vector2(0, -22), "+1 " + D.MATS[k.kind.substr(2)], Color("d9d4c7"))
+				"seed":
+					var sid: String = D.SEEDS.keys()[rng.randi() % D.SEEDS.size()]
+					Meta.S.seeds[sid] = int(Meta.S.seeds.get(sid, 0)) + 1
+					Sfx.play("pick")
+					label(p.pos + Vector2(0, -22), "SEED: " + D.SEEDS[sid].name, Color("a9e150"))
 				"key":
 					p.keys += 1
 					Sfx.play("pick")
@@ -1523,6 +1539,8 @@ func update_rooms(dt: float) -> void:
 		for pl in players:
 			pl.room_hits = 0
 			pl.skin_ready = true
+			if pl.pet != null:
+				pl.pet.guard = true
 			# the gates are shut: pull anyone left outside in next to whoever stepped in
 			if not cur.rect.grow(-1).has_point(Vector2i((pl.pos / TS).floor())):
 				pl.pos = trig.pos
@@ -2222,6 +2240,7 @@ func kill(e: Dictionary) -> void:
 	e.dead = true
 	kills += 1
 	Meta.stat("bosses" if e.is_boss else "kills")
+	Pets.on_kill(self)
 	Meta.record("bosses" if e.is_boss else "foes", e.id)
 	if p.syn.has("wildfire") and e.st.has("fire"):
 		Ext.add_zone(self, e.pos, 18.0, "tox", 3.0)
@@ -2244,6 +2263,11 @@ func kill(e: Dictionary) -> void:
 	drop("orb", c, 1 + (1 if rng.randf() < 0.35 else 0))
 	if e.is_boss or e.elite or rng.randf() < 0.08:
 		drop("scrap", c, 5 if e.is_boss else (3 if e.elite else 1))
+	# crafting materials: what a foe is made of decides what it leaves behind
+	if not in_lobby and (e.is_boss or e.elite or rng.randf() < 0.15):
+		drop("m_ess" if e.el != "" else ("m_fib" if d.get("fly", false) else "m_ore"), c, 4 if e.is_boss else (2 if e.elite else 1))
+	if not in_lobby and rng.randf() < (1.0 if e.is_boss else 0.03):
+		drop("seed", c, 1)
 	if d.has("child"):
 		for i in 2:
 			var ch = spawn_enemy(d.child, e.pos + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)))
@@ -2289,9 +2313,12 @@ func hurt_player(dmg: int, el: String = "") -> void:
 		Sfx.play("slash", 0.7)
 		label(p.pos + Vector2(0, -22), "BLOCKED", Color("a8a7b8"))
 		return
+	if Pets.guard(self):
+		return
 	if p.relics.has("boots"):
 		el = ""
 	p.room_hits += 1
+	Pets.on_hurt(self)
 	if boss != null:
 		Meta.boss_credit(boss.id, D.BOSS_ATKS[boss.d.boss], boss.atk, float(dmg))
 	if st.thorns > 0:

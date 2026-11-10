@@ -41,13 +41,13 @@ func _init():
 	g.p.gold = 77
 	g.p.weapons[1] = {id = "rail", el = "bolt", el2 = "", lv = 2}
 	g.apply_buff("vital")
-	var mhp = g.p.mhp
 	g.kills = 12
 	g.next_floor()
 	g.pick_buff(0)
 	await frames(3)
 	check(not Meta.S.run.is_empty() and int(Meta.S.run.floor) == 1, "second floor should be saved")
 	var name = g.p.name
+	var mhp = g.p.mhp
 	var grid = g.dg.grid.duplicate()
 	var nbuffs = g.p.buffs.size()
 	# quit the program and come back
@@ -60,6 +60,7 @@ func _init():
 	Lobby.activate(g, g.menu.rows[0])
 	await frames(3)
 	check(not g.in_lobby and g.state == "play" and g.floor_i == 1 and g.run_seed == 4321, "continue should enter floor two of the same run")
+	print("  restored: ", g.p.name, " gold=", g.p.gold, " mhp=", g.p.mhp, "/", mhp, " buffs=", g.p.buffs.size(), "/", nbuffs, " kills=", g.kills)
 	check(g.p.name == name and g.p.gold == 77 and g.p.mhp == mhp and g.p.buffs.size() == nbuffs and g.kills == 12, "hero should be restored")
 	check(g.p.weapons[1] != null and g.p.weapons[1].id == "rail" and int(g.p.weapons[1].lv) == 2, "weapons should be restored")
 	check(g.dg.grid == grid, "floor layout should be the same")

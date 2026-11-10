@@ -132,7 +132,7 @@ static func rows(g, kind: String) -> Array:
 				out.append({name = m.name, desc = m.desc, cost = m.cost, state = "on" if has else "buy",
 					fn = func(): eat(g, m.id)})
 		"bench":
-			out.append({name = "SCRAP: %d" % int(Meta.S.scrap), desc = "BLUEPRINTS: SECRET ROOMS, ELITES, BOSSES", cost = 0, state = "owned", tag = "", fn = func(): pass})
+			out.append({name = "SCRAP %d  ORE %d  ESSENCE %d  FIBER %d" % [int(Meta.S.scrap), Meta.mat("ore"), Meta.mat("ess"), Meta.mat("fib")], desc = "MATERIALS DROP FROM FOES AND CHESTS", cost = 0, state = "owned", tag = "", fn = func(): pass})
 			for id in D.WEAPONS:
 				var w = D.WEAPONS[id]
 				if not w.get("bp", false):
@@ -142,9 +142,17 @@ static func rows(g, kind: String) -> Array:
 					continue
 				var packed = str(Meta.S.boons.get("weapon", "")) == id
 				var can = int(Meta.S.scrap) >= CRAFT_COST
-				out.append({name = w.name, desc = w.bpdesc, cost = 0, icon = "w_%s_" % w.spr,
-					state = "on" if packed else ("owned" if can else "locked"), tag = "PACKED" if packed else "%d SCRAP" % CRAFT_COST,
+				var rec: Dictionary = D.RECIPES[id]
+				var need = "%d SCRAP" % CRAFT_COST
+				for k in rec:
+					need += ", %d %s" % [rec[k], D.MATS[k]]
+					if Meta.mat(k) < rec[k]:
+						can = false
+				out.append({name = w.name, desc = w.bpdesc if packed else "NEEDS " + need, cost = 0, icon = "w_%s_" % w.spr,
+					state = "on" if packed else ("owned" if can else "locked"), tag = "PACKED" if packed else ("CRAFT" if can else "NEED MORE"),
 					fn = func():
+						for k in rec:
+							Meta.add_mat(k, -rec[k])
 						Meta.S.scrap = int(Meta.S.scrap) - CRAFT_COST
 						Meta.S.boons["weapon"] = id})
 		"tailor":

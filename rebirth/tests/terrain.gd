@@ -143,6 +143,7 @@ func _init():
 	print("scrap after 31 kills: ", Meta.S.scrap)
 	check(int(Meta.S.scrap) >= 3, "foes should drop scrap")
 	Meta.S.scrap = 20
+	Meta.S.mats = {ore = 9, ess = 9, fib = 9}
 	g.end_run(false)
 	g.goto_lobby()
 	g.open_menu("bench")

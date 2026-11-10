@@ -215,9 +215,9 @@ static func defaults() -> Dictionary:
 		gems = 0, best = 0, wins = 0, runs = 0, hero = 0, el = 0, hero_lv = {}, tree = {},
 		pets = ["pup"], pet = "pup", mounts = [], mount = "", fuse_unlocked = false, fuse = -1, eggs = {},
 		gen_seed = 0, weaves = 0, codex = {}, heat = 0, heat_max = 0, daily = {}, boons = {hp = 0, relic = 0},
-		garden = [{kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}], last_seed = 0,
+		garden = [{kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}], last_seed = 0,
 		stats = {}, quests = {day = 0, list = []}, trophies = {}, dyes = [], dye = -1, gift_day = 0, streak = 0,
-		blueprints = [], scrap = 0,
+		blueprints = [], scrap = 0, mats = {ore = 0, ess = 0, fib = 0}, seeds = {}, treats = 0, bond = {},
 		opts = {music = 4, sfx = 4, full = false, shake = true}, tips = {}, run = {},
 		ai = {cunning = 0.25, lead = [2.0, 1.0, 2.0, 1.0], bw = {}},
 	}
@@ -236,7 +236,7 @@ static func load_save() -> void:
 				S.ai[k2] = v[k][k2]
 		else:
 			S[k] = v[k]
-	for k in ["gems", "best", "wins", "runs", "hero", "el", "fuse", "gen_seed", "weaves", "heat", "heat_max", "last_seed", "scrap"]:
+	for k in ["gems", "best", "wins", "runs", "hero", "el", "fuse", "gen_seed", "weaves", "heat", "heat_max", "last_seed", "scrap", "treats"]:
 		S[k] = int(S[k])
 	# saves from before trees were effect-based
 	for key in S.tree:
@@ -244,6 +244,8 @@ static func load_save() -> void:
 		for id in S.tree[key]:
 			fixed.append(OLD_IDS.get(id, id))
 		S.tree[key] = fixed
+	while S.garden.size() < 5:
+		S.garden.append({kind = "", left = 0})
 	if S.hero >= hero_count():
 		S.hero = 0
 	if S.fuse >= hero_count():
@@ -267,6 +269,12 @@ static func stat(name: String, n: int = 1) -> void:
 	for q in S.quests.get("list", []):
 		if q.id == name and int(q.have) < int(q.need):
 			q.have = int(q.have) + n
+
+static func mat(k: String) -> int:
+	return int(S.mats.get(k, 0))
+
+static func add_mat(k: String, n: int) -> void:
+	S.mats[k] = mat(k) + n
 
 static func today() -> int:
 	var d = Time.get_date_dict_from_system()
