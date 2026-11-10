@@ -7,6 +7,7 @@ const D = preload("res://src/data.gd")
 const Meta = preload("res://src/meta.gd")
 const Touch = preload("res://src/touch.gd")
 const Hub = preload("res://src/hub.gd")
+const Reso = preload("res://src/reso.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -276,6 +277,11 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	for k in weapon_els(o):
 		if not all.has(k):
 			all.append(k)
+	# an element carried twice is attuned: its resonance needs one stack fewer
+	var att = Reso.attuned(g)
+	for i in att.size():
+		big(ci, Art.T["ic_" + att[i]], Vector2(wx - 22, 204 - i * 11), 1.0)
+		Px.text(ci, Vector2(wx - 12, 206 - i * 11), "X2 ATTUNED", D.EL_COL[att[i]])
 	if all.size() >= 2:
 		var pair = [all[0], all[1]]
 		pair.sort()

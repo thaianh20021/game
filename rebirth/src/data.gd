@@ -30,6 +30,14 @@ const WEAPONS = {
 	"bow": {name = "LONGBOW", spr = "bow", type = "bullet", dmg = 7.0, cd = 0.46, cost = 0.0, speed = 330.0, pierce = 1, kind = "arrow", rar = 0},
 	"flask": {name = "FLASK", spr = "flask", type = "lob", dmg = 6.0, cd = 0.55, cost = 0.0, range = 130.0, aoe = 20.0, puddle = true, rar = 0},
 	"axe": {name = "WAR AXE", spr = "axe", type = "melee", dmg = 12.0, cd = 0.5, cost = 0.0, range = 32.0, arc = 2.8, rar = 0},
+	"crossbow": {name = "CROSSBOW", spr = "crossbow", type = "bullet", dmg = 5.0, cd = 0.5, cost = 0.0, speed = 340.0, n = 3, fan = 0.16, kind = "arrow", rar = 0},
+	"boomerang": {name = "BOOMERANG", spr = "boomerang", type = "bullet", dmg = 6.0, cd = 0.6, cost = 0.0, speed = 230.0, life = 1.1, pierce = 99, boomer = true, r = 3, rar = 0},
+	"spear": {name = "SPEAR", spr = "spear", type = "melee", dmg = 8.0, cd = 0.26, cost = 0.0, range = 48.0, arc = 0.7, rar = 0},
+	"twins": {name = "TWIN PISTOLS", spr = "twins", type = "bullet", dmg = 3.2, cd = 0.2, cost = 0.6, speed = 280.0, n = 2, fan = 0.1, spread = 0.05, rar = 0},
+	"hammer": {name = "WARHAMMER", spr = "hammer", type = "melee", dmg = 18.0, cd = 0.75, cost = 1.5, range = 34.0, arc = 2.6, slam = 26.0, rar = 1},
+	"chakram": {name = "CHAKRAM", spr = "chakram", type = "bullet", dmg = 5.0, cd = 0.4, cost = 1.5, speed = 260.0, bounce = 4, pierce = 2, r = 3, rar = 1},
+	"grimoire": {name = "GRIMOIRE", spr = "grimoire", type = "bullet", dmg = 4.5, cd = 0.34, cost = 1.6, speed = 170.0, homing = 4.0, life = 2.0, r = 3, rar = 1},
+	"launcher": {name = "ROCKET TUBE", spr = "launcher", type = "bullet", dmg = 14.0, cd = 0.95, cost = 5.0, speed = 210.0, aoe = 30.0, r = 3, rar = 2},
 	"scatter": {name = "SCATTERGUN", spr = "shotgun", type = "bullet", dmg = 3.0, cd = 0.7, cost = 3.0, speed = 250.0, n = 6, fan = 0.55, spread = 0.05, life = 0.42, rar = 0},
 	"needle": {name = "NEEDLER", spr = "smg", type = "bullet", dmg = 2.2, cd = 0.08, cost = 0.7, speed = 300.0, spread = 0.12, rar = 0},
 	"repeater": {name = "REPEATER", spr = "smg", type = "bullet", dmg = 3.4, cd = 0.14, cost = 1.0, speed = 330.0, spread = 0.05, bounce = 1, rar = 1},
@@ -55,6 +63,10 @@ const SKILLS = {
 	"elixir": {name = "ELIXIR", cd = 12.0},
 	"leap": {name = "SKY LEAP", cd = 6.0},
 	"rage": {name = "BLOOD RAGE", cd = 13.0},
+	"turret": {name = "SENTRY", cd = 10.0},
+	"pulse": {name = "MAGNET PULSE", cd = 8.0},
+	"vines": {name = "GRASPING VINES", cd = 9.0},
+	"spirits": {name = "WILD SPIRITS", cd = 7.0},
 }
 
 # each element is weak to one other element
@@ -73,6 +85,10 @@ const HEROES = [
 		desc = "LOBS ELEMENT FLASKS. TURNS ANY STATUS INTO A REACTION."},
 	{id = "berserker", name = "BERSERKER", hp = 8, ar = 3, en = 140, start = "axe", skill = "leap", skill2 = "rage", skill_name = "SKY LEAP", skill_cd = 6.0,
 		desc = "ALL HEALTH, LITTLE ARMOR. LEAPS IN AND RAGES."},
+	{id = "engineer", name = "ENGINEER", hp = 5, ar = 5, en = 200, start = "crossbow", skill = "turret", skill2 = "pulse", skill_name = "SENTRY", skill_cd = 10.0,
+		desc = "BUILDS A SENTRY GUN. PULSE STUNS FOES AND PULLS IN LOOT."},
+	{id = "wildheart", name = "WILDHEART", hp = 6, ar = 4, en = 190, start = "boomerang", skill = "vines", skill2 = "spirits", skill_name = "GRASPING VINES", skill_cd = 9.0,
+		desc = "ROOTS FOES IN PLACE AND SENDS SPIRITS THAT HUNT THEM."},
 ]
 
 # ai: chase bat shoot spread charge bomb turret blink boss

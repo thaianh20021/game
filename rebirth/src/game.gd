@@ -20,6 +20,8 @@ const Hub = preload("res://src/hub.gd")
 const Traps = preload("res://src/traps.gd")
 const Fx = preload("res://src/fx.gd")
 const Foes = preload("res://src/foes.gd")
+const Arms = preload("res://src/arms.gd")
+const Reso = preload("res://src/reso.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -137,6 +139,7 @@ var pending_coop = false
 var pending_resume = false
 var buff_sel = 0
 var buff_turn = 0
+var reso_src = true
 var pending_start = null
 var menu_close = false
 var menu_plot = 0
@@ -1193,9 +1196,13 @@ func try_fire() -> void:
 	p.cd = w.cd * (0.6 if p.rage_t > 0.0 else 1.0) * st.rate
 	p.kick = 3.0
 	var lvm = Ext.wdmg(wi) * (1.4 if p.rage_t > 0.0 else 1.0)
-	if lvm != 1.0:
+	var tr: String = wi.get("trait", "")
+	if lvm != 1.0 or tr != "":
 		w = w.duplicate()
 		w.dmg = w.dmg * lvm
+		Arms.apply(w, tr)
+		if tr == "swift":
+			p.cd *= 0.75
 	fire_weapon(w, cur_el(), pcenter() + p.aim * 8.0, p.aim)
 
 func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> void:
@@ -1211,7 +1218,8 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 				add_bullet(origin, Vector2.from_angle(a) * w.speed * rng.randf_range(0.95, 1.05), {
 					dmg = w.dmg, el = el, r = float(w.get("r", 2)), life = w.get("life", 1.4),
 					pierce = w.get("pierce", 0) + st.pierce, bounce = w.get("bounce", 0) + st.bounce,
-					aoe = w.get("aoe", 0.0), kind = w.get("kind", "orb")})
+					aoe = w.get("aoe", 0.0), kind = w.get("kind", "orb"),
+					homing = w.get("homing", 0.0), boomer = w.get("boomer", false), zap = w.get("zap", false)})
 			if w.get("kind", "") != "flame":
 				burst(origin, 3, col, 50.0, 0.15)
 				Fx.muzzle(self, origin, dir, el)
@@ -1244,6 +1252,8 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 				var d = pr.pos - pc
 				if d.length() < rg + 6.0 and absf(angle_difference(dir.angle(), d.angle())) < w.arc / 2.0:
 					hurt_prop(pr, w.dmg)
+			if w.get("slam", 0.0) > 0.0:
+				explode(pc + dir * rg * 0.8, w.slam, w.dmg * 0.5, el, 0)
 			slashes.append({pos = pc, ang = dir.angle(), arc = w.arc, r = rg, t = 0.0, col = col})
 			Sfx.play("slash")
 		"chain":
@@ -1650,6 +1660,7 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 	e.anim += dt
 	e.react_cd -= dt
 	e.arc_cd -= dt
+	Reso.tick(e, dt)
 	e.vuln -= dt
 	for k in e.st.keys():
 		e.st[k] -= dt
@@ -2054,7 +2065,10 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 		burst(center(e), 3, c, 60.0, 0.25)
 		Fx.hit(self, center(e), el)
 	if el != "" and not resist and e.hp > 0.0:
+		# only direct hits build resonance; pools and burns do not
+		reso_src = not dot
 		apply_el(e, el, amt)
+		reso_src = true
 	if not dot and e.st.has("bolt") and e.arc_cd <= 0.0:
 		e.arc_cd = 0.35
 		var o = nearest_enemy(center(e), 64.0, [e])
@@ -2076,10 +2090,15 @@ func apply_el(e: Dictionary, el: String, dmg: float) -> void:
 		e.chill = 0
 		e.tox_n = 0
 		e.react_cd = 0.6
+		e.rs = null
 		var pair = [el, other]
 		pair.sort()
 		react(e, pair[0] + "+" + pair[1])
 		return
+	if reso_src:
+		Reso.add(self, e, el)
+		if e.dead:
+			return
 	match el:
 		"fire":
 			e.st["fire"] = 4.0 * st.dur
@@ -2395,6 +2414,10 @@ func update_bullets(dt: float) -> void:
 			if b.aoe > 0.0:
 				explode(b.pos, b.aoe, b.dmg * 0.6, b.el, b.team)
 			continue
+		if b.team == 0:
+			Arms.steer(self, b, dt)
+			if b.dead:
+				continue
 		var np = b.pos + b.vel * dt
 		if solid_at(np.x, np.y) and not b.get("ghost", false):
 			if b.bounce > 0:
@@ -2433,7 +2456,7 @@ func update_bullets(dt: float) -> void:
 					hurt_enemy(e, b.dmg, b.el, b.vel.normalized() * 90.0)
 					if (b.get("attune", false) or st.lens) and b.el != "" and not e.dead:
 						apply_el(e, b.el, 0.0)
-					if b.kind == "arrow" and p.syn.has("thunder"):
+					if (b.kind == "arrow" and p.syn.has("thunder")) or b.get("zap", false):
 						var o2 = nearest_enemy(center(e), 70.0, [e])
 						if o2 != null:
 							bolt(center(e), center(o2), D.EL_COL["bolt"])
@@ -2802,6 +2825,7 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 		Px.ctext(ci, Vector2(e.pos.x, topy - 13.0), "!", Color("ffd24a"))
 	Fx.status(self, ci, e, base, topy)
 	Foes.draw_charge(self, ci, e)
+	Reso.draw(self, ci, e)
 	if e.is_boss:
 		Fx.boss_fx(self, ci, e)
 

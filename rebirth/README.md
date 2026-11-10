@@ -2,6 +2,8 @@
 | `src/hub.gd` | South wing: bounties, trophies, quartermaster, cook, tailor, capsule machine, boons || `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
 | `src/pad.gd` | Gamepad input and local player two |
 | `src/touch.gd` | Touch sticks and buttons |
+| `src/reso.gd` | Elemental resonance: stacks, the four bursts, attunement |
+| `src/arms.gd` | Fusion traits; homing and returning projectiles |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
 | `src/fx.gd` | Visual effects: element trails, hits, statuses, reactions, boss auras, fused gear |
 | `src/traps.gd` | Floor traps: placement, timing, drawing |
@@ -79,7 +81,7 @@ needs the Android SDK set in Godot's Editor Settings; then: `godot --headless --
 Every run starts and ends here. Gems earned in runs are spent here and are kept forever.
 
 - Walk up to another hero and press E to play as them. Touch a crystal to pick your starting element.
-- 6 heroes. Mentor: a 9-node skill tree per hero (Power / Flow / Element); newer heroes, fusions and woven heroes each get a different tree.
+- 8 heroes. Mentor: a 9-node skill tree per hero (Power / Flow / Element); newer heroes, fusions and woven heroes each get a different tree.
 - Armorer: 5 permanent hero ranks.
 - Keeper: 4 pets (one per element) and 2 mounts.
 - Soul Altar: fuse your hero with another one: best stats of both, their main skill as your second
@@ -107,6 +109,14 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
 
 - Carry 2 weapons, each with an element (fire, ice, storm, venom). Two different elements on one foe
   trigger a reaction: Melt, Blast, Overload, Shatter, Blight, Plague. Reactions charge the Burst bar.
+- Resonance (for single-element builds): every direct hit of the same element on one foe adds a stack,
+  shown as motes circling it. At 5 stacks (4 if the party carries that element twice, +2 on bosses) the
+  element erupts: Eruption (fire: blast and burning ground), Glacier (ice: freezes the target and chills
+  neighbours), Thunderstrike (storm: strike that chains to 5 foes and stuns), Bloom (venom: cloud that
+  maxes poison). Stacks fade after 4 seconds; a different element or a reaction resets them. Pools and
+  burns do not add stacks.
+- Weapon fusion keeps the rarer weapon, both elements, and one trait from the weapon melted into it:
+  Splitting, Piercing, Rebound, Blasting, Arcing, Seeking, Haste or The Edge.
 - Fire and ice counter each other, storm and venom counter each other (+50% damage).
 - Shooting an element pool with a different element detonates it.
 - Workshop rooms: upgrade a weapon (+1 to +5), change its element, or fuse both weapons into one
@@ -158,5 +168,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

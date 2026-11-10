@@ -50,7 +50,7 @@ static func populate(g) -> void:
 	g.inter.append({kind = "gate", pos = tp(15, 5)})
 	for i in Meta.hero_count():
 		if i != Meta.S.hero:
-			g.inter.append({kind = "hero", i = i, pos = tp(6 + i * 3, 8)})
+			g.inter.append({kind = "hero", i = i, pos = tp(5 + i * 2.7, 8)})
 	for i in 4:
 		g.inter.append({kind = "crystal", i = i, pos = tp(4 + i * 2.5, 16.5)})
 	g.inter.append({kind = "npc", menu = "tree", spr = "npc_mentor", name = "MENTOR: SKILL TREE", pos = tp(4, 10)})

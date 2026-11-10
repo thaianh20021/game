@@ -1071,6 +1071,111 @@ t...ttttttttttttttt...t.
 ..p......bBBBBb......y..
 ..........bBBb..........
 ...........bb...........""",
+	"crossbow": """
+....t.....
+...tGGGGGc
+tttttttttC
+...tGGGGGc
+....t.....""",
+	"boomerang": """
+.cCCCCCc.
+cCc...cCc
+Cc.....cC
+c.......c""",
+	"twins": """
+gGGGGc..
+tt......
+..gGGGGc
+..tt....""",
+	"spear": """
+..............c.
+tttttttttttttGCc
+..............c.""",
+	"hammer": """
+.........gGGGg
+.........gcCCg
+tttttttttgCCCg
+.........gcCCg
+.........gGGGg""",
+	"chakram": """
+..cCCc..
+.c....c.
+C..GG..C
+C..GG..C
+.c....c.
+..cCCc..""",
+	"grimoire": """
+.pppppp.
+pPcCCcPp
+pPCwwCPp
+pPcCCcPp
+pwwwwwwp
+.PPPPPP.""",
+	"launcher": """
+.KggggggggggK.
+gGGGGGGGGGGGcC
+ttgGGcCcGGGGcC
+ttKggggggggK..
+.tt...........""",
+	"h_engineer": """
+...yyyyyy...
+..yyyyyyyy..
+.yyyyyyyyyy.
+..sGcsscGs..
+..ssssssss..
+...ssSSss...
+..tttttttt..
+.sttGttGtts.
+..ttyttytt..
+..tttttttt..
+..bb....bb..
+..KK....KK..""",
+	"h_wildheart": """
+..n......n..
+..nt.nn.tn..
+...tnnnnt...
+..nnnnnnnn..
+..nsssssss..
+..nskssksn..
+..nssssssn..
+...lnnnnl...
+.snnllllnns.
+..nnnttnnn..
+..NnnnnnnN..
+..ee....ee..
+..TT....TT..""",
+	"sk_turret": """
+....ww....
+...wGGw...
+...wGGw...
+..wwwwww..
+..wGGGGw..
+.wwwwwwww.
+.w......w.""",
+	"sk_pulse": """
+...wwww...
+..w....w..
+.w..GG..w.
+.w.GwwG.w.
+.w..GG..w.
+..w....w..
+...wwww...""",
+	"sk_vines": """
+.w......w.
+..w.ww.w..
+...wGGw...
+..w.GG.w..
+.w..GG..w.
+....GG....
+...wGGw...""",
+	"sk_spirits": """
+..ww......
+.wGGw..ww.
+.wGGw.wGGw
+..ww..wGGw
+....ww.ww.
+...wGGw...
+...wGGw...""",
 	"pedestal": """
 .GGGGGGGGGG.
 GwGGGGGGGGGG
@@ -1079,7 +1184,7 @@ gggggggggggg
 .gggggggggg.""",
 }
 
-const WSPR = ["pistol", "kunai", "rifle", "cannon", "staff", "blade", "bow", "axe", "greatblade", "shotgun", "smg", "sprayer", "coil", "mortar", "flask", "railgun", "lance", "starstaff"]
+const WSPR = ["pistol", "kunai", "rifle", "cannon", "staff", "blade", "bow", "axe", "greatblade", "shotgun", "smg", "sprayer", "coil", "mortar", "flask", "railgun", "lance", "starstaff", "crossbow", "boomerang", "twins", "spear", "hammer", "chakram", "grimoire", "launcher"]
 
 # Texture name for a weapon. Fused weapons get both colours and gilded metal, built on demand.
 static func wtex(w: Dictionary) -> String:
@@ -1127,7 +1232,7 @@ static func build() -> void:
 		reg("B_" + el, orb(5, c, c.darkened(0.45), Color.WHITE))
 		reg("eb_" + el, orb(4, Color("ff4a5e") if el == "" else c, Color("2a0714"), Color("fff0d0")))
 		reg("arrow_" + el, arrow(c))
-	for n in ["sk_whirl", "sk_nova", "sk_volley", "sk_blink", "sk_bulwark", "sk_rift", "sk_mines", "sk_knives", "sk_transmute", "sk_elixir", "sk_leap", "sk_rage", "br_0", "br_1", "br_2", "loom"]:
+	for n in ["sk_turret", "sk_pulse", "sk_vines", "sk_spirits", "sk_whirl", "sk_nova", "sk_volley", "sk_blink", "sk_bulwark", "sk_rift", "sk_mines", "sk_knives", "sk_transmute", "sk_elixir", "sk_leap", "sk_rage", "br_0", "br_1", "br_2", "loom"]:
 		make(n, MAPS[n])
 	for n in ["key", "board", "shelf", "plot", "sprout", "chest_lock"]:
 		make(n, MAPS[n])

@@ -66,7 +66,7 @@ func lobby_tour() -> void:
 	check(Meta.S.fuse_unlocked, "altar should unlock fusion")
 	check(Meta.S.pets.size() == 4 and Meta.S.mounts.size() == 2, "all pets and mounts bought")
 	check(Meta.S.tree.values().any(func(v): return v.size() == 9), "full skill tree bought")
-	check(Meta.S.gen_seed != 0 and Meta.hero_count() == 7, "loom should weave a hero")
+	check(Meta.S.gen_seed != 0 and Meta.hero_count() == D.HEROES.size() + 1, "loom should weave a hero")
 	# secret wall, then its chest
 	g.sim["fire"] = true
 	g.p.weapons[0] = {id = "pistol", el = "fire", el2 = "", lv = 0}
@@ -174,9 +174,9 @@ func _init() -> void:
 	await step(5)
 	await lobby_tour()
 	await run_hero(0, 1, "pup", "boar")
-	await run_hero(4, -1, "owl", "strider")
-	await run_hero(5, 6, "mote", "")
-	await run_hero(6, 4, "", "boar")
+	await run_hero(6, -1, "owl", "strider")
+	await run_hero(7, 8, "mote", "")
+	await run_hero(8, 4, "", "boar")
 	await run_hero(2, 3, "toad", "")
 	# garden grew during the runs, board starts a daily run
 	check(Meta.S.garden[0].kind != "" and int(Meta.S.garden[0].left) == 0, "plant should be ripe")

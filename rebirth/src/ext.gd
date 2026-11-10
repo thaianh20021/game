@@ -6,6 +6,7 @@ extends RefCounted
 const D = preload("res://src/data.gd")
 const Meta = preload("res://src/meta.gd")
 const Sfx = preload("res://src/sfx.gd")
+const Arms = preload("res://src/arms.gd")
 
 # ---- weapons ---------------------------------------------------------------------
 
@@ -21,7 +22,8 @@ static func wname(w: Dictionary) -> String:
 		s += D.EL_NAME[w.el] + "-" + D.EL_NAME[el2] + " "
 	else:
 		s += D.EL_PREFIX[w.el]
-	return s + D.WEAPONS[w.id].name
+	var tr: String = w.get("trait", "")
+	return s + D.WEAPONS[w.id].name + (" OF " + Arms.TRAIT_NAME[tr] if tr != "" else "")
 
 static func station_cost(g, it: Dictionary) -> int:
 	var w = g.p.weapons[g.p.wi]
@@ -74,7 +76,10 @@ static func station(g, it: Dictionary) -> void:
 			var id = w.id if D.WEAPONS[w.id].rar >= D.WEAPONS[o.id].rar else o.id
 			var res = {id = id, el = els[0] if els.size() > 0 else "", el2 = els[1] if els.size() > 1 else "",
 				lv = mini(5, maxi(int(w.get("lv", 0)), int(o.get("lv", 0))) + 1)}
+			# the weapon that is melted down leaves one of its traits behind
+			res.trait = Arms.trait_of(o.id if id == w.id else w.id)
 			p.weapons = [res, null]
+			g.banner = {text = "FUSED: " + Arms.TRAIT_NAME[res.trait], sub = Arms.TRAIT_DESC[res.trait], t = 3.0}
 			p.wi = 0
 			w = res
 			g.rings.append({pos = it.pos, r = 50.0, t = 0.0, col = Color("e58cff")})
@@ -262,6 +267,41 @@ static func do_skill(g, id: String, mw: Vector2, el: String) -> void:
 			g.rings.append({pos = pc, r = 34.0, t = 0.0, col = Color("d43b42")})
 			g.flash(pc, 90.0, Color("d43b42"), 0.4)
 			Sfx.play("roar", 1.5, -4.0)
+		"turret":
+			g.allies.append({pos = p.pos, life = 9.0 * sk.area, t = 0.2, el = el})
+			g.burst(p.pos, 10, col, 60.0, 0.4)
+			Sfx.play("door", 1.6)
+		"pulse":
+			for e in g.enemies:
+				if e.dead:
+					continue
+				var d = g.center(e) - pc
+				if d.length() < 70.0 * sk.area:
+					hit(g, e, 6.0 + fl, el, d.normalized() * 60.0)
+					if not e.dead:
+						e.stun = maxf(e.stun, 0.4 if e.is_boss else 1.3)
+			for k in g.pickups:
+				if k.kind != "heart" or p.hp < p.mhp:
+					k.pos = pc
+			g.rings.append({pos = pc, r = 70.0 * sk.area, t = 0.0, col = col})
+			g.flash(pc, 110.0, col, 0.3)
+			g.shake_add(3.0)
+		"vines":
+			for e in g.enemies:
+				if e.dead:
+					continue
+				if g.center(e).distance_to(pc) < 75.0 * sk.area:
+					hit(g, e, 4.0 + fl, el, Vector2.ZERO)
+					if not e.dead:
+						e.frz = maxf(e.frz, 0.7 if e.is_boss else 2.0)
+						g.bolts.append({a = e.pos + Vector2(0, e.r), b = g.center(e), col = Color("4fae4c"), t = 0.4, straight = false})
+			g.rings.append({pos = pc, r = 75.0 * sk.area, t = 0.0, col = Color("4fae4c")})
+			g.flash(pc, 100.0, Color("4fae4c"), 0.3)
+		"spirits":
+			for i in 6:
+				g.add_bullet(pc, Vector2.from_angle(p.aim.angle() + (i - 2.5) * 0.5) * 150.0,
+					{dmg = (6.0 + fl) * sk.dmg, el = el, homing = 5.0, life = 2.5 * sk.area, pierce = 1, r = 3.0, attune = sk.attune})
+			g.rings.append({pos = pc, r = 24.0, t = 0.0, col = col})
 		"knives":
 			for i in 16:
 				g.add_bullet(pc, Vector2.from_angle(p.aim.angle() + i / 16.0 * TAU) * 300.0,
