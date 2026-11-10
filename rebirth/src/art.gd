@@ -890,6 +890,61 @@ gGGGGykkyGGGGg
 gGGGGGyyGGGGGg
 gGGGGGGGGGGGGg
 gKKKKKKKKKKKKg""",
+	"trophy": """
+yyyyyyyy
+yYYyyyyo
+.yYyyyo.
+.yyyyyo.
+..yyyo..
+...yo...
+...yo...
+..tttt..
+.tTTTTt.""",
+	"capsule": """
+.gggggggg.
+gCCCCCCCCg
+gCrCyCbCCg
+gCCnCCmCCg
+gCyCCrCnCg
+gggggggggg
+gppppppppg
+gppkkkkppg
+gppkYYkppg
+gppppppppg
+gPPPPPPPPg
+.gg....gg.""",
+	"rack": """
+tttttttttttt
+t.G..c..y..t
+t.G..c..y..t
+t.G..c..y..t
+t.G..C..y..t
+t.t..t..t..t
+tttttttttttt
+t..........t
+TT........TT""",
+	"mailbox": """
+.bbbbbb.
+bBBBBBBb
+bBwwwwBb
+bBBBBBBr
+bbbbbbbr
+...tt...
+...tt...
+...tt...
+..TTTT..""",
+	"mannequin": """
+...ee...
+..eeee..
+...ee...
+.mmmmmm.
+mmmmmmmm
+.mmmmmm.
+.mmmmmm.
+..mmmm..
+...tt...
+...tt...
+..TTTT..""",
 	"pedestal": """
 .GGGGGGGGGG.
 GwGGGGGGGGGG
@@ -940,6 +995,11 @@ static func build() -> void:
 		make("relic_" + id, MAPS["relic"], {"c": sw[0], "C": sw[1], "b": sw[2]})
 	for id in D.SEEDS:
 		make("plant_" + id, MAPS["plant"], D.SEEDS[id].sw)
+	for n in ["trophy", "capsule", "rack", "mailbox", "mannequin"]:
+		make(n, MAPS[n])
+	make("npc_cook", MAPS["goblin"], {"t": "w", "e": "G", "T": "g"})
+	make("npc_tailor", MAPS["mage"], {"p": "m", "P": "p"})
+	make("npc_quarter", MAPS["guard"], {"r": "n", "o": "l"})
 	for n in ["cat", "jukebox", "tomb", "altar", "anvil", "cauldron", "fountain", "pet_pup", "pet_owl", "pet_mote", "pet_toad", "ic_fire", "ic_ice", "ic_bolt", "ic_tox", "gem"]:
 		make(n, MAPS[n])
 	for el in ["fire", "ice", "bolt", "tox"]:
@@ -1050,12 +1110,26 @@ static func look(l: Dictionary) -> String:
 			names.append(gn)
 		else:
 			names.append("h_" + id)
-	if l.k != "fuse":
-		return names[0]
-	var name = "hf_%s_%s" % [names[0], names[1]]
-	if not T.has(name):
-		fuse_hero(names[0], names[1], name)
-	return name
+	var name: String = names[0]
+	if l.k == "fuse":
+		name = "hf_%s_%s" % [names[0], names[1]]
+		if not T.has(name):
+			fuse_hero(names[0], names[1], name)
+	# tailor dye: shift the hue of the cloth, leave outline, greys and skin alone
+	var dye = float(l.get("dye", 0.0))
+	if dye <= 0.0:
+		return name
+	var dn = "%s_d%d" % [name, int(dye * 100.0)]
+	if not T.has(dn):
+		for suf in ["", "_1", "_2"]:
+			var img: Image = I[name + suf].duplicate()
+			for y in img.get_height():
+				for x in img.get_width():
+					var c = img.get_pixel(x, y)
+					if c.a > 0.0 and c.s > 0.3 and c.v > 0.2 and not (c.h > 0.03 and c.h < 0.11 and c.s < 0.6):
+						img.set_pixel(x, y, Color.from_hsv(fmod(c.h + dye, 1.0), c.s, c.v, 1.0))
+			reg(dn + suf, img)
+	return dn
 
 # Character fusion: head of sprite a on the body and legs of sprite b.
 static func fuse_hero(a: String, b: String, name: String) -> void:

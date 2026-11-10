@@ -13,6 +13,9 @@ const WHO = {
 	"armor": {name = "ARMORER HOLT", spr = "npc_armorer"},
 	"beast": {name = "KEEPER MOSSY", spr = "npc_keeper"},
 	"fuse": {name = "THE SOUL ALTAR", spr = "altar"},
+	"brew": {name = "COOK DUMPLE", spr = "npc_cook"},
+	"tailor": {name = "TAILOR VESS", spr = "npc_tailor"},
+	"armory": {name = "QUARTERMASTER ODD", spr = "npc_quarter"},
 	"loom": {name = "THE SOUL LOOM", spr = "loom"},
 }
 
@@ -103,6 +106,15 @@ static func lines(g, who: String) -> Array:
 			out.append(pick(g, ["THEY BITE. MOSTLY THE ENEMY.", "A PET BRINGS ITS OWN ELEMENT. THAT IS A FREE REACTION, FRIEND."]))
 			if Meta.S.mount == "":
 				out.append("STILL WALKING? A MOUNT TAKES THE HITS FOR YOU.")
+		"brew":
+			out.append("EAT BEFORE YOU DELVE. A MEAL LASTS ONE RUN, SO CHOOSE WELL.")
+			if Meta.S.runs >= 2 and Meta.S.wins == 0:
+				out.append("YOU KEEP COMING BACK HUNGRY. TRY THE STEW.")
+		"tailor":
+			out.append("SAME HERO, NEW COLOURS. THE FOES WILL NOT KNOW WHAT HIT THEM." if Meta.S.dyes.is_empty() else "BACK FOR ANOTHER SHADE? I KNEW YOU HAD TASTE.")
+		"armory":
+			var nw = Meta.codex_count("weapons")
+			out.append("YOU HAVE HANDLED %d KINDS OF WEAPON. I KEEP A FEW OF THEM ON THE RACK." % nw if nw > 0 else "BRING ME STORIES OF WEAPONS AND I WILL STOCK THEM.")
 		"fuse":
 			out.append("TWO SOULS. ONE BODY. THE BEST OF BOTH, AND A SKILL TREE ALL ITS OWN." if Meta.S.fuse_unlocked else "THE ALTAR SLEEPS. GEMS WILL WAKE IT.")
 		"loom":

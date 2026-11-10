@@ -6,6 +6,7 @@ const Px = preload("res://src/font.gd")
 const D = preload("res://src/data.gd")
 const Meta = preload("res://src/meta.gd")
 const Touch = preload("res://src/touch.gd")
+const Hub = preload("res://src/hub.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -24,7 +25,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - FREEZE, +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - SPREADS TO ALL NEARBY"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR"}
 
 static func buff_rect(i: int) -> Rect2:
 	return Rect2(55 + i * 127, 84, 116, 112)
@@ -221,11 +222,18 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	for q in g.players:
 		if q.idx == p.idx:
 			continue
-		panel(ci, Rect2(3, 140, 78, 30))
+		panel(ci, Rect2(3, 140, 104, 42))
 		Px.text(ci, Vector2(7, 143), "P%d %s" % [q.idx + 1, "DOWN" if q.down else str(q.name).substr(0, 9)], Color("ff6a6a") if q.down else Color("ffb84a"))
 		bar(ci, Vector2(7, 153), 68, q.hp, q.mhp, Color("e0444c"), true)
 		ci.draw_rect(Rect2(7, 162, 68.0 * clampf(float(q.ar) / maxf(q.mar, 1.0), 0.0, 1.0), 2), Color("a8a7b8"))
 		ci.draw_rect(Rect2(7, 165, 68.0 * clampf(q.en / maxf(q.men, 1.0), 0.0, 1.0), 2), Color("4aa8f0"))
+		var qw = q.weapons[q.wi]
+		Px.text(ci, Vector2(7, 171), str(D.WEAPONS[qw.id].name).substr(0, 10), D.EL_COL[qw.el])
+		for k in 2:
+			var qcd: float = q.skill_cd if k == 0 else q.skill2_cd
+			big(ci, Art.T["sk_" + q.skills[k]], Vector2(80 + k * 13, 150), 1.0, Color.WHITE if qcd <= 0.0 else Color(0.35, 0.35, 0.42))
+		big(ci, Art.T["coin"], Vector2(80, 169), 1.0)
+		Px.text(ci, Vector2(89, 171), str(q.gold), GOLD)
 	for i in p.relics.size():
 		big(ci, Art.T["relic_" + p.relics[i]], Vector2(4 + i * 11, 246), 1.0)
 
@@ -279,6 +287,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 
 	if g.in_lobby:
 		Px.text(ci, Vector2(5, 259), "THE HEARTH - " + p.name, DIM)
+		Px.text(ci, Vector2(5, 249), Hub.boon_text(), Color("a6e84e"))
 	else:
 		var bi = g.floor_i / 2
 		Px.text(ci, Vector2(5, 259), "%s %d-%d" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1], DIM)
@@ -495,7 +504,7 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 
 static func draw_buff(g, ci: CanvasItem) -> void:
 	ci.draw_rect(Rect2(0, 0, VW, VH), Color(0.02, 0.01, 0.05, 0.8))
-	Px.ctext(ci, Vector2(240, 36), "CHOOSE A BLESSING", GOLD, 2)
+	Px.ctext(ci, Vector2(240, 36), ("P%d: CHOOSE A BLESSING" % (g.buff_turn + 1)) if g.local_coop() else "CHOOSE A BLESSING", GOLD if g.buff_turn == 0 else Color("ffb84a"), 2)
 	Px.ctext(ci, Vector2(240, 58), "THE CORE REWARDS THOSE WHO DESCEND", DIM)
 	var m = g.mouse()
 	for i in g.buff_choices.size():

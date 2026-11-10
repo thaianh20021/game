@@ -212,6 +212,7 @@ static func defaults() -> Dictionary:
 		pets = ["pup"], pet = "pup", mounts = [], mount = "", fuse_unlocked = false, fuse = -1, eggs = {},
 		gen_seed = 0, weaves = 0, codex = {}, heat = 0, heat_max = 0, daily = {}, boons = {hp = 0, relic = 0},
 		garden = [{kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}], last_seed = 0,
+		stats = {}, quests = {day = 0, list = []}, trophies = {}, dyes = [], dye = -1, gift_day = 0, streak = 0,
 		ai = {cunning = 0.25, lead = [2.0, 1.0, 2.0, 1.0], bw = {}},
 	}
 
@@ -253,6 +254,13 @@ static func record(cat: String, id: String) -> bool:
 
 static func codex_count(cat: String) -> int:
 	return S.codex.get(cat, {}).size()
+
+# Lifetime counters; also feeds today's bounties.
+static func stat(name: String, n: int = 1) -> void:
+	S.stats[name] = int(S.stats.get(name, 0)) + n
+	for q in S.quests.get("list", []):
+		if q.id == name and int(q.have) < int(q.need):
+			q.have = int(q.have) + n
 
 static func today() -> int:
 	var d = Time.get_date_dict_from_system()

@@ -82,9 +82,12 @@ func _init():
 	await step(2)
 	check(g.state == "buff", "portal should offer a blessing")
 	var bid = g.buff_choices[0].id
+	var bid2 = g.buff_choices[1].id
 	g.pick_buff(0)
+	check(g.state == "buff" and g.buff_turn == 1, "player two should get a turn to choose")
+	g.pick_buff(1)
 	await step(3)
-	check(g.players[0].buffs.has(bid) and g.players[1].buffs.has(bid), "both players should get the blessing")
+	check(g.players[0].buffs.has(bid) and g.players[1].buffs.has(bid2) and not g.players[0].buffs.has(bid2), "each player should get its own blessing")
 	check(g.floor_i == 1 and g.players[1].name == h2, "second floor with the same partner")
 	# both down ends the run
 	for pl in g.players:
