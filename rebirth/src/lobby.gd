@@ -355,7 +355,7 @@ static func rows(g, kind: String) -> Array:
 			if Meta.S.heat_max == 0:
 				out.append({name = "WIN A RUN TO UNLOCK HEAT 1", desc = "EACH HEAT LEVEL ADDS A CURSE AND STACKS", cost = 0, state = "locked", tag = "", fn = func(): pass})
 		"codex":
-			var cats = [["WEAPONS", "weapons", D.WEAPONS.size()], ["FOES", "foes", D.ENEMIES.size() - 7], ["BOSSES", "bosses", 6],
+			var cats = [["WEAPONS", "weapons", D.WEAPONS.size()], ["FOES", "foes", D.ENEMIES.size() - 10], ["BOSSES", "bosses", 9],
 				["REACTIONS", "reactions", 6], ["RELICS", "relics", D.RELICS.size()], ["SYNERGIES", "synergies", D.SYNERGIES.size()]]
 			var have = 0
 			var total = 0

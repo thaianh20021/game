@@ -246,7 +246,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	var w = p.weapons[p.wi]
 	var def = D.WEAPONS[w.id]
 	panel(ci, wr, Color(0.07, 0.05, 0.12, 0.9), ecol)
-	var wt: Texture2D = Art.T["w_%s_%s" % [def.spr, w.el]]
+	var wt: Texture2D = Art.T[Art.wtex(w)]
 	var sc = 2.0 if wt.get_height() <= 9 else 1.0
 	big(ci, wt, wr.position + Vector2(20 - wt.get_width() * sc / 2.0, 16 - wt.get_height() * sc / 2.0), sc)
 	var els = weapon_els(w)
@@ -268,7 +268,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		var odef = D.WEAPONS[o.id]
 		var orr = Rect2(wx + 70, 211, 47, 18)
 		panel(ci, orr, Color(0.07, 0.05, 0.12, 0.8), DIM)
-		var ot: Texture2D = Art.T["w_%s_%s" % [odef.spr, o.el]]
+		var ot: Texture2D = Art.T[Art.wtex(o)]
 		big(ci, ot, orr.position + Vector2(28 - ot.get_width() / 2.0, 9 - ot.get_height() / 2.0), 1.0, Color(0.8, 0.8, 0.85))
 		Px.text(ci, orr.position + Vector2(4, 6), "Q", GOLD)
 	# which reaction the carried elements make together

@@ -18,6 +18,8 @@ const Pad = preload("res://src/pad.gd")
 const Net = preload("res://src/net.gd")
 const Hub = preload("res://src/hub.gd")
 const Traps = preload("res://src/traps.gd")
+const Fx = preload("res://src/fx.gd")
+const Foes = preload("res://src/foes.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -779,7 +781,7 @@ func new_floor() -> void:
 	# the layout of a floor depends only on the run seed, so seeds can be shared
 	drng.seed = hash([run_seed, floor_i])
 	dg = Dungeon.generate(drng, floor_i, floor_i % 2 == 1)
-	dg.boss_id = D.BIOMES[bi].bosses[drng.randi() % 2]
+	dg.boss_id = D.BIOMES[bi].bosses[drng.randi() % D.BIOMES[bi].bosses.size()]
 	rebake()
 	props = dg.props
 	traps = dg.get("traps", [])
@@ -1213,6 +1215,7 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 					aoe = w.get("aoe", 0.0), kind = w.get("kind", "orb")})
 			if w.get("kind", "") != "flame":
 				burst(origin, 3, col, 50.0, 0.15)
+				Fx.muzzle(self, origin, dir, el)
 				flash(origin, 26.0, col, 0.1)
 			Sfx.play("shoot" if el == "" else "shoot_" + el, 1.0, -4.0 if w.cd < 0.1 else 0.0)
 		"melee":
@@ -1705,6 +1708,8 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 				e.dodge_dir = side if side.dot(tb) > 0.0 else -side
 				e.dodge_t = 0.22
 				break
+	if not e.is_boss and Foes.special(self, e, dt, dir, dist):
+		return
 	match d.ai:
 		"chase":
 			steer(e, dir + Vector2(sin(e.anim * 3.0 + e.uid), cos(e.anim * 2.3 + e.uid)) * 0.35, spd, dt)
@@ -1825,6 +1830,9 @@ func steer(e: Dictionary, dir: Vector2, spd: float, dt: float) -> void:
 
 func boss_ai(e: Dictionary, dt: float, dir: Vector2) -> void:
 	var rage = e.hp < e.mhp * 0.5
+	if rage and not e.get("raged", false):
+		e.raged = true
+		Fx.enrage(self, e)
 	match e.state:
 		"hop":
 			var k = clampf(1.0 - e.t / 0.8, 0.0, 1.0)
@@ -1834,8 +1842,8 @@ func boss_ai(e: Dictionary, dt: float, dir: Vector2) -> void:
 				e.z = 0.0
 				e.state = "busy"
 				e.t = 0.9
-				explode(e.pos, 42.0, 2.0, "tox", 1)
-				ring(center(e), 24 if rage else 16, 90.0, "tox", rng.randf() * TAU)
+				explode(e.pos, 42.0, 2.0, e.el, 1)
+				ring(center(e), 24 if rage else 16, 90.0, e.el, rng.randf() * TAU)
 			return
 		"aim":
 			if e.t <= 0.0:
@@ -1871,7 +1879,8 @@ func boss_ai(e: Dictionary, dt: float, dir: Vector2) -> void:
 		0: boss_golem(e, rage, dir)
 		1: boss_tyrant(e, rage)
 		2: boss_lich(e, rage)
-		_: Ext.boss(self, e, rage, dir)
+		3, 4, 5: Ext.boss(self, e, rage, dir)
+		_: Foes.boss(self, e, rage, dir)
 
 func tele_circle(pos: Vector2, r: float, dur: float) -> void:
 	teles.append({kind = "circle", pos = pos, t = 0.0, dur = dur, r = r})
@@ -2047,6 +2056,7 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 	if not dot:
 		Sfx.play("hit", 1.0, -3.0)
 		burst(center(e), 3, c, 60.0, 0.25)
+		Fx.hit(self, center(e), el)
 	if el != "" and not resist and e.hp > 0.0:
 		apply_el(e, el, amt)
 	if not dot and e.st.has("bolt") and e.arc_cd <= 0.0:
@@ -2102,6 +2112,7 @@ func react(e: Dictionary, key: String) -> void:
 	charge_res()
 	Meta.record("reactions", key)
 	tip("react", "REACTION: " + info[0], "REACTIONS FILL THE BURST BAR")
+	Fx.react(self, c, key)
 	Meta.stat("reacts")
 	hitstop = maxf(hitstop, 0.04)
 	shake_add(3.0)
@@ -2411,7 +2422,7 @@ func update_bullets(dt: float) -> void:
 		b.pos = np
 		if b.team == 0:
 			if b.kind != "flame" and Engine.get_process_frames() % 2 == 0:
-				parts.append({pos = b.pos, vel = Vector2.ZERO, life = 0.18, max = 0.18, col = D.EL_COL[b.el], size = 1, grav = 0.0})
+				Fx.trail(self, b)
 			for e in enemies:
 				if e.dead or b.hit.has(e.uid):
 					continue
@@ -2703,7 +2714,7 @@ func draw_inter(ci: CanvasItem, it: Dictionary) -> void:
 			ci.draw_texture(sh, it.pos + Vector2(-8, 1))
 			spr(ci, "chest_open" if it.open else "chest", it.pos + Vector2(0, 5))
 		"weapon":
-			var t: Texture2D = Art.T["w_%s_%s" % [D.WEAPONS[it.w.id].spr, it.w.el]]
+			var t: Texture2D = Art.T[Art.wtex(it.w)]
 			var bobk = sin(time * 3.0 + it.pos.x) * 2.0
 			ci.draw_texture(sh, it.pos + Vector2(-8, 2))
 			ci.draw_texture(t, (it.pos + Vector2(-t.get_width() / 2.0, -6 - t.get_height() / 2.0 + bobk)).round())
@@ -2715,7 +2726,7 @@ func draw_inter(ci: CanvasItem, it: Dictionary) -> void:
 			var bobk = sin(time * 3.0 + it.pos.x) * 1.5
 			match it.item.type:
 				"weapon":
-					var t: Texture2D = Art.T["w_%s_%s" % [D.WEAPONS[it.item.w.id].spr, it.item.w.el]]
+					var t: Texture2D = Art.T[Art.wtex(it.item.w)]
 					ci.draw_texture(t, (it.pos + Vector2(-t.get_width() / 2.0, -10 - t.get_height() / 2.0 + bobk)).round())
 				"relic":
 					spr(ci, "relic_" + it.item.id, it.pos + Vector2(0, -3 + bobk))
@@ -2788,11 +2799,15 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 		ci.draw_rect(Rect2(e.pos.x - 7.0, topy - 1.0, 14.0 * clampf(e.hp / e.mhp, 0.0, 1.0), 2), Color("ff5a6a"))
 	if e.wind > 0.0 or e.state == "wind" or e.state == "fuse":
 		Px.ctext(ci, Vector2(e.pos.x, topy - 13.0), "!", Color("ffd24a"))
+	Fx.status(self, ci, e, base, topy)
+	Foes.draw_charge(self, ci, e)
+	if e.is_boss:
+		Fx.boss_fx(self, ci, e)
 
 func draw_weapon(ci: CanvasItem) -> void:
 	var w = p.weapons[p.wi]
 	var def = D.WEAPONS[w.id]
-	var t: Texture2D = Art.T["w_%s_%s" % [def.spr, w.el]]
+	var t: Texture2D = Art.T[Art.wtex(w)]
 	var hand = p.pos + Vector2(0, -2.0 - plift()) + p.aim * 3.0
 	var ang = p.aim.angle()
 	var flip = -1.0 if p.aim.x < 0.0 else 1.0
@@ -2806,6 +2821,7 @@ func draw_weapon(ci: CanvasItem) -> void:
 	ci.draw_set_transform(hand.round(), ang, Vector2(1.0, flip))
 	ci.draw_texture(t, Vector2(-1.0 - p.kick + (3.0 if def.spr == "bow" else 0.0), -t.get_height() / 2.0))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Fx.weapon_aura(self, ci, hand, w)
 
 func plift() -> float:
 	return 6.0 if (p.mount != null and p.mount.hp > 0) else 0.0
@@ -2826,6 +2842,7 @@ func draw_player(ci: CanvasItem) -> void:
 	if p.slow > 0.0:
 		mod = Color(0.6, 0.85, 1.0, a)
 	ci.draw_texture(Art.T["shadow"], p.pos + Vector2(-8, p.r - 3.0))
+	Fx.fuse_aura(self, ci, p)
 	var behind = p.aim.y < -0.35
 	if behind:
 		draw_weapon(ci)
@@ -2868,6 +2885,7 @@ func draw_top(ci: CanvasItem) -> void:
 			ci.draw_texture(t, Vector2(-5, -1.5))
 			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		else:
+			Fx.tail(ci, b, col if b.team == 0 else Color(1.0, 0.3, 0.37))
 			var nm = "eb_" + b.el if b.team == 1 else (("B_" if b.r >= 3.0 else "b_") + b.el)
 			var t: Texture2D = Art.T[nm]
 			ci.draw_texture(t, (b.pos - t.get_size() / 2.0).round())

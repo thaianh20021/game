@@ -2,6 +2,8 @@
 | `src/hub.gd` | South wing: bounties, trophies, quartermaster, cook, tailor, capsule machine, boons || `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
 | `src/pad.gd` | Gamepad input and local player two |
 | `src/touch.gd` | Touch sticks and buttons |
+| `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
+| `src/fx.gd` | Visual effects: element trails, hits, statuses, reactions, boss auras, fused gear |
 | `src/traps.gd` | Floor traps: placement, timing, drawing |
 | `src/more.gd` | Synergies, relics, active items, secret rooms |
 | `src/talk.gd` | NPC dialogue rules |
@@ -113,11 +115,15 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
   Cave, flame jets in the Ember Forge, storm runes (triggered by stepping close) in the Crystal
   Archive. Traps also hurt foes and apply their element, so luring foes in can start a reaction.
   Flying foes ignore spikes; dashing through a trap is safe.
+- Charged attacks: any foe may stop, gather power for a second (closing ring and "!!") and release a
+  move outside its usual routine: slimes leap, shooters fire a double volley, chargers quake, and so on.
+  Elites do it twice as often.
+- Nine bosses, three per biome, picked per floor. At half health a boss enrages.
 - Shrines trade 1 max health for a blessing. Shops sell weapons, potions and tomes.
 - Talk to the peddler, smith and alchemist: they comment on your gold, health and elements, and the
   peddler tells you the weakness of the boss ahead.
 - Fight rooms can be elite, dark, frenzied or element-surged. Layouts, room shapes and the boss of
-  each biome (two candidates each, six in total) are rolled per floor.
+  each biome (three candidates each, nine in total) are rolled per floor.
 - Pick a blessing after every floor.
 
 ## Foes that learn
@@ -149,5 +155,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

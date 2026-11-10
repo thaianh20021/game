@@ -945,6 +945,132 @@ mmmmmmmm
 ...tt...
 ...tt...
 ..TTTT..""",
+	"axe": """
+.........GGG.
+........GcCCG
+tttttttttGCCG
+........GcCCG
+.........GGG.""",
+	"greatblade": """
+...y.............
+..yyGGGGGGGGGGGc.
+ttyyCwwwwwwwwwwwc
+ttyyCwwwwwwwwwwwc
+..yyGGGGGGGGGGGc.
+...y.............""",
+	"shotgun": """
+.KggggggggggK
+.gGGGGGGGGGGc
+ttgGGGGGGGGGc
+tttKggg......
+.tt..........""",
+	"smg": """
+..gGGGGGGGGc
+ttgGcCGGGGk.
+ttgggg.g....
+.tt..gg.....""",
+	"sprayer": """
+..KKKK.......
+.gGGGGgggggc.
+ttGcCGGGGGGCc
+ttgGGGggggc..
+.tt.KK.......""",
+	"coil": """
+.........c.c..
+........cCcCc.
+tttttttttCwC..
+........cCcCc.
+.........c.c..""",
+	"mortar": """
+...KggggggK.
+..gGGGGGGGGc
+ttgGcCcGGGGc
+tt.KggggggK.
+ttt.........""",
+	"flask": """
+....ww..
+...GccG.
+tt.GcCcG
+ttGccCcG
+...GccG.
+....GG..""",
+	"railgun": """
+..gggggggggggggg.
+.gGGcGGcGGcGGcGGc
+ttgKKKKKKKKKKKKK.
+ttgGGcGGcGGcGGcGc
+.tt.gggggggggggg.""",
+	"lance": """
+..gGGGGGGGg....
+ttgGcCCCCCCCCCw
+ttgGGGGGGGg....
+.tt............""",
+	"starstaff": """
+...........y..
+..........cCc.
+ttttttttttCwCy
+..........cCc.
+...........y..""",
+	"rootking_b": """
+....n...n..nn..n...n....
+...nln.nlnnllnnln.nln...
+....nnnnnnnnnnnnnnnn....
+.....tttttttttttttt.....
+....tteeeeeeeeeeeett....
+...tteeTeeeeeeeeTeett...
+...tteekkkeeeekkkeett...
+...tteekykeeeekykeett...
+...tteekkkeeeekkkeett...
+...tteeeeeeTTeeeeeett...
+...ttTeeekkkkkkeeeTtt...
+..tttteekwkwkwkeetttt...
+.tt.ttteekkkkkeettt.tt..
+tt..tttteeeeeeetttt..tt.
+t...ttttttttttttttt...t.
+...tttTtttttttttTttt....
+..ttt.ttt.tttt.ttt.ttt..
+.tt...tt...tt...tt...tt.
+.T....T....TT....T....T.""",
+	"wyrm_b": """
+..y..................y..
+..yy................yy..
+...oy..rrrrrrrrrr..yo...
+...oorrrrrrrrrrrrrroo...
+....rrroorrrrrroorrr....
+...rrrokyorrrrokyorrr...
+...rrroooorrrroooorrr...
+...rrrrrrrrrrrrrrrrrr...
+....rrrrkrrrrrrkrrrr....
+....RrrrrrrrrrrrrrrR....
+.....RwkwkwkwkwkwkR.....
+.....RkwkwkwkwkwkwR.....
+......RRrrrrrrrrRR......
+..rrrr..RRrrrrRR..rrrr..
+.rroorr...rrrr...rroorr.
+.rooyor..rroorr..royoor.
+.rroorrrrrooyorrrrroorr.
+..rrrrRRrrroorrrRRrrrr..
+....RRR..rrrrrr..RRR....""",
+	"sentinel_b": """
+...........cc...........
+..........cCCc..........
+.........cCCCCc.........
+....c...cCCwwCCc...c....
+...cCc.cCCwwwwCCc.cCc...
+...cCc.cCCCCCCCCc.cCc...
+....c.gggggggggggg.c....
+.....gGGGGGGGGGGGGg.....
+....gGGGkkkkkkkkGGGg....
+....gGGkkmmmmmmkkGGg....
+....gGGkmmYwwYmmkGGg....
+....gGGkkmmmmmmkkGGg....
+....gGGGkkkkkkkkGGGg....
+.....gGGGGGGGGGGGGg.....
+..p...gggggggggggg...y..
+.pPp....bBBBBBBb....yYy.
+..p......bBBBBb......y..
+..........bBBb..........
+...........bb...........""",
 	"pedestal": """
 .GGGGGGGGGG.
 GwGGGGGGGGGG
@@ -952,6 +1078,21 @@ gggggggggggg
 .gKKKKKKKKg.
 .gggggggggg.""",
 }
+
+const WSPR = ["pistol", "kunai", "rifle", "cannon", "staff", "blade", "bow", "axe", "greatblade", "shotgun", "smg", "sprayer", "coil", "mortar", "flask", "railgun", "lance", "starstaff"]
+
+# Texture name for a weapon. Fused weapons get both colours and gilded metal, built on demand.
+static func wtex(w: Dictionary) -> String:
+	var s: String = D.WEAPONS[w.id].spr
+	var el2: String = w.get("el2", "")
+	if el2 == "":
+		return "w_%s_%s" % [s, w.el]
+	var n = "w_%s_%s_%s" % [s, w.el, el2]
+	if not T.has(n):
+		var a = el_swap(w.el)
+		var b = el_swap(el2)
+		make(n, MAPS[s], {"c": a.get("c", "c"), "C": b.get("c", "c"), "b": b.get("b", "b"), "g": "e", "K": "T", "G": "Y"})
+	return n
 
 static func el_swap(el: String) -> Dictionary:
 	match el:
@@ -973,7 +1114,7 @@ static func build() -> void:
 		make("e_" + id, MAPS[d.spr], d.get("swap", {}))
 		if d.get("walk", false):
 			walk_frames("e_" + id)
-	for base in ["pistol", "kunai", "rifle", "cannon", "staff", "blade", "bow"]:
+	for base in WSPR:
 		for el in ["", "fire", "ice", "bolt", "tox", "prism"]:
 			make("w_" + base + "_" + el, MAPS[base], el_swap(el))
 	for n in ["coin", "orb", "heart", "chest", "chest_open", "potion", "cell", "tome", "crate", "torch", "pedestal"]:
@@ -1142,6 +1283,10 @@ static func fuse_hero(a: String, b: String, name: String) -> void:
 		for y in 7:
 			for x in img.get_width():
 				img.set_pixel(x, h - 1 - y, ib.get_pixel(x, hb - 1 - y) if x < ib.get_width() else Color(0, 0, 0, 0))
+		for y in h:
+			for x in img.get_width():
+				if img.get_pixel(x, y).is_equal_approx(OUT):
+					img.set_pixel(x, y, Color("7a5514"))
 		reg(name + suf, img)
 
 # Two extra frames with one foot lifted each, for a cheap walk cycle.

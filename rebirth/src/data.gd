@@ -28,18 +28,18 @@ const WEAPONS = {
 	"blade": {name = "BLADE", spr = "blade", type = "melee", dmg = 9.0, cd = 0.36, cost = 0.0, range = 30.0, arc = 2.4, rar = 0},
 	"wand": {name = "WAND", spr = "staff", type = "bullet", dmg = 6.0, cd = 0.42, cost = 0.0, speed = 210.0, aoe = 16.0, r = 3, rar = 0},
 	"bow": {name = "LONGBOW", spr = "bow", type = "bullet", dmg = 7.0, cd = 0.46, cost = 0.0, speed = 330.0, pierce = 1, kind = "arrow", rar = 0},
-	"flask": {name = "FLASK", spr = "cannon", type = "lob", dmg = 6.0, cd = 0.55, cost = 0.0, range = 130.0, aoe = 20.0, puddle = true, rar = 0},
-	"axe": {name = "WAR AXE", spr = "blade", type = "melee", dmg = 12.0, cd = 0.5, cost = 0.0, range = 32.0, arc = 2.8, rar = 0},
-	"scatter": {name = "SCATTERGUN", spr = "cannon", type = "bullet", dmg = 3.0, cd = 0.7, cost = 3.0, speed = 250.0, n = 6, fan = 0.55, spread = 0.05, life = 0.42, rar = 0},
-	"needle": {name = "NEEDLER", spr = "rifle", type = "bullet", dmg = 2.2, cd = 0.08, cost = 0.7, speed = 300.0, spread = 0.12, rar = 0},
-	"repeater": {name = "REPEATER", spr = "rifle", type = "bullet", dmg = 3.4, cd = 0.14, cost = 1.0, speed = 330.0, spread = 0.05, bounce = 1, rar = 1},
-	"sprayer": {name = "SPRAYER", spr = "cannon", type = "bullet", dmg = 1.6, cd = 0.05, cost = 0.45, speed = 175.0, spread = 0.26, life = 0.34, pierce = 99, kind = "flame", rar = 1},
-	"coil": {name = "ARC COIL", spr = "staff", type = "chain", dmg = 6.0, cd = 0.42, cost = 2.5, range = 135.0, n = 3, rar = 1},
-	"mortar": {name = "MORTAR", spr = "cannon", type = "lob", dmg = 13.0, cd = 0.9, cost = 4.0, range = 150.0, aoe = 34.0, puddle = true, rar = 1},
-	"greatblade": {name = "GREATBLADE", spr = "blade", type = "melee", dmg = 16.0, cd = 0.55, cost = 1.0, range = 38.0, arc = 3.0, rar = 1},
-	"beam": {name = "BEAM LANCE", spr = "rifle", type = "beam", dmg = 1.5, cd = 0.06, cost = 0.5, range = 140.0, rar = 2},
-	"rail": {name = "RAILGUN", spr = "rifle", type = "bullet", dmg = 20.0, cd = 0.85, cost = 4.0, speed = 560.0, pierce = 5, r = 3, kind = "arrow", rar = 2},
-	"nova": {name = "STAR STAFF", spr = "staff", type = "bullet", dmg = 4.0, cd = 0.6, cost = 4.0, speed = 190.0, n = 10, fan = 5.6, pierce = 1, rar = 2},
+	"flask": {name = "FLASK", spr = "flask", type = "lob", dmg = 6.0, cd = 0.55, cost = 0.0, range = 130.0, aoe = 20.0, puddle = true, rar = 0},
+	"axe": {name = "WAR AXE", spr = "axe", type = "melee", dmg = 12.0, cd = 0.5, cost = 0.0, range = 32.0, arc = 2.8, rar = 0},
+	"scatter": {name = "SCATTERGUN", spr = "shotgun", type = "bullet", dmg = 3.0, cd = 0.7, cost = 3.0, speed = 250.0, n = 6, fan = 0.55, spread = 0.05, life = 0.42, rar = 0},
+	"needle": {name = "NEEDLER", spr = "smg", type = "bullet", dmg = 2.2, cd = 0.08, cost = 0.7, speed = 300.0, spread = 0.12, rar = 0},
+	"repeater": {name = "REPEATER", spr = "smg", type = "bullet", dmg = 3.4, cd = 0.14, cost = 1.0, speed = 330.0, spread = 0.05, bounce = 1, rar = 1},
+	"sprayer": {name = "SPRAYER", spr = "sprayer", type = "bullet", dmg = 1.6, cd = 0.05, cost = 0.45, speed = 175.0, spread = 0.26, life = 0.34, pierce = 99, kind = "flame", rar = 1},
+	"coil": {name = "ARC COIL", spr = "coil", type = "chain", dmg = 6.0, cd = 0.42, cost = 2.5, range = 135.0, n = 3, rar = 1},
+	"mortar": {name = "MORTAR", spr = "mortar", type = "lob", dmg = 13.0, cd = 0.9, cost = 4.0, range = 150.0, aoe = 34.0, puddle = true, rar = 1},
+	"greatblade": {name = "GREATBLADE", spr = "greatblade", type = "melee", dmg = 16.0, cd = 0.55, cost = 1.0, range = 38.0, arc = 3.0, rar = 1},
+	"beam": {name = "BEAM LANCE", spr = "lance", type = "beam", dmg = 1.5, cd = 0.06, cost = 0.5, range = 140.0, rar = 2},
+	"rail": {name = "RAILGUN", spr = "railgun", type = "bullet", dmg = 20.0, cd = 0.85, cost = 4.0, speed = 560.0, pierce = 5, r = 3, kind = "arrow", rar = 2},
+	"nova": {name = "STAR STAFF", spr = "starstaff", type = "bullet", dmg = 4.0, cd = 0.6, cost = 4.0, speed = 190.0, n = 10, fan = 5.6, pierce = 1, rar = 2},
 }
 
 const SKILLS = {
@@ -98,17 +98,20 @@ const ENEMIES = {
 	"queen": {spr = "queen_b", name = "THE BROOD QUEEN", hp = 560, spd = 20, ai = "boss", boss = 3, touch = 1, el = "tox", r = 14, sc = 2.0, cost = 0, squash = true},
 	"iron": {spr = "iron_b", name = "IRON WARDEN MK II", hp = 820, spd = 24, ai = "boss", boss = 4, touch = 1, el = "bolt", r = 14, sc = 2.0, cost = 0},
 	"void": {spr = "void_b", name = "THE HOLLOW SHADE", hp = 1000, spd = 34, ai = "boss", boss = 5, touch = 1, r = 14, sc = 2.0, cost = 0, fly = true},
+	"rootking": {spr = "rootking_b", name = "THE ROOT KING", hp = 600, spd = 18, ai = "boss", boss = 6, touch = 1, r = 14, sc = 2.0, cost = 0},
+	"wyrm": {spr = "wyrm_b", name = "THE CINDER WYRM", hp = 860, spd = 30, ai = "boss", boss = 7, touch = 1, el = "fire", r = 14, sc = 2.0, cost = 0},
+	"sentinel": {spr = "sentinel_b", name = "THE PRISM SENTINEL", hp = 1100, spd = 22, ai = "boss", boss = 8, touch = 1, r = 14, sc = 2.0, cost = 0, fly = true},
 	"dummy": {spr = "dummy", hp = 99999, spd = 0, ai = "dummy", r = 5, cost = 0},
 }
 
 static var BIOMES = [
-	{name = "ANCIENT CAVE", roster = ["slime", "slime", "bat", "goblin", "boar", "shroom"], bosses = ["golem", "queen"],
+	{name = "ANCIENT CAVE", roster = ["slime", "slime", "bat", "goblin", "boar", "shroom"], bosses = ["golem", "queen", "rootking"],
 		ambient = Color(0.20, 0.20, 0.31), floor = [Color("57516a"), Color("4e4960"), Color("605a74")], grout = Color("38334a"),
 		accent = Color("4f8a50"), face = [Color("8479a0"), Color("6a5f86"), Color("4a4263")], cap = Color("1b1726"), edge = Color("9d93b8")},
-	{name = "EMBER FORGE", roster = ["imp", "magma", "pyro", "guard", "turret", "bat", "goblin"], bosses = ["tyrant", "iron"],
+	{name = "EMBER FORGE", roster = ["imp", "magma", "pyro", "guard", "turret", "bat", "goblin"], bosses = ["tyrant", "iron", "wyrm"],
 		ambient = Color(0.28, 0.18, 0.17), floor = [Color("5c4038"), Color("523931"), Color("684a40")], grout = Color("35211f"),
 		accent = Color("ff8a2a"), face = [Color("98563f"), Color("7a4133"), Color("552b27")], cap = Color("1d1216"), edge = Color("c0704c")},
-	{name = "CRYSTAL ARCHIVE", roster = ["wisp", "skel", "necro", "shade", "turret", "guard", "pyro"], bosses = ["lich", "void"],
+	{name = "CRYSTAL ARCHIVE", roster = ["wisp", "skel", "necro", "shade", "turret", "guard", "pyro"], bosses = ["lich", "void", "sentinel"],
 		ambient = Color(0.17, 0.22, 0.34), floor = [Color("3b4c70"), Color("344364"), Color("44577e")], grout = Color("232d48"),
 		accent = Color("7fe3ff"), face = [Color("6780b6"), Color("4d6194"), Color("35446c")], cap = Color("111626"), edge = Color("95afe0")},
 ]
@@ -133,7 +136,7 @@ const BUFFS = [
 	{id = "wind2", name = "SECOND WIND", desc = "ONCE PER FLOOR, SURVIVE A FATAL HIT"},
 	{id = "surge", name = "RESONANCE", desc = "BURST CHARGES 50% FASTER"},
 ]
-const BOSS_ATKS = [3, 4, 4, 3, 4, 4]
+const BOSS_ATKS = [3, 4, 4, 3, 4, 4, 3, 3, 3]
 
 # ---- synergies: hidden bonuses for carrying the right combination ----------------
 const SYNERGIES = [
