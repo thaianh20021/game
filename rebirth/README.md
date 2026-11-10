@@ -2,6 +2,7 @@
 | `src/hub.gd` | South wing: bounties, trophies, quartermaster, cook, tailor, capsule machine, boons || `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
 | `src/pad.gd` | Gamepad input and local player two |
 | `src/touch.gd` | Touch sticks and buttons |
+| `src/traps.gd` | Floor traps: placement, timing, drawing |
 | `src/more.gd` | Synergies, relics, active items, secret rooms |
 | `src/talk.gd` | NPC dialogue rules |
 | `src/sfx.gd` || R | Elemental Burst (when the bar is full) |
@@ -108,6 +109,10 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
 - Shooting an element pool with a different element detonates it.
 - Workshop rooms: upgrade a weapon (+1 to +5), change its element, or fuse both weapons into one
   dual-element weapon that sets off reactions by itself.
+- Traps: floor spikes everywhere, plus one trap per biome: spore vents (venom cloud) in the Ancient
+  Cave, flame jets in the Ember Forge, storm runes (triggered by stepping close) in the Crystal
+  Archive. Traps also hurt foes and apply their element, so luring foes in can start a reaction.
+  Flying foes ignore spikes; dashing through a trap is safe.
 - Shrines trade 1 max health for a blessing. Shops sell weapons, potions and tomes.
 - Talk to the peddler, smith and alchemist: they comment on your gold, health and elements, and the
   peddler tells you the weakness of the boss ahead.
@@ -144,5 +149,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

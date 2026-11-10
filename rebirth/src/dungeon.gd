@@ -4,6 +4,7 @@ extends RefCounted
 
 const Art = preload("res://src/art.gd")
 const D = preload("res://src/data.gd")
+const Traps = preload("res://src/traps.gd")
 const CW = 28
 const CH = 22
 const TS = 16
@@ -74,7 +75,7 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Di
 	var h = (maxy - miny + 1) * CH + 2
 	var grid = PackedByteArray()
 	grid.resize(w * h)
-	var d = {w = w, h = h, grid = grid, rooms = rooms, props = [], torches = [], cracks = []}
+	var d = {w = w, h = h, grid = grid, rooms = rooms, props = [], torches = [], cracks = [], traps = []}
 
 	for r in rooms:
 		r.cell = Vector2i(r.cell.x, r.cell.y - miny)
@@ -139,6 +140,9 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Di
 		if r.type == "fight":
 			_pillars(rng, d, r)
 			_props(rng, d, r)
+			Traps.place(rng, d, r, floor_i)
+		elif r.type == "boss":
+			Traps.place(rng, d, r, floor_i)
 		var ty = r.rect.position.y - 1
 		for x in range(r.rect.position.x + 1, r.rect.end.x, 4):
 			if grid[ty * w + x] == 0:
@@ -162,7 +166,7 @@ static func lobby(nook_open: bool) -> Dictionary:
 		grid[11 * w + 29] = 1
 	var r = {id = 0, cell = Vector2i(0, 0), type = "lobby", links = [], center = Vector2i(15, 11), rect = hall, gates = [],
 		cleared = true, seen = true, wave = 0, waves = 0, mod = "", elite = false, trial = false}
-	var d = {w = w, h = h, grid = grid, rooms = [r], props = [], torches = [], cracks = []}
+	var d = {w = w, h = h, grid = grid, rooms = [r], props = [], torches = [], cracks = [], traps = []}
 	for x in range(4, 28, 4):
 		d.torches.append(Vector2(x * TS + 8, 3 * TS + 9))
 	for x in [6, 10, 20, 24]:

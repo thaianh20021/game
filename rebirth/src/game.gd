@@ -17,6 +17,7 @@ const Touch = preload("res://src/touch.gd")
 const Pad = preload("res://src/pad.gd")
 const Net = preload("res://src/net.gd")
 const Hub = preload("res://src/hub.gd")
+const Traps = preload("res://src/traps.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -114,6 +115,7 @@ var crack_hp = 10
 var dummy_hits = 0
 var code_i = 0
 var allies = []
+var traps = []
 var tin = Touch.fresh()
 # every hero in the run; p and st always point at the one currently being simulated or drawn
 var players = []
@@ -761,6 +763,7 @@ func clear_world() -> void:
 	near = null
 	pending = 0
 	allies.clear()
+	traps = []
 
 func rebake() -> void:
 	var imgs = Dungeon.bake(dg, 0 if in_lobby else floor_i / 2)
@@ -779,6 +782,7 @@ func new_floor() -> void:
 	dg.boss_id = D.BIOMES[bi].bosses[drng.randi() % 2]
 	rebake()
 	props = dg.props
+	traps = dg.get("traps", [])
 	light_bg.color = D.BIOMES[bi].ambient * 1.2
 	for pl in players:
 		pl.wind2 = pl.buffs.has("wind2")
@@ -1059,6 +1063,10 @@ func update_play(dt: float) -> void:
 	separate()
 	update_bullets(dt)
 	update_zones(dt)
+	if not in_lobby:
+		Traps.update(self, dt)
+		if state != "play":
+			return
 	update_pickups(dt)
 	for t in teles:
 		t.t += dt
@@ -2566,6 +2574,7 @@ func draw_scene(ci: CanvasItem) -> void:
 		ci.draw_circle(z.pos, z.r, Color(c.r, c.g, c.b, 0.16 * a))
 		ci.draw_circle(z.pos, z.r * 0.72 + sin(time * 5.0 + z.pos.x) * 1.5, Color(c.r, c.g, c.b, 0.22 * a))
 		ci.draw_arc(z.pos, z.r, 0.0, TAU, 20, Color(c.r, c.g, c.b, 0.6 * a), 1.0)
+	Traps.draw(self, ci)
 	for t in teles:
 		var k = t.t / t.dur
 		match t.kind:
@@ -2978,6 +2987,7 @@ func draw_lights(ci: CanvasItem) -> void:
 			l.call(b.pos, 24.0 if b.kind == "flame" else 17.0, c * (0.22 if b.kind == "flame" else 0.4))
 	for z in zones:
 		l.call(z.pos, z.r * 2.2, D.EL_COL[z.el] * 0.3)
+	Traps.lights(self, l)
 	for q in flashes:
 		l.call(q.pos, q.r, q.col * (0.8 * q.t / q.max))
 	for q in bolts:

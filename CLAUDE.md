@@ -41,7 +41,8 @@ Done: lobby, 6 heroes + woven heroes, fusion, skill trees, pets, mounts, weapon 
 active items, synergies, secret rooms, codex, heat levels, daily/seeded runs, garden, 6 bosses,
 learning foes, touch controls, gamepads, local and LAN co-op (player two can use the keyboard),
 hub south wing (bounties, trophies, quartermaster, cook, tailor, capsule machine, mailbox),
-settings menu, first-time hints, solo run save and continue. Next steps are in `rebirth/ROADMAP.md`.
+settings menu, first-time hints, solo run save and continue, floor traps (spikes + one per biome,
+`src/traps.gd`). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested
