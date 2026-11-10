@@ -1,7 +1,6 @@
 # Dungeon Core: Elemental Rebirth
 
-Godot 4 roguelike action prototype.
+The current game is the remake in [`rebirth/`](rebirth/README.md) (Godot 4.7).
 
-## Run
-
-Open the project folder in Godot 4.7 and run the main scene.
+The files at the repository root are the original prototype, kept for reference:
+open the root folder in Godot 4.7 and run the main scene.
