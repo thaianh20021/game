@@ -121,6 +121,14 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
 - Shooting an element pool with a different element detonates it.
 - Workshop rooms: upgrade a weapon (+1 to +5), change its element, or fuse both weapons into one
   dual-element weapon that sets off reactions by itself.
+- Hard ground in fight rooms: mire slows anything on foot (heroes and foes) to about half speed;
+  pits cost a hero one point and put them back where they last stood. Dashing crosses both safely.
+  Foes on foot must walk around pits, flyers ignore them, bullets fly over. The rim of a room and
+  the cross through its centre are always clear, so doors are never cut off.
+- Crafting: blueprints for six weapons that never drop as loot are found in secret rooms (always),
+  after bosses (40%) and elite rooms (30%), and are kept forever. Foes drop scrap (kept between runs).
+  The Workbench in the Hearth's south wing spends 15 scrap to pack a blueprint weapon for the next
+  run; the bench in a workshop room builds a random known one on the spot for 50 gold.
 - Traps: floor spikes everywhere, plus one trap per biome: spore vents (venom cloud) in the Ancient
   Cave, flame jets in the Ember Forge, storm runes (triggered by stepping close) in the Crystal
   Archive. Traps also hurt foes and apply their element, so luring foes in can start a reaction.
@@ -168,5 +176,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

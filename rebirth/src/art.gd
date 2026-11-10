@@ -1176,6 +1176,29 @@ ttKggggggggK..
 ....ww.ww.
 ...wGGw...
 ...wGGw...""",
+	"bench": """
+.ttttttttttttt.
+teeeeeeeeeeeeet
+teGGeeeeeycceet
+ttttttttttttttt
+.tT.........Tt.
+.tT..gGGg...Tt.
+.tT..gggg...Tt.
+.TT.........TT.""",
+	"blueprint": """
+.bbbbbbbb.
+bBccccccBb
+bBcwwcCcBb
+bBcCcwwcBb
+bBccccccBb
+.bbbbbbbb.""",
+	"scrap": """
+.g.gg.g.
+gGGGGGGg
+.GGkkGG.
+gGGkkGGg
+.GGGGGG.
+g.gg.g..""",
 	"pedestal": """
 .GGGGGGGGGG.
 GwGGGGGGGGGG
@@ -1241,7 +1264,7 @@ static func build() -> void:
 		make("relic_" + id, MAPS["relic"], {"c": sw[0], "C": sw[1], "b": sw[2]})
 	for id in D.SEEDS:
 		make("plant_" + id, MAPS["plant"], D.SEEDS[id].sw)
-	for n in ["trophy", "capsule", "rack", "mailbox", "mannequin"]:
+	for n in ["bench", "blueprint", "scrap", "trophy", "capsule", "rack", "mailbox", "mannequin"]:
 		make(n, MAPS[n])
 	make("npc_cook", MAPS["goblin"], {"t": "w", "e": "G", "T": "g"})
 	make("npc_tailor", MAPS["mage"], {"p": "m", "P": "p"})

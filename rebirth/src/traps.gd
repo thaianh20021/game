@@ -24,7 +24,7 @@ static func place(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary, floo
 	for i in n:
 		for attempt in 20:
 			var c = r.rect.position + Vector2i(1 + rng.randi() % (r.rect.size.x - 2), 1 + rng.randi() % (r.rect.size.y - 2))
-			if d.grid[c.y * d.w + c.x] != 1 or taken.has(c):
+			if d.grid[c.y * d.w + c.x] != 1 or taken.has(c) or (d.terr.size() > 0 and d.terr[c.y * d.w + c.x] != 0):
 				continue
 			if abs(c.x - r.center.x) + abs(c.y - r.center.y) < 3:
 				continue

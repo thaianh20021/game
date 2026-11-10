@@ -7,7 +7,8 @@ const D = preload("res://src/data.gd")
 const Meta = preload("res://src/meta.gd")
 const Sfx = preload("res://src/sfx.gd")
 
-const KINDS = ["quest", "trophy", "armory", "brew", "tailor"]
+const KINDS = ["quest", "trophy", "armory", "brew", "tailor", "bench"]
+const CRAFT_COST = 15
 
 const QUESTS = [
 	{id = "kills", name = "SLAY %d FOES", need = [60, 90, 120], reward = [15, 20, 25]},
@@ -130,6 +131,22 @@ static func rows(g, kind: String) -> Array:
 				var has = (str(Meta.S.boons.get("active", "")) != "") if m.id == "active" else boon(m.id) > 0
 				out.append({name = m.name, desc = m.desc, cost = m.cost, state = "on" if has else "buy",
 					fn = func(): eat(g, m.id)})
+		"bench":
+			out.append({name = "SCRAP: %d" % int(Meta.S.scrap), desc = "BLUEPRINTS: SECRET ROOMS, ELITES, BOSSES", cost = 0, state = "owned", tag = "", fn = func(): pass})
+			for id in D.WEAPONS:
+				var w = D.WEAPONS[id]
+				if not w.get("bp", false):
+					continue
+				if not Meta.S.blueprints.has(id):
+					out.append({name = "UNKNOWN BLUEPRINT", desc = "NOT FOUND YET", cost = 0, state = "locked", tag = "", fn = func(): pass})
+					continue
+				var packed = str(Meta.S.boons.get("weapon", "")) == id
+				var can = int(Meta.S.scrap) >= CRAFT_COST
+				out.append({name = w.name, desc = w.bpdesc, cost = 0, icon = "w_%s_" % w.spr,
+					state = "on" if packed else ("owned" if can else "locked"), tag = "PACKED" if packed else "%d SCRAP" % CRAFT_COST,
+					fn = func():
+						Meta.S.scrap = int(Meta.S.scrap) - CRAFT_COST
+						Meta.S.boons["weapon"] = id})
 		"tailor":
 			for i in DYES.size():
 				var own = Meta.S.dyes.has(i) or Meta.S.dyes.has(float(i))

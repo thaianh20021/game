@@ -75,7 +75,7 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Di
 	var h = (maxy - miny + 1) * CH + 2
 	var grid = PackedByteArray()
 	grid.resize(w * h)
-	var d = {w = w, h = h, grid = grid, rooms = rooms, props = [], torches = [], cracks = [], traps = []}
+	var d = {w = w, h = h, grid = grid, rooms = rooms, props = [], torches = [], cracks = [], traps = [], terr = PackedByteArray()}
 
 	for r in rooms:
 		r.cell = Vector2i(r.cell.x, r.cell.y - miny)
@@ -139,6 +139,7 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Di
 	for r in rooms:
 		if r.type == "fight":
 			_pillars(rng, d, r)
+			_terrain(rng, d, r)
 			_props(rng, d, r)
 			Traps.place(rng, d, r, floor_i)
 		elif r.type == "boss":
@@ -166,7 +167,7 @@ static func lobby(nook_open: bool) -> Dictionary:
 		grid[11 * w + 29] = 1
 	var r = {id = 0, cell = Vector2i(0, 0), type = "lobby", links = [], center = Vector2i(15, 11), rect = hall, gates = [],
 		cleared = true, seen = true, wave = 0, waves = 0, mod = "", elite = false, trial = false}
-	var d = {w = w, h = h, grid = grid, rooms = [r], props = [], torches = [], cracks = [], traps = []}
+	var d = {w = w, h = h, grid = grid, rooms = [r], props = [], torches = [], cracks = [], traps = [], terr = PackedByteArray()}
 	for x in range(4, 28, 4):
 		d.torches.append(Vector2(x * TS + 8, 3 * TS + 9))
 	for x in [6, 10, 20, 24]:
@@ -212,6 +213,55 @@ static func _pillars(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -
 	for p in cells:
 		d.grid[p.y * d.w + p.x] = 0
 
+# Hard ground. terr: 1 = mire (slows anything on foot), 2 = pit (heroes fall, walkers must go around).
+# The rim of the room and the cross through its centre stay clear, so no door is ever cut off.
+static func _terrain(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -> void:
+	if d.terr.size() == 0:
+		d.terr.resize(d.w * d.h)
+	var inner: Rect2i = r.rect.grow(-1)
+	for kind in [1, 2]:
+		if rng.randf() > (0.6 if kind == 1 else 0.5):
+			continue
+		var want = (8 + rng.randi() % 8) if kind == 1 else (4 + rng.randi() % 5)
+		var blob = []
+		for attempt in 200:
+			if blob.size() >= want:
+				break
+			var c: Vector2i
+			if blob.is_empty():
+				c = inner.position + Vector2i(rng.randi() % inner.size.x, rng.randi() % inner.size.y)
+			else:
+				c = blob[rng.randi() % blob.size()] + [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)][rng.randi() % 4]
+			if not inner.has_point(c) or d.grid[c.y * d.w + c.x] != 1 or d.terr[c.y * d.w + c.x] != 0:
+				continue
+			if abs(c.x - r.center.x) <= 1 or abs(c.y - r.center.y) <= 1:
+				continue
+			d.terr[c.y * d.w + c.x] = kind
+			blob.append(c)
+
+static func _terr_tile(img: Image, x: int, y: int, kind: int, bi: int, b: Dictionary, lip: bool) -> void:
+	var ox = x * TS
+	var oy = y * TS
+	if kind == 1:
+		var mud: Color = [Color("3d5a34"), Color("2a1b1c"), Color("5f86b4")][bi]
+		var hi: Color = [Color("6f9a4c"), Color("f2812f"), Color("c6f4ff")][bi]
+		for py in 16:
+			for px in 16:
+				var c = img.get_pixel(ox + px, oy + py).lerp(mud, 0.72)
+				if ((px * 7 + py * 13 + x * 5 + y * 3) % 23) == 0:
+					c = c.lerp(hi, 0.55)
+				elif ((px + x * 3) % 8 < 5) and ((py + y * 5) % 6 == 2):
+					c = c.darkened(0.18)
+				img.set_pixel(ox + px, oy + py, c)
+	else:
+		img.fill_rect(Rect2i(ox, oy, 16, 16), Color("07050c"))
+		if lip:
+			img.fill_rect(Rect2i(ox, oy, 16, 3), b.face[2])
+			img.fill_rect(Rect2i(ox, oy + 3, 16, 2), b.face[2].darkened(0.45))
+			img.fill_rect(Rect2i(ox, oy + 5, 16, 2), b.face[2].darkened(0.75))
+			for px in range(1, 16, 5):
+				img.set_pixel(ox + px + (y % 3), oy + 1, b.face[0])
+
 static func _props(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -> void:
 	var taken = {}
 	var n_crate = 3 + rng.randi() % 4
@@ -219,7 +269,7 @@ static func _props(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -> 
 	for i in n_crate + n_barrel:
 		for attempt in 20:
 			var p = r.rect.position + Vector2i(rng.randi() % r.rect.size.x, rng.randi() % r.rect.size.y)
-			if d.grid[p.y * d.w + p.x] != 1 or taken.has(p):
+			if d.grid[p.y * d.w + p.x] != 1 or taken.has(p) or d.terr[p.y * d.w + p.x] != 0:
 				continue
 			if p.x == r.center.x or p.y == r.center.y or abs(p.x - r.center.x) + abs(p.y - r.center.y) < 3:
 				continue
@@ -259,6 +309,8 @@ static func bake(d: Dictionary, bi: int) -> Array:
 				ground.blit_rect(t.floor[v], r16, Vector2i(x * TS, y * TS))
 				if y > 0 and grid[(y - 1) * w + x] == 0:
 					ground.blend_rect(shade, Rect2i(0, 0, 16, 7), Vector2i(x * TS, y * TS))
+				if d.terr.size() > 0 and d.terr[y * w + x] != 0:
+					_terr_tile(ground, x, y, d.terr[y * w + x], bi, b, y == 0 or d.terr[(y - 1) * w + x] != 2)
 			else:
 				var face = y + 1 < h and grid[(y + 1) * w + x] != 0
 				if face:

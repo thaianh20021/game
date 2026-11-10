@@ -26,7 +26,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - FREEZE, +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - SPREADS TO ALL NEARBY"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH"}
 
 static func buff_rect(i: int) -> Rect2:
 	return Rect2(55 + i * 127, 84, 116, 112)
@@ -181,6 +181,8 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	if g.in_lobby:
 		big(ci, Art.T["gem"], Vector2(5, 42), 1.0)
 		Px.text(ci, Vector2(16, 43), str(Meta.S.gems), GEM)
+		big(ci, Art.T["scrap"], Vector2(78, 41), 1.0)
+		Px.text(ci, Vector2(89, 43), str(int(Meta.S.scrap)), PALE)
 	else:
 		big(ci, Art.T["coin"], Vector2(5, 42), 1.0)
 		Px.text(ci, Vector2(16, 43), str(p.gold), GOLD)

@@ -44,7 +44,8 @@ hub south wing (bounties, trophies, quartermaster, cook, tailor, capsule machine
 settings menu, first-time hints, solo run save and continue, floor traps (spikes + one per biome,
 `src/traps.gd`), charged specials for ordinary foes (`src/foes.gd`), per-weapon sprites and
 element/reaction/boss visual effects (`src/fx.gd`), elemental resonance (`src/reso.gd`), fusion
-traits and homing/returning shots (`src/arms.gd`). Next steps are in `rebirth/ROADMAP.md`.
+traits and homing/returning shots (`src/arms.gd`), mire and pits (`dg.terr`, generated in
+`src/dungeon.gd`), blueprints, scrap and workbenches (`src/more.gd`, `src/hub.gd`). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested

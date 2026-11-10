@@ -76,6 +76,7 @@ static func populate(g) -> void:
 	g.inter.append({kind = "npc", menu = "brew", spr = "npc_cook", name = "COOK: MEALS FOR THE ROAD", pos = tp(15, 26)})
 	g.inter.append({kind = "deco", spr = "mannequin", pos = tp(6.6, 28)})
 	g.inter.append({kind = "npc", menu = "tailor", spr = "npc_tailor", name = "TAILOR: DYES", pos = tp(8.2, 28)})
+	g.inter.append({kind = "npc", menu = "bench", spr = "bench", name = "WORKBENCH: CRAFT FROM BLUEPRINTS", pos = tp(12.5, 28.2), notalk = true})
 	g.inter.append({kind = "egg", egg = "capsule", spr = "capsule", name = "CAPSULE MACHINE: %d GEMS" % Hub.CAPSULE_COST, pos = tp(22.5, 28)})
 	g.inter.append({kind = "npc", menu = "coop", spr = "crystal_prism", name = "LINK STONE: CO-OP", pos = tp(11, 5.4), notalk = true})
 

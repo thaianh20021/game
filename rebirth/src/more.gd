@@ -168,3 +168,68 @@ static func hit_crack(g, tx: int, ty: int) -> void:
 			g.shake_add(6.0)
 			g.banner = {text = "SECRET ROOM", sub = "", t = 2.0}
 			Meta.record("secrets", "room")
+
+# ---- blueprints ------------------------------------------------------------------
+
+static func bp_ids() -> Array:
+	var out = []
+	for id in D.WEAPONS:
+		if D.WEAPONS[id].get("bp", false):
+			out.append(id)
+	return out
+
+# A blueprint the player does not own yet and that is not already lying on this floor.
+static func next_blueprint(g) -> String:
+	var pool = []
+	for id in bp_ids():
+		if Meta.S.blueprints.has(id):
+			continue
+		var lying = false
+		for it in g.inter:
+			if it.kind == "blueprint" and it.id == id:
+				lying = true
+		if not lying:
+			pool.append(id)
+	return "" if pool.is_empty() else pool[g.rng.randi() % pool.size()]
+
+static func drop_blueprint(g, pos: Vector2) -> void:
+	var id = next_blueprint(g)
+	if id == "":
+		g.drop("scrap", pos, 4)
+	else:
+		g.inter.append({kind = "blueprint", id = id, pos = pos})
+
+static func take_blueprint(g, it: Dictionary) -> void:
+	it.gone = true
+	if not Meta.S.blueprints.has(it.id):
+		Meta.S.blueprints.append(it.id)
+	Meta.save()
+	Sfx.play("chest")
+	g.flash(g.pcenter(), 90.0, Color("5cd3f2"), 0.4)
+	g.banner = {text = "BLUEPRINT: " + D.WEAPONS[it.id].name, sub = "CRAFT IT AT A WORKBENCH", t = 3.5}
+
+# The bench in a workshop room: builds one weapon from a blueprint you own.
+static func bench(g, it: Dictionary) -> void:
+	var at = g.p.pos + Vector2(0, -22)
+	if it.get("used", false):
+		g.label(at, "THE BENCH IS OUT OF PARTS", Color("a8a7b8"))
+		return
+	var own = []
+	for id in bp_ids():
+		if Meta.S.blueprints.has(id):
+			own.append(id)
+	if own.is_empty():
+		Sfx.play("deny")
+		g.label(at, "NO BLUEPRINTS YET. FIND ONE FIRST.", Color("ff6a6a"))
+		return
+	if g.p.gold < 50:
+		Sfx.play("deny")
+		g.label(at, "NOT ENOUGH GOLD", Color("ff6a6a"))
+		return
+	g.p.gold -= 50
+	it.used = true
+	var id: String = own[g.rng.randi() % own.size()]
+	g.inter.append({kind = "weapon", w = {id = id, el = D.EL[g.rng.randi() % 4], el2 = "", lv = 1}, pos = it.pos + Vector2(0, 20)})
+	Sfx.play("chest")
+	g.burst(it.pos + Vector2(0, -6), 16, Color("5cd3f2"), 90.0, 0.5)
+	g.label(at, "CRAFTED " + D.WEAPONS[id].name, Color("5cd3f2"))

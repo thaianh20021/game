@@ -38,6 +38,13 @@ const WEAPONS = {
 	"chakram": {name = "CHAKRAM", spr = "chakram", type = "bullet", dmg = 5.0, cd = 0.4, cost = 1.5, speed = 260.0, bounce = 4, pierce = 2, r = 3, rar = 1},
 	"grimoire": {name = "GRIMOIRE", spr = "grimoire", type = "bullet", dmg = 4.5, cd = 0.34, cost = 1.6, speed = 170.0, homing = 4.0, life = 2.0, r = 3, rar = 1},
 	"launcher": {name = "ROCKET TUBE", spr = "launcher", type = "bullet", dmg = 14.0, cd = 0.95, cost = 5.0, speed = 210.0, aoe = 30.0, r = 3, rar = 2},
+	# blueprint weapons: never found as loot, only crafted
+	"stormcaller": {name = "STORMCALLER", spr = "coil", type = "chain", dmg = 8.0, cd = 0.36, cost = 2.5, range = 160.0, n = 6, rar = 2, bp = true, bpdesc = "LIGHTNING THAT JUMPS SIX TIMES"},
+	"sunlance": {name = "SUN LANCE", spr = "lance", type = "beam", dmg = 2.6, cd = 0.06, cost = 0.6, range = 185.0, rar = 2, bp = true, bpdesc = "A LONGER, HOTTER BEAM"},
+	"swarm": {name = "SWARM TOME", spr = "grimoire", type = "bullet", dmg = 3.6, cd = 0.3, cost = 2.0, speed = 180.0, homing = 5.0, life = 2.2, n = 3, fan = 0.7, r = 3, rar = 2, bp = true, bpdesc = "THREE SEEKING SHOTS AT ONCE"},
+	"phoenix": {name = "PHOENIX BOW", spr = "bow", type = "bullet", dmg = 7.0, cd = 0.42, cost = 1.5, speed = 340.0, n = 3, fan = 0.2, pierce = 2, kind = "arrow", rar = 2, bp = true, bpdesc = "THREE PIERCING ARROWS"},
+	"quake": {name = "QUAKE HAMMER", spr = "hammer", type = "melee", dmg = 22.0, cd = 0.7, cost = 2.0, range = 38.0, arc = 3.2, slam = 44.0, rar = 2, bp = true, bpdesc = "EVERY SWING SHAKES THE ROOM"},
+	"voidring": {name = "VOID CHAKRAM", spr = "chakram", type = "bullet", dmg = 7.0, cd = 0.36, cost = 2.0, speed = 280.0, bounce = 8, pierce = 5, r = 3, rar = 2, bp = true, bpdesc = "BOUNCES EIGHT TIMES"},
 	"scatter": {name = "SCATTERGUN", spr = "shotgun", type = "bullet", dmg = 3.0, cd = 0.7, cost = 3.0, speed = 250.0, n = 6, fan = 0.55, spread = 0.05, life = 0.42, rar = 0},
 	"needle": {name = "NEEDLER", spr = "smg", type = "bullet", dmg = 2.2, cd = 0.08, cost = 0.7, speed = 300.0, spread = 0.12, rar = 0},
 	"repeater": {name = "REPEATER", spr = "smg", type = "bullet", dmg = 3.4, cd = 0.14, cost = 1.0, speed = 330.0, spread = 0.05, bounce = 1, rar = 1},

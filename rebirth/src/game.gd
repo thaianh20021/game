@@ -812,6 +812,7 @@ func new_floor() -> void:
 			"secret":
 				inter.append({kind = "relic", id = More.random_relic(self), pos = c + Vector2(-16, 0)})
 				inter.append({kind = "active", id = More.random_active(self), pos = c + Vector2(16, 0)})
+				More.drop_blueprint(self, c + Vector2(0, 20))
 			"exit":
 				inter.append({kind = "portal", pos = c})
 			"workshop":
@@ -820,6 +821,7 @@ func new_floor() -> void:
 				inter.append({kind = "talk", who = "alch", spr = "npc_alch", name = "TALK", pos = c + Vector2(0, -22)})
 				inter.append({kind = "alch", spr = "cauldron", name = "CHANGE ELEMENT", pos = c + Vector2(0, 4)})
 				inter.append({kind = "fuse", spr = "altar", name = "FUSE BOTH WEAPONS", pos = c + Vector2(44, 4)})
+				inter.append({kind = "bench", spr = "bench", name = "CRAFT A BLUEPRINT WEAPON: 50 GOLD", pos = c + Vector2(0, 44), used = false})
 			"shrine":
 				inter.append({kind = "shrine", spr = "altar", pos = c, used = false})
 			"shop":
@@ -859,6 +861,8 @@ func random_weapon() -> Dictionary:
 	var wts = []
 	var total = 0.0
 	for id in D.WEAPONS:
+		if D.WEAPONS[id].get("bp", false):
+			continue
 		var wt = [5.0, 2.5 + floor_i * 0.5, 0.8 + floor_i * 0.5][D.WEAPONS[id].rar]
 		ids.append(id)
 		wts.append(wt)
@@ -970,15 +974,26 @@ func box_free(pos: Vector2, r: float) -> bool:
 	return true
 
 # Moves an actor axis by axis; returns true if a wall blocked it.
+func terr_at(pos: Vector2) -> int:
+	if dg.terr.size() == 0:
+		return 0
+	var tx = int(floor(pos.x / TS))
+	var ty = int(floor(pos.y / TS))
+	if tx < 0 or ty < 0 or tx >= dg.w or ty >= dg.h:
+		return 0
+	return dg.terr[ty * dg.w + tx]
+
 func move(a: Dictionary, d: Vector2) -> bool:
 	var hit = false
+	# foes on foot cannot walk into a pit; heroes can (and fall), flyers do not care
+	var walker = a.has("d") and not a.d.get("fly", false)
 	var np = a.pos + Vector2(d.x, 0)
-	if box_free(np, a.r):
+	if box_free(np, a.r) and not (walker and terr_at(np) == 2):
 		a.pos = np
 	else:
 		hit = true
 	np = a.pos + Vector2(0, d.y)
-	if box_free(np, a.r):
+	if box_free(np, a.r) and not (walker and terr_at(np) == 2):
 		a.pos = np
 	else:
 		hit = true
@@ -1118,6 +1133,9 @@ func update_player(dt: float) -> void:
 		burst(p.pos, 6, Color(0.9, 0.9, 1.0, 0.8), 40.0, 0.3)
 	var riding = p.mount != null and p.mount.hp > 0
 	var v = mv * 92.0 * st.spd * (0.6 if p.slow > 0.0 else 1.0) * (p.mount.spd if riding else 1.0) * (1.35 if p.haste_t > 0.0 else 1.0)
+	if terr_at(p.pos) == 1 and not in_lobby:
+		v *= 0.55
+		tip("mire", "MIRE", "IT SLOWS ANYTHING ON FOOT. DASH THROUGH IT.")
 	if p.dash_t > 0.0:
 		p.dash_t -= dt
 		v = p.dash_dir * 310.0
@@ -1141,6 +1159,19 @@ func update_player(dt: float) -> void:
 		var off = (p.pos - cam).abs()
 		if (off.x > 222.0 or off.y > 118.0) and p.pos.distance_to(cam) > was.distance_to(cam):
 			p.pos = was
+	if terr_at(p.pos) == 2:
+		if p.dash_t <= 0.0:
+			# fell into a pit: lose a point and climb out where you last stood
+			burst(p.pos, 8, Color("3a3346"), 50.0, 0.4)
+			p.pos = p.get("safe", p.pos)
+			hurt_player(1)
+			if state != "play":
+				return
+			p.inv = maxf(p.inv, 1.0)
+			label(p.pos + Vector2(0, -22), "FELL!", Color("ff6a6a"))
+			tip("pit", "PITS", "DASH ACROSS THEM. FOES ON FOOT MUST GO AROUND.")
+	else:
+		p.safe = p.pos
 	p.moving = mv != Vector2.ZERO
 	if p.moving:
 		p.walk += dt * 11.0
@@ -1331,6 +1362,10 @@ func interact(it: Dictionary) -> void:
 			More.take_relic(self, it.id)
 		"active":
 			More.take_active(self, it)
+		"blueprint":
+			More.take_blueprint(self, it)
+		"bench":
+			More.bench(self, it)
 		"lchest":
 			if p.keys <= 0:
 				Sfx.play("deny")
@@ -1435,6 +1470,9 @@ func update_pickups(dt: float) -> void:
 		if dist < 8.0:
 			k.dead = true
 			match k.kind:
+				"scrap":
+					Meta.S.scrap = int(Meta.S.scrap) + 1
+					Sfx.play("coin", 0.7)
 				"key":
 					p.keys += 1
 					Sfx.play("pick")
@@ -1509,7 +1547,7 @@ func update_rooms(dt: float) -> void:
 func random_room_pos(r: Dictionary, mind: float) -> Vector2:
 	for i in 50:
 		var c = r.rect.position + Vector2i(rng.randi() % r.rect.size.x, rng.randi() % r.rect.size.y)
-		if dg.grid[c.y * dg.w + c.x] != 1:
+		if dg.grid[c.y * dg.w + c.x] != 1 or (dg.terr.size() > 0 and dg.terr[c.y * dg.w + c.x] == 2):
 			continue
 		var pos = Vector2(c) * TS + Vector2(8, 8)
 		if pos.distance_to(p.pos) > mind:
@@ -1613,6 +1651,8 @@ func clear_room(r: Dictionary) -> void:
 	Meta.add_cunning(0.02 if hits == 0 else (-0.015 if hits >= 3 else 0.0))
 	if r.elite or run_heat >= 4:
 		drop("coin", rc(r), 10)
+		if rng.randf() < 0.3:
+			More.drop_blueprint(self, random_room_pos(r, 30.0))
 		if rng.randf() < 0.6:
 			drop("key", rc(r), 1)
 		else:
@@ -1627,6 +1667,8 @@ func clear_room(r: Dictionary) -> void:
 	if r.type == "boss":
 		inter.append({kind = "portal", pos = c})
 		inter.append({kind = "relic", id = More.random_relic(self), pos = c + Vector2(0, 34)})
+		if rng.randf() < 0.4:
+			More.drop_blueprint(self, c + Vector2(0, -34))
 		inter.append({kind = "chest", pos = c + Vector2(-40, 10), loot = "weapon", open = false})
 		inter.append({kind = "chest", pos = c + Vector2(40, 10), loot = "reward", open = false})
 		drop("heart", c, 1)
@@ -1696,7 +1738,7 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 	var dir = to / dist
 	if absf(dir.x) > 0.15 and e.state != "dash":
 		e.face = 1 if dir.x > 0.0 else -1
-	var spd = d.spd * (0.55 if e.st.has("ice") else 1.0) * (1.25 if (lock != null and lock.mod == "haste") else 1.0)
+	var spd = d.spd * (0.55 if e.st.has("ice") else 1.0) * (0.6 if (terr_at(e.pos) == 1 and not d.get("fly", false)) else 1.0) * (1.25 if (lock != null and lock.mod == "haste") else 1.0)
 	e.t -= dt
 	e.weak_t -= dt
 	e.cast_t = maxf(0.0, e.cast_t - dt)
@@ -2200,6 +2242,8 @@ func kill(e: Dictionary) -> void:
 	var d = e.d
 	drop("coin", c, d.cost + rng.randi() % 2)
 	drop("orb", c, 1 + (1 if rng.randf() < 0.35 else 0))
+	if e.is_boss or e.elite or rng.randf() < 0.08:
+		drop("scrap", c, 5 if e.is_boss else (3 if e.elite else 1))
 	if d.has("child"):
 		for i in 2:
 			var ch = spawn_enemy(d.child, e.pos + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)))
@@ -2720,7 +2764,11 @@ func draw_inter(ci: CanvasItem, it: Dictionary) -> void:
 			spr(ci, "crystal_" + cel, it.pos + Vector2(0, 5))
 			if Meta.S.el == it.i and not prism_next:
 				ci.draw_arc(it.pos + Vector2(0, -2), 10.0 + sin(time * 4.0), 0.0, TAU, 16, D.EL_COL[cel], 1.0)
-		"npc", "egg", "deco", "talk", "smith", "alch", "fuse", "shrine":
+		"blueprint":
+			ci.draw_texture(sh, it.pos + Vector2(-8, 2))
+			ci.draw_arc(it.pos + Vector2(0, -6), 9.0 + sin(time * 4.0), 0.0, TAU, 14, Color(0.36, 0.83, 0.95, 0.6), 1.0)
+			spr(ci, "blueprint", it.pos + Vector2(0, -2.0 + sin(time * 3.0 + it.pos.x) * 2.0))
+		"npc", "egg", "deco", "talk", "smith", "alch", "fuse", "shrine", "bench":
 			ci.draw_texture(sh, it.pos + Vector2(-8, 1))
 			var nb = 0.0
 			if it.spr.begins_with("npc_"):
@@ -2977,6 +3025,10 @@ func draw_prompt(ci: CanvasItem) -> void:
 			"active":
 				txt = D.ACTIVES[near.id].name
 				col = Color("5cd3f2")
+			"blueprint":
+				txt = "BLUEPRINT: " + D.WEAPONS[near.id].name
+				col = Color("5cd3f2")
+			"bench": txt = near.name
 			"lchest": txt = "UNLOCK" if p.keys > 0 else "LOCKED: NEEDS A KEY"
 			"plot":
 				var gp = Meta.S.garden[near.i]
