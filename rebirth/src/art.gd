@@ -1010,12 +1010,12 @@ static func reg(name: String, img: Image) -> void:
 	W[name] = ImageTexture.create_from_image(wi)
 
 # A woven hero: head of one base hero, body of another, cloth colours hue-shifted.
-static var gen_seed = -1
+static var gen_done = {}
 
-static func gen_hero(seed: int) -> void:
-	if seed == gen_seed:
+static func gen_hero(seed: int, name: String = "h_gen") -> void:
+	if gen_done.get(name, -1) == seed:
 		return
-	gen_seed = seed
+	gen_done[name] = seed
 	var rng = RandomNumberGenerator.new()
 	rng.seed = seed
 	var n = D.HEROES.size()
@@ -1037,20 +1037,38 @@ static func gen_hero(seed: int) -> void:
 				# leave outline, greys and skin tones alone
 				if c.a > 0.0 and c.s > 0.3 and c.v > 0.2 and not (c.h > 0.03 and c.h < 0.11 and c.s < 0.6):
 					img.set_pixel(x, y, Color.from_hsv(fmod(c.h + shift, 1.0), c.s, c.v, 1.0))
-		reg("h_gen" + suf, img)
+		reg(name + suf, img)
 
-# Character fusion: head of hero a on the body and legs of hero b.
-static func fuse_hero(a: String, b: String) -> void:
+# Sprite name for a player described by look = {k, a, b, seed}; builds fused and woven
+# sprites on demand so both sides of a LAN game can draw any hero.
+static func look(l: Dictionary) -> String:
+	var names = []
+	for id in [l.a, l.get("b", "")]:
+		if id == "gen":
+			var gn = "hg_%d" % int(l.seed)
+			gen_hero(int(l.seed), gn)
+			names.append(gn)
+		else:
+			names.append("h_" + id)
+	if l.k != "fuse":
+		return names[0]
+	var name = "hf_%s_%s" % [names[0], names[1]]
+	if not T.has(name):
+		fuse_hero(names[0], names[1], name)
+	return name
+
+# Character fusion: head of sprite a on the body and legs of sprite b.
+static func fuse_hero(a: String, b: String, name: String) -> void:
 	for suf in ["", "_1", "_2"]:
-		var ia: Image = I["h_" + a + suf]
-		var ib: Image = I["h_" + b + suf]
+		var ia: Image = I[a + suf]
+		var ib: Image = I[b + suf]
 		var img: Image = ia.duplicate()
 		var h = img.get_height()
 		var hb = ib.get_height()
 		for y in 7:
 			for x in img.get_width():
 				img.set_pixel(x, h - 1 - y, ib.get_pixel(x, hb - 1 - y) if x < ib.get_width() else Color(0, 0, 0, 0))
-		reg("h_fuse" + suf, img)
+		reg(name + suf, img)
 
 # Two extra frames with one foot lifted each, for a cheap walk cycle.
 static func walk_frames(name: String) -> void:

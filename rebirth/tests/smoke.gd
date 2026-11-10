@@ -44,7 +44,7 @@ func lobby_tour() -> void:
 	Meta.S.gems = 5000
 	# every station once
 	for it in g.inter.duplicate():
-		if it.kind in ["gate", "hero"] or it.get("menu", "") == "board":
+		if it.kind in ["gate", "hero"] or it.get("menu", "") in ["board", "coop"]:
 			continue
 		g.p.pos = it.pos + Vector2(0, 8)
 		await step(2)

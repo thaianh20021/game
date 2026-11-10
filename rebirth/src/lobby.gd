@@ -6,6 +6,7 @@ const D = preload("res://src/data.gd")
 const Meta = preload("res://src/meta.gd")
 const Sfx = preload("res://src/sfx.gd")
 const Dungeon = preload("res://src/dungeon.gd")
+const Net = preload("res://src/net.gd")
 
 const TRACKS = ["CAVE THEME", "FORGE THEME", "ARCHIVE THEME", "BOSS THEME", "HEARTH THEME"]
 const CRACK = Vector2i(29, 11)
@@ -22,8 +23,11 @@ static func build(g) -> void:
 	g.props = []
 	g.light_bg.color = Color(0.36, 0.33, 0.44)
 	g.make_player()
+	g.players = [g.p]
 	g.p.pos = tp(15, 13)
 	g.cam = g.p.pos
+	if g.local2 and g.net.mode != "client":
+		g.set_local2(true)
 	g.floor_i = 0
 	g.crack_hp = 10
 	g.dummy_hits = 0
@@ -61,6 +65,7 @@ static func populate(g) -> void:
 	g.inter.append({kind = "npc", menu = "codex", spr = "shelf", name = "ARCHIVE: CODEX", pos = tp(7, 5.2), notalk = true})
 	for i in 3:
 		g.inter.append({kind = "plot", i = i, pos = tp(21 + i * 2, 5.5)})
+	g.inter.append({kind = "npc", menu = "coop", spr = "crystal_prism", name = "LINK STONE: CO-OP", pos = tp(11, 5.4), notalk = true})
 
 static func refresh_player(g) -> void:
 	var pos = g.p.pos
@@ -75,9 +80,32 @@ static func gems(g, n: int, text: String) -> void:
 	Sfx.play("chest")
 
 static func interact(g, it: Dictionary) -> void:
+	if g.p.idx > 0:
+		# player two may only swap hero or element, or walk through the gate
+		match it.kind:
+			"hero":
+				var pos = g.p.pos
+				g.local2_hero = it.i
+				g.set_local2(true)
+				g.players[1].pos = pos
+				return
+			"crystal":
+				g.p.weapons[0].el = D.EL[it.i]
+				Sfx.play("pick")
+				g.label(g.p.pos + Vector2(0, -24), D.EL_NAME[D.EL[it.i]] + " ATTUNED", D.EL_COL[D.EL[it.i]])
+				return
+			"gate":
+				pass
+			_:
+				return
 	match it.kind:
 		"gate":
-			g.start_run(0, false)
+			if g.net.mode == "client":
+				g.label(g.p.pos + Vector2(0, -24), "THE HOST STARTS THE RUN", Color("ffd24a"))
+			elif g.net.mode == "host" and g.net.joined:
+				Net.start(g)
+			else:
+				g.start_run(0, false)
 		"hero":
 			Meta.S.hero = it.i
 			if Meta.S.fuse == it.i:
@@ -262,6 +290,24 @@ static func rows(g, kind: String) -> Array:
 						desc = "SECOND SKILL: " + D.SKILLS[o.skill].name, cost = 0, icon = "h_" + o.id,
 						state = "on" if Meta.S.fuse == i else "owned", fn = func(): Meta.S.fuse = i})
 				out.append({name = "NO FUSION", desc = "STAY PURE", cost = 0, state = "on" if Meta.S.fuse == -1 else "owned", fn = func(): Meta.S.fuse = -1})
+		"coop":
+			var n = g.net
+			out.append({name = "STATUS", desc = n.status if n.status != "" else "NOT CONNECTED", cost = 0, state = "owned", tag = "", fn = func(): pass})
+			if n.mode == "":
+				out.append({name = "HOST A LAN GAME", desc = "YOUR ADDRESS IS " + Net.local_ip(), cost = 0, state = "owned", tag = "HOST", fn = func(): Net.host(g)})
+				for ip in n.hosts:
+					out.append({name = "JOIN " + ip, desc = "A GAME FOUND ON YOUR NETWORK", cost = 0, state = "owned", tag = "JOIN", fn = func(): Net.join(g, ip)})
+				out.append({name = "JOIN BY ADDRESS: " + (n.ip_in if n.ip_in != "" else "TYPE IT"), desc = "THE ADDRESS ON THE HOST SCREEN", cost = 0,
+					state = "owned" if n.ip_in != "" else "locked", tag = "JOIN", fn = func(): Net.join(g, n.ip_in)})
+			else:
+				if n.mode == "host" and n.joined:
+					out.append({name = "START CO-OP RUN", desc = "BOTH PLAYERS ENTER THE DUNGEON", cost = 0, state = "owned", tag = "START", fn = func(): g.pending_coop = true})
+				out.append({name = "DISCONNECT", desc = "LEAVE THE LAN GAME", cost = 0, state = "owned", tag = "LEAVE", fn = func(): Net.leave(g)})
+			if n.mode != "client":
+				out.append({name = "LOCAL PLAYER 2: " + ("ON" if g.local2 else "OFF"), desc = "OR PRESS START ON THE SECOND GAMEPAD", cost = 0, state = "owned", tag = "CHANGE",
+					fn = func(): g.set_local2(not g.local2)})
+				out.append({name = "A SINGLE GAMEPAD PLAYS: " + ("PLAYER 2" if g.pad_p2_first else "PLAYER 1"), desc = "KEYBOARD AND MOUSE ARE PLAYER 1", cost = 0, state = "owned", tag = "CHANGE",
+					fn = func(): g.pad_p2_first = not g.pad_p2_first})
 		"board":
 			out.append({name = "NORMAL RUN", desc = "A FRESH RANDOM DUNGEON AT HEAT %d" % Meta.S.heat, cost = 0, state = "owned", tag = "START",
 				fn = func(): g.pending_start = [0, false]})
@@ -342,6 +388,11 @@ static func activate(g, row: Dictionary) -> void:
 			Meta.S.gems -= row.cost
 	row.fn.call()
 	Meta.save()
+	if g.pending_coop:
+		g.pending_coop = false
+		g.set_state("play")
+		Net.start(g)
+		return
 	if g.pending_start != null:
 		var ps = g.pending_start
 		g.pending_start = null

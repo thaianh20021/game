@@ -14,6 +14,8 @@ const Lobby = preload("res://src/lobby.gd")
 const Talk = preload("res://src/talk.gd")
 const More = preload("res://src/more.gd")
 const Touch = preload("res://src/touch.gd")
+const Pad = preload("res://src/pad.gd")
+const Net = preload("res://src/net.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -112,6 +114,22 @@ var dummy_hits = 0
 var code_i = 0
 var allies = []
 var tin = Touch.fresh()
+# every hero in the run; p and st always point at the one currently being simulated or drawn
+var players = []
+var me = 0
+var cin = null
+var net = Net.fresh()
+var local2 = false
+var local2_hero = -1
+var pad_p2_first = false
+var pad_jp = {}
+var pad_lt = {}
+var pad_flick = {}
+var pad_used = false
+var p1_pad = false
+var sim_p2 = null
+var pending_coop = false
+var buff_sel = 0
 var pending_start = null
 var menu_close = false
 var menu_plot = 0
@@ -197,6 +215,10 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	tin.on = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile")
 	Meta.load_save()
+	multiplayer.connected_to_server.connect(func(): Net.on_connected(self))
+	multiplayer.connection_failed.connect(func(): Net.on_failed(self))
+	multiplayer.server_disconnected.connect(func(): Net.on_peer_left(self))
+	multiplayer.peer_disconnected.connect(func(_id): Net.on_peer_left(self))
 	goto_title()
 
 func set_state(s: String) -> void:
@@ -223,6 +245,8 @@ func start_talk(who: String, then: String = "") -> void:
 	Sfx.play("ui")
 
 func open_menu(kind: String) -> void:
+	if kind == "coop":
+		Net.listen(self)
 	menu = {kind = kind, sel = 0, rows = Lobby.rows(self, kind), msg = ""}
 	set_state("menu")
 	Sfx.play("ui")
@@ -242,6 +266,17 @@ func update_menu() -> void:
 			menu.sel = (menu.sel + step) % n
 		if jpk(KEY_A) or jpk(KEY_LEFT):
 			menu.sel = (menu.sel + n - step) % n
+	if menu.kind == "coop" and net.mode == "":
+		var was: String = net.ip_in
+		for d in 10:
+			if (jpk(KEY_0 + d) or jpk(KEY_KP_0 + d)) and net.ip_in.length() < 15:
+				net.ip_in += str(d)
+		if (jpk(KEY_PERIOD) or jpk(KEY_KP_PERIOD)) and net.ip_in.length() < 15:
+			net.ip_in += "."
+		if jpk(KEY_BACKSPACE) and net.ip_in != "":
+			net.ip_in = net.ip_in.substr(0, net.ip_in.length() - 1)
+		if net.ip_in != was:
+			Net.refresh_menu(self)
 	if menu.kind == "board":
 		var before = seed_in
 		for d in 10:
@@ -266,6 +301,8 @@ func update_menu() -> void:
 
 # Ends a run: converts what you did into gems and teaches the foes a little.
 func end_run(won: bool) -> void:
+	if net.mode == "host" and players.size() > 1 and players[1].get("remote", false):
+		rpc("net_event", "end", {floor = floor_i, won = won})
 	gems_won = int((floor_i * 8 + kills / 5 + boss_kills * 20 + (60 if won else 0)) * (1.0 + 0.3 * run_heat))
 	run_score = floor_i * 100 + kills + boss_kills * 50 + (500 if won else 0)
 	Meta.S.gems += gems_won
@@ -291,6 +328,9 @@ func end_run(won: bool) -> void:
 # ---- input -----------------------------------------------------------------------
 
 func _input(ev: InputEvent) -> void:
+	if ev is InputEventJoypadButton or ev is InputEventJoypadMotion:
+		Pad.handle(self, ev)
+		return
 	if ev is InputEventScreenTouch or ev is InputEventScreenDrag:
 		Touch.handle(self, ev)
 		return
@@ -298,16 +338,27 @@ func _input(ev: InputEvent) -> void:
 		return
 	if ev is InputEventKey and ev.pressed and not ev.echo:
 		jp[ev.physical_keycode] = true
+		p1_pad = false
 	elif ev is InputEventMouseButton and ev.pressed:
 		jp["m%d" % ev.button_index] = true
+		p1_pad = false
 
+# cin is set while a pad or remote player is being simulated; it replaces keyboard and mouse.
 func jpk(k) -> bool:
+	if cin != null:
+		return cin.jp.has(k)
 	return jp.has(k)
 
 func key(k: int) -> bool:
+	if cin != null:
+		return false
 	return sim.has(k) or Input.is_physical_key_pressed(k)
 
 func mouse() -> Vector2:
+	if cin != null:
+		return cin.mw - cam_tl
+	if p1_pad and state == "play" and not p.is_empty():
+		return pcenter() - cam_tl + p.aim * 60.0
 	if sim.has("mouse"):
 		return sim["mouse"]
 	if tin.on:
@@ -317,6 +368,8 @@ func mouse() -> Vector2:
 	return get_viewport().get_mouse_position()
 
 func firing() -> bool:
+	if cin != null:
+		return cin.fire
 	if tin.on:
 		return tin.fire
 	return sim.get("fire", false) or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
@@ -330,6 +383,8 @@ func _process(dt: float) -> void:
 	fade = maxf(0.0, fade - dt * 1.6)
 	dmg_flash = maxf(0.0, dmg_flash - dt * 3.0)
 	banner.t -= dt
+	Pad.frame(self)
+	Net.poll(self, dt)
 	match state:
 		"title":
 			update_title()
@@ -337,6 +392,9 @@ func _process(dt: float) -> void:
 			if jpk(KEY_ESCAPE):
 				set_state("pause")
 				Sfx.play("ui")
+			elif net.mode == "client" and not in_lobby:
+				Net.client_tick(self, dt)
+				update_fx(dt)
 			elif hitstop > 0.0:
 				hitstop -= dt
 			else:
@@ -349,6 +407,9 @@ func _process(dt: float) -> void:
 			elif jpk(KEY_Q) or tq:
 				if in_lobby:
 					goto_title()
+				elif net.mode == "client":
+					Net.leave(self)
+					goto_lobby()
 				else:
 					end_run(false)
 		"buff":
@@ -375,8 +436,21 @@ func _process(dt: float) -> void:
 			update_fx(dt)
 			if state_t > 1.0 and (jpk(KEY_ENTER) or jpk(KEY_R) or jpk(KEY_SPACE) or jpk("m1")):
 				goto_lobby()
+	cin = null
+	if state != "title" and me < players.size():
+		bind(players[me])
 	if state != "title" and not p.is_empty():
 		var target = p.pos + (mouse() - Vector2(VW, VH) / 2.0) * 0.16
+		if local_coop():
+			# shared screen: keep the camera between the heroes still standing
+			var sum = Vector2.ZERO
+			var cnt = 0
+			for pl in players:
+				if not pl.down:
+					sum += pl.pos
+					cnt += 1
+			if cnt > 0:
+				target = sum / cnt
 		cam = cam.lerp(target, minf(1.0, dt * 9.0))
 		shake = maxf(0.0, shake - dt * 22.0)
 		var sh = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * shake
@@ -388,6 +462,7 @@ func _process(dt: float) -> void:
 	lights.queue_redraw()
 	hud.queue_redraw()
 	jp.clear()
+	pad_jp.clear()
 
 func update_title() -> void:
 	if state_t > 0.3 and (jpk(KEY_ENTER) or jpk(KEY_SPACE) or jpk("m1") or jpk(KEY_E)):
@@ -396,6 +471,13 @@ func update_title() -> void:
 
 func update_buff() -> void:
 	var pick = -1
+	var nb = buff_choices.size()
+	if jpk(KEY_LEFT):
+		buff_sel = (buff_sel + nb - 1) % nb
+	if jpk(KEY_RIGHT):
+		buff_sel = (buff_sel + 1) % nb
+	if pad_used and jpk(KEY_ENTER):
+		pick = buff_sel % nb
 	for i in buff_choices.size():
 		if jpk(KEY_1 + i):
 			pick = i
@@ -406,10 +488,8 @@ func update_buff() -> void:
 
 # ---- run / floor setup -----------------------------------------------------------
 
-func make_player() -> void:
-	if Meta.S.gen_seed != 0:
-		Art.gen_hero(Meta.S.gen_seed)
-	var h = Meta.hero(Meta.S.hero)
+func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
+	var h = Meta.hero(hi)
 	var hid: String = h.id
 	var hkey = Meta.hero_key(h)
 	var tkey = hkey
@@ -418,21 +498,20 @@ func make_player() -> void:
 	var ar = h.ar + (1 if lv >= 2 else 0) + (1 if lv >= 5 else 0)
 	var en = h.en + (40 if lv >= 3 else 0)
 	var nm: String = h.name
-	var sprn = "h_" + hid
 	var sk2: String = h.skill2
-	if Meta.S.fuse_unlocked and Meta.S.fuse >= 0 and Meta.S.fuse != Meta.S.hero:
-		var h2 = Meta.hero(Meta.S.fuse)
+	var look = {k = "base", a = hid, b = "", seed = Meta.S.gen_seed}
+	if fi >= 0 and fi != hi:
+		var h2 = Meta.hero(fi)
 		hp = max(hp, h2.hp)
 		ar = max(ar, h2.ar)
 		en = (en + h2.en) / 2 + 20
 		sk2 = h2.skill
 		nm = Meta.fuse_name(h, h2)
 		tkey = Meta.fuse_key(h, h2)
-		Art.fuse_hero(hid, h2.id)
-		sprn = "h_fuse"
-	var el = "prism" if prism_next else D.EL[Meta.S.el]
-	p = {
-		hero = h, name = nm, spr = sprn, hkey = hkey, tkey = tkey, haste_t = 0.0, rage_t = 0.0, skills = [h.skill, sk2], pos = Vector2.ZERO, r = 4.0,
+		look = {k = "fuse", a = hid, b = h2.id, seed = Meta.S.gen_seed}
+	var pl = {
+		idx = idx, down = false, hero_i = hi, look = look, spr = Art.look(look),
+		hero = h, name = nm, hkey = hkey, tkey = tkey, haste_t = 0.0, rage_t = 0.0, skills = [h.skill, sk2], pos = Vector2.ZERO, r = 4.0,
 		hp = hp, mhp = hp, ar = ar, mar = ar, en = float(en), men = en,
 		weapons = [{id = h.start, el = el, el2 = "", lv = 0}, null], wi = 0,
 		cd = 0.0, dash_t = 0.0, dash_cd = 0.0, dash_dir = Vector2.RIGHT, dash_hit = [], inv = 0.0, ar_t = 0.0, ar_tick = 0.0,
@@ -441,13 +520,113 @@ func make_player() -> void:
 		syn = [], syn_t = 0.0, relics = [], active = null, keys = 0, feather = false, skin_ready = true, fang_n = 0,
 		shield_t = 0.0, res = 0.0, v = Vector2.ZERO, room_hits = 0, wind2 = false, lvdmg = lv >= 4, pet = null, mount = null,
 	}
-	p.sk = Meta.calc_sk(tkey)
+	pl.sk = Meta.calc_sk(tkey)
 	if Meta.S.pet != "" and Meta.PETS.has(Meta.S.pet):
-		p.pet = {id = Meta.S.pet, pos = Vector2.ZERO, t = 1.0, face = 1, moving = false}
+		pl.pet = {id = Meta.S.pet, pos = Vector2.ZERO, t = 1.0, face = 1, moving = false}
 	if Meta.S.mount != "" and Meta.MOUNTS.has(Meta.S.mount):
 		var md = Meta.MOUNTS[Meta.S.mount]
-		p.mount = {id = Meta.S.mount, hp = md.hp, mhp = md.hp, spd = md.spd}
+		pl.mount = {id = Meta.S.mount, hp = md.hp, mhp = md.hp, spd = md.spd}
+	var keep = p
+	p = pl
 	calc_stats()
+	if keep.has("st"):
+		bind(keep)
+	return pl
+
+func make_player() -> void:
+	if Meta.S.gen_seed != 0:
+		Art.gen_hero(Meta.S.gen_seed)
+	var pl = build_player(Meta.S.hero, Meta.S.fuse if Meta.S.fuse_unlocked else -1, "prism" if prism_next else D.EL[Meta.S.el], 0)
+	if players.is_empty():
+		players = [pl]
+	else:
+		players[0] = pl
+	me = 0
+	bind(pl)
+
+func bind(pl: Dictionary) -> void:
+	p = pl
+	st = pl.st
+
+# The standing hero closest to a point: who foes chase and who picks things up.
+func target_for(pos: Vector2) -> Dictionary:
+	var best = players[0]
+	var bd = INF
+	for pl in players:
+		if pl.down:
+			continue
+		var d = pl.pos.distance_squared_to(pos)
+		if d < bd:
+			bd = d
+			best = pl
+	return best
+
+func local_coop() -> bool:
+	return players.size() > 1 and net.mode != "client" and not players[1].get("remote", false)
+
+func set_local2(on: bool) -> void:
+	local2 = on
+	players = players.slice(0, 1)
+	if on:
+		if local2_hero < 0 or local2_hero >= Meta.hero_count():
+			local2_hero = (Meta.S.hero + 1) % Meta.hero_count()
+		var pl = build_player(local2_hero, -1, D.EL[(Meta.S.el + 1) % 4], 1)
+		pl.pos = players[0].pos + Vector2(16, 0)
+		if pl.pet != null:
+			pl.pet.pos = pl.pos
+		players.append(pl)
+		banner = {text = "PLAYER 2 JOINED", sub = pl.name, t = 2.5}
+		Sfx.play("pick")
+	bind(players[0])
+
+func input_for(i: int):
+	var pl = players[i]
+	if pl.get("remote", false):
+		return net.rin
+	if i > 0 and sim_p2 != null:
+		return sim_p2
+	var dev = Pad.device_for(self, i)
+	if i == 0:
+		return Pad.read(self, pl, dev) if (dev != -1 and p1_pad) else null
+	return Pad.read(self, pl, dev)
+
+func find_near() -> void:
+	near = null
+	var bd = 24.0
+	for it in inter:
+		if (it.kind == "chest" and it.open) or it.kind == "deco" or (it.kind == "shrine" and it.used):
+			continue
+		var d = it.pos.distance_to(p.pos)
+		if d < bd:
+			bd = d
+			near = it
+
+# ---- LAN messages (see net.gd) ----------------------------------------------------
+
+@rpc("any_peer", "call_remote", "reliable")
+func net_hello(pd: Dictionary) -> void:
+	if net.mode == "host":
+		Net.on_hello(self, pd)
+
+@rpc("any_peer", "call_remote", "unreliable_ordered")
+func net_input(mv: Vector2, mw: Vector2, fire: bool) -> void:
+	if net.mode == "host":
+		net.rin.mv = mv.limit_length(1.0)
+		net.rin.mw = mw
+		net.rin.fire = fire
+
+@rpc("any_peer", "call_remote", "reliable")
+func net_press(k) -> void:
+	if net.mode == "host":
+		net.rin.jp[k] = true
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func net_snap(data: PackedByteArray) -> void:
+	Net.apply(self, data)
+
+@rpc("authority", "call_remote", "reliable")
+func net_event(kind: String, data: Dictionary) -> void:
+	Net.on_event(self, kind, data)
 
 func start_run(seed: int = 0, daily: bool = false) -> void:
 	in_lobby = false
@@ -513,6 +692,7 @@ func calc_stats() -> void:
 			"magnet": st.magnet += 1
 			"thorns": st.thorns += 1
 			"surge": st.res += 0.5
+	p.st = st
 
 func rc(r: Dictionary) -> Vector2:
 	return Vector2(r.center) * TS + Vector2(8, 8)
@@ -545,14 +725,19 @@ func new_floor() -> void:
 	rebake()
 	props = dg.props
 	light_bg.color = D.BIOMES[bi].ambient * 1.2
-	p.wind2 = p.buffs.has("wind2")
-	if p.mount != null:
-		p.mount.hp = p.mount.mhp
+	for pl in players:
+		pl.wind2 = pl.buffs.has("wind2")
+		if pl.mount != null:
+			pl.mount.hp = pl.mount.mhp
+		if pl.down:
+			pl.down = false
+			pl.hp = max(1, pl.mhp / 2)
 	for r in dg.rooms:
 		var c = rc(r)
 		match r.type:
 			"start":
-				p.pos = c
+				for pl in players:
+					pl.pos = c + Vector2(pl.idx * 14.0, 0)
 				if floor_i == 0:
 					var el = D.EL[(Meta.S.el + 1 + rng.randi() % 3) % 4]
 					inter.append({kind = "weapon", w = {id = ["pistol", "scatter", "needle"][rng.randi() % 3], el = el, el2 = "", lv = 0}, pos = c + Vector2(34, 0)})
@@ -592,12 +777,15 @@ func new_floor() -> void:
 					elif it.type == "relic":
 						price = 55 + floor_i * 6
 					inter.append({kind = "shop", pos = c + Vector2((i - 1) * 44, -4), item = it, price = price})
-	if p.pet != null:
-		p.pet.pos = p.pos
-	cam = p.pos
+	for pl in players:
+		if pl.pet != null:
+			pl.pet.pos = pl.pos
+	cam = players[me].pos
 	fade = 1.0
 	banner = {text = D.BIOMES[bi].name, sub = "FLOOR %d-%d" % [bi + 1, floor_i % 2 + 1], t = 3.2}
 	Sfx.play_music(bi)
+	if net.mode == "host" and players.size() > 1 and players[1].get("remote", false):
+		rpc("net_event", "floor", {floor = floor_i, boss = dg.boss_id})
 
 func random_weapon() -> Dictionary:
 	var ids = []
@@ -634,6 +822,7 @@ func offer_buffs(stay: bool) -> void:
 		buff_choices.append(pool[k])
 		pool.remove_at(k)
 	buff_stay = stay
+	buff_sel = 0
 	set_state("buff")
 
 func next_floor() -> void:
@@ -660,7 +849,11 @@ func apply_buff(id: String) -> void:
 	calc_stats()
 
 func pick_buff(i: int) -> void:
-	apply_buff(buff_choices[i].id)
+	# a blessing is shared by the whole party
+	for pl in players:
+		bind(pl)
+		apply_buff(buff_choices[i].id)
+	bind(players[me])
 	Sfx.play("pick")
 	if not buff_stay:
 		floor_i += 1
@@ -726,8 +919,9 @@ func nearest_enemy(pos: Vector2, maxd: float, exclude: Array):
 			res = e
 	return res
 
+# Delayed call; remembers which hero was acting so it runs for the same one.
 func after(t: float, fn: Callable) -> void:
-	timers.append([t, fn])
+	timers.append([t, fn, int(p.get("idx", 0))])
 
 # ---- play update -----------------------------------------------------------------
 
@@ -741,18 +935,32 @@ func update_play(dt: float) -> void:
 	if not due.is_empty():
 		timers = timers.filter(func(t): return t[0] > 0.0)
 		for t in due:
+			if t[2] < players.size():
+				bind(players[t[2]])
 			t[1].call()
 			if state != "play":
 				return
-	update_player(dt)
-	if state != "play":
-		return
-	Ext.update_pet(self, dt)
+	var i = 0
+	while i < players.size():
+		var pl = players[i]
+		i += 1
+		bind(pl)
+		if pl.down:
+			continue
+		cin = input_for(pl.idx)
+		find_near()
+		update_player(dt)
+		cin = null
+		if state != "play":
+			return
+		Ext.update_pet(self, dt)
+		p.syn_t -= dt
+		if p.syn_t <= 0.0:
+			p.syn_t = 0.5
+			More.refresh_syn(self)
+	net.rin.jp.clear()
+	bind(players[0])
 	More.update_allies(self, dt)
-	p.syn_t -= dt
-	if p.syn_t <= 0.0:
-		p.syn_t = 0.5
-		More.refresh_syn(self)
 	if in_lobby:
 		Lobby.update(self, dt)
 	else:
@@ -775,15 +983,8 @@ func update_play(dt: float) -> void:
 	pickups = pickups.filter(func(k): return not k.dead)
 	props = props.filter(func(pr): return not pr.dead)
 	inter = inter.filter(func(it): return not it.get("gone", false))
-	near = null
-	var bd = 24.0
-	for it in inter:
-		if (it.kind == "chest" and it.open) or it.kind == "deco" or (it.kind == "shrine" and it.used):
-			continue
-		var d = it.pos.distance_to(p.pos)
-		if d < bd:
-			bd = d
-			near = it
+	bind(players[me] if me < players.size() else players[0])
+	find_near()
 
 func update_player(dt: float) -> void:
 	var mv = Vector2(
@@ -791,7 +992,9 @@ func update_player(dt: float) -> void:
 		float(key(KEY_S) or key(KEY_DOWN)) - float(key(KEY_W) or key(KEY_UP)))
 	if mv.length() > 0.0:
 		mv = mv.normalized()
-	if tin.on:
+	if cin != null:
+		mv = cin.mv
+	if tin.on and cin == null:
 		if tin.mv != Vector2.ZERO:
 			mv = tin.mv
 		var td = Touch.aim_dir(self)
@@ -799,7 +1002,7 @@ func update_player(dt: float) -> void:
 			p.aim = td
 	var mw = mouse() + cam_tl
 	var aim = mw - pcenter()
-	if aim.length() > 1.0 and not tin.on:
+	if aim.length() > 1.0 and not (tin.on and cin == null):
 		p.aim = aim.normalized()
 	p.face = 1 if p.aim.x >= 0.0 else -1
 	for k in ["cd", "dash_cd", "inv", "skill_cd", "skill2_cd", "shield_t", "haste_t", "rage_t", "flash", "swing", "slow", "noregen", "ar_t"]:
@@ -818,7 +1021,7 @@ func update_player(dt: float) -> void:
 	if p.dash_t > 0.0:
 		p.dash_t -= dt
 		v = p.dash_dir * 310.0
-		ghosts.append({pos = p.pos, flip = p.face < 0, t = 0.22})
+		ghosts.append({pos = p.pos, flip = p.face < 0, t = 0.22, spr = p.spr})
 		if riding:
 			Ext.mount_dash(self)
 	if p.spin > 0.0:
@@ -831,7 +1034,13 @@ func update_player(dt: float) -> void:
 	if p.shield_t > 0.0:
 		Ext.shield_tick(self)
 	p.v = v
+	var was: Vector2 = p.pos
 	move(p, v * dt)
+	if local_coop() and not in_lobby:
+		# two heroes share one screen: nobody may walk off its edge
+		var off = (p.pos - cam).abs()
+		if (off.x > 222.0 or off.y > 118.0) and p.pos.distance_to(cam) > was.distance_to(cam):
+			p.pos = was
 	p.moving = mv != Vector2.ZERO
 	if p.moving:
 		p.walk += dt * 11.0
@@ -993,13 +1202,15 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 			var d = to - p.pos
 			if d.length() > w.range:
 				to = p.pos + d.normalized() * w.range
-			bullets.append({lob = true, pos = origin, from = origin, to = to, t = 0.0, dur = 0.5, z = 0.0, team = 0,
+			bullets.append({lob = true, own = p.idx, pos = origin, from = origin, to = to, t = 0.0, dur = 0.5, z = 0.0, team = 0,
 				dmg = w.dmg, el = el, aoe = w.aoe, puddle = w.get("puddle", false), dead = false, r = 3.0, kind = "orb", age = 0.0, vel = Vector2.ZERO})
 			Sfx.play("shoot_tox" if el == "" else "shoot_" + el, 0.8)
 
 # ---- interaction -----------------------------------------------------------------
 
 func interact(it: Dictionary) -> void:
+	if p.get("remote", false) and it.kind in ["talk", "npc", "egg", "plot"]:
+		return
 	match it.kind:
 		"gate", "hero", "crystal", "npc", "egg", "plot":
 			Lobby.interact(self, it)
@@ -1099,8 +1310,9 @@ func drop(kind: String, pos: Vector2, n: int) -> void:
 		pickups.append({kind = kind, pos = pos, vel = Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(30.0, 90.0), t = 0.0, dead = false})
 
 func update_pickups(dt: float) -> void:
-	var pc = pcenter()
 	for k in pickups:
+		bind(target_for(k.pos))
+		var pc = pcenter()
 		k.t += dt
 		var np = k.pos + k.vel * dt
 		if not solid_at(np.x, np.y):
@@ -1139,24 +1351,35 @@ func update_pickups(dt: float) -> void:
 # ---- rooms & waves ---------------------------------------------------------------
 
 func update_rooms(dt: float) -> void:
-	var t = Vector2i((p.pos / TS).floor())
 	var cur = null
-	for r in dg.rooms:
-		if r.rect.has_point(t):
-			cur = r
-			break
-	if cur != null and cur != room:
-		room = cur
-		cur.seen = true
-	if lock == null and cur != null and not cur.cleared and cur.rect.grow(-1).has_point(t):
+	var trig = null
+	for pl in players:
+		if pl.down:
+			continue
+		var t = Vector2i((pl.pos / TS).floor())
+		for r in dg.rooms:
+			if r.rect.has_point(t):
+				r.seen = true
+				if pl.idx == me:
+					room = r
+				if lock == null and cur == null and not r.cleared and r.rect.grow(-1).has_point(t):
+					cur = r
+					trig = pl
+				break
+	if cur != null:
 		lock = cur
 		for g in cur.gates:
 			dg.grid[g.y * dg.w + g.x] = 2
 		Sfx.play("door")
 		shake_add(3.0)
 		wave_wait = 0.0
-		p.room_hits = 0
-		p.skin_ready = true
+		for pl in players:
+			pl.room_hits = 0
+			pl.skin_ready = true
+			# the gates are shut: pull anyone left outside in next to whoever stepped in
+			if not cur.rect.grow(-1).has_point(Vector2i((pl.pos / TS).floor())):
+				pl.pos = trig.pos
+		bind(trig)
 		if cur.trial:
 			banner = {text = "FLAWLESS TRIAL", sub = "TAKE NO DAMAGE FOR A RELIC", t = 2.4}
 		if cur.mod == "surge":
@@ -1262,9 +1485,23 @@ func spawn_enemy(id: String, pos: Vector2) -> Dictionary:
 func clear_room(r: Dictionary) -> void:
 	r.cleared = true
 	lock = null
-	Meta.add_cunning(0.02 if p.room_hits == 0 else (-0.015 if p.room_hits >= 3 else 0.0))
-	if p.active != null:
-		p.active.n = min(D.ACTIVES[p.active.id].max, p.active.n + 1)
+	var hits = 0
+	var up = players[0]
+	for pl in players:
+		if not pl.down:
+			up = pl
+	for pl in players:
+		hits += pl.room_hits
+		if pl.active != null:
+			pl.active.n = min(D.ACTIVES[pl.active.id].max, pl.active.n + 1)
+		if pl.down:
+			pl.down = false
+			pl.hp = max(1, pl.mhp / 2)
+			pl.inv = 2.0
+			pl.pos = up.pos
+			label(pl.pos + Vector2(0, -26), "REVIVED", Color("a6e84e"), true)
+	bind(up)
+	Meta.add_cunning(0.02 if hits == 0 else (-0.015 if hits >= 3 else 0.0))
 	if r.elite or run_heat >= 4:
 		drop("coin", rc(r), 10)
 		drop("heart", rc(r), 1)
@@ -1272,7 +1509,7 @@ func clear_room(r: Dictionary) -> void:
 			drop("key", rc(r), 1)
 		else:
 			inter.append({kind = "active", id = More.random_active(self), pos = random_room_pos(r, 30.0)})
-	if r.trial and p.room_hits == 0:
+	if r.trial and hits == 0:
 		inter.append({kind = "relic", id = More.random_relic(self), pos = random_room_pos(r, 30.0)})
 		label(p.pos + Vector2(0, -30), "FLAWLESS!", Color("ffd24a"), true)
 	for g in r.gates:
@@ -1344,6 +1581,7 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 		e.stun -= dt
 		return
 	var d = e.d
+	bind(target_for(e.pos))
 	var to = p.pos - e.pos
 	var dist = maxf(to.length(), 0.01)
 	var dir = to / dist
@@ -1672,7 +1910,7 @@ func separate() -> void:
 				move(a, -push)
 				move(b, push)
 	for pr in props:
-		for a in enemies + [p]:
+		for a in enemies + players:
 			if a.get("dead", false):
 				continue
 			var d = a.pos - pr.pos
@@ -1872,7 +2110,7 @@ func kill(e: Dictionary) -> void:
 				kill(o)
 
 func hurt_player(dmg: int, el: String = "") -> void:
-	if p.inv > 0.0 or p.dash_t > 0.0 or state != "play":
+	if p.get("down", false) or p.inv > 0.0 or p.dash_t > 0.0 or state != "play":
 		return
 	if in_lobby or p.shield_t > 0.0:
 		return
@@ -1939,7 +2177,11 @@ func hurt_player(dmg: int, el: String = "") -> void:
 		p.hp = 0
 		burst(pcenter(), 30, Color("ff5a6a"), 120.0, 0.8)
 		Sfx.play("boom")
-		end_run(false)
+		p.down = true
+		if players.all(func(q): return q.down):
+			end_run(false)
+		else:
+			label(p.pos + Vector2(0, -26), "DOWN! CLEAR THE ROOM TO REVIVE", Color("ff6a6a"), true)
 
 func hurt_prop(pr: Dictionary, dmg: float) -> void:
 	if pr.dead:
@@ -1983,8 +2225,13 @@ func explode(pos: Vector2, r: float, dmg: float, el: String, team: int, col = nu
 		for pr in props:
 			if pr.pos.distance_to(pos) < r + 6.0:
 				hurt_prop(pr, dmg)
-	elif pcenter().distance_to(pos) < r + 3.0:
-		hurt_player(int(dmg), el)
+	else:
+		var keep = p
+		for pl in players:
+			if not pl.down and (pl.pos + Vector2(0, -3)).distance_to(pos) < r + 3.0:
+				bind(pl)
+				hurt_player(int(dmg), el)
+		bind(keep)
 
 # ---- bullets & zones -------------------------------------------------------------
 
@@ -1994,6 +2241,8 @@ func add_bullet(pos: Vector2, vel: Vector2, o: Dictionary) -> Dictionary:
 	o.dead = false
 	o.hit = []
 	o.age = 0.0
+	if not o.has("own"):
+		o.own = int(p.get("idx", 0))
 	for k in BDEF:
 		if not o.has(k):
 			o[k] = BDEF[k]
@@ -2006,6 +2255,9 @@ func update_bullets(dt: float) -> void:
 		if b.dead:
 			continue
 		b.age += dt
+		if b.team == 0:
+			# damage, crits and synergies belong to whoever fired it
+			bind(players[mini(int(b.get("own", 0)), players.size() - 1)])
 		if b.lob:
 			b.t += dt
 			var k = b.t / b.dur
@@ -2093,13 +2345,22 @@ func update_bullets(dt: float) -> void:
 					break
 		else:
 			var rr = 3.0 + b.r
-			if p.inv <= 0.0 and p.dash_t <= 0.0 and Geometry2D.get_closest_point_to_segment(pc, prev, np).distance_squared_to(pc) < rr * rr:
-				hurt_player(int(b.dmg), b.el)
-				b.dead = true
-				if b.get("arm", -1) >= 0:
-					Meta.lead_result(b.arm, true)
-				if state != "play":
-					return
+			var struck = false
+			for pl in players:
+				if pl.down or pl.inv > 0.0 or pl.dash_t > 0.0:
+					continue
+				var pc2: Vector2 = pl.pos + Vector2(0, -3)
+				if Geometry2D.get_closest_point_to_segment(pc2, prev, np).distance_squared_to(pc2) < rr * rr:
+					bind(pl)
+					hurt_player(int(b.dmg), b.el)
+					b.dead = true
+					if b.get("arm", -1) >= 0:
+						Meta.lead_result(b.arm, true)
+					struck = true
+					break
+			if state != "play":
+				return
+			if struck:
 				continue
 			for pr in props:
 				if not pr.dead and pr.kind == "crate" and pr.pos.distance_squared_to(b.pos + Vector2(0, 4)) < 49.0:
@@ -2125,12 +2386,17 @@ func update_zones(dt: float) -> void:
 				for e in enemies:
 					if not e.dead and e.pos.distance_to(z.pos) < z.r + e.r:
 						hurt_enemy(e, z.get("sdmg", 1.5 + floor_i * 0.5), z.el, Vector2.ZERO, true)
-			elif p.pos.distance_to(z.pos) < z.r:
-				hurt_player(1, z.el)
+			else:
+				for pl in players:
+					if not pl.down and pl.pos.distance_to(z.pos) < z.r:
+						bind(pl)
+						hurt_player(1, z.el)
 
 # ---- fx --------------------------------------------------------------------------
 
 func burst(pos: Vector2, n: int, col: Color, spd: float = 80.0, life: float = 0.4, grav: float = 0.0) -> void:
+	if net.mode == "host" and Sfx.logging and net.blog.size() < 40:
+		net.blog.append([pos, n, col, spd, life, grav])
 	if parts.size() > 900:
 		return
 	for i in n:
@@ -2233,7 +2499,7 @@ func draw_scene(ci: CanvasItem) -> void:
 			if rng.randf() < 0.04:
 				parts.append({pos = t + Vector2(rng.randf_range(-2, 2), -7), vel = Vector2(rng.randf_range(-5, 5), -22), life = 0.6, max = 0.6, col = Color("ffb347"), size = 1, grav = 0.0})
 	for q in ghosts:
-		spr(ci, p.spr, q.pos + Vector2(0, p.r), q.flip, Color(0.6, 0.8, 1.0, q.t * 2.5), Vector2.ONE, true)
+		spr(ci, q.get("spr", p.spr), q.pos + Vector2(0, p.r), q.flip, Color(0.6, 0.8, 1.0, q.t * 2.5), Vector2.ONE, true)
 
 	var list = []
 	for pr in props:
@@ -2247,9 +2513,10 @@ func draw_scene(ci: CanvasItem) -> void:
 	for a in allies:
 		list.append([a.pos.y, 6, a])
 	if state != "dead":
-		list.append([p.pos.y + p.r, 4, null])
-		if p.pet != null:
-			list.append([p.pet.pos.y + 3.0, 5, p.pet])
+		for pl in players:
+			list.append([pl.pos.y + pl.r, 4, pl])
+			if pl.pet != null and not pl.down:
+				list.append([pl.pet.pos.y + 3.0, 5, pl.pet])
 	list.sort_custom(func(a, b): return a[0] < b[0])
 	var sh: Texture2D = Art.T["shadow"]
 	for it in list:
@@ -2273,6 +2540,7 @@ func draw_scene(ci: CanvasItem) -> void:
 				if on_screen(o.pos, 60.0):
 					draw_enemy(ci, o)
 			4:
+				bind(o)
 				draw_player(ci)
 			6:
 				ci.draw_texture(sh, o.pos + Vector2(-8, 1))
@@ -2281,6 +2549,8 @@ func draw_scene(ci: CanvasItem) -> void:
 				var hop = absf(sin(time * 9.0)) * 2.0 if o.moving else 0.0
 				ci.draw_texture(sh, o.pos + Vector2(-8, 0), Color(1, 1, 1, 0.6))
 				spr(ci, "pet_" + o.id, o.pos + Vector2(0, 4.0 - hop), o.face < 0)
+	if me < players.size():
+		bind(players[me])
 
 func draw_inter(ci: CanvasItem, it: Dictionary) -> void:
 	if not on_screen(it.pos, 60.0):
@@ -2435,6 +2705,10 @@ func plift() -> float:
 	return 6.0 if (p.mount != null and p.mount.hp > 0) else 0.0
 
 func draw_player(ci: CanvasItem) -> void:
+	if p.get("down", false):
+		spr(ci, p.spr, p.pos + Vector2(0, p.r + 1.0), p.face < 0, Color(0.45, 0.45, 0.55, 0.6))
+		Px.ctext(ci, p.pos + Vector2(0, -22), "DOWN", Color("ff6a6a"))
+		return
 	var nm: String = p.spr
 	var fr = nm
 	if p.moving:
@@ -2462,6 +2736,8 @@ func draw_player(ci: CanvasItem) -> void:
 		spr(ci, fr, base, p.face < 0, Color(1, 1, 1, 0.8), Vector2.ONE, true)
 	if not behind:
 		draw_weapon(ci)
+	if players.size() > 1:
+		Px.ctext(ci, p.pos + Vector2(0, -25.0 - plift()), "P%d" % (p.idx + 1), Color("7adfff") if p.idx == 0 else Color("ffb84a"))
 
 func draw_top(ci: CanvasItem) -> void:
 	if state == "title" or p.is_empty():
@@ -2581,8 +2857,9 @@ func draw_lights(ci: CanvasItem) -> void:
 	var off = -cam_tl
 	var l = func(pos: Vector2, r: float, col: Color):
 		ci.draw_texture_rect(lt, Rect2(pos + off - Vector2(r, r), Vector2(r * 2.0, r * 2.0)), false, col)
-	l.call(p.pos + Vector2(0, -6), 112.0 * (0.55 if (lock != null and lock.mod == "dark") else 1.0), Color(0.36, 0.34, 0.31))
-	l.call(p.pos + Vector2(0, -6), 44.0, Color(0.06, 0.06, 0.05))
+	for pl in players:
+		l.call(pl.pos + Vector2(0, -6), 112.0 * (0.55 if (lock != null and lock.mod == "dark") else 1.0), Color(0.36, 0.34, 0.31))
+		l.call(pl.pos + Vector2(0, -6), 44.0, Color(0.06, 0.06, 0.05))
 	for t in dg.torches:
 		if on_screen(t, 80.0):
 			l.call(t, 66.0 + sin(time * 9.0 + t.x) * 4.0, Color(0.40, 0.24, 0.10))

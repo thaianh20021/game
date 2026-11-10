@@ -10,6 +10,9 @@ static var last = {}
 static var music: AudioStreamPlayer
 static var cur_track = -1
 static var tracks = {}
+# when hosting a LAN game, sounds are also listed here and sent to the guest
+static var log = []
+static var logging = false
 
 # name: [duration, freq start, freq end, wave (0 square, 1 saw, 2 sine), volume, noise mix]
 const DEFS = {
@@ -79,6 +82,8 @@ static func synth(a: Array) -> AudioStreamWAV:
 	return w
 
 static func play(name: String, pitch: float = 1.0, db: float = 0.0) -> void:
+	if logging and log.size() < 24 and not log.has(name):
+		log.append(name)
 	if not S.has(name) or pool.is_empty():
 		return
 	var now = Time.get_ticks_msec()

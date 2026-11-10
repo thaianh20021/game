@@ -24,7 +24,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - FREEZE, +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - SPREADS TO ALL NEARBY"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP"}
 
 static func buff_rect(i: int) -> Rect2:
 	return Rect2(55 + i * 127, 84, 116, 112)
@@ -192,8 +192,8 @@ static func draw_play(g, ci: CanvasItem) -> void:
 
 	var wel: String = p.weapons[p.wi].el
 	var ecol: Color = D.EL_COL[wel]
-	skill_box(g, ci, 54, 0, "1" if g.tin.on else "RMB", ecol)
-	skill_box(g, ci, 76, 1, "2" if g.tin.on else "F", ecol)
+	skill_box(g, ci, 54, 0, "LB" if g.p1_pad else ("1" if g.tin.on else "RMB"), ecol)
+	skill_box(g, ci, 76, 1, "RB" if g.p1_pad else ("2" if g.tin.on else "F"), ecol)
 	# resonance: fills from reactions, R spends it
 	ci.draw_rect(Rect2(3, 99, 62, 6), INK)
 	var full = p.res >= 1.0
@@ -217,6 +217,15 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		for i in ad.max:
 			ci.draw_rect(Rect2(34 + i * 6, 117, 4, 4), Color("5cd3f2") if i < p.active.n else Color("3a3346"))
 		Px.text(ci, Vector2(26, 125), ad.name, Color("5cd3f2") if has else DIM)
+	# the other hero in a co-op game
+	for q in g.players:
+		if q.idx == p.idx:
+			continue
+		panel(ci, Rect2(3, 140, 78, 30))
+		Px.text(ci, Vector2(7, 143), "P%d %s" % [q.idx + 1, "DOWN" if q.down else str(q.name).substr(0, 9)], Color("ff6a6a") if q.down else Color("ffb84a"))
+		bar(ci, Vector2(7, 153), 68, q.hp, q.mhp, Color("e0444c"), true)
+		ci.draw_rect(Rect2(7, 162, 68.0 * clampf(float(q.ar) / maxf(q.mar, 1.0), 0.0, 1.0), 2), Color("a8a7b8"))
+		ci.draw_rect(Rect2(7, 165, 68.0 * clampf(q.en / maxf(q.men, 1.0), 0.0, 1.0), 2), Color("4aa8f0"))
 	for i in p.relics.size():
 		big(ci, Art.T["relic_" + p.relics[i]], Vector2(4 + i * 11, 246), 1.0)
 
@@ -492,7 +501,7 @@ static func draw_buff(g, ci: CanvasItem) -> void:
 	for i in g.buff_choices.size():
 		var b = g.buff_choices[i]
 		var r = buff_rect(i)
-		var hov = r.has_point(m)
+		var hov = r.has_point(m) or (g.pad_used and i == g.buff_sel)
 		panel(ci, r, Color(0.16, 0.1, 0.24, 0.97) if hov else Color(0.09, 0.06, 0.15, 0.95), GOLD if hov else Color("9352cb"))
 		big(ci, Art.T["tome"], r.position + Vector2(58 - 15, 10), 3.0)
 		Px.ctext(ci, r.position + Vector2(58, 44), b.name, GOLD)

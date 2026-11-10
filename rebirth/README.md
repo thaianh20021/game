@@ -1,4 +1,10 @@
-| `src/meta.gd` | Save file, skill tree effects and generator, hero generator, enemy learning |
+| `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
+| `src/pad.gd` | Gamepad input and local player two |
+| `src/touch.gd` | Touch sticks and buttons |
+| `src/more.gd` | Synergies, relics, active items, secret rooms |
+| `src/talk.gd` | NPC dialogue rules |
+| `src/sfx.gd` || R | Elemental Burst (when the bar is full) |
+| C | Active item || `src/meta.gd` | Save file, skill tree effects and generator, hero generator, enemy learning |
 | `src/talk.gd` | NPC dialogue rules |# Dungeon Core: Elemental Rebirth (remake)
 
 Top-down roguelike shooter: two-weapon gunplay plus an elemental reaction system.
@@ -25,6 +31,43 @@ Open this `rebirth` folder in Godot 4.7 and press F5, or:
 | Q | Swap weapon |
 | E | Talk, open, pick up, buy, enter |
 | Esc | Pause (reaction cheat sheet, foe cunning) |
+
+## Gamepad
+
+| Pad | Action |
+|---|---|
+| Left stick | Move |
+| Right stick | Aim (fires when pushed far). Idle: auto-aims at the nearest foe |
+| RT | Fire |
+| A or LT | Dash |
+| LB / RB | Skill one / skill two |
+| R3 or d-pad up | Elemental Burst |
+| B | Active item |
+| Y | Swap weapon |
+| X | Interact |
+| START | Pause. In menus: A confirm, B back, d-pad or stick to move |
+
+Touch screens get two virtual sticks and buttons (auto-aim while the fire stick is held near its centre).
+
+## Co-op (two players)
+
+Use the Link Stone in the Hearth.
+
+- Same screen: plug in two gamepads and press START on the second one in the Hearth, or switch
+  "Local player 2" on. With one gamepad, "A single gamepad plays: player 2" lets keyboard+mouse be
+  player 1 and the pad be player 2. Player 2 picks a hero and element by walking up to them.
+- LAN: one player chooses "Host a LAN game"; the other sees the game listed under the Link Stone
+  (or types the host's address) and joins. The host starts the run. UDP/TCP port 24242, discovery
+  on UDP 24243; both devices must be on the same network.
+- A hero at 0 health goes down and gets back up with half health when the room is cleared or the
+  next floor starts. The run ends when both are down. Blessings are shared; gold, weapons, relics
+  and keys belong to whoever picks them up.
+- The host simulates everything and sends 20 snapshots a second; the guest predicts only its own walking.
+
+## Android
+
+`export_presets.cfg` has an Android preset (arm64, landscape, network permissions). Building an APK
+needs the Android SDK set in Godot's Editor Settings; then: `godot --headless --path rebirth --export-debug Android build/dungeon-core.apk`.
 
 ## The Hearth (lobby)
 
@@ -86,4 +129,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/shot.gd` saves screenshots to the temp folder.
+using a bot in god mode. Uses its own save file. `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

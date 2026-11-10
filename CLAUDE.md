@@ -1,0 +1,48 @@
+# Dungeon Core: Elemental Rebirth
+
+The game lives in `rebirth/` (Godot 4.7, GDScript, GL Compatibility). The repository root holds the
+old prototype and is kept only for reference: do not edit it.
+
+## What the game is
+
+Top-down roguelike shooter inspired by twin-weapon dungeon crawlers plus an elemental reaction
+system. Original names and art; never copy another game's characters, names or assets.
+All sprites, tiles, sounds and music are generated from code at boot (no asset files).
+In-game text is English capitals only (the pixel font has no other glyphs). The owner writes in Vietnamese.
+
+## Run and test
+
+Godot console binary on this machine:
+`%LOCALAPPDATA%\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7-stable_win64_console.exe`
+
+- Play: `<godot> --path rebirth`
+- Regression (about 5 minutes): `<godot> --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd`
+- Local co-op: same with `res://tests/coop.gd`
+- LAN: start `tests/net_host.gd`, then `tests/net_client.gd`, as two processes with `--max-fps 60` (no `--fixed-fps`)
+- Screenshots: run `tests/shot.gd`, `tests/shot2.gd`, `tests/pad.gd` without `--headless`; PNGs go to the temp folder
+
+Tests use their own save files (`Meta.PATH`). Always run smoke.gd after touching `src/game.gd`.
+
+## Architecture rules
+
+- `src/game.gd` owns the simulation. Actors are plain dictionaries, no physics engine, no scene files.
+- `players` is the list of heroes; `p` and `st` point at the hero being simulated or drawn. Call
+  `bind(pl)` before code that reads `p`; `_process` rebinds `players[me]` every frame.
+- Input goes through `jpk()`, `key()`, `mouse()`, `firing()`. `cin` replaces keyboard/mouse while a
+  pad, touch-less remote or simulated player is updated (`input_for`).
+- LAN: host-authoritative, see `src/net.gd`. Anything a guest must see has to be in `Net.snapshot`.
+- Floor layout must depend only on `run_seed` and `floor_i` (uses `drng`), so seeds and LAN guests match.
+- Tunable content is in `src/data.gd`; persistent progress and generators in `src/meta.gd`.
+- `README.md` in `rebirth/` lists every file and the controls; keep it current.
+
+## State of the work (2026-11)
+
+Done: lobby, 6 heroes + woven heroes, fusion, skill trees, pets, mounts, weapon workshop, relics,
+active items, synergies, secret rooms, codex, heat levels, daily/seeded runs, garden, 6 bosses,
+learning foes, touch controls, gamepads, local and LAN co-op.
+
+Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
+physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested
+only between two processes on one PC; text is English only.
+
+Work happens on branch `done`; `main` still has only the old prototype.

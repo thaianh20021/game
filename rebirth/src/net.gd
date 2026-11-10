@@ -63,6 +63,7 @@ static func leave(g) -> void:
 		g.multiplayer.multiplayer_peer = null
 	if g.net.udp != null:
 		g.net.udp.close()
+	Sfx.logging = false
 	var hosts = g.net.hosts
 	g.net = fresh()
 	g.net.hosts = hosts
@@ -77,10 +78,12 @@ static func on_connected(g) -> void:
 	g.net.status = "CONNECTED. WAITING FOR THE HOST TO START."
 	g.net.joined = true
 	g.rpc_id(1, "net_hello", g.p)
+	refresh_menu(g)
 
 static func on_failed(g) -> void:
 	leave(g)
 	g.net.status = "CONNECTION FAILED"
+	refresh_menu(g)
 
 static func on_peer_left(g) -> void:
 	if g.net.mode == "host":
@@ -97,10 +100,12 @@ static func on_peer_left(g) -> void:
 
 static func on_hello(g, pd: Dictionary) -> void:
 	pd.idx = 1
+	pd.remote = true
 	pd.down = false
 	g.net.guest = pd
 	g.net.joined = true
 	g.net.status = "PARTNER READY: " + str(pd.name)
+	refresh_menu(g)
 
 static func refresh_menu(g) -> void:
 	if g.state == "menu" and g.menu.kind == "coop":
@@ -124,7 +129,13 @@ static func poll(g, dt: float) -> void:
 				if pk.get_string_from_utf8() == "DCORE" and ip != "" and not n.hosts.has(ip):
 					n.hosts.append(ip)
 					refresh_menu(g)
-	if n.mode == "host" and g.players.size() > 1 and g.state == "play" and not g.in_lobby:
+	# a guest waiting in its own lobby keeps the host up to date on which hero it plays
+	if n.mode == "client" and n.joined and g.in_lobby and not g.p.is_empty():
+		n.beacon_t -= dt
+		if n.beacon_t <= 0.0:
+			n.beacon_t = 1.0
+			g.rpc_id(1, "net_hello", g.p)
+	if n.mode == "host" and g.players.size() > 1 and g.players[1].get("remote", false) and g.state == "play" and not g.in_lobby:
 		n.snap_t -= dt
 		if n.snap_t <= 0.0:
 			n.snap_t = RATE
@@ -133,6 +144,10 @@ static func poll(g, dt: float) -> void:
 # ---- host: starting a shared run -------------------------------------------------
 
 static func start(g) -> void:
+	g.local2 = false
+	g.players = g.players.slice(0, 1)
+	Sfx.logging = true
+	Sfx.log.clear()
 	g.start_run(0, false)
 	var guest: Dictionary = g.net.guest
 	g.bind(guest)
@@ -185,12 +200,12 @@ static func snapshot(g) -> PackedByteArray:
 	}
 	Sfx.log.clear()
 	g.net.blog.clear()
-	return var_to_bytes(snap).compress(FileAccess.COMPRESSION_ZSTD)
+	return var_to_bytes(snap).compress(FileAccess.COMPRESSION_GZIP)
 
 static func apply(g, data: PackedByteArray) -> void:
 	if g.net.mode != "client" or g.in_lobby:
 		return
-	var snap = bytes_to_var(data.decompress_dynamic(1 << 22, FileAccess.COMPRESSION_ZSTD))
+	var snap = bytes_to_var(data.decompress_dynamic(1 << 22, FileAccess.COMPRESSION_GZIP))
 	if not (snap is Dictionary) or snap.fl != g.floor_i:
 		return
 	var n = g.net
@@ -198,6 +213,9 @@ static func apply(g, data: PackedByteArray) -> void:
 	for pl in g.players:
 		pl.spr = Art.look(pl.look)
 	var mine: Dictionary = g.players[g.me]
+	if g.p.has("hp") and (mine.hp < g.p.hp or mine.ar < g.p.ar):
+		g.dmg_flash = 1.0
+		g.shake_add(4.0)
 	# keep our own predicted position unless it drifted from the host's
 	if n.pred.distance_to(mine.pos) > 22.0 or mine.dash_t > 0.0:
 		n.pred = mine.pos
