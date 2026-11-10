@@ -39,7 +39,8 @@ Tests use their own save files (`Meta.PATH`). Always run smoke.gd after touching
 
 Done: lobby, 6 heroes + woven heroes, fusion, skill trees, pets, mounts, weapon workshop, relics,
 active items, synergies, secret rooms, codex, heat levels, daily/seeded runs, garden, 6 bosses,
-learning foes, touch controls, gamepads, local and LAN co-op.
+learning foes, touch controls, gamepads, local and LAN co-op (player two can use the keyboard),
+hub south wing (bounties, trophies, quartermaster, cook, tailor, capsule machine, mailbox).
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested

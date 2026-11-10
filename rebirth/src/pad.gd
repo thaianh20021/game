@@ -100,3 +100,30 @@ static func frame(g) -> void:
 				g.pad_flick[dev] = dirn
 				if dirn > 0:
 					g.jp[[KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP][dirn - 1]] = true
+
+# Player two on the same keyboard: arrows move, aim is automatic.
+#   L or numpad 0 fire, K or numpad Enter dash, I / O skills, P burst, U item, J interact, H swap.
+const KB2 = {
+	KEY_K: KEY_SPACE, KEY_KP_ENTER: KEY_SPACE, KEY_I: "m2", KEY_KP_1: "m2", KEY_O: KEY_F, KEY_KP_2: KEY_F,
+	KEY_P: KEY_R, KEY_KP_3: KEY_R, KEY_U: KEY_C, KEY_KP_4: KEY_C, KEY_J: KEY_E, KEY_KP_5: KEY_E, KEY_H: KEY_Q, KEY_KP_6: KEY_Q,
+}
+
+static func read_kb(g, pl: Dictionary) -> Dictionary:
+	var pc: Vector2 = pl.pos + Vector2(0, -3)
+	var mv = Vector2(
+		float(Input.is_physical_key_pressed(KEY_RIGHT)) - float(Input.is_physical_key_pressed(KEY_LEFT)),
+		float(Input.is_physical_key_pressed(KEY_DOWN)) - float(Input.is_physical_key_pressed(KEY_UP)))
+	if mv != Vector2.ZERO:
+		mv = mv.normalized()
+	var dir: Vector2 = pl.aim
+	var e = g.nearest_enemy(pc, 190.0, [])
+	if e != null:
+		dir = (g.center(e) - pc).normalized()
+	elif mv != Vector2.ZERO:
+		dir = mv
+	var out = {mv = mv, mw = pc + dir * 80.0, jp = {},
+		fire = Input.is_physical_key_pressed(KEY_L) or Input.is_physical_key_pressed(KEY_KP_0)}
+	for k in KB2:
+		if g.jp.has(k):
+			out.jp[KB2[k]] = true
+	return out

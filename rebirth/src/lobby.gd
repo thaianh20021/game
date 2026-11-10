@@ -7,6 +7,7 @@ const Meta = preload("res://src/meta.gd")
 const Sfx = preload("res://src/sfx.gd")
 const Dungeon = preload("res://src/dungeon.gd")
 const Net = preload("res://src/net.gd")
+const Hub = preload("res://src/hub.gd")
 
 const TRACKS = ["CAVE THEME", "FORGE THEME", "ARCHIVE THEME", "BOSS THEME", "HEARTH THEME"]
 const CRACK = Vector2i(29, 11)
@@ -22,6 +23,7 @@ static func build(g) -> void:
 	rebake(g)
 	g.props = []
 	g.light_bg.color = Color(0.36, 0.33, 0.44)
+	Hub.ensure_quests()
 	g.make_player()
 	g.players = [g.p]
 	g.p.pos = tp(15, 13)
@@ -65,6 +67,16 @@ static func populate(g) -> void:
 	g.inter.append({kind = "npc", menu = "codex", spr = "shelf", name = "ARCHIVE: CODEX", pos = tp(7, 5.2), notalk = true})
 	for i in 3:
 		g.inter.append({kind = "plot", i = i, pos = tp(21 + i * 2, 5.5)})
+	g.inter.append({kind = "npc", menu = "quest", spr = "board", name = "BOUNTY BOARD: DAILY TASKS", pos = tp(8, 22.4), notalk = true})
+	g.inter.append({kind = "npc", menu = "trophy", spr = "trophy", name = "TROPHY CASE", pos = tp(12, 22.4), notalk = true})
+	g.inter.append({kind = "egg", egg = "mail", spr = "mailbox", name = "MAILBOX: DAILY GIFT", pos = tp(23.5, 22.4)})
+	g.inter.append({kind = "deco", spr = "rack", pos = tp(20.5, 22.3)})
+	g.inter.append({kind = "npc", menu = "armory", spr = "npc_quarter", name = "QUARTERMASTER: PACK A WEAPON", pos = tp(18.5, 23)})
+	g.inter.append({kind = "deco", spr = "cauldron", pos = tp(16.6, 26.3)})
+	g.inter.append({kind = "npc", menu = "brew", spr = "npc_cook", name = "COOK: MEALS FOR THE ROAD", pos = tp(15, 26)})
+	g.inter.append({kind = "deco", spr = "mannequin", pos = tp(6.6, 28)})
+	g.inter.append({kind = "npc", menu = "tailor", spr = "npc_tailor", name = "TAILOR: DYES", pos = tp(8.2, 28)})
+	g.inter.append({kind = "egg", egg = "capsule", spr = "capsule", name = "CAPSULE MACHINE: %d GEMS" % Hub.CAPSULE_COST, pos = tp(22.5, 28)})
 	g.inter.append({kind = "npc", menu = "coop", spr = "crystal_prism", name = "LINK STONE: CO-OP", pos = tp(11, 5.4), notalk = true})
 
 static func refresh_player(g) -> void:
@@ -153,6 +165,9 @@ static func interact(g, it: Dictionary) -> void:
 			egg(g, it)
 
 static func egg(g, it: Dictionary) -> void:
+	if it.egg in ["capsule", "mail"]:
+		Hub.egg(g, it)
+		return
 	var at = g.p.pos + Vector2(0, -24)
 	match it.egg:
 		"cat":
@@ -211,6 +226,9 @@ static func hit_wall(g, tx: int, ty: int) -> void:
 		g.label(g.p.pos + Vector2(0, -24), "A SECRET ROOM!", Color("ffd24a"), true)
 
 static func update(g, dt: float) -> void:
+	Hub.chatter(g, dt)
+	if g.jpk(KEY_F2) and g.net.mode == "":
+		g.set_local2(not g.local2)
 	# training dummy never dies and remembers how often it got hit
 	for e in g.enemies:
 		if e.id == "dummy":
@@ -236,6 +254,8 @@ static func update(g, dt: float) -> void:
 # A row: {name, desc, cost, state, fn}. state: buy | owned | on | locked
 
 static func rows(g, kind: String) -> Array:
+	if Hub.KINDS.has(kind):
+		return Hub.rows(g, kind)
 	var out = []
 	var hid: String = g.p.hkey
 	var me = Meta.hero(Meta.S.hero)
@@ -304,7 +324,7 @@ static func rows(g, kind: String) -> Array:
 					out.append({name = "START CO-OP RUN", desc = "BOTH PLAYERS ENTER THE DUNGEON", cost = 0, state = "owned", tag = "START", fn = func(): g.pending_coop = true})
 				out.append({name = "DISCONNECT", desc = "LEAVE THE LAN GAME", cost = 0, state = "owned", tag = "LEAVE", fn = func(): Net.leave(g)})
 			if n.mode != "client":
-				out.append({name = "LOCAL PLAYER 2: " + ("ON" if g.local2 else "OFF"), desc = "OR PRESS START ON THE SECOND GAMEPAD", cost = 0, state = "owned", tag = "CHANGE",
+				out.append({name = "LOCAL PLAYER 2: " + ("ON" if g.local2 else "OFF"), desc = "F2, OR START ON A SECOND GAMEPAD. NO PAD: ARROWS + HJKL UIOP", cost = 0, state = "owned", tag = "CHANGE",
 					fn = func(): g.set_local2(not g.local2)})
 				out.append({name = "A SINGLE GAMEPAD PLAYS: " + ("PLAYER 2" if g.pad_p2_first else "PLAYER 1"), desc = "KEYBOARD AND MOUSE ARE PLAYER 1", cost = 0, state = "owned", tag = "CHANGE",
 					fn = func(): g.pad_p2_first = not g.pad_p2_first})

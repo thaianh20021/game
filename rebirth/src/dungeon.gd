@@ -148,12 +148,13 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Di
 # The hand-built hub: one hall plus a sealed nook behind a cracked wall.
 static func lobby(nook_open: bool) -> Dictionary:
 	var w = 36
-	var h = 23
+	var h = 34
 	var grid = PackedByteArray()
 	grid.resize(w * h)
 	var hall = Rect2i(2, 4, 27, 15)
 	var nook = Rect2i(30, 10, 3, 3)
-	for rc in [hall, nook]:
+	# south wing with the shops, reached through a short passage
+	for rc in [hall, nook, Rect2i(14, 19, 3, 2), Rect2i(5, 21, 21, 10)]:
 		for y in range(rc.position.y, rc.end.y):
 			for x in range(rc.position.x, rc.end.x):
 				grid[y * w + x] = 1
@@ -164,6 +165,8 @@ static func lobby(nook_open: bool) -> Dictionary:
 	var d = {w = w, h = h, grid = grid, rooms = [r], props = [], torches = [], cracks = []}
 	for x in range(4, 28, 4):
 		d.torches.append(Vector2(x * TS + 8, 3 * TS + 9))
+	for x in [6, 10, 20, 24]:
+		d.torches.append(Vector2(x * TS + 8, 20 * TS + 9))
 	return d
 
 static func _pillars(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -> void:

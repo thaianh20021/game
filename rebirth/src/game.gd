@@ -16,6 +16,7 @@ const More = preload("res://src/more.gd")
 const Touch = preload("res://src/touch.gd")
 const Pad = preload("res://src/pad.gd")
 const Net = preload("res://src/net.gd")
+const Hub = preload("res://src/hub.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -130,6 +131,7 @@ var p1_pad = false
 var sim_p2 = null
 var pending_coop = false
 var buff_sel = 0
+var buff_turn = 0
 var pending_start = null
 var menu_close = false
 var menu_plot = 0
@@ -499,7 +501,7 @@ func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
 	var en = h.en + (40 if lv >= 3 else 0)
 	var nm: String = h.name
 	var sk2: String = h.skill2
-	var look = {k = "base", a = hid, b = "", seed = Meta.S.gen_seed}
+	var look = {k = "base", a = hid, b = "", seed = Meta.S.gen_seed, dye = Hub.dye_shift()}
 	if fi >= 0 and fi != hi:
 		var h2 = Meta.hero(fi)
 		hp = max(hp, h2.hp)
@@ -508,7 +510,7 @@ func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
 		sk2 = h2.skill
 		nm = Meta.fuse_name(h, h2)
 		tkey = Meta.fuse_key(h, h2)
-		look = {k = "fuse", a = hid, b = h2.id, seed = Meta.S.gen_seed}
+		look = {k = "fuse", a = hid, b = h2.id, seed = Meta.S.gen_seed, dye = Hub.dye_shift()}
 	var pl = {
 		idx = idx, down = false, hero_i = hi, look = look, spr = Art.look(look),
 		hero = h, name = nm, hkey = hkey, tkey = tkey, haste_t = 0.0, rage_t = 0.0, skills = [h.skill, sk2], pos = Vector2.ZERO, r = 4.0,
@@ -579,6 +581,12 @@ func set_local2(on: bool) -> void:
 		Sfx.play("pick")
 	bind(players[0])
 
+func kb2() -> bool:
+	return local_coop() and sim_p2 == null and Pad.device_for(self, 1) == -1
+
+func arrow(k: int) -> bool:
+	return key(k) and not kb2()
+
 func input_for(i: int):
 	var pl = players[i]
 	if pl.get("remote", false):
@@ -588,6 +596,8 @@ func input_for(i: int):
 	var dev = Pad.device_for(self, i)
 	if i == 0:
 		return Pad.read(self, pl, dev) if (dev != -1 and p1_pad) else null
+	if dev == -1:
+		return Pad.read_kb(self, pl)
 	return Pad.read(self, pl, dev)
 
 func find_near() -> void:
@@ -640,12 +650,7 @@ func start_run(seed: int = 0, daily: bool = false) -> void:
 		p.mhp = max(1, p.mhp - 2)
 		p.hp = p.mhp
 	if not daily:
-		if int(Meta.S.boons.get("hp", 0)) > 0:
-			p.mhp += int(Meta.S.boons.hp)
-			p.hp = p.mhp
-		for i in int(Meta.S.boons.get("relic", 0)):
-			More.take_relic(self, More.random_relic(self))
-		Meta.S.boons = {hp = 0, relic = 0}
+		Hub.apply_boons(self, More)
 	Meta.record("weapons", p.weapons[0].id)
 	floor_i = 0
 	kills = 0
@@ -823,10 +828,12 @@ func offer_buffs(stay: bool) -> void:
 		pool.remove_at(k)
 	buff_stay = stay
 	buff_sel = 0
+	buff_turn = 0
 	set_state("buff")
 
 func next_floor() -> void:
 	Sfx.play("portal")
+	Meta.stat("floors")
 	if floor_i >= LAST_FLOOR:
 		end_run(true)
 		return
@@ -849,11 +856,23 @@ func apply_buff(id: String) -> void:
 	calc_stats()
 
 func pick_buff(i: int) -> void:
-	# a blessing is shared by the whole party
-	for pl in players:
-		bind(pl)
+	if local_coop():
+		# same screen: each hero takes a turn and may choose differently
+		bind(players[buff_turn])
 		apply_buff(buff_choices[i].id)
-	bind(players[me])
+		bind(players[me])
+		if buff_turn < players.size() - 1:
+			buff_turn += 1
+			state_t = 0.0
+			Sfx.play("pick")
+			return
+	else:
+		# over LAN the host's choice is shared by the whole party
+		for pl in players:
+			bind(pl)
+			apply_buff(buff_choices[i].id)
+		bind(players[me])
+	buff_turn = 0
 	Sfx.play("pick")
 	if not buff_stay:
 		floor_i += 1
@@ -946,6 +965,19 @@ func update_play(dt: float) -> void:
 		i += 1
 		bind(pl)
 		if pl.down:
+			# a partner standing close for a moment gets you back on your feet
+			var helper = false
+			for q in players:
+				if not q.down and q.pos.distance_to(pl.pos) < 20.0:
+					helper = true
+			pl.rev = (float(pl.get("rev", 0.0)) + dt) if helper else 0.0
+			if pl.rev >= 2.5:
+				pl.rev = 0.0
+				pl.down = false
+				pl.hp = max(1, pl.mhp / 3)
+				pl.inv = 2.0
+				Sfx.play("pick")
+				label(pl.pos + Vector2(0, -26), "REVIVED", Color("a6e84e"), true)
 			continue
 		cin = input_for(pl.idx)
 		find_near()
@@ -988,8 +1020,8 @@ func update_play(dt: float) -> void:
 
 func update_player(dt: float) -> void:
 	var mv = Vector2(
-		float(key(KEY_D) or key(KEY_RIGHT)) - float(key(KEY_A) or key(KEY_LEFT)),
-		float(key(KEY_S) or key(KEY_DOWN)) - float(key(KEY_W) or key(KEY_UP)))
+		float(key(KEY_D) or arrow(KEY_RIGHT)) - float(key(KEY_A) or arrow(KEY_LEFT)),
+		float(key(KEY_S) or arrow(KEY_DOWN)) - float(key(KEY_W) or arrow(KEY_UP)))
 	if mv.length() > 0.0:
 		mv = mv.normalized()
 	if cin != null:
@@ -1248,6 +1280,7 @@ func interact(it: Dictionary) -> void:
 			if it.open:
 				return
 			it.open = true
+			Meta.stat("chests")
 			Sfx.play("chest")
 			burst(it.pos + Vector2(0, -6), 14, Color("ffd24a"), 90.0, 0.5)
 			flash(it.pos, 60.0, Color("ffd24a"), 0.4)
@@ -1333,6 +1366,7 @@ func update_pickups(dt: float) -> void:
 					label(p.pos + Vector2(0, -22), "KEY", Color("ffd24a"))
 				"coin":
 					p.gold += 1
+					Meta.stat("gold")
 					if p.relics.has("coin") and rng.randf() < 0.5:
 						p.gold += 1
 					if p.relics.has("greed") and rng.randf() < 0.5:
@@ -2002,6 +2036,7 @@ func react(e: Dictionary, key: String) -> void:
 	Sfx.play("react")
 	charge_res()
 	Meta.record("reactions", key)
+	Meta.stat("reacts")
 	hitstop = maxf(hitstop, 0.04)
 	shake_add(3.0)
 	rings.append({pos = c, r = 36.0, t = 0.0, col = col})
@@ -2052,6 +2087,7 @@ func kill(e: Dictionary) -> void:
 		return
 	e.dead = true
 	kills += 1
+	Meta.stat("bosses" if e.is_boss else "kills")
 	Meta.record("bosses" if e.is_boss else "foes", e.id)
 	if p.syn.has("wildfire") and e.st.has("fire"):
 		Ext.add_zone(self, e.pos, 18.0, "tox", 3.0)
@@ -2181,7 +2217,7 @@ func hurt_player(dmg: int, el: String = "") -> void:
 		if players.all(func(q): return q.down):
 			end_run(false)
 		else:
-			label(p.pos + Vector2(0, -26), "DOWN! CLEAR THE ROOM TO REVIVE", Color("ff6a6a"), true)
+			label(p.pos + Vector2(0, -26), "DOWN! STAND CLOSE TO REVIVE", Color("ff6a6a"), true)
 
 func hurt_prop(pr: Dictionary, dmg: float) -> void:
 	if pr.dead:
@@ -2708,6 +2744,8 @@ func draw_player(ci: CanvasItem) -> void:
 	if p.get("down", false):
 		spr(ci, p.spr, p.pos + Vector2(0, p.r + 1.0), p.face < 0, Color(0.45, 0.45, 0.55, 0.6))
 		Px.ctext(ci, p.pos + Vector2(0, -22), "DOWN", Color("ff6a6a"))
+		if float(p.get("rev", 0.0)) > 0.0:
+			ci.draw_arc(p.pos, 12.0, -PI / 2.0, -PI / 2.0 + TAU * float(p.rev) / 2.5, 20, Color("a6e84e"), 2.0)
 		return
 	var nm: String = p.spr
 	var fr = nm
@@ -2805,6 +2843,16 @@ func draw_top(ci: CanvasItem) -> void:
 		ci.draw_rect(Rect2(cp + Vector2(15, -56), Vector2(96, 128)), D.BIOMES[0].cap)
 		for seg in [[2, 3, 5, 7], [5, 7, 3, 11], [5, 7, 9, 9], [9, 9, 8, 13]]:
 			ci.draw_line(cp + Vector2(seg[0], seg[1]), cp + Vector2(seg[2], seg[3]), Color(0.05, 0.03, 0.08, 0.9), 1.0)
+	# every hero on this screen gets its own prompt
+	for pl in (players if local_coop() else [players[me]]):
+		if not pl.down:
+			bind(pl)
+			find_near()
+			draw_prompt(ci)
+	bind(players[me])
+	find_near()
+
+func draw_prompt(ci: CanvasItem) -> void:
 	if near != null and state == "play":
 		var txt = ""
 		var col = Color.WHITE

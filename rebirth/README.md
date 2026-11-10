@@ -1,4 +1,5 @@
-| `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
+| `src/lobby.gd` | The Hearth: stations, menus, secrets |
+| `src/hub.gd` | South wing: bounties, trophies, quartermaster, cook, tailor, capsule machine, boons || `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
 | `src/pad.gd` | Gamepad input and local player two |
 | `src/touch.gd` | Touch sticks and buttons |
 | `src/more.gd` | Synergies, relics, active items, secret rooms |
@@ -53,14 +54,15 @@ Touch screens get two virtual sticks and buttons (auto-aim while the fire stick 
 
 Use the Link Stone in the Hearth.
 
-- Same screen: plug in two gamepads and press START on the second one in the Hearth, or switch
-  "Local player 2" on. With one gamepad, "A single gamepad plays: player 2" lets keyboard+mouse be
+- Same screen: press F2 in the Hearth (or START on a second gamepad, or use the Link Stone).
+  Without a second gamepad, player 2 plays on the keyboard: arrows move, aim is automatic,
+  L fire, K dash, I and O skills, P burst, U item, J interact, H swap (numpad 0, Enter, 1-6 also work). With one gamepad, "A single gamepad plays: player 2" lets keyboard+mouse be
   player 1 and the pad be player 2. Player 2 picks a hero and element by walking up to them.
 - LAN: one player chooses "Host a LAN game"; the other sees the game listed under the Link Stone
   (or types the host's address) and joins. The host starts the run. UDP/TCP port 24242, discovery
   on UDP 24243; both devices must be on the same network.
-- A hero at 0 health goes down and gets back up with half health when the room is cleared or the
-  next floor starts. The run ends when both are down. Blessings are shared; gold, weapons, relics
+- A hero at 0 health goes down. Stand next to them for 2.5 seconds to revive them; they also get
+  back up when the room is cleared or the next floor starts. The run ends when both are down. On one screen each player picks a blessing in turn (shared over LAN); gold, weapons, relics
   and keys belong to whoever picks them up.
 - The host simulates everything and sends 20 snapshots a second; the guest predicts only its own walking.
 
@@ -82,6 +84,12 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
 - Soul Loom: weaves a brand-new hero from a random seed (first one free, then 40 gems): sprite,
   archetype, stats, starting weapon, two skills and its own skill tree. Rule-based, no AI model.
 - NPCs talk before opening their menu; lines depend on your gems, runs and current hero.
+- South wing (walk down from the hall):
+  - Bounty Board: three daily tasks for gems. Trophy Case: lifetime achievements.
+  - Quartermaster: pack a weapon you have found before as your second weapon for the next run.
+  - Cook: one-run meals (health, armor, gold, key, item). Tailor: dyes that recolour your heroes.
+  - Capsule Machine: 12 gems for a random prize. Mailbox: a daily gift with a streak bonus.
+  - Whatever is queued for the next run is listed bottom-left in the Hearth.
 - Secrets: a cat, a jukebox, a wishing fountain, an old grave, a training dummy, a hollow wall
   and a code on the arrow keys.
 
