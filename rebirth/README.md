@@ -14,6 +14,15 @@ You do not shoot foes down; you build weather, and you forge with words.
   mire), water floods pits into mire and puts out fire pools, leaf overgrows mire into dry
   brush (which burns), wood lays planks across pits, metal cuts crates and cracked walls,
   gear jams traps for good, and X does what a random other element would.
+- Three elements are not always a storm. Only the old four make the hand-made storms. Any
+  other triple becomes an effect whose shape comes from the element that COMPLETES it, so
+  the order you paint matters: fire eruption rings, ice spikes turning like a star, chain
+  lightning, a venom cloud that hunts, meteors (stone), a wandering tornado (wind), two
+  sweeping sunbeams (light), a singularity that drags everything in and bursts (void), tides
+  rolling along your aim (water), brambles that root (leaf), fissures that quake (earth),
+  orbiting blades that cut bullets (metal), a grove of thorn posts (wood), a battery of
+  three sentries (gear); X picks one at random. It is named after the field it grew from
+  and its form ("MAGMA TORNADO"). See `src/storm.gd`.
 - Elements run out. Each of the three carried elements has a bar: painting drains the chosen
   one (about seven seconds of steady fire), resting ones refill in four. A spent element
   paints nothing until it is a third full again, so the cost of an element is having to
@@ -286,6 +295,7 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/spell.gd` | Recipes: word spells set off by reactions (six shapes, four motions) |
 | `src/chem.gd` | Chemistry generator: aspects of the fifteen elements, generated reactions, fields and storms |
 | `src/tutor.gd` | The first lesson at the training dummy |
+| `src/storm.gd` | The fourteen forms a three-element effect can take |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
@@ -317,6 +327,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `recipes.gd` | Fifteen elements, generated reactions and storms, element slots, recipes |
 | `terra.gd` | The newer elements against terrain, crates, walls and traps; gamepad prompts |
 | `lesson.gd` | Element saturation, blessing emblems, the first lesson, touch button layout |
+| `forms.gd` | Every three-element form runs, hurts and has its own name (pictures when not headless) |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |
 | `shot4.gd`, `shot5.gd` | Phone-shaped screenshots: wide view, lesson, blessing cards (`--resolution 1400x630`) |
 | `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |

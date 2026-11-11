@@ -170,7 +170,7 @@ func _init():
 	check(o.hp < hp_o, "the generated field keeps hurting")
 	check(g.bullets.filter(func(b): return b.team == 1 and not b.dead).is_empty(), "a field with stone stops bullets")
 	g.hurt_enemy(e, 1.0, "wind")
-	check(g.fields[0].tier == 3 and g.fields[0].key == "fire+stone+wind" and Combo.name_of(g.fields[0]) == "HOWLING MAGMA", "a third element makes a generated storm: " + Combo.name_of(g.fields[0]))
+	check(g.fields[0].tier == 3 and g.fields[0].key == "fire+stone+wind" and Combo.name_of(g.fields[0]) == "MAGMA TORNADO" and g.fields[0].form == "wind", "a third element gives the field a form: " + Combo.name_of(g.fields[0]))
 	check(Book.known("s_fire+stone+wind"), "and the storm is written down")
 	hp_o = o.hp
 	await frames(30)

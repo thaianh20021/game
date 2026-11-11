@@ -11,6 +11,7 @@ const Sfx = preload("res://src/sfx.gd")
 const Px = preload("res://src/font.gd")
 const Book = preload("res://src/book.gd")
 const Chem = preload("res://src/chem.gd")
+const Storm = preload("res://src/storm.gd")
 
 # pair key (sorted, as in D.REACT) -> [name, colour, what it does]
 const FIELD = {
@@ -32,6 +33,11 @@ const FIELD_R = 30.0
 const STORM_R = 72.0
 
 static func name_of(f: Dictionary) -> String:
+	if f.has("form"):
+		# not a storm but an effect of its own: named after the field it grew from and its form
+		# ("MAGMA TORNADO"), unless the player wrote a name for this triple in the notebook
+		var own = str(Book.Meta.S.book.get("s_" + f.key, ""))
+		return own if own != "" else Chem.field_name(Chem.pair_key(f.els[0], f.els[1])) + " " + Storm.FORM[f.form][0]
 	return Book.name(f.key if f.tier == 2 else "s_" + f.key)
 
 static func col_of(f: Dictionary) -> Color:
@@ -69,7 +75,11 @@ static func touch(g, pos: Vector2, el: String, rad: float = 0.0) -> void:
 			f.life = 6.0
 			f.tick = 0.0
 			col = col_of(f)
-			g.banner = {text = Book.find(g, "s_" + f.key), sub = STORM[f.key][2] if STORM.has(f.key) else Chem.storm_note(f.key), t = 2.6}
+			# storms of the newer elements take their shape from the element that completed them
+			if not STORM.has(f.key):
+				Storm.pick(g, f)
+			var found = Book.find(g, "s_" + f.key)
+			g.banner = {text = found if STORM.has(f.key) else name_of(f), sub = STORM[f.key][2] if STORM.has(f.key) else Storm.FORM[f.form][1], t = 2.6}
 			g.charge_res(1.0)
 			Sfx.play("roar", 1.6, -4.0)
 		else:
@@ -105,6 +115,8 @@ static func update(g, dt: float) -> void:
 					b.dead = true
 					g.parts.append({pos = b.pos, vel = Vector2(0, -20), life = 0.3, max = 0.3, col = col, size = 2, grav = 0.0})
 		Chem.bullets(g, f.els, f.pos, f.r, col)
+		if f.has("form"):
+			Storm.frame(g, f, dt, m * (2.2 + fl * 0.7), col)
 		if f.tick > 0.0:
 			continue
 		f.tick = 0.5 if f.tier == 2 else 0.35
@@ -166,7 +178,11 @@ static func update(g, dt: float) -> void:
 					if not e.dead:
 						e.frz = maxf(e.frz, 0.15 if e.is_boss else 0.5)
 			_:
-				Chem.tick(g, f.els, inside, f.pos, m * (2.2 + fl * 0.7), col)
+				if f.has("form"):
+					var pw = m * (2.2 + fl * 0.7)
+					Chem.tick(g, f.els, Storm.targets(g, f, pw, col), f.pos, pw * Storm.SCALE[f.form], col)
+				else:
+					Chem.tick(g, f.els, inside, f.pos, m * (2.2 + fl * 0.7), col)
 	g.fields = g.fields.filter(func(f): return f.life > 0.0)
 
 # ---- drawing ---------------------------------------------------------------------
@@ -188,6 +204,8 @@ static func draw(g, ci: CanvasItem) -> void:
 			if g.rng.randf() < 0.5:
 				var q = p + Vector2.from_angle(g.rng.randf() * TAU) * g.rng.randf() * f.r
 				g.parts.append({pos = q, vel = Vector2(g.rng.randf_range(-6, 6), -22 if f.key != "bolt+ice" else 40), life = 0.5, max = 0.5, col = col, size = 1 + g.rng.randi() % 2, grav = 0.0})
+		elif f.has("form"):
+			Storm.draw(g, ci, f, col, a)
 		else:
 			ci.draw_circle(p, f.r, Color(col.r, col.g, col.b, 0.1 * a))
 			ci.draw_circle(p, f.r * 0.6, Color(0.05, 0.03, 0.1, 0.25 * a))
@@ -209,7 +227,7 @@ static func draw_names(g, ci: CanvasItem) -> void:
 			continue
 		var col: Color = col_of(f)
 		var a = clampf(f.life, 0.0, 1.0)
-		var at = f.pos + Vector2(0, -f.r - 10.0)
+		var at = f.pos + Vector2(0, -minf(f.r, 60.0) - 10.0)
 		Px.ctext(ci, at, name_of(f), Color(col.r, col.g, col.b, a), 2 if f.tier == 3 else 1)
 		# the elements that made it
 		var x = f.pos.x - f.els.size() * 4.5
