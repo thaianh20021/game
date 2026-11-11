@@ -24,6 +24,7 @@ const Arms = preload("res://src/arms.gd")
 const Reso = preload("res://src/reso.gd")
 const Pets = preload("res://src/pets.gd")
 const Forge = preload("res://src/forge.gd")
+const Combo = preload("res://src/combo.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -122,6 +123,7 @@ var dummy_hits = 0
 var code_i = 0
 var allies = []
 var traps = []
+var fields = []
 var tin = Touch.fresh()
 # every hero in the run; p and st always point at the one currently being simulated or drawn
 var players = []
@@ -776,6 +778,7 @@ func clear_world() -> void:
 	pending = 0
 	allies.clear()
 	traps = []
+	fields = []
 
 func rebake() -> void:
 	var imgs = Dungeon.bake(dg, 0 if in_lobby else floor_i / 2)
@@ -1092,6 +1095,7 @@ func update_play(dt: float) -> void:
 	separate()
 	update_bullets(dt)
 	update_zones(dt)
+	Combo.update(self, dt)
 	if not in_lobby:
 		Traps.update(self, dt)
 		if state != "play":
@@ -2154,6 +2158,8 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 		kill(e)
 
 func apply_el(e: Dictionary, el: String, dmg: float) -> void:
+	if reso_src:
+		Combo.touch(self, center(e), el)
 	var other = ""
 	for k in e.st.keys():
 		if k != el:
@@ -2201,8 +2207,9 @@ func react(e: Dictionary, key: String) -> void:
 	Sfx.play("react")
 	charge_res()
 	Meta.record("reactions", key)
-	tip("react", "REACTION: " + info[0], "REACTIONS FILL THE BURST BAR")
+	tip("react", "REACTION: " + info[0], "IT LEAVES A FIELD. ADD A THIRD ELEMENT FOR A STORM.")
 	Fx.react(self, c, key)
+	Combo.spawn(self, c, key)
 	Meta.stat("reacts")
 	hitstop = maxf(hitstop, 0.04)
 	shake_add(3.0)
@@ -2436,6 +2443,7 @@ func explode(pos: Vector2, r: float, dmg: float, el: String, team: int, col = nu
 	if team == 0:
 		if el != "":
 			Ext.zone_touch(self, pos, r * 0.6, el)
+			Combo.touch(self, pos, el, r * 0.5)
 		for e in enemies:
 			if e.dead:
 				continue
@@ -2697,6 +2705,7 @@ func draw_scene(ci: CanvasItem) -> void:
 		ci.draw_circle(z.pos, z.r, Color(c.r, c.g, c.b, 0.16 * a))
 		ci.draw_circle(z.pos, z.r * 0.72 + sin(time * 5.0 + z.pos.x) * 1.5, Color(c.r, c.g, c.b, 0.22 * a))
 		ci.draw_arc(z.pos, z.r, 0.0, TAU, 20, Color(c.r, c.g, c.b, 0.6 * a), 1.0)
+	Combo.draw(self, ci)
 	Traps.draw(self, ci)
 	for t in teles:
 		var k = t.t / t.dur
@@ -3059,6 +3068,7 @@ func draw_top(ci: CanvasItem) -> void:
 		ci.draw_rect(Rect2(cp + Vector2(15, -56), Vector2(96, 128)), D.BIOMES[0].cap)
 		for seg in [[2, 3, 5, 7], [5, 7, 3, 11], [5, 7, 9, 9], [9, 9, 8, 13]]:
 			ci.draw_line(cp + Vector2(seg[0], seg[1]), cp + Vector2(seg[2], seg[3]), Color(0.05, 0.03, 0.08, 0.9), 1.0)
+	Combo.draw_names(self, ci)
 	if in_lobby and state == "play":
 		Lobby.draw_signs(self, ci)
 	# every hero on this screen gets its own prompt
@@ -3140,6 +3150,7 @@ func draw_lights(ci: CanvasItem) -> void:
 	for z in zones:
 		l.call(z.pos, z.r * 2.2, D.EL_COL[z.el] * 0.3)
 	Traps.lights(self, l)
+	Combo.lights(self, l)
 	for q in flashes:
 		l.call(q.pos, q.r, q.col * (0.8 * q.t / q.max))
 	for q in bolts:

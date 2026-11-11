@@ -51,7 +51,8 @@ element/reaction/boss visual effects (`src/fx.gd`), elemental resonance (`src/re
 traits and homing/returning shots (`src/arms.gd`), mire and pits (`dg.terr`, generated in
 `src/dungeon.gd`), blueprints, scrap and workbenches (`src/more.gd`, `src/hub.gd`), crafting materials and recipes,
 seed drops and a five-plot garden, pet skills with hearts and exclusive passives (`src/pets.gd`), Word Forge (`src/forge.gd`), two starting
-weapons, hub name plates and rugs, harder bullet-dense tuning. Next steps are in `rebirth/ROADMAP.md`.
+weapons, hub name plates and rugs, harder bullet-dense tuning, element fields and three-element
+storms (`src/combo.gd`). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested

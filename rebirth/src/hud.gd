@@ -10,6 +10,7 @@ const Hub = preload("res://src/hub.gd")
 const Reso = preload("res://src/reso.gd")
 const Pets = preload("res://src/pets.gd")
 const Forge = preload("res://src/forge.gd")
+const Combo = preload("res://src/combo.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -21,12 +22,12 @@ static var GOLD = Color("ffd24a")
 static var GEM = Color("e56db2")
 
 const REACT_HELP = [
-	["fire", "ice", "MELT - HUGE SINGLE HIT"],
-	["fire", "tox", "BLAST - BIG EXPLOSION"],
-	["bolt", "fire", "OVERLOAD - BLAST AND STUN"],
-	["bolt", "ice", "SHATTER - CHAIN LIGHTNING"],
-	["ice", "tox", "BLIGHT - FREEZE, +50% DAMAGE TAKEN"],
-	["bolt", "tox", "PLAGUE - SPREADS TO ALL NEARBY"],
+	["fire", "ice", "MELT - LEAVES STEAM: EATS ENEMY BULLETS"],
+	["fire", "tox", "BLAST - LEAVES WILDFIRE: BURNS HARD"],
+	["bolt", "fire", "OVERLOAD - LEAVES PLASMA: STUNS"],
+	["bolt", "ice", "SHATTER - LEAVES HAIL: CHILLS AND CUTS"],
+	["ice", "tox", "BLIGHT - LEAVES ROT: +50% DAMAGE TAKEN"],
+	["bolt", "tox", "PLAGUE - LEAVES MIASMA: POISONS ALL"],
 ]
 const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH"}
 
@@ -345,7 +346,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 			Px.ctext(ci, Vector2(VW / 2.0, by + 18.0), g.banner.sub, Color(PALE.r, PALE.g, PALE.b, a))
 	if g.floor_i == 0 and not g.in_lobby and g.run_time < 14.0 and g.state == "play" and not g.tin.on:
 		var a = clampf(14.0 - g.run_time, 0.0, 1.0)
-		Px.ctext(ci, Vector2(232, 246), "YOU CARRY TWO WEAPONS: Q SWAPS - RMB AND F SKILLS - SPACE DASH", Color(PALE.r, PALE.g, PALE.b, a))
+		Px.ctext(ci, Vector2(190, 246), "TWO WEAPONS: Q SWAPS - RMB, F SKILLS - SPACE DASH", Color(PALE.r, PALE.g, PALE.b, a))
 
 static func draw_minimap(g, ci: CanvasItem) -> void:
 	var rooms = g.dg.rooms
@@ -498,8 +499,18 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 		Px.text(ci, Vector2(41, y), "+", DIM)
 		big(ci, Art.T["ic_" + rh[1]], Vector2(48, y - 2), 1.0)
 		Px.text(ci, Vector2(62, y), rh[2], D.REACT[rh[0] + "+" + rh[1]][1])
-	Px.text(ci, Vector2(30, 140), "FIRE AND ICE COUNTER EACH OTHER. SO DO STORM AND VENOM.", DIM)
-	Px.text(ci, Vector2(30, 151), "SHOOT AN ELEMENT POOL WITH ANOTHER ELEMENT TO DETONATE IT.", DIM)
+	Px.text(ci, Vector2(30, 138), "A THIRD ELEMENT ON A FIELD MAKES A STORM. THE FOURTH: CATACLYSM.", GOLD)
+	var si = 0
+	for miss in Combo.STORM:
+		var sx2 = 30 + (si % 2) * 150
+		var sy2 = 149 + (si / 2) * 10
+		var ex2 = sx2
+		for el in D.EL:
+			if el != miss:
+				big(ci, Art.T["ic_" + el], Vector2(ex2, sy2 - 2), 1.0)
+				ex2 += 9
+		Px.text(ci, Vector2(sx2 + 30, sy2), Combo.STORM[miss][0], Color(Combo.STORM[miss][1]))
+		si += 1
 	Px.text(ci, Vector2(320, 52), "BLESSINGS", PALE)
 	var counts = {}
 	for b in g.p.buffs:

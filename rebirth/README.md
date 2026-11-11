@@ -3,6 +3,7 @@
 | `src/pad.gd` | Gamepad input and local player two |
 | `src/touch.gd` | Touch sticks and buttons |
 | `src/pets.gd` | Pet skills, hearts, exclusive passives, the pet bowl |
+| `src/combo.gd` | Element fields left by reactions, three-element storms, cataclysm |
 | `src/forge.gd` | Word Forge: command parsing (EN/VI/pad) and forged weapons |
 | `src/reso.gd` | Elemental resonance: stacks, the four bursts, attunement |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
@@ -125,6 +126,14 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
   weapon is carried on your back.
 - Difficulty is bullet-hell leaning: bigger waves, shooters fire three-shot fans, rings and fans are
   denser, bosses rest less. A white dot on the hero marks the only spot enemy bullets can hit.
+- Combinations you can see: every reaction leaves a field on the ground for 5 seconds, labelled with
+  its name and the elements that made it: Steam (fire + ice, swallows enemy bullets), Wildfire
+  (fire + venom), Plasma (storm + fire, stuns), Hail (storm + ice), Rot (ice + venom, +50% damage
+  taken), Miasma (storm + venom). Hit a foe inside a field, or blast the field, with a third
+  element and it becomes a storm covering a large area for 6 seconds: Thunderstorm (fire + ice +
+  storm), Acid Rain (fire + ice + venom), Firestorm (fire + storm + venom), Blizzard (ice + storm
+  + venom, also swallows bullets). The fourth element on a storm ends it in a Cataclysm: a huge
+  blast that clears every enemy bullet. Pets, barrels, traps and skills all count as sources.
 - Resonance (for single-element builds): every direct hit of the same element on one foe adds a stack,
   shown as motes circling it. At 5 stacks (4 if the party carries that element twice, +2 on bosses) the
   element erupts: Eruption (fire: blast and burning ground), Glacier (ice: freezes the target and chills
@@ -200,5 +209,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/forge.gd` checks the Word Forge and starting loadout; `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/combo.gd` checks fields, storms and the cataclysm; `tests/forge.gd` checks the Word Forge and starting loadout; `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.
