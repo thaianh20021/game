@@ -31,6 +31,36 @@ func _init():
 			check(Art.T.has("h_" + h.id + suf), "hero frame h_%s%s" % [h.id, suf])
 		check(Art.I["h_" + h.id + "_b"].get_data() != Art.I["h_" + h.id].get_data(), h.id + " breathe frame differs")
 		check(Art.I["h_" + h.id + "_l"].get_data() != Art.I["h_" + h.id].get_data(), h.id + " lean frame differs")
+	check(Art.bad_rows.is_empty(), "hand-drawn rows must keep their length: " + str(Art.bad_rows))
+	var Frames = load("res://src/frames.gd")
+	print("hand-drawn sprites: ", Frames.HAND.size())
+	if vis:
+		# contact sheet: base, wind-up, attack for every hand-drawn sprite
+		var sheet = Image.create_empty(1500, 860, false, Image.FORMAT_RGBA8)
+		sheet.fill(Color("2a2438"))
+		var x = 6
+		var y = 6
+		var rowh = 0
+		var names = []
+		for h in D.HEROES:
+			names.append("h_" + h.id)
+		for id in D.ENEMIES:
+			if id != "dummy" and not D.ENEMIES[id].has("swap"):
+				names.append("e_" + id)
+		for n in names:
+			var sc = 3 if Art.I[n].get_width() > 20 else 4
+			if x + Art.I[n].get_width() * sc * 3 + 30 > 1490:
+				x = 6
+				y += rowh + 10
+				rowh = 0
+			for suf in ["", "_b", "_l"]:
+				var im: Image = Art.I[n + suf].duplicate()
+				im.resize(im.get_width() * sc, im.get_height() * sc, Image.INTERPOLATE_NEAREST)
+				sheet.blend_rect(im, Rect2i(Vector2i.ZERO, im.get_size()), Vector2i(x, y))
+				x += im.get_width() + 4
+				rowh = max(rowh, im.get_height())
+			x += 18
+		sheet.save_png("C:/Users/ADMIN/AppData/Local/Temp/rb_frames.png")
 	for id in D.ENEMIES:
 		check(Art.T.has("e_" + id + "_b") and Art.T.has("e_" + id + "_l"), "foe frames for " + id)
 	# fused, woven and dyed heroes get the full set too

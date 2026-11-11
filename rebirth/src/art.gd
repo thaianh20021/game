@@ -2,6 +2,7 @@ extends RefCounted
 # Every sprite in the game is authored here as a character map and baked to textures at boot.
 
 const D = preload("res://src/data.gd")
+const Frames = preload("res://src/frames.gd")
 
 static var PAL = {
 	"k": Color("16121d"), "K": Color("3a3346"), "g": Color("6b6779"), "G": Color("a8a7b8"), "w": Color("f6f2e6"),
@@ -1339,11 +1340,11 @@ static func build() -> void:
 	for h in D.HEROES:
 		make("h_" + h.id, MAPS["h_" + h.id])
 		walk_frames("h_" + h.id)
-		pose_frames("h_" + h.id)
+		pose_frames("h_" + h.id, "h_" + h.id, {})
 	for id in D.ENEMIES:
 		var d = D.ENEMIES[id]
 		make("e_" + id, MAPS[d.spr], d.get("swap", {}))
-		pose_frames("e_" + id)
+		pose_frames("e_" + id, d.spr, d.get("swap", {}))
 		if d.get("walk", false):
 			walk_frames("e_" + id)
 	for base in WSPR:
@@ -1533,22 +1534,49 @@ const DECOR = [["d_bone", "d_shroom", "d_pebble", "d_grass"], ["d_ember", "d_gea
 # Two pose frames made from the base sprite:
 #   _b  breathe / crouch: everything above the feet sinks one pixel
 #   _l  lean: the upper half shifts one pixel forward (used when attacking)
-static func pose_frames(name: String) -> void:
+# The base map with some rows redrawn by hand (see frames.gd), baked like any other sprite.
+static var bad_rows = []
+
+static func hand_img(tmp: String, key: String, edits: Dictionary, swaps: Dictionary) -> Image:
+	var rows = []
+	for line in MAPS[key].split("
+"):
+		var s = line.strip_edges()
+		if s != "":
+			rows.append(s)
+	for i in edits:
+		if i >= rows.size() or edits[i].length() != rows[i].length():
+			bad_rows.append("%s row %d" % [key, i])
+			continue
+		rows[i] = edits[i]
+	make(tmp, "
+".join(rows), swaps)
+	return I[tmp]
+
+static func pose_frames(name: String, key: String = "", swaps: Dictionary = {}) -> void:
 	var base: Image = I[name]
+	var src_b: Image = base
+	var src_l: Image = base
+	if Frames.HAND.has(key):
+		var hd = Frames.HAND[key]
+		if hd.has("b"):
+			src_b = hand_img(name + "_hb", key, hd.b, swaps)
+		if hd.has("l"):
+			src_l = hand_img(name + "_hl", key, hd.l, swaps)
 	var w = base.get_width()
 	var h = base.get_height()
 	var clear = Color(0, 0, 0, 0)
-	var b: Image = base.duplicate()
+	var b: Image = src_b.duplicate()
 	for y in range(h - 5, 0, -1):
 		for x in w:
-			b.set_pixel(x, y, base.get_pixel(x, y - 1))
+			b.set_pixel(x, y, src_b.get_pixel(x, y - 1))
 	for x in w:
 		b.set_pixel(x, 0, clear)
 	reg(name + "_b", b)
-	var l: Image = base.duplicate()
+	var l: Image = src_l.duplicate()
 	for y in h / 2:
 		for x in range(w - 1, 0, -1):
-			l.set_pixel(x, y, base.get_pixel(x - 1, y))
+			l.set_pixel(x, y, src_l.get_pixel(x - 1, y))
 		l.set_pixel(0, y, clear)
 	reg(name + "_l", l)
 

@@ -191,7 +191,9 @@ Saved between runs in the same file as your progress:
 
 ## Animation
 
-All frames are generated from each base sprite at boot (`Art.pose_frames`, `Art.walk_frames`).
+Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 bosses in
+`src/frames.gd` (the rows that change: eyes, mouths, arms, horns, cores). Generated motion
+(`Art.pose_frames`, `Art.walk_frames`) is applied on top.
 
 - Heroes: walk cycle with a body bob and dust under the feet, idle breathing, a forward lean when
   firing, swinging or casting, and a stretch along the dash.
@@ -209,6 +211,7 @@ All frames are generated from each base sprite at boot (`Art.pose_frames`, `Art.
 | `src/lobby.gd` | The Hearth: stations, menus, secrets |
 | `src/meta.gd` | Save file, skill tree and shop data, enemy learning |
 | `src/hud.gd` | Title, HUD, minimap, menus |
+| `src/frames.gd` | Hand-drawn wind-up and attack frames, as row edits of the base sprites |
 | `src/art.gd` | All sprites as character maps + tile generators |
 | `src/data.gd` | Weapons, heroes, skills, enemies, biomes, blessings (tune here) |
 | `src/dungeon.gd` | Floor layout, lobby layout, baking |

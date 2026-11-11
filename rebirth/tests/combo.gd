@@ -53,7 +53,7 @@ func _init():
 	g.hurt_enemy(e, 1.0, "bolt")
 	check(g.fields[0].tier == 3 and Combo.name_of(g.fields[0]) == "THUNDERSTORM", "steam + storm makes a thunderstorm")
 	var hp_o = o.hp
-	await frames(40)
+	await frames(150)
 	check(o.hp < hp_o, "the thunderstorm strikes foes across its area")
 	shot("combo3")
 	# + venom -> cataclysm

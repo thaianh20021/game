@@ -52,7 +52,8 @@ traits and homing/returning shots (`src/arms.gd`), mire and pits (`dg.terr`, gen
 `src/dungeon.gd`), blueprints, scrap and workbenches (`src/more.gd`, `src/hub.gd`), crafting materials and recipes,
 seed drops and a five-plot garden, pet skills with hearts and exclusive passives (`src/pets.gd`), Word Forge (`src/forge.gd`), two starting
 weapons, hub name plates and rugs, harder bullet-dense tuning, element fields and three-element
-storms (`src/combo.gd`), generated pose frames and spawn/attack/death animation, floor decor. Next steps are in `rebirth/ROADMAP.md`.
+storms (`src/combo.gd`), generated pose frames and spawn/attack/death animation, floor decor, hand-drawn wind-up and
+attack frames for every hero, foe shape and boss (`src/frames.gd`: add an entry there when adding a sprite). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested

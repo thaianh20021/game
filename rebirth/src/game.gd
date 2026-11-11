@@ -2902,7 +2902,7 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 	var charging = e.wind > 0.0 or float(e.get("sp_c", 0.0)) > 0.0 or e.state in ["wind", "fuse", "aim"]
 	if e.frz > 0.0:
 		pass
-	elif float(e.get("atk_t", 0.0)) > 0.0 or e.cast_t > 0.0 or e.state == "dash":
+	elif float(e.get("atk_t", 0.0)) > 0.0 or e.cast_t > 0.0 or e.state == "dash" or (e.is_boss and e.state in ["busy", "hop"]):
 		fr = nm + "_l"
 	elif charging:
 		fr = nm + "_b"
