@@ -1,25 +1,6 @@
-| `src/lobby.gd` | The Hearth: stations, menus, secrets |
-| `src/hub.gd` | South wing: bounties, trophies, quartermaster, cook, tailor, capsule machine, boons || `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
-| `src/pad.gd` | Gamepad input and local player two |
-| `src/touch.gd` | Touch sticks and buttons |
-| `src/pets.gd` | Pet skills, hearts, exclusive passives, the pet bowl |
-| `src/env.gd` | Rooms reacting to elements; hijacking enemy pools |
-| `src/wish.gd` | Typed wishes for blessings; naming and shaping skill one |
-| `src/nemesis.gd` | The foe that killed you returns |
-| `src/combo.gd` | Element fields left by reactions, three-element storms, cataclysm |
-| `src/forge.gd` | Word Forge: command parsing (EN/VI/pad) and forged weapons |
-| `src/reso.gd` | Elemental resonance: stacks, the four bursts, attunement |
-| `src/arms.gd` | Fusion traits; homing and returning projectiles |
-| `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
-| `src/fx.gd` | Visual effects: element trails, hits, statuses, reactions, boss auras, fused gear |
-| `src/traps.gd` | Floor traps: placement, timing, drawing |
-| `src/more.gd` | Synergies, relics, active items, secret rooms |
-| `src/talk.gd` | NPC dialogue rules |
-| `src/sfx.gd` || R | Elemental Burst (when the bar is full) |
-| `src/meta.gd` | Save file, skill tree effects and generator, hero generator, enemy learning |
-| `src/talk.gd` | NPC dialogue rules |# Dungeon Core: Elemental Rebirth (remake)
+# Dungeon Core: Elemental Rebirth (remake)
 
-Top-down roguelike shooter: two-weapon gunplay plus an elemental reaction system.
+Top-down roguelike shooter, bullet-hell leaning, built around an elemental reaction system.
 Godot 4.7, GL Compatibility renderer. No art or audio files: every sprite, tile, sound
 and music loop is generated from code at boot.
 
@@ -85,7 +66,8 @@ Use the Link Stone in the Hearth.
 
 - Same screen: press F2 in the Hearth (or START on a second gamepad, or use the Link Stone).
   Without a second gamepad, player 2 plays on the keyboard: arrows move, aim is automatic,
-  L fire, K dash, I and O skills, P burst, U item, J interact, H swap (numpad 0, Enter, 1-6 also work). With one gamepad, "A single gamepad plays: player 2" lets keyboard+mouse be
+  L fire, K dash, I and O skills, P burst, J interact, H swap (numpad 0, Enter, 1-6 also work).
+  With one gamepad, "A single gamepad plays: player 2" lets keyboard+mouse be
   player 1 and the pad be player 2. Player 2 picks a hero and element by walking up to them.
 - LAN: one player chooses "Host a LAN game"; the other sees the game listed under the Link Stone
   (or types the host's address) and joins. The host starts the run. UDP/TCP port 24242, discovery
@@ -163,17 +145,18 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
   maxes poison). Stacks fade after 4 seconds; a different element or a reaction resets them. Pools and
   burns do not add stacks.
 - Fire and ice counter each other, storm and venom counter each other (+50% damage).
-- Shooting an element pool with a different element detonates it.
-- Workshop rooms: upgrade a weapon (+1 to +5), change its element, or fuse both weapons into one
-  dual-element weapon that sets off reactions by itself.
+- Shooting one of your own element pools with a different element detonates it; doing the same
+  to an enemy pool hijacks it (see above).
+- Workshop rooms: upgrade a weapon (+1 to +5), change its element, use the Word Forge, or build a
+  blueprint weapon at the bench.
 - Hard ground in fight rooms: mire slows anything on foot (heroes and foes) to about half speed;
   pits cost a hero one point and put them back where they last stood. Dashing crosses both safely.
   Foes on foot must walk around pits, flyers ignore them, bullets fly over. The rim of a room and
   the cross through its centre are always clear, so doors are never cut off.
 - Crafting: blueprints for six weapons that never drop as loot are found in secret rooms (always),
   after bosses (40%) and elite rooms (30%), and are kept forever. Foes drop scrap (kept between runs).
-  The Workbench in the Hearth's south wing spends 15 scrap to pack a blueprint weapon for the next
-  run; the bench in a workshop room builds a random known one on the spot for 50 gold.
+  The Quartermaster in the Hearth crafts one for the next run (15 scrap plus materials); the bench
+  in a workshop room builds a random known one on the spot for 50 gold.
 - Materials: foes sometimes leave ore (ground foes), fiber (flyers) or essence (elemental foes);
   reward chests always hold one or two; elites and bosses leave more. Blueprint weapons at the hub
   Workbench now cost 15 scrap plus a recipe of materials.
@@ -229,14 +212,31 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | File | What |
 |---|---|
 | `src/game.gd` | Simulation, combat, enemies, first boss set, world drawing, lighting |
-| `src/ext.gd` | Skills, pets, mounts, burst, workshop, second boss set |
-| `src/lobby.gd` | The Hearth: stations, menus, secrets |
-| `src/meta.gd` | Save file, skill tree and shop data, enemy learning |
-| `src/hud.gd` | Title, HUD, minimap, menus |
+| `src/data.gd` | Weapons, heroes, skills, enemies, biomes, blessings, recipes (tune here) |
+| `src/meta.gd` | Save file, skill tree effects and generator, hero generator, enemy learning |
+| `src/dungeon.gd` | Floor layout, hazards, lobby layout, baking |
+| `src/art.gd` | All sprites as character maps, tile generators, pose frames |
 | `src/frames.gd` | Hand-drawn wind-up and attack frames, as row edits of the base sprites |
-| `src/art.gd` | All sprites as character maps + tile generators |
-| `src/data.gd` | Weapons, heroes, skills, enemies, biomes, blessings (tune here) |
-| `src/dungeon.gd` | Floor layout, lobby layout, baking |
+| `src/hud.gd` | Title, HUD, minimap, menus |
+| `src/combo.gd` | Element fields left by reactions, three-element storms, cataclysm |
+| `src/env.gd` | Rooms reacting to elements; hijacking enemy pools |
+| `src/reso.gd` | Elemental resonance: stacks, the four bursts, attunement |
+| `src/forge.gd` | Word Forge: command parsing (EN/VI/pad) and forged weapons |
+| `src/wish.gd` | Typed wishes for blessings; naming and shaping skill one |
+| `src/nemesis.gd` | The foe that killed you returns |
+| `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
+| `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
+| `src/arms.gd` | Fusion traits; homing and returning projectiles |
+| `src/more.gd` | Synergies, relics, secret rooms, blueprints, dungeon bench |
+| `src/pets.gd` | Pet skills, hearts, exclusive passives, the pet bowl |
+| `src/traps.gd` | Floor traps: placement, timing, drawing |
+| `src/fx.gd` | Visual effects: element trails, hits, statuses, reactions, boss auras, fused gear |
+| `src/lobby.gd` | The Hearth: stations, menus, signs, secrets |
+| `src/hub.gd` | South wing: bounties, trophies, quartermaster, tailor, capsule machine, boons |
+| `src/talk.gd` | NPC dialogue rules |
+| `src/net.gd` | LAN co-op: host/join, discovery, snapshots |
+| `src/pad.gd` | Gamepad input and local player two |
+| `src/touch.gd` | Touch sticks and buttons |
 | `src/sfx.gd` | Synthesized sound effects and music |
 | `src/font.gd` | 5x7 pixel font |
 
@@ -244,6 +244,24 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
-Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/chem.gd` checks room chemistry, hijacking, wishes, named skills and the nemesis; `tests/anim.gd` checks pose frames and animation states; `tests/combo.gd` checks fields, storms and the cataclysm; `tests/forge.gd` checks the Word Forge and starting loadout; `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
-processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.
+`smoke.gd` tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with
+five heroes using a bot in god mode. Every test uses its own save file. Run the others the same way:
+
+| Test | Covers |
+|---|---|
+| `chem.gd` | Room chemistry, hijacking, wishes, named skills, nemesis, prep station |
+| `combo.gd` | Fields, storms, cataclysm |
+| `forge.gd` | Word Forge and the starting loadout |
+| `anim.gd` | Pose frames and animation states |
+| `pets.gd` | Materials, seeds, garden, recipes, pets |
+| `terrain.gd` | Mire, pits, blueprints, crafting |
+| `arms.gd` | Weapons, fusion traits, newest heroes, resonance |
+| `foes.gd` | Charged specials, newest bosses, weapon sprites |
+| `drops.gd` | Drop and shop rules |
+| `traps.gd` | Traps in every biome |
+| `resume.gd` | Settings, hints, continuing a saved run |
+| `coop.gd` | Local two-player co-op |
+| `net_host.gd` + `net_client.gd` | A LAN session (two processes, host first, `--max-fps 60`) |
+| `touch.gd`, `pad.gd` | Touch and gamepad input |
+
+Bots play in god mode, so the tests catch crashes and stuck rooms, not balance.
