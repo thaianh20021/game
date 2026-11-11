@@ -54,6 +54,7 @@ func _init():
 					Combo.spawn(g, d.pos, "fire+ice")
 				Combo.touch(g, g.fields[0].pos, "bolt")
 			"bars": g.tut.t = 8.0
+			"cast": g.cast_big(d.pos)
 			"skill":
 				g.p.skill_cd = 0.0
 				Ext.cast(g, 0, d.pos)

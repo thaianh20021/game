@@ -449,7 +449,7 @@ static func rows(g, kind: String) -> Array:
 					Meta.S.hero = D.HEROES.size()})
 			if Meta.S.gen_seed != 0:
 				var h = Meta.gen_hero(Meta.S.gen_seed)
-				out.append({name = h.name + " - " + h.arch, desc = "%d HEALTH  %d ARMOR  %d ENERGY" % [h.hp, h.ar, h.en], cost = 0, state = "on", icon = "h_gen", fn = func(): pass})
+				out.append({name = h.name + " - " + h.arch, desc = "%d HEALTH  %d ARMOR  %d MANA" % [h.hp, h.ar, h.en], cost = 0, state = "on", icon = "h_gen", fn = func(): pass})
 				out.append({name = D.SKILLS[h.skill].name, desc = "SKILL ONE", cost = 0, state = "on", icon = "sk_" + h.skill, fn = func(): pass})
 				out.append({name = D.SKILLS[h.skill2].name, desc = "SKILL TWO", cost = 0, state = "on", icon = "sk_" + h.skill2, fn = func(): pass})
 				out.append({name = D.WEAPONS[h.start].name, desc = "STARTING WEAPON", cost = 0, state = "on", fn = func(): pass})

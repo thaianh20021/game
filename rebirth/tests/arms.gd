@@ -138,6 +138,8 @@ func _init():
 		# shoving elements (wind, water) may have moved it out of reach
 		e3.pos = c + Vector2(30, 0)
 		e3.kb = Vector2.ZERO
+		e3.cc_free = 0.0
+		e3.cc_on = false
 		Ext.cast(g, 0, c + Vector2(40, 0))
 		await frames(20)
 	check(g.allies.size() == 1, "sentry should be deployed")

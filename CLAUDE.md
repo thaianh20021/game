@@ -69,7 +69,10 @@ in `data.gd`, `chem.gd`, `art.gd` el_swap + icon, `forge.gd` words, `reso.gd`, `
 and `tests/recipes.gd` checks it), three carried element slots, word recipes that cast themselves
 when their two elements react (`src/spell.gd`), terrain reactions for every element (`src/env.gd`),
 prompts that follow the gamepad (`Pad.hint`: wrap any new on-screen key name in it),
-element saturation (`D.SAT`, `game.paint_el`), first lesson (`src/tutor.gd`; headless tests only get it with
+mana held in three per-element pools instead of one energy bar (`D.SAT`, `game.paint_el`, `mana_cost`; `p.en` is
+only their sum and `mana_sync` moves any change made to it into the pools), gathered casts on a held
+element key (`game.cast_big`; not sent by LAN guests or keyboard player two), field and control limits
+(`D.FIELDS_MAX`, `D.CC_FREE`), weapons as foci with no off-element penalty, first lesson (`src/tutor.gd`; headless tests only get it with
 `g.sim.tutor`), blessing emblems (`bl_<id>` maps in `art.gd`: add one with every new blessing), procedural
 motion in `draw_enemy`/`draw_player` (lean, breathing, hop, recoil), a view that fills wide screens
 (`game.fit`; HUD code draws on the 480x270 sheet, use `g.full()` for anything that must reach the

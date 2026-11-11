@@ -142,7 +142,7 @@ func _init():
 		g.try_fire()
 		dm.append(g.bullets[-1].dmg)
 		check(g.bullets[-1].el == g.p.els[i], "the shot carries the chosen element")
-	check(absf(dm[1] / dm[0] - 0.8) < 0.01, "another element hits at 80%% (%.2f)" % (dm[1] / dm[0]))
+	check(absf(dm[1] / dm[0] - 1.0) < 0.01, "every element hits the same through any weapon (%.2f)" % (dm[1] / dm[0]))
 	g.p.eli = 0
 	g.bullets.clear()
 	await frames(2)

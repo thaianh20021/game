@@ -21,9 +21,19 @@ static var EL_COL = {
 	"wood": Color("8f6a34"), "mech": Color("e0b040"), "x": Color("ff5fb0"),
 }
 
-# Saturation of the three carried elements. Painting drains the chosen one; an empty one
-# paints nothing (plain damage) until it is back above "back". Seconds are of steady fire.
-const SAT = {drain = 7.0, rest = 4.0, idle = 9.0, back = 0.35}
+# Mana. Each of the three carried elements has its own pool (a third of the hero's max mana).
+# Painting drains the chosen one ("drain" seconds of steady fire at 160 max mana), resting
+# ones refill in "rest" seconds, the chosen one in "idle" when not firing. An empty pool
+# paints nothing until it is back above "back". A reaction takes "react" of both pools, the
+# element that completes a three-element effect pays "storm", a gathered cast (hold the
+# element key for "charge" seconds) pays "cast". Costs shrink as max mana grows.
+# Close weapons are the way to earn mana back: painting with one drains at "melee" of the
+# rate, and each strike that lands gives "strike" to both resting pools (up to three foes).
+const SAT = {drain = 7.0, rest = 4.0, idle = 9.0, back = 0.35, react = 0.15, storm = 0.35, cast = 0.4, charge = 0.8, base = 160.0, melee = 0.5, strike = 0.06}
+# seconds a foe cannot be stunned, frozen or rooted again after it gets free
+const CC_FREE = 1.5
+# reaction fields that may lie on the floor at once; only one three-element effect exists at a time
+const FIELDS_MAX = 3
 
 # reaction key = the two elements sorted and joined with "+"
 static var REACT = {
@@ -258,7 +268,7 @@ static var BIOMES = [
 const BUFFS = [
 	{id = "vital", name = "IRON HEART", desc = "+2 MAX HEALTH AND HEAL 3"},
 	{id = "plating", name = "RUNE PLATING", desc = "+2 MAX ARMOR"},
-	{id = "battery", name = "DEEP CELL", desc = "+80 MAX ENERGY, FULL REFILL"},
+	{id = "battery", name = "DEEP CELL", desc = "+80 MAX MANA, FULL REFILL"},
 	{id = "catalyst", name = "CATALYST", desc = "REACTIONS DEAL +60% DAMAGE"},
 	{id = "linger", name = "LINGERING HEX", desc = "ELEMENT EFFECTS LAST 60% LONGER"},
 	{id = "crit", name = "KEEN EYE", desc = "+15% CRITICAL CHANCE"},
@@ -266,7 +276,7 @@ const BUFFS = [
 	{id = "pierce", name = "DRILL TIPS", desc = "BULLETS PIERCE ONE MORE ENEMY"},
 	{id = "swift", name = "WINDSTEP", desc = "MOVE FASTER, DASH RECHARGES QUICKER"},
 	{id = "vamp", name = "SOUL SIPHON", desc = "KILLS OFTEN RESTORE 1 ARMOR"},
-	{id = "free", name = "RECYCLER", desc = "30% OF SHOTS COST NO ENERGY"},
+	{id = "free", name = "RECYCLER", desc = "30% OF SHOTS COST NO MANA"},
 	{id = "cond", name = "CONTAGION", desc = "SLAIN FOES PASS THEIR ELEMENT ON"},
 	{id = "fury", name = "FURY", desc = "+20% ALL WEAPON DAMAGE"},
 	{id = "magnet", name = "LODESTONE", desc = "PULL PICKUPS FROM AFAR, +30% GOLD"},
@@ -303,7 +313,7 @@ const RELICS = {
 	"lens": {name = "ELEMENT LENS", desc = "WEAPON HITS APPLY ELEMENTS TWICE", sw = ["p", "m", "P"]},
 	"skin": {name = "THICK SKIN", desc = "IGNORE THE FIRST HIT IN EVERY ROOM", sw = ["g", "G", "K"]},
 	"greed": {name = "GREED", desc = "+50% GOLD, SHOPS COST 25% MORE", sw = ["y", "l", "n"]},
-	"cell": {name = "DEEP BATTERY", desc = "ENERGY ORBS GIVE DOUBLE", sw = ["c", "w", "b"]},
+	"cell": {name = "DEEP BATTERY", desc = "MANA ORBS GIVE DOUBLE", sw = ["c", "w", "b"]},
 	"compass": {name = "COMPASS", desc = "REVEALS THE WHOLE MAP AND ITS SECRETS", sw = ["n", "l", "N"]},
 }
 

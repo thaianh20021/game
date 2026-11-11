@@ -205,7 +205,7 @@ func _init():
 	g.p.en = float(g.p.men)
 	var n = g.spawn_enemy(Meta.S.nemesis.id, g.p.pos + Vector2(60, 0))
 	Nemesis.empower(g, n)
-	check(g.banner.sub.find("ENERGY") >= 0, "it greets you with that memory: " + g.banner.sub)
+	check(g.banner.sub.find("MANA") >= 0, "it greets you with that memory: " + g.banner.sub)
 	await frames(10)
 	shot("nemesis_talk")
 	g.hurt_enemy(n, 999999.0)

@@ -1,7 +1,7 @@
 extends RefCounted
 # The first lesson. A new save starts it in the Hearth beside the training dummy: ten small
 # steps, each done by actually doing the thing (move, dash, paint, switch, react, storm,
-# watch the element bars, skill, burst, go). It can be skipped at any time and replayed
+# mana, gathered cast, skill, burst, go). It can be skipped at any time and replayed
 # from Settings. Nothing here changes the rules: it only watches and tells.
 
 const D = preload("res://src/data.gd")
@@ -17,7 +17,8 @@ const STEPS = [
 	["switch", "SWITCH", "1 2 3 PICK ONE OF YOUR THREE ELEMENTS. PICK ANOTHER NOW.", "THE BIG ELEMENT BUTTON BY THE FIRE STICK PICKS THE NEXT ELEMENT."],
 	["react", "REACT", "PAINT THE DUMMY WITH TWO DIFFERENT ELEMENTS. THEY REACT AND LEAVE A FIELD.", "PAINT THE DUMMY WITH TWO DIFFERENT ELEMENTS. THEY REACT AND LEAVE A FIELD."],
 	["storm", "STORM", "NOW A THIRD ELEMENT INTO THAT FIELD. THREE MAKE A STORM. STORMS DO THE KILLING.", "NOW A THIRD ELEMENT INTO THAT FIELD. THREE MAKE A STORM. STORMS DO THE KILLING."],
-	["bars", "ROTATE", "THE BAR UNDER EACH ELEMENT DRAINS AS YOU PAINT AND REFILLS AS IT RESTS. KEEP SWITCHING.", "THE RING ON THE ELEMENT BUTTON DRAINS AS YOU PAINT AND REFILLS AS IT RESTS. KEEP SWITCHING."],
+	["bars", "ROTATE", "EACH ELEMENT HAS ITS OWN MANA. PAINTING AND REACTIONS DRAIN IT, RESTING REFILLS IT. KEEP SWITCHING.", "THE RING ON THE ELEMENT BUTTON IS ITS MANA. PAINTING AND REACTIONS DRAIN IT, RESTING REFILLS IT."],
+	["cast", "CAST", "KEEP THE ELEMENT KEY HELD TO GATHER IT, THEN LET GO: ONE BIG CAST, SHAPED BY YOUR WEAPON.", "KEEP THE ELEMENT BUTTON HELD TO GATHER IT, THEN LET GO: ONE BIG CAST, SHAPED BY YOUR WEAPON."],
 	["skill", "SKILL", "RMB AND F ARE YOUR HERO'S SKILLS. USE ONE.", "BUTTONS 1 AND 2 ARE YOUR HERO'S SKILLS. USE ONE."],
 	["burst", "BURST", "REACTIONS FILL THE BURST BAR. IT IS FULL NOW: PRESS R.", "REACTIONS FILL THE BURST BAR. IT IS FULL NOW: PRESS R."],
 	["go", "DESCEND", "CRYSTALS CHOOSE YOUR THREE ELEMENTS. THE GATE AT THE TOP STARTS A RUN. GOOD LUCK.", "CRYSTALS CHOOSE YOUR THREE ELEMENTS. THE GATE AT THE TOP STARTS A RUN. GOOD LUCK."],
@@ -69,6 +70,7 @@ static func done(g, id: String) -> bool:
 		"react": return not g.fields.is_empty()
 		"storm": return g.fields.any(func(f): return int(f.tier) >= 3)
 		"bars": return t.t > 7.0 or (p.has("spent") and p.spent.has(true))
+		"cast": return int(p.get("casts", 0)) > int(t.get("casts", 0))
 		"skill": return p.skill_cd > 0.0 or p.skill2_cd > 0.0
 		"burst": return t.t > 0.5 and p.res < 0.5
 		"go": return t.t > 7.0
@@ -93,6 +95,7 @@ static func update(g, dt: float) -> void:
 			t.i += 1
 			t.t = 0.0
 			t.eli = int(g.p.get("eli", 0))
+			t.casts = int(g.p.get("casts", 0))
 			t.hits = g.dummy_hits
 			if t.i >= STEPS.size():
 				finish(g, false)

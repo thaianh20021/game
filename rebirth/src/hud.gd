@@ -162,6 +162,23 @@ static func skill_box(g, ci: CanvasItem, y: float, slot: int, keyname: String, e
 	Px.text(ci, Vector2(26, y + 2), keyname, GOLD if ready else DIM)
 	Px.text(ci, Vector2(26, y + 11), g.skill_name(slot), ecol if ready else DIM)
 
+# The shape a weapon gives to whatever element passes through it.
+static func form_name(def: Dictionary) -> String:
+	match def.type:
+		"melee": return "ARC"
+		"beam": return "BEAM"
+		"chain": return "CHAIN"
+		"lob": return "LOB"
+	if int(def.get("n", 1)) > 1:
+		return "FAN"
+	if float(def.get("aoe", 0.0)) > 0.0:
+		return "BURST"
+	if int(def.get("pierce", 0)) > 0:
+		return "LANCE"
+	if float(def.get("homing", 0.0)) > 0.0:
+		return "SEEKER"
+	return "BOLT"
+
 static func weapon_els(w) -> Array:
 	var out = []
 	if w != null:
@@ -189,7 +206,14 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	bar(ci, Vector2(18, 17), 60, p.ar, p.mar, Color("a8a7b8") if p.noregen <= 0.0 else Color("8fb060"), true)
 	Px.text(ci, Vector2(82, 16), "%d/%d" % [p.ar, p.mar], PALE)
 	big(ci, Art.T["orb"], Vector2(7, 25), 1.0)
-	bar(ci, Vector2(18, 27), 60, p.en, p.men, Color("4aa8f0"), false)
+	if p.has("sat"):
+		# mana: one pool for each carried element
+		for i in 3:
+			bar(ci, Vector2(18 + i * 20.5, 27), 19, p.sat[i], 1.0, Color("6b6779") if p.spent[i] else D.EL_COL[p.els[i]], false)
+			if i == p.eli:
+				ci.draw_rect(Rect2(18 + i * 20.5, 33, 19, 1), Color.WHITE)
+	else:
+		bar(ci, Vector2(18, 27), 60, p.en, p.men, Color("4aa8f0"), false)
 	Px.text(ci, Vector2(82, 26), str(int(p.en)), PALE)
 	var sx = 110.0
 	if p.slow > 0.0:
@@ -299,9 +323,9 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	var lv = int(w.get("lv", 0))
 	Px.text(ci, wr.position + Vector2(40, 15), ("+%d " % lv if lv > 0 else "") + def.name, GOLD if w.has("fname") else D.RAR_COL[def.rar])
 	if def.cost > 0.0:
-		Px.text(ci, wr.position + Vector2(40, 25), "COST " + str(def.cost).trim_suffix(".0"), Color("4aa8f0") if p.en >= def.cost else Color("ff6a6a"))
+		Px.text(ci, wr.position + Vector2(40, 25), form_name(def) + "  COST " + str(def.cost).trim_suffix(".0"), Color("4aa8f0") if p.en >= def.cost else Color("ff6a6a"))
 	else:
-		Px.text(ci, wr.position + Vector2(40, 25), "FREE", DIM)
+		Px.text(ci, wr.position + Vector2(40, 25), form_name(def), DIM)
 	var o = p.weapons[1 - p.wi]
 	if o != null:
 		var odef = D.WEAPONS[o.id]
@@ -329,8 +353,6 @@ static func draw_play(g, ci: CanvasItem) -> void:
 			panel(ci, Rect2(slx, 211, 20, 18), Color(0.07, 0.05, 0.12, 0.9), D.EL_COL[p.els[i]] if on else DIM)
 			big(ci, Art.T["ic_" + p.els[i]], Vector2(slx + 9, 216), 1.0, Color.WHITE if on else Color(1, 1, 1, 0.45))
 			Px.text(ci, Vector2(slx + 2, 213), str(i + 1), GOLD if on else DIM)
-			if nat.has(p.els[i]) or w.el == "prism":
-				ci.draw_rect(Rect2(slx + 14, 213, 4, 1), D.EL_COL[p.els[i]])
 			if p.has("sat"):
 				# how much of this element is left: it drains while you paint with it, refills while it rests
 				var spent: bool = p.spent[i]

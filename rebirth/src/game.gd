@@ -1339,12 +1339,25 @@ func update_player(dt: float) -> void:
 	if jpk(KEY_TAB):
 		set_el((int(p.get("eli", 0)) + 1) % 3)
 	if p.has("els"):
-		sat_init(p)
+		mana_sync(p)
 		for i in 3:
 			var rate = 1.0 / D.SAT.rest if i != p.eli else (0.0 if firing() else 1.0 / D.SAT.idle)
 			p.sat[i] = minf(1.0, p.sat[i] + rate * dt)
 			if p.spent[i] and p.sat[i] >= D.SAT.back:
 				p.spent[i] = false
+		mana_total(p)
+		# hold the element key: gather, then let go to cast
+		if el_held():
+			p.chg = float(p.get("chg", 0.0)) + dt
+			if p.chg > 0.25:
+				p.cd = maxf(p.cd, 0.15)
+				if int(p.chg * 30.0) % 4 == 0:
+					var qa = rng.randf() * TAU
+					parts.append({pos = pcenter() + Vector2.from_angle(qa) * 24.0, vel = -Vector2.from_angle(qa) * 70.0, life = 0.3, max = 0.3, col = D.EL_COL[act_el(p)], size = 2, grav = 0.0})
+		else:
+			if float(p.get("chg", 0.0)) >= D.SAT.charge:
+				cast_big(mw)
+			p.chg = 0.0
 	if jpk(KEY_E) and near != null:
 		interact(near)
 		if state != "play":
@@ -1372,13 +1385,128 @@ func set_el(i: int) -> void:
 	var el: String = p.els[i]
 	Sfx.play("pick", 1.4, -4.0)
 	rings.append({pos = pcenter(), r = 16.0, t = 0.0, col = D.EL_COL[el]})
-	label(p.pos + Vector2(0, -22), D.EL_NAME[el] + ("" if native(p.weapons[p.wi], el) else "  80%"), D.EL_COL[el])
-	tip("slots", Pad.hint(self, "1 2 3") + " CHANGE YOUR ELEMENT", "A WEAPON HITS FULL IN ITS OWN ELEMENT, 80% IN OTHERS")
+	label(p.pos + Vector2(0, -22), D.EL_NAME[el], D.EL_COL[el])
+	tip("slots", Pad.hint(self, "1 2 3") + " CHANGE YOUR ELEMENT", "THE WEAPON SHAPES THE SHOT. THE ELEMENT DECIDES WHAT IT DOES.")
 
 func sat_init(pl: Dictionary) -> void:
 	if not pl.has("sat") or pl.sat.size() != 3:
 		pl.sat = [1.0, 1.0, 1.0]
 		pl.spent = [false, false, false]
+
+# Mana lives in the three pools; pl.en is only their sum, kept so that everything that
+# gives or takes "energy" (orbs, cells, relics, pets, hits) still works: a change made to
+# pl.en since the last look is moved into the pools here.
+func mana_sync(pl: Dictionary) -> void:
+	if not pl.has("els"):
+		return
+	sat_init(pl)
+	var cap = maxf(1.0, float(pl.men) / 3.0)
+	var d: float = pl.en - float(pl.get("en_seen", pl.en))
+	if d > 0.001:
+		var left = d / cap
+		for n in 3:
+			var lo = 0
+			for i in 3:
+				if pl.sat[i] < pl.sat[lo]:
+					lo = i
+			var add = minf(left, 1.0 - pl.sat[lo])
+			pl.sat[lo] += add
+			left -= add
+	elif d < -0.001:
+		var left = -d / cap
+		for n in 3:
+			var i = (int(pl.eli) + n) % 3
+			var take = minf(left, pl.sat[i])
+			pl.sat[i] -= take
+			left -= take
+			if pl.sat[i] <= 0.0001:
+				pl.spent[i] = true
+	mana_total(pl)
+
+func mana_total(pl: Dictionary) -> void:
+	if not pl.has("sat"):
+		return
+	pl.en = (pl.sat[0] + pl.sat[1] + pl.sat[2]) * float(pl.men) / 3.0
+	pl.en_seen = pl.en
+
+# Takes frac of a pool from each of these elements the hero carries.
+func mana_cost(els: Array, frac: float) -> void:
+	if not p.has("els"):
+		return
+	sat_init(p)
+	var k = frac * D.SAT.base / maxf(1.0, float(p.men))
+	for el in els:
+		var i: int = p.els.find(el)
+		if i == -1:
+			continue
+		p.sat[i] = maxf(0.0, p.sat[i] - k)
+		if p.sat[i] <= 0.0:
+			p.spent[i] = true
+	mana_total(p)
+
+# Is the "element" input being held (tab, 1 2 3, the pad's B or d-pad, the touch button)?
+func el_held() -> bool:
+	if cin != null:
+		return cin.get("elh", false)
+	if tin.on and tin.held.values().has("el"):
+		return true
+	return sim.get("elh", false) or key(KEY_TAB) or key(KEY_1) or key(KEY_2) or key(KEY_3)
+
+# A gathered cast: one big piece of the chosen element, shaped by the weapon in hand.
+func cast_big(mw: Vector2) -> void:
+	sat_init(p)
+	var i: int = p.eli
+	var el: String = p.els[i]
+	if p.spent[i] or p.sat[i] < 0.1:
+		label(p.pos + Vector2(0, -22), "NO MANA", Color("ff6a6a"))
+		Sfx.play("deny")
+		return
+	var need = D.SAT.cast * D.SAT.base / maxf(1.0, float(p.men))
+	var k = clampf(p.sat[i] / need, 0.3, 1.0)
+	p.sat[i] = maxf(0.0, p.sat[i] - need)
+	if p.sat[i] <= 0.0:
+		p.spent[i] = true
+	mana_total(p)
+	p.casts = int(p.get("casts", 0)) + 1
+	var wi = p.weapons[p.wi]
+	var dmg = (14.0 + floor_i * 4.0) * Ext.wdmg(wi) * k
+	var col: Color = D.EL_COL[el]
+	var pc = pcenter()
+	var dir: Vector2 = p.aim if p.aim != Vector2.ZERO else Vector2.RIGHT
+	match D.WEAPONS[wi.id].type:
+		"melee":
+			# a ring around you
+			explode(pc, 58.0, dmg, el, 0)
+			Ext.add_zone(self, p.pos, 30.0, el, 3.0)
+		"beam", "chain":
+			# a lance through everything along your aim
+			var far: Vector2 = pc + dir * 230.0
+			for e in enemies:
+				if not e.dead and Geometry2D.get_closest_point_to_segment(center(e), pc, far).distance_to(center(e)) < 12.0 + e.hr:
+					hurt_enemy(e, dmg * 1.2, el, dir * 120.0)
+			bolts.append({a = pc, b = far, col = col, t = 0.3, straight = true})
+			bolts.append({a = pc, b = far, col = Color.WHITE, t = 0.15, straight = true})
+			for n in 5:
+				Env.touch(self, pc + dir * (30.0 + n * 45.0), 14.0, el)
+				Combo.touch(self, pc + dir * (30.0 + n * 45.0), el, 14.0)
+		"lob":
+			# dropped where you point
+			var at: Vector2 = pc + (mw - pc).limit_length(150.0)
+			tele_circle(at, 46.0, 0.35)
+			after(0.35, func():
+				explode(at, 46.0, dmg, el, 0)
+				Ext.add_zone(self, at, 34.0, el, 4.0))
+		_:
+			# one heavy orb that bursts
+			add_bullet(pc + dir * 8.0, dir * 210.0, {dmg = dmg, el = el, r = 5.0, life = 1.6, aoe = 46.0, kind = "orb"})
+	rings.append({pos = pc, r = 26.0, t = 0.0, col = col})
+	flash(pc, 90.0, col, 0.3)
+	shake_add(4.0)
+	p.pose = 0.3
+	p.kick = 5.0
+	Sfx.play("skill", 0.8)
+	Sfx.play("shoot" if not Sfx.S.has("shoot_" + el) else "shoot_" + el, 0.6)
+	label(p.pos + Vector2(0, -24), D.EL_NAME[el] + " CAST", col)
 
 # The element this shot paints: the chosen one, unless it has been used up.
 func paint_el(shot_cd: float) -> String:
@@ -1389,13 +1517,14 @@ func paint_el(shot_cd: float) -> String:
 	var i: int = p.eli
 	if p.spent[i]:
 		return ""
-	p.sat[i] -= shot_cd / D.SAT.drain
+	p.sat[i] -= shot_cd / D.SAT.drain * D.SAT.base / maxf(1.0, float(p.men))
 	if p.sat[i] <= 0.0:
 		p.sat[i] = 0.0
 		p.spent[i] = true
 		label(p.pos + Vector2(0, -22), D.EL_NAME[el] + " SPENT", Color("ff6a6a"))
 		Sfx.play("deny")
 		tip("sat", "ELEMENT SPENT", "SWITCH TO ANOTHER ONE. RESTING ELEMENTS REFILL.")
+	mana_total(p)
 	return el
 
 func cur_el() -> String:
@@ -1408,21 +1537,24 @@ func try_fire() -> void:
 	var wi = p.weapons[p.wi]
 	var w = D.WEAPONS[wi.id]
 	var cost = w.cost
-	if p.en < cost:
+	mana_sync(p)
+	var have: float = p.en
+	if p.has("els"):
+		have = p.sat[p.eli] * float(p.men) / 3.0
+	if cost > 0.0 and have < cost:
 		p.cd = 0.3
 		Sfx.play("deny")
-		label(p.pos + Vector2(0, -22), "NO ENERGY", Color("7adfff"))
+		label(p.pos + Vector2(0, -22), "NO MANA", Color("7adfff"))
 		return
 	if cost > 0.0 and rng.randf() < st.free:
 		cost = 0.0
 	p.en -= cost
+	mana_sync(p)
 	p.cd = w.cd * (0.6 if p.rage_t > 0.0 else 1.0) * st.rate
 	p.kick = 3.0
 	# weapons are brushes: they paint elements, the weather does the killing
 	var lvm = 0.7 * Ext.wdmg(wi) * (1.4 if p.rage_t > 0.0 else 1.0) * float(wi.get("pow", 1.0))
 	var ael = act_el(p)
-	if not native(wi, ael):
-		lvm *= 0.9 if wi.el == "" else 0.8
 	el_use[ael] = int(el_use.get(ael, 0)) + 1
 	var trs: Array = [wi.get("trait", "")] + wi.get("traits", [])
 	if lvm != 1.0 or trs.size() > 1 or trs[0] != "":
@@ -1432,7 +1564,7 @@ func try_fire() -> void:
 			Arms.apply(w, tr)
 			if tr == "swift":
 				p.cd *= 0.75
-	fire_weapon(w, paint_el(p.cd), pcenter() + p.aim * 8.0, p.aim)
+	fire_weapon(w, paint_el(p.cd * (D.SAT.melee if w.type == "melee" else 1.0)), pcenter() + p.aim * 8.0, p.aim)
 
 func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> void:
 	var col = D.EL_COL[el]
@@ -1456,6 +1588,7 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 			Sfx.play("shoot" if el == "" else "shoot_" + el, 1.0, -4.0 if w.cd < 0.1 else 0.0)
 		"melee":
 			p.swing = 0.18
+			var struck = 0
 			var pc = pcenter()
 			var rg = w.range
 			for e in enemies:
@@ -1464,6 +1597,7 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 				var d = center(e) - pc
 				if d.length() < rg + e.hr and (d.length() < 10.0 or absf(angle_difference(dir.angle(), d.angle())) < w.arc / 2.0):
 					hurt_enemy(e, w.dmg, el, d.normalized() * 140.0)
+					struck += 1
 			for b in bullets:
 				if b.team == 1 and not b.lob:
 					var d = b.pos - pc
@@ -1483,6 +1617,12 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 					hurt_prop(pr, w.dmg)
 			if w.get("slam", 0.0) > 0.0:
 				explode(pc + dir * rg * 0.8, w.slam, w.dmg * 0.5, el, 0)
+			if struck > 0 and p.has("sat"):
+				# the risk of standing close pays: every strike that lands feeds the resting pools
+				for i in 3:
+					if i != p.eli:
+						p.sat[i] = minf(1.0, p.sat[i] + D.SAT.strike * mini(struck, 3))
+				mana_total(p)
 			slashes.append({pos = pc, ang = dir.angle(), arc = w.arc, r = rg, t = 0.0, col = col})
 			Env.touch(self, pc + dir * rg * 0.6, rg * 0.6, el)
 			Sfx.play("slash")
@@ -1653,7 +1793,7 @@ func interact(it: Dictionary) -> void:
 					it.gone = true
 				"cell":
 					p.en = float(p.men)
-					label(p.pos + Vector2(0, -22), "ENERGY FULL", Color("7adfff"))
+					label(p.pos + Vector2(0, -22), "MANA FULL", Color("7adfff"))
 					it.gone = true
 				"tome":
 					apply_buff(it.item.buff.id)
@@ -1960,6 +2100,18 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 	if e.kb.length() > 2.0:
 		move(e, e.kb * dt)
 		e.kb = e.kb.lerp(Vector2.ZERO, minf(1.0, dt * 9.0))
+	# once free of a stun, freeze or root, a foe cannot be held again for a moment
+	if e.d.ai != "dummy":
+		var free: float = e.get("cc_free", 0.0)
+		if free > 0.0:
+			e.cc_free = free - dt
+			e.frz = 0.0
+			e.stun = 0.0
+		elif e.frz > 0.0 or e.stun > 0.0:
+			e.cc_on = true
+		elif e.get("cc_on", false):
+			e.cc_on = false
+			e.cc_free = D.CC_FREE
 	if e.frz > 0.0:
 		e.frz -= dt
 		return
@@ -2424,6 +2576,7 @@ func react(e: Dictionary, key: String) -> void:
 	tip("react", "REACTION: " + info[0], "IT LEAVES A FIELD. ADD A THIRD ELEMENT FOR A STORM.")
 	Fx.react(self, c, key)
 	Combo.spawn(self, c, key)
+	mana_cost(Array(key.split("+")), D.SAT.react)
 	Spell.on_react(self, key, c)
 	Meta.stat("reacts")
 	hitstop = maxf(hitstop, 0.04)
@@ -3209,6 +3362,11 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 	for k in e.st:
 		ci.draw_texture(Art.T["ic_" + k], Vector2(roundf(x), roundf(topy - 12.0)))
 		x += 9.0
+	if float(e.get("cc_free", 0.0)) > 0.0:
+		# a small chevron: this one cannot be held right now
+		var cy = topy - 5.0
+		ci.draw_line(Vector2(e.pos.x - 4.0, cy), Vector2(e.pos.x, cy - 3.0), Color(1, 1, 1, 0.8), 1.0)
+		ci.draw_line(Vector2(e.pos.x, cy - 3.0), Vector2(e.pos.x + 4.0, cy), Color(1, 1, 1, 0.8), 1.0)
 	if e.elite:
 		ci.draw_arc(e.pos + Vector2(0, e.r - 1.0), e.r * 2.0 + sin(time * 5.0), 0.0, TAU, 18, Color(1.0, 0.82, 0.3, 0.8), 1.0)
 	if not e.is_boss and e.hp < e.mhp:
@@ -3281,6 +3439,13 @@ func draw_player(ci: CanvasItem) -> void:
 	if p.slow > 0.0:
 		mod = Color(0.6, 0.85, 1.0, a)
 	ci.draw_texture(Art.T["shadow"], p.pos + Vector2(-8, p.r - 3.0))
+	if p.has("els"):
+		var ac: Color = D.EL_COL[act_el(p)]
+		var foot: Vector2 = p.pos + Vector2(0, p.r)
+		ci.draw_set_transform(foot, 0.0, Vector2(1.0, 0.45))
+		ci.draw_arc(Vector2.ZERO, 10.0 + sin(time * 4.0), 0.0, TAU, 20, Color(ac.r, ac.g, ac.b, 0.45), 1.0)
+		ci.draw_circle(Vector2.ZERO, 9.0, Color(ac.r, ac.g, ac.b, 0.1))
+		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	Fx.fuse_aura(self, ci, p)
 	# the weapon in the other hand rides on the back
 	var ow = p.weapons[1 - p.wi]
@@ -3307,6 +3472,19 @@ func draw_player(ci: CanvasItem) -> void:
 		spr(ci, fr, base, p.face < 0, Color(1, 1, 1, 0.8), psc, true, prot)
 	if not behind:
 		draw_weapon(ci)
+	if p.has("els"):
+		var ac2: Color = D.EL_COL[act_el(p)]
+		for i in 3:
+			var oa = time * 3.2 + i * TAU / 3.0
+			var op: Vector2 = p.pos + Vector2(cos(oa) * 11.0, -7.0 - plift() + sin(oa) * 4.0)
+			ci.draw_rect(Rect2(op.round() - Vector2(1, 1), Vector2(2, 2)), Color(ac2.r, ac2.g, ac2.b, 0.9))
+			ci.draw_rect(Rect2(op.round(), Vector2(1, 1)), Color(1, 1, 1, 0.8))
+		var chg: float = p.get("chg", 0.0)
+		if chg > 0.25:
+			var ck = clampf((chg - 0.25) / (D.SAT.charge - 0.25), 0.0, 1.0)
+			var rdy = chg >= D.SAT.charge
+			ci.draw_arc(pcenter(), 24.0 - 9.0 * ck, -PI / 2.0, -PI / 2.0 + TAU * ck, 28, Color.WHITE if (rdy and int(time * 12.0) % 2 == 0) else ac2, 2.0)
+			ci.draw_circle(pcenter(), 6.0 * ck, Color(ac2.r, ac2.g, ac2.b, 0.35))
 	if not in_lobby and not enemies.is_empty():
 		# the only spot enemy bullets can hit
 		ci.draw_rect(Rect2(pcenter().round() - Vector2(2, 2), Vector2(4, 4)), Color("120e18"))
@@ -3433,7 +3611,7 @@ func draw_prompt(ci: CanvasItem) -> void:
 						txt = wname(near.item.w)
 						col = D.EL_COL[near.item.w.el]
 					"potion": txt = "HEAL 2"
-					"cell": txt = "FULL ENERGY"
+					"cell": txt = "FULL MANA"
 					"tome": txt = near.item.buff.name
 					"relic":
 						txt = D.RELICS[near.item.id].name

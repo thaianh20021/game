@@ -69,6 +69,7 @@ static func read(g, pl: Dictionary, dev: int) -> Dictionary:
 	for b in g.pad_jp.get(dev, {}):
 		if BTN.has(b):
 			out.jp[BTN[b]] = true
+	out.elh = Input.is_joy_button_pressed(dev, JOY_BUTTON_B) or Input.is_joy_button_pressed(dev, JOY_BUTTON_DPAD_LEFT) or Input.is_joy_button_pressed(dev, JOY_BUTTON_DPAD_DOWN) or Input.is_joy_button_pressed(dev, JOY_BUTTON_DPAD_RIGHT)
 	return out
 
 # Once per frame: turns pad presses into menu keys, pause, and "player 2 joins".

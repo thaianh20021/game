@@ -19,7 +19,7 @@ const EFFECTS = {
 	"echo": {b = 0, cap = true, name = "ECHO", desc = "SKILL TWO UNLEASHES TWICE"},
 	"tempo": {b = 1, cap = false, name = "TEMPO", desc = "SKILL COOLDOWNS -15%"},
 	"rhythm": {b = 1, cap = false, name = "RHYTHM", desc = "SKILL COOLDOWNS -15%"},
-	"siphon": {b = 1, cap = false, name = "SIPHON", desc = "CASTING A SKILL RESTORES 15 ENERGY"},
+	"siphon": {b = 1, cap = false, name = "SIPHON", desc = "CASTING A SKILL RESTORES 15 MANA"},
 	"fleet": {b = 1, cap = false, name = "FLEET", desc = "MOVE 35% FASTER FOR 2S AFTER A SKILL"},
 	"rush": {b = 1, cap = true, name = "BLOODRUSH", desc = "EVERY KILL CUTS COOLDOWNS BY 0.4S"},
 	"guard": {b = 1, cap = true, name = "AEGIS", desc = "CASTING GRANTS 1 ARMOR AND BRIEF INVULNERABILITY"},
@@ -190,7 +190,7 @@ const MOUNTS = {
 	"boar": {name = "STONE BOAR", hp = 4, spd = 1.22, cost = 120, desc = "ABSORBS 4 HITS. DASH TRAMPLES FOES."},
 	"strider": {name = "STORM STRIDER", hp = 2, spd = 1.45, cost = 120, desc = "VERY FAST. DASH LEAVES LIGHTNING."},
 }
-const HERO_UP = ["+1 MAX HEALTH", "+1 MAX ARMOR", "+40 MAX ENERGY", "+10% DAMAGE", "+1 HEALTH AND +1 ARMOR"]
+const HERO_UP = ["+1 MAX HEALTH", "+1 MAX ARMOR", "+40 MAX MANA", "+10% DAMAGE", "+1 HEALTH AND +1 ARMOR"]
 const FUSE_COST = 150
 const FORTUNES = [
 	"FIRE AND ICE MAKE STEAM. STEAM HURTS.", "POISON LOVES A SPARK.", "A FROZEN FOE CANNOT DODGE.",

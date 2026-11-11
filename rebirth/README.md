@@ -23,10 +23,26 @@ You do not shoot foes down; you build weather, and you forge with words.
   orbiting blades that cut bullets (metal), a grove of thorn posts (wood), a battery of
   three sentries (gear); X picks one at random. It is named after the field it grew from
   and its form ("MAGMA TORNADO"). See `src/storm.gd`.
-- Elements run out. Each of the three carried elements has a bar: painting drains the chosen
-  one (about seven seconds of steady fire), resting ones refill in four. A spent element
-  paints nothing until it is a third full again, so the cost of an element is having to
-  rotate, and rotating is what makes reactions. Numbers are `D.SAT` in `src/data.gd`.
+- Mana by element. There is no shared energy bar: each of the three carried elements has
+  its own pool (a third of the hero's max mana). Painting drains the chosen pool (about
+  seven seconds of steady fire), resting pools refill in four. A reaction takes 15% from
+  both pools, the element that completes a three-element effect pays 35%, weapons with a
+  cost draw on the chosen pool, and everything that used to give energy fills the emptiest
+  pool. An empty pool paints nothing until it is a third full. Numbers: `D.SAT`.
+- Gathered casts. Keep the element key held (Tab, 1 2 3, the pad's B or d-pad, the touch
+  element button) for 0.8 s and let go: one big cast of that element for 40% of its pool,
+  shaped by the weapon in hand (a bursting orb, a ring around you for arcs, a lance for
+  beams and chains, a drop where you point for lobbers). A short press only switches.
+- Weapons are foci. A weapon decides the shape of the shot (the panel names it: bolt, fan,
+  burst, lance, seeker, arc, beam, chain, lob); the element decides what it does. Every
+  element hits the same through any weapon. The hero wears the chosen element as a ring
+  underfoot and three orbiting motes.
+- Limits. At most three reaction fields lie on the floor and only one three-element effect
+  exists at a time (a new one replaces the old). A foe that gets free of a stun, freeze or
+  root cannot be held again for 1.5 s (a chevron shows over it). `D.FIELDS_MAX`, `D.CC_FREE`.
+- Close weapons earn mana. Painting with an arc weapon drains its pool at half the rate, and
+  every strike that lands gives 6% to both resting pools (up to three foes a swing). Shoot
+  to spend, step in to earn it back.
 - A first lesson. A new save starts beside the training dummy with ten steps done by doing
   (move, dash, paint, switch, react, storm, rotate, skill, burst, go). Backspace, the pad's
   Back button or a tap skips it; Settings in the Hearth replays it (`src/tutor.gd`).
@@ -328,6 +344,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `terra.gd` | The newer elements against terrain, crates, walls and traps; gamepad prompts |
 | `lesson.gd` | Element saturation, blessing emblems, the first lesson, touch button layout |
 | `forms.gd` | Every three-element form runs, hurts and has its own name (pictures when not headless) |
+| `mana.gd` | Mana pools, reaction costs, field limits, control immunity, gathered casts |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |
 | `shot4.gd`, `shot5.gd` | Phone-shaped screenshots: wide view, lesson, blessing cards (`--resolution 1400x630`) |
 | `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |

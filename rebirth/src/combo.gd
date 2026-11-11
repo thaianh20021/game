@@ -55,8 +55,14 @@ static func spawn(g, pos: Vector2, key: String) -> void:
 		if f.tier == 2 and f.key == key and f.pos.distance_to(pos) < 26.0:
 			f.life = life
 			return
-	if g.fields.size() >= 6:
-		g.fields.pop_front()
+	if g.fields.size() >= D.FIELDS_MAX:
+		# the oldest plain field makes room (a three-element effect is never pushed out by a field)
+		for i in g.fields.size():
+			if g.fields[i].tier == 2:
+				g.fields.remove_at(i)
+				break
+	if g.fields.size() >= D.FIELDS_MAX:
+		return
 	g.fields.append({pos = pos, r = FIELD_R, key = key, els = Array(key.split("+")), life = life, tick = 0.0, tier = 2, t = 0.0})
 
 # Something of element el struck at pos: fields it touches move up a tier.
@@ -68,6 +74,12 @@ static func touch(g, pos: Vector2, el: String, rad: float = 0.0) -> void:
 			continue
 		var col: Color
 		if f.tier == 2:
+			# only one three-element effect at a time: the new one replaces the old
+			for o in g.fields:
+				if o.tier == 3 and o.life > 0.0:
+					o.life = 0.0
+					o.boom = true
+			g.mana_cost([el], D.SAT.storm)
 			f.els.append(el)
 			f.tier = 3
 			f.key = Chem.storm_key(f.els)
