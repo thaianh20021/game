@@ -99,6 +99,7 @@ static func hit(g, e: Dictionary, dmg: float, el: String, kb: Vector2) -> void:
 
 static func add_zone(g, pos: Vector2, r: float, el: String, life: float, extra: Dictionary = {}) -> void:
 	zone_touch(g, pos, r, el)
+	g.Env.touch(g, pos, r, el)
 	var z = {pos = pos, r = r, el = el, life = life, team = 0, tick = 0.3}
 	for k in extra:
 		z[k] = extra[k]
@@ -129,11 +130,22 @@ static func cast(g, slot: int, mw: Vector2) -> void:
 		return
 	var id: String = p.skills[slot]
 	var el: String = g.cur_el()
-	p[key] = D.SKILLS[id].cd * p.sk.cdm
+	# skill one can be renamed and reshaped with words (wish.gd)
+	var own = slot == 0 and p.has("sk1")
+	if own and str(p.sk_el) != "":
+		el = p.sk_el
+	p[key] = D.SKILLS[id].cd * p.sk.cdm * (p.sk1[2] if own else 1.0)
 	Sfx.play("skill")
-	g.label(p.pos + Vector2(0, -24), D.SKILLS[id].name, D.EL_COL[el])
+	g.label(p.pos + Vector2(0, -24), g.skill_name(slot), D.EL_COL[el])
 	p.pose = 0.3
+	var d0: float = p.sk.dmg
+	var a0: float = p.sk.area
+	if own:
+		p.sk.dmg *= p.sk1[0]
+		p.sk.area *= p.sk1[1]
 	do_skill(g, id, mw, el)
+	p.sk.dmg = d0
+	p.sk.area = a0
 	if (slot == 0 and p.sk.twice) or (slot == 1 and p.sk.echo):
 		g.after(0.5, func(): do_skill(g, id, g.mouse() + g.cam_tl, el))
 	if p.sk.siphon:
@@ -315,6 +327,8 @@ static func do_skill(g, id: String, mw: Vector2, el: String) -> void:
 static func whirl_tick(g) -> void:
 	var p = g.p
 	var el: String = g.cur_el()
+	if str(p.get("sk_el", "")) != "" and p.skills[0] == "whirl":
+		el = p.sk_el
 	var pc: Vector2 = g.pcenter()
 	var rg = 34.0 * p.sk.area
 	for e in g.enemies:

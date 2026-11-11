@@ -55,6 +55,8 @@ func lobby_tour() -> void:
 			while g.state == "talk":
 				g.jp[KEY_E] = true
 				await step(8)
+			if g.state == "say":
+				g.set_state("play")
 		if g.state == "menu":
 			for i in g.menu.rows.size() * 2:
 				g.menu.sel = i % g.menu.rows.size()

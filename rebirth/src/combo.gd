@@ -88,6 +88,7 @@ static func update(g, dt: float) -> void:
 	if g.fields.is_empty():
 		return
 	var fl: int = g.floor_i
+	var m = 3.6 * g.st.react
 	for f in g.fields:
 		f.life -= dt
 		f.t += dt
@@ -110,24 +111,24 @@ static func update(g, dt: float) -> void:
 			for e in inside:
 				match f.key:
 					"fire+ice":
-						g.hurt_enemy(e, 1.0 + fl * 0.5, "", Vector2.ZERO, true, col)
+						g.hurt_enemy(e, m * (1.0 + fl * 0.5), "", Vector2.ZERO, true, col)
 					"fire+tox":
-						g.hurt_enemy(e, 3.0 + fl, "", Vector2.ZERO, true, col)
+						g.hurt_enemy(e, m * (3.0 + fl), "", Vector2.ZERO, true, col)
 					"bolt+fire":
-						g.hurt_enemy(e, 1.5 + fl * 0.5, "", Vector2.ZERO, true, col)
+						g.hurt_enemy(e, m * (1.5 + fl * 0.5), "", Vector2.ZERO, true, col)
 						if not e.dead and not e.is_boss:
 							e.stun = maxf(e.stun, 0.3)
 					"bolt+ice":
-						g.hurt_enemy(e, 2.0 + fl * 0.5, "", Vector2.ZERO, true, col)
+						g.hurt_enemy(e, m * (2.0 + fl * 0.5), "", Vector2.ZERO, true, col)
 						if not e.dead and not e.is_boss:
 							e.frz = maxf(e.frz, 0.2)
 					"ice+tox":
-						g.hurt_enemy(e, 1.0 + fl * 0.3, "", Vector2.ZERO, true, col)
+						g.hurt_enemy(e, m * (1.0 + fl * 0.3), "", Vector2.ZERO, true, col)
 						e.vuln = maxf(e.vuln, 1.0)
 					"bolt+tox":
 						e.st["tox"] = 4.0
 						e.tox_n = max(e.tox_n, 4)
-						g.hurt_enemy(e, 1.0 + fl * 0.4, "", Vector2.ZERO, true, col)
+						g.hurt_enemy(e, m * (1.0 + fl * 0.4), "", Vector2.ZERO, true, col)
 			continue
 		match f.key:
 			"tox":
@@ -136,7 +137,7 @@ static func update(g, dt: float) -> void:
 					var e = inside[g.rng.randi() % inside.size()]
 					var c: Vector2 = g.center(e)
 					g.bolt(c + Vector2(g.rng.randf_range(-18, 18), -150), c, col)
-					g.hurt_enemy(e, 6.0 + fl * 2.0, "", Vector2.ZERO, true, col)
+					g.hurt_enemy(e, m * (6.0 + fl * 2.0), "", Vector2.ZERO, true, col)
 					if not e.dead:
 						e.stun = maxf(e.stun, 0.15 if e.is_boss else 0.4)
 					Sfx.play("shoot_bolt", 0.7, -6.0)
@@ -145,16 +146,16 @@ static func update(g, dt: float) -> void:
 					g.bolt(q + Vector2(0, -150), q, col)
 			"bolt":
 				for e in inside:
-					g.hurt_enemy(e, 3.0 + fl, "", Vector2.ZERO, true, col)
+					g.hurt_enemy(e, m * (3.0 + fl), "", Vector2.ZERO, true, col)
 					e.vuln = maxf(e.vuln, 1.0)
 			"ice":
 				var q = f.pos + Vector2.from_angle(g.rng.randf() * TAU) * g.rng.randf() * (f.r - 16.0)
 				if not inside.is_empty() and g.rng.randf() < 0.6:
 					q = inside[g.rng.randi() % inside.size()].pos
-				g.explode(q, 24.0, 6.0 + fl * 2.0, "", 0, col)
+				g.explode(q, 24.0, m * (6.0 + fl * 2.0), "", 0, col)
 			"fire":
 				for e in inside:
-					g.hurt_enemy(e, 2.0 + fl * 0.7, "", Vector2.ZERO, true, col)
+					g.hurt_enemy(e, m * (2.0 + fl * 0.7), "", Vector2.ZERO, true, col)
 					if not e.dead:
 						e.frz = maxf(e.frz, 0.15 if e.is_boss else 0.5)
 	g.fields = g.fields.filter(func(f): return f.life > 0.0)

@@ -25,6 +25,9 @@ const Reso = preload("res://src/reso.gd")
 const Pets = preload("res://src/pets.gd")
 const Forge = preload("res://src/forge.gd")
 const Combo = preload("res://src/combo.gd")
+const Env = preload("res://src/env.gd")
+const Wish = preload("res://src/wish.gd")
+const Nemesis = preload("res://src/nemesis.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -124,6 +127,12 @@ var code_i = 0
 var allies = []
 var traps = []
 var fields = []
+var patches = []
+var env_cd = 0.0
+var say = ""
+var el_use = {}
+var nem_met = false
+var menu_next = ""
 # sprite afterimages: dying foes squash flat, dashing bosses leave trails
 var echoes = []
 var tin = Touch.fresh()
@@ -363,6 +372,8 @@ func update_menu() -> void:
 
 # Ends a run: converts what you did into gems and teaches the foes a little.
 func end_run(won: bool) -> void:
+	if not won and not in_lobby and players.all(func(q): return q.hp <= 0):
+		Nemesis.on_death(self)
 	Meta.S.run = {}
 	if net.mode == "host" and players.size() > 1 and players[1].get("remote", false):
 		rpc("net_event", "end", {floor = floor_i, won = won})
@@ -399,6 +410,8 @@ func _input(ev: InputEvent) -> void:
 		return
 	if tin.on and ev is InputEventMouseButton:
 		return
+	if state in ["buff", "say"] and ev is InputEventKey and ev.pressed:
+		Wish.key_input(self, ev)
 	if state == "forge" and ev is InputEventKey and ev.pressed:
 		Forge.key_input(self, ev)
 	if ev is InputEventKey and ev.pressed and not ev.echo:
@@ -485,6 +498,8 @@ func _process(dt: float) -> void:
 			update_menu()
 		"forge":
 			Forge.update(self)
+		"say":
+			Wish.update_say(self)
 		"talk":
 			talk.t += dt
 			if jpk(KEY_ESCAPE):
@@ -538,9 +553,30 @@ func update_title() -> void:
 		Sfx.play("portal")
 		goto_lobby()
 
+func skill_name(slot: int) -> String:
+	if slot == 0 and str(p.get("sk_name", "")) != "":
+		return p.sk_name
+	return D.SKILLS[p.skills[slot]].name
+
 func update_buff() -> void:
 	var pick = -1
 	var nb = buff_choices.size()
+	if say != "":
+		# a typed wish overrides the three offers
+		if (jpk(KEY_ENTER) or jpk(KEY_KP_ENTER)) and state_t > 0.3:
+			var wid = Wish.wish_buff(say)
+			for b in D.BUFFS:
+				if b.id == wid:
+					var keep = buff_choices
+					buff_choices = [b]
+					say = ""
+					pick_buff(0)
+					if state == "buff":
+						buff_choices = keep
+					return
+			Sfx.play("deny")
+		if not jpk("m1"):
+			return
 	if jpk(KEY_LEFT):
 		buff_sel = (buff_sel + nb - 1) % nb
 	if jpk(KEY_RIGHT):
@@ -590,6 +626,10 @@ func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
 		shield_t = 0.0, res = 0.0, v = Vector2.ZERO, room_hits = 0, wind2 = false, lvdmg = lv >= 4, pet = null, mount = null,
 	}
 	pl.sk = Meta.calc_sk(tkey)
+	var sm: Dictionary = Meta.S.skillmod.get(hkey, {})
+	pl.sk_name = str(sm.get("name", ""))
+	pl.sk_el = str(sm.get("el", ""))
+	pl.sk1 = [float(sm.get("dmg", 1.0)), float(sm.get("area", 1.0)), float(sm.get("cdm", 1.0))]
 	if Meta.S.pet != "" and Meta.PETS.has(Meta.S.pet):
 		pl.pet = {id = Meta.S.pet, pos = Vector2.ZERO, t = 1.0, face = 1, moving = false, sk = 4.0, guard = true, hearts = Pets.hearts(Meta.S.pet)}
 	if Meta.S.mount != "" and Meta.MOUNTS.has(Meta.S.mount):
@@ -711,6 +751,8 @@ func start_run(seed: int = 0, daily: bool = false) -> void:
 	prism_next = false
 	run_seed = seed if seed != 0 else rng.randi_range(1, 99999999)
 	run_daily = daily
+	el_use = {}
+	nem_met = false
 	Meta.S.run = {}
 	run_heat = 0 if daily else Meta.S.heat
 	Meta.S.last_seed = run_seed
@@ -781,6 +823,7 @@ func clear_world() -> void:
 	allies.clear()
 	traps = []
 	fields = []
+	patches = []
 
 func rebake() -> void:
 	var imgs = Dungeon.bake(dg, 0 if in_lobby else floor_i / 2)
@@ -800,6 +843,7 @@ func new_floor() -> void:
 	rebake()
 	props = dg.props
 	traps = dg.get("traps", [])
+	Nemesis.plan(self)
 	light_bg.color = D.BIOMES[bi].ambient * 1.2
 	for pl in players:
 		pl.wind2 = pl.buffs.has("wind2")
@@ -823,7 +867,6 @@ func new_floor() -> void:
 					inter.append({kind = "lchest", pos = c + Vector2(30, 0), open = false})
 			"secret":
 				inter.append({kind = "relic", id = More.random_relic(self), pos = c + Vector2(-16, 0)})
-				inter.append({kind = "active", id = More.random_active(self), pos = c + Vector2(16, 0)})
 				More.drop_blueprint(self, c + Vector2(0, 20))
 			"exit":
 				inter.append({kind = "portal", pos = c})
@@ -906,6 +949,7 @@ func offer_buffs(stay: bool) -> void:
 		pool.remove_at(k)
 	buff_stay = stay
 	buff_sel = 0
+	say = ""
 	buff_turn = 0
 	set_state("buff")
 
@@ -1210,8 +1254,6 @@ func update_player(dt: float) -> void:
 		Ext.cast(self, 1, mw)
 	if jpk(KEY_R):
 		Ext.burst(self)
-	if jpk(KEY_C) or jpk(KEY_G):
-		More.use_active(self)
 	if jpk(KEY_E) and near != null:
 		interact(near)
 		if state != "play":
@@ -1247,7 +1289,10 @@ func try_fire() -> void:
 	p.en -= cost
 	p.cd = w.cd * (0.6 if p.rage_t > 0.0 else 1.0) * st.rate
 	p.kick = 3.0
-	var lvm = Ext.wdmg(wi) * (1.4 if p.rage_t > 0.0 else 1.0) * float(wi.get("pow", 1.0))
+	# weapons are brushes: they paint elements, the weather does the killing
+	var lvm = 0.7 * Ext.wdmg(wi) * (1.4 if p.rage_t > 0.0 else 1.0) * float(wi.get("pow", 1.0))
+	if wi.el != "":
+		el_use[wi.el] = int(el_use.get(wi.el, 0)) + 1
 	var trs: Array = [wi.get("trait", "")] + wi.get("traits", [])
 	if lvm != 1.0 or trs.size() > 1 or trs[0] != "":
 		w = w.duplicate()
@@ -1308,6 +1353,7 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 			if w.get("slam", 0.0) > 0.0:
 				explode(pc + dir * rg * 0.8, w.slam, w.dmg * 0.5, el, 0)
 			slashes.append({pos = pc, ang = dir.angle(), arc = w.arc, r = rg, t = 0.0, col = col})
+			Env.touch(self, pc + dir * rg * 0.6, rg * 0.6, el)
 			Sfx.play("slash")
 		"chain":
 			var target = null
@@ -1625,6 +1671,8 @@ func spawn_wave(r: Dictionary) -> void:
 			boss = spawn_enemy(bid, pos)
 			boss.t = 1.2
 			banner = {text = D.ENEMIES[bid].name, sub = "BOSS", t = 2.6}
+			if dg.get("nem_boss", false) and not nem_met:
+				Nemesis.empower(self, boss)
 			Sfx.play("roar")
 			Sfx.play_music(3)
 			shake_add(8.0)
@@ -1643,6 +1691,8 @@ func spawn_wave(r: Dictionary) -> void:
 		budget -= c
 		n += 1
 		spawn_tele(id, random_room_pos(r, 60.0))
+	if r.get("nemesis", false) and r.wave == r.waves and not nem_met:
+		Nemesis.spawn(self, r)
 	if (r.elite or run_heat >= 4) and r.wave == r.waves:
 		spawn_tele(roster[rng.randi() % roster.size()], random_room_pos(r, 70.0), 1.1, true)
 	Sfx.play("warn")
@@ -1694,7 +1744,7 @@ func clear_room(r: Dictionary) -> void:
 		if rng.randf() < 0.6:
 			drop("key", rc(r), 1)
 		else:
-			inter.append({kind = "active", id = More.random_active(self), pos = random_room_pos(r, 30.0)})
+			drop("key", rc(r), 1)
 	if r.trial and hits == 0:
 		inter.append({kind = "relic", id = More.random_relic(self), pos = random_room_pos(r, 30.0)})
 		label(p.pos + Vector2(0, -30), "FLAWLESS!", Color("ffd24a"), true)
@@ -2173,6 +2223,7 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 
 func apply_el(e: Dictionary, el: String, dmg: float) -> void:
 	if reso_src:
+		Env.touch(self, e.pos, 12.0, el)
 		Combo.touch(self, center(e), el)
 	var other = ""
 	for k in e.st.keys():
@@ -2277,6 +2328,8 @@ func kill(e: Dictionary) -> void:
 	kills += 1
 	echoes.append({name = "e_" + e.id, pos = e.pos + Vector2(0, e.r), flip = e.face < 0, t = 0.0, dur = 0.6 if e.is_boss else 0.32, sc = e.sc, squash = true, col = Color.WHITE})
 	Meta.stat("bosses" if e.is_boss else "kills")
+	if e.get("nem", false):
+		Nemesis.slain(self, e)
 	Pets.on_kill(self)
 	Meta.record("bosses" if e.is_boss else "foes", e.id)
 	if p.syn.has("wildfire") and e.st.has("fire"):
@@ -2459,6 +2512,7 @@ func explode(pos: Vector2, r: float, dmg: float, el: String, team: int, col = nu
 		if el != "":
 			Ext.zone_touch(self, pos, r * 0.6, el)
 			Combo.touch(self, pos, el, r * 0.5)
+			Env.touch(self, pos, r, el)
 		for e in enemies:
 			if e.dead:
 				continue
@@ -2527,6 +2581,11 @@ func update_bullets(dt: float) -> void:
 			Arms.steer(self, b, dt)
 			if b.dead:
 				continue
+			if b.el != "":
+				if terr_at(b.pos) != 0:
+					Env.touch(self, b.pos, 5.0, b.el)
+				if not zones.is_empty():
+					Env.hijack(self, b.pos, b.r, b.el)
 		var np = b.pos + b.vel * dt
 		if solid_at(np.x, np.y) and not b.get("ghost", false):
 			if b.bounce > 0:
@@ -2547,6 +2606,7 @@ func update_bullets(dt: float) -> void:
 					if in_lobby:
 						Lobby.hit_wall(self, int(floor(np.x / TS)), int(floor(np.y / TS)))
 					else:
+						Env.touch(self, np, 10.0, b.el)
 						More.hit_crack(self, int(floor(np.x / TS)), int(floor(np.y / TS)))
 				if b.aoe > 0.0:
 					explode(b.pos, b.aoe, b.dmg * 0.6, b.el, b.team)
@@ -2723,6 +2783,7 @@ func draw_scene(ci: CanvasItem) -> void:
 		ci.draw_circle(z.pos, z.r, Color(c.r, c.g, c.b, 0.16 * a))
 		ci.draw_circle(z.pos, z.r * 0.72 + sin(time * 5.0 + z.pos.x) * 1.5, Color(c.r, c.g, c.b, 0.22 * a))
 		ci.draw_arc(z.pos, z.r, 0.0, TAU, 20, Color(c.r, c.g, c.b, 0.6 * a), 1.0)
+	Env.draw(self, ci)
 	Combo.draw(self, ci)
 	Traps.draw(self, ci)
 	for t in teles:
@@ -2969,6 +3030,8 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 	Fx.status(self, ci, e, base, topy)
 	Foes.draw_charge(self, ci, e)
 	Reso.draw(self, ci, e)
+	if e.get("nem_name", "") != "" and not e.is_boss:
+		Px.ctext(ci, Vector2(e.pos.x, topy - 22.0), e.nem_name, Color("ff4a5e"))
 	if e.is_boss:
 		Fx.boss_fx(self, ci, e)
 

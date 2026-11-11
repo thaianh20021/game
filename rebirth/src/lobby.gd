@@ -9,6 +9,8 @@ const Dungeon = preload("res://src/dungeon.gd")
 const Net = preload("res://src/net.gd")
 const Hub = preload("res://src/hub.gd")
 const Pets = preload("res://src/pets.gd")
+const Wish = preload("res://src/wish.gd")
+const Nemesis = preload("res://src/nemesis.gd")
 
 const TRACKS = ["CAVE THEME", "FORGE THEME", "ARCHIVE THEME", "BOSS THEME", "HEARTH THEME"]
 const CRACK = Vector2i(29, 11)
@@ -38,6 +40,9 @@ static func build(g) -> void:
 	populate(g)
 	g.spawn_enemy("dummy", tp(21, 12))
 	g.banner = {text = "THE HEARTH", sub = "STEP INTO THE GATE WHEN READY" if Meta.S.run.is_empty() else "A SAVED RUN WAITS AT THE RUN BOARD", t = 3.0 if Meta.S.run.is_empty() else 5.0}
+	var nm = Nemesis.current()
+	if not nm.is_empty() and Meta.S.run.is_empty():
+		g.banner = {text = "NEMESIS: " + Nemesis.title(nm), sub = "IT WAITS IN THE DUNGEON" + ((". IT RESISTS " + D.EL_NAME[nm.el]) if str(nm.el) != "" else ""), t = 5.0}
 	Sfx.play_music(4)
 
 static func rebake(g) -> void:
@@ -75,12 +80,12 @@ static func populate(g) -> void:
 	g.inter.append({kind = "npc", menu = "trophy", spr = "trophy", name = "TROPHY CASE", pos = tp(12, 22.4), notalk = true})
 	g.inter.append({kind = "egg", egg = "mail", spr = "mailbox", name = "MAILBOX: DAILY GIFT", pos = tp(23.5, 22.4)})
 	g.inter.append({kind = "deco", spr = "rack", pos = tp(20.5, 22.3)})
-	g.inter.append({kind = "npc", menu = "armory", spr = "npc_quarter", name = "QUARTERMASTER: PACK A WEAPON", pos = tp(18.5, 23)})
-	g.inter.append({kind = "deco", spr = "cauldron", pos = tp(16.6, 26.3)})
-	g.inter.append({kind = "npc", menu = "brew", spr = "npc_cook", name = "COOK: MEALS FOR THE ROAD", pos = tp(15, 26)})
+	g.inter.append({kind = "deco", spr = "cauldron", pos = tp(17, 22.6)})
+	g.inter.append({kind = "deco", spr = "bench", pos = tp(22.4, 23.6)})
+	g.inter.append({kind = "npc", menu = "prep", spr = "npc_quarter", name = "QUARTERMASTER: MEALS, WEAPONS, CRAFTING", pos = tp(18.8, 23.2), notalk = true})
+	g.inter.append({kind = "egg", egg = "lectern", spr = "tome", name = "LECTERN: NAME YOUR SKILL", pos = tp(4, 12.6)})
 	g.inter.append({kind = "deco", spr = "mannequin", pos = tp(6.6, 28)})
 	g.inter.append({kind = "npc", menu = "tailor", spr = "npc_tailor", name = "TAILOR: DYES", pos = tp(8.2, 28)})
-	g.inter.append({kind = "npc", menu = "bench", spr = "bench", name = "WORKBENCH: CRAFT FROM BLUEPRINTS", pos = tp(12.5, 28.2), notalk = true})
 	g.inter.append({kind = "egg", egg = "capsule", spr = "capsule", name = "CAPSULE MACHINE: %d GEMS" % Hub.CAPSULE_COST, pos = tp(22.5, 28)})
 	g.inter.append({kind = "npc", menu = "coop", spr = "crystal_prism", name = "LINK STONE: CO-OP", pos = tp(11, 5.4), notalk = true})
 
@@ -180,6 +185,9 @@ static func interact(g, it: Dictionary) -> void:
 			egg(g, it)
 
 static func egg(g, it: Dictionary) -> void:
+	if it.egg == "lectern":
+		Wish.open_skill(g)
+		return
 	if it.egg == "bowl":
 		Pets.feed(g, it)
 		return
@@ -451,6 +459,11 @@ static func activate(g, row: Dictionary) -> void:
 		g.set_state("play")
 		Net.start(g)
 		return
+	if g.menu_next != "":
+		var nk: String = g.menu_next
+		g.menu_next = ""
+		g.open_menu(nk)
+		return
 	if g.pending_resume:
 		g.pending_resume = false
 		g.set_state("play")
@@ -488,7 +501,7 @@ const SIGN = {
 	"tree": ["SKILL TREE", "7adfff"], "armor": ["HERO RANKS", "7adfff"], "beast": ["PETS", "a6e84e"], "fuse": ["HERO FUSION", "e58cff"],
 	"loom": ["SOUL LOOM", "e58cff"], "board": ["RUN BOARD", "ffd24a"], "codex": ["CODEX", "d9d4c7"], "coop": ["CO-OP", "ffd24a"],
 	"quest": ["BOUNTIES", "ffd24a"], "trophy": ["TROPHIES", "ffd24a"], "armory": ["ARMORY", "ffb84a"], "brew": ["KITCHEN", "ffb84a"],
-	"tailor": ["TAILOR", "e56db2"], "bench": ["WORKBENCH", "5cd3f2"],
+	"tailor": ["TAILOR", "e56db2"], "prep": ["QUARTERMASTER", "ffb84a"], "lectern": ["NAME SKILL", "7adfff"],
 	"fountain": ["WISHES", "7adfff"], "jukebox": ["MUSIC", "e58cff"], "capsule": ["CAPSULES", "e56db2"], "mail": ["MAIL", "7adfff"], "bowl": ["PET BOWL", "a6e84e"],
 }
 # [tile rect, colour, floor caption]

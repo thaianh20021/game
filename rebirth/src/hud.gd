@@ -11,6 +11,8 @@ const Reso = preload("res://src/reso.gd")
 const Pets = preload("res://src/pets.gd")
 const Forge = preload("res://src/forge.gd")
 const Combo = preload("res://src/combo.gd")
+const Wish = preload("res://src/wish.gd")
+const Nemesis = preload("res://src/nemesis.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -29,7 +31,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - LEAVES ROT: +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - LEAVES MIASMA: POISONS ALL"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER"}
 
 static func buff_rect(i: int) -> Rect2:
 	return Rect2(55 + i * 127, 84, 116, 112)
@@ -76,6 +78,7 @@ static func draw(g, ci: CanvasItem) -> void:
 				"buff": draw_buff(g, ci)
 				"menu": draw_menu(g, ci)
 				"forge": Forge.draw(g, ci, Hud_self())
+				"say": Wish.draw_say(g, ci, Hud_self())
 				"talk": draw_talk(g, ci)
 				"dead": draw_end(g, ci, false)
 				"win": draw_end(g, ci, true)
@@ -151,7 +154,7 @@ static func skill_box(g, ci: CanvasItem, y: float, slot: int, keyname: String, e
 		ci.draw_rect(Rect2(sr.position.x + 1, sr.position.y + 1, 18, 18.0 * clampf(cd / (def.cd * p.sk.cdm), 0.0, 1.0)), Color(0.02, 0.01, 0.05, 0.75))
 		Px.ctext(ci, sr.position + Vector2(10, 7), str(int(ceil(cd))), PALE)
 	Px.text(ci, Vector2(26, y + 2), keyname, GOLD if ready else DIM)
-	Px.text(ci, Vector2(26, y + 11), def.name, ecol if ready else DIM)
+	Px.text(ci, Vector2(26, y + 11), g.skill_name(slot), ecol if ready else DIM)
 
 static func weapon_els(w) -> Array:
 	var out = []
@@ -331,7 +334,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		ci.draw_rect(Rect2(bx, 11, bw * k, 5), bc)
 		ci.draw_rect(Rect2(bx, 11, bw * k, 2), bc.lightened(0.4))
 		ci.draw_rect(Rect2(bx + bw / 2.0, 11, 1, 5), INK)
-		Px.ctext(ci, Vector2(VW / 2.0, 20), b.d.name, PALE)
+		Px.ctext(ci, Vector2(VW / 2.0, 20), b.get("nem_name", b.d.name), Color("ff4a5e") if b.has("nem_name") else PALE)
 		if b.el != "":
 			Px.text(ci, Vector2(bx, 30), "RESISTS", DIM)
 			big(ci, Art.T["ic_" + b.el], Vector2(bx + 44, 28), 1.0)
@@ -558,6 +561,7 @@ static func draw_buff(g, ci: CanvasItem) -> void:
 		for k in lines.size():
 			Px.ctext(ci, r.position + Vector2(58, 60 + k * 10), lines[k], PALE)
 		Px.ctext(ci, r.position + Vector2(58, 99), "PRESS %d" % (i + 1), DIM)
+	Wish.draw_buff_line(g, ci, Hud_self())
 
 static func draw_end(g, ci: CanvasItem, win: bool) -> void:
 	var a = clampf(g.state_t, 0.0, 1.0)
@@ -576,6 +580,7 @@ static func draw_end(g, ci: CanvasItem, win: bool) -> void:
 		["BOSSES", str(g.boss_kills)],
 		["TIME", "%d:%02d" % [int(g.run_time) / 60, int(g.run_time) % 60]],
 		["GEMS EARNED", "+%d" % g.gems_won],
+		["NEMESIS", Nemesis.title(Nemesis.current()) if not Nemesis.current().is_empty() else "NONE"],
 		["SCORE", "%d   SEED %d%s" % [g.run_score, g.run_seed, "  DAILY" if g.run_daily else ("  HEAT %d" % g.run_heat)]],
 	]
 	for i in rows.size():

@@ -3,6 +3,9 @@
 | `src/pad.gd` | Gamepad input and local player two |
 | `src/touch.gd` | Touch sticks and buttons |
 | `src/pets.gd` | Pet skills, hearts, exclusive passives, the pet bowl |
+| `src/env.gd` | Rooms reacting to elements; hijacking enemy pools |
+| `src/wish.gd` | Typed wishes for blessings; naming and shaping skill one |
+| `src/nemesis.gd` | The foe that killed you returns |
 | `src/combo.gd` | Element fields left by reactions, three-element storms, cataclysm |
 | `src/forge.gd` | Word Forge: command parsing (EN/VI/pad) and forged weapons |
 | `src/reso.gd` | Elemental resonance: stacks, the four bursts, attunement |
@@ -13,12 +16,31 @@
 | `src/more.gd` | Synergies, relics, active items, secret rooms |
 | `src/talk.gd` | NPC dialogue rules |
 | `src/sfx.gd` || R | Elemental Burst (when the bar is full) |
-| C | Active item || `src/meta.gd` | Save file, skill tree effects and generator, hero generator, enemy learning |
+| `src/meta.gd` | Save file, skill tree effects and generator, hero generator, enemy learning |
 | `src/talk.gd` | NPC dialogue rules |# Dungeon Core: Elemental Rebirth (remake)
 
 Top-down roguelike shooter: two-weapon gunplay plus an elemental reaction system.
 Godot 4.7, GL Compatibility renderer. No art or audio files: every sprite, tile, sound
 and music loop is generated from code at boot.
+
+## What makes it different
+
+You do not shoot foes down; you build weather, and you forge with words.
+
+- Weapons are brushes. They deal modest damage and paint elements; fields and storms do the
+  killing (a field out-damages a basic weapon roughly 2.5 to 1).
+- The room reacts. Ice freezes mire into firm ground and bridges pits. Fire burns crates and
+  walks through dry brush tile by tile. Lightning runs through a whole patch of mire and shocks
+  everything standing in it, you included. Venom eats through cracked walls.
+- Enemy pools can be hijacked: hit one with a different element and it becomes your field
+  (a fire pool hit with ice turns into steam that swallows bullets). Elemental foes leave a
+  pool behind whenever they release a charged attack.
+- Words are rewards. On the blessing screen you may type a wish instead of taking an offer
+  ("health", "xuyen", "hoi sinh"). At the lectern in the Hearth you name skill one and shape it
+  ("frost comet big", "bao lua manh"): an element word locks its element, big / fast / strong
+  trade area, cooldown and damage. The Word Forge fuses weapons the same way.
+- A nemesis. Whatever kills you gets a name, comes back tougher in a later run and resists the
+  element you used most. Kill it for gems and a relic; die to it again and it gains a rank.
 
 ## Run
 
@@ -51,7 +73,6 @@ Open this `rebirth` folder in Godot 4.7 and press F5, or:
 | A or LT | Dash |
 | LB / RB | Skill one / skill two |
 | R3 or d-pad up | Elemental Burst |
-| B | Active item |
 | Y | Swap weapon |
 | X | Interact |
 | START | Pause. In menus: A confirm, B back, d-pad or stick to move |
@@ -97,8 +118,9 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
 - NPCs talk before opening their menu; lines depend on your gems, runs and current hero.
 - South wing (walk down from the hall):
   - Bounty Board: three daily tasks for gems. Trophy Case: lifetime achievements.
-  - Quartermaster: pack a weapon you have found before as your second weapon for the next run.
-  - Cook: one-run meals (health, armor, gold, key, item). Tailor: dyes that recolour your heroes.
+  - Quartermaster: one station for preparing a run: meals (health, armor, gold, key), packing a
+    weapon you have found before, and crafting from blueprints.
+  - Tailor: dyes that recolour your heroes.
   - Capsule Machine: 12 gems for a random prize. Mailbox: a daily gift with a streak bonus.
   - Whatever is queued for the next run is listed bottom-left in the Hearth.
 - Secrets: a cat, a jukebox, a wishing fountain, an old grave, a training dummy, a hollow wall
@@ -223,5 +245,5 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/anim.gd` checks pose frames and animation states; `tests/combo.gd` checks fields, storms and the cataclysm; `tests/forge.gd` checks the Word Forge and starting loadout; `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/chem.gd` checks room chemistry, hijacking, wishes, named skills and the nemesis; `tests/anim.gd` checks pose frames and animation states; `tests/combo.gd` checks fields, storms and the cataclysm; `tests/forge.gd` checks the Word Forge and starting loadout; `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

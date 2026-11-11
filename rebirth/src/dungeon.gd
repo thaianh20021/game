@@ -219,10 +219,10 @@ static func _terrain(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -
 	if d.terr.size() == 0:
 		d.terr.resize(d.w * d.h)
 	var inner: Rect2i = r.rect.grow(-1)
-	for kind in [1, 2]:
+	for kind in [1, 2, 4]:
 		if rng.randf() > (0.6 if kind == 1 else 0.5):
 			continue
-		var want = (8 + rng.randi() % 8) if kind == 1 else (4 + rng.randi() % 5)
+		var want = (8 + rng.randi() % 8) if kind != 2 else (4 + rng.randi() % 5)
 		var blob = []
 		for attempt in 200:
 			if blob.size() >= want:
@@ -242,6 +242,16 @@ static func _terrain(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -
 static func _terr_tile(img: Image, x: int, y: int, kind: int, bi: int, b: Dictionary, lip: bool) -> void:
 	var ox = x * TS
 	var oy = y * TS
+	if kind == 4:
+		# dry brush: burns, and the fire walks from tile to tile
+		var gc: Color = [Color("8a9a3c"), Color("b89a4a"), Color("9a8a6a")][bi]
+		for i in 9:
+			var px = (i * 5 + x * 3) % 14 + 1
+			var py = (i * 7 + y * 5) % 11 + 3
+			img.set_pixel(ox + px, oy + py, gc.darkened(0.2))
+			img.set_pixel(ox + px, oy + py - 1, gc)
+			img.set_pixel(ox + px + (i % 2), oy + py - 2, gc.lightened(0.3))
+		return
 	if kind == 1:
 		var mud: Color = [Color("3d5a34"), Color("2a1b1c"), Color("5f86b4")][bi]
 		var hi: Color = [Color("6f9a4c"), Color("f2812f"), Color("c6f4ff")][bi]

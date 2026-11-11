@@ -51,6 +51,9 @@ static func unleash(g, e: Dictionary, kind: String) -> void:
 	var spd: float = e.d.get("bspd", 100)
 	g.flash(c, 60.0, D.EL_COL[el] if el != "" else Color("ff5a6a"), 0.2)
 	e.atk_t = 0.35
+	if el != "":
+		# elemental foes leave a pool behind: dangerous, and yours if you hit it with another element
+		g.zones.append({pos = e.pos, r = 16.0, el = el, life = 3.0, team = 1, tick = 0.5})
 	match kind:
 		"slam":
 			# leaps to where the hero stood when the charge began

@@ -193,7 +193,7 @@ static func snapshot(g) -> PackedByteArray:
 	for r in g.dg.rooms:
 		rooms.append([r.cleared, r.seen, r.wave])
 	var snap = {
-		fl = g.floor_i, pl = g.players, en = en, bu = bu, pr = pr, pk = pk, zo = g.zones, it = g.inter, te = g.teles, al = g.allies, tr = g.traps, fd = g.fields,
+		fl = g.floor_i, pl = g.players, en = en, bu = bu, pr = pr, pk = pk, zo = g.zones, it = g.inter, te = g.teles, al = g.allies, tr = g.traps, fd = g.fields, pa = g.patches,
 		lock = g.lock.id if g.lock != null else -1, rooms = rooms, cr = cr, nums = g.nums, rings = g.rings, bolts = g.bolts,
 		sl = g.slashes, fla = g.flashes, bn = g.banner, boss = g.boss.uid if g.boss != null else 0, kills = g.kills, rt = g.run_time,
 		sfx = Sfx.log.duplicate(), bl = g.net.blog.duplicate(), bk = g.boss_kills,
@@ -248,6 +248,9 @@ static func apply(g, data: PackedByteArray) -> void:
 	g.allies = snap.al
 	g.traps = snap.tr
 	g.fields = snap.fd
+	for q in snap.pa.slice(g.patches.size()):
+		g.dg.terr[q.cell.y * g.dg.w + q.cell.x] = 0
+	g.patches = snap.pa
 	g.nums = snap.nums
 	g.rings = snap.rings
 	g.bolts = snap.bolts

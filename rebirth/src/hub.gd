@@ -7,7 +7,7 @@ const D = preload("res://src/data.gd")
 const Meta = preload("res://src/meta.gd")
 const Sfx = preload("res://src/sfx.gd")
 
-const KINDS = ["quest", "trophy", "armory", "brew", "tailor", "bench"]
+const KINDS = ["quest", "trophy", "armory", "brew", "tailor", "bench", "prep"]
 const CRAFT_COST = 15
 
 const QUESTS = [
@@ -33,7 +33,6 @@ const MEALS = [
 	{id = "armor", name = "GUARD TEA", desc = "NEXT RUN: +1 MAX ARMOR", cost = 10},
 	{id = "gold", name = "LUCKY PIE", desc = "NEXT RUN: START WITH 30 GOLD", cost = 8},
 	{id = "key", name = "KEY BISCUIT", desc = "NEXT RUN: START WITH A KEY", cost = 8},
-	{id = "active", name = "PACKED LUNCH", desc = "NEXT RUN: START WITH A RANDOM ITEM", cost = 12},
 ]
 const DYES = [["EMBER DYE", 0.12], ["MOSS DYE", 0.3], ["TIDE DYE", 0.45], ["DUSK DYE", 0.62], ["ROSE DYE", 0.8]]
 const DYE_COST = 25
@@ -85,6 +84,10 @@ static func quest_name(q: Dictionary) -> String:
 static func rows(g, kind: String) -> Array:
 	var out = []
 	match kind:
+		"prep":
+			out.append({name = "MEALS", desc = "ONE-RUN BONUSES: HEALTH, ARMOR, GOLD, KEY", cost = 0, state = "owned", tag = "OPEN", fn = func(): g.menu_next = "brew"})
+			out.append({name = "PACK A WEAPON", desc = "CARRY A WEAPON YOU HAVE FOUND BEFORE", cost = 0, state = "owned", tag = "OPEN", fn = func(): g.menu_next = "armory"})
+			out.append({name = "CRAFT FROM BLUEPRINTS", desc = "SCRAP %d  ORE %d  ESSENCE %d  FIBER %d" % [int(Meta.S.scrap), Meta.mat("ore"), Meta.mat("ess"), Meta.mat("fib")], cost = 0, state = "owned", tag = "OPEN", fn = func(): g.menu_next = "bench"})
 		"quest":
 			ensure_quests()
 			out.append({name = "BOUNTIES FOR " + str(int(Meta.S.quests.day)), desc = "THREE NEW TASKS EVERY DAY, COUNTED IN ANY RUN", cost = 0, state = "owned", tag = "", fn = func(): pass})
@@ -213,8 +216,8 @@ static func egg(g, it: Dictionary) -> void:
 				Meta.S.boons["key"] = boon("key") + 1
 				prize(g, "A KEY FOR YOUR NEXT RUN", Color("ffd24a"))
 			elif roll < 0.9:
-				Meta.S.boons["active"] = D.ACTIVES.keys()[g.rng.randi() % D.ACTIVES.size()]
-				prize(g, D.ACTIVES[Meta.S.boons.active].name + " NEXT RUN", Color("5cd3f2"))
+				Meta.S.gems += 20
+				prize(g, "PRIZE +20", pink)
 			else:
 				var missing = []
 				for id in Meta.PETS:

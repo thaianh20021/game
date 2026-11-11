@@ -6,6 +6,10 @@ old prototype and is kept only for reference: do not edit it.
 ## What the game is
 
 Top-down roguelike shooter, bullet-hell leaning, built around an elemental reaction system.
+Identity (owner's decision, 2026-11-11): "you build weather, and you forge with words". Weapons
+deal modest damage and paint elements; fields and storms do the killing; rooms react to elements;
+enemy pools can be hijacked; rewards can be typed; a nemesis returns. New features should serve
+these pillars. Active items were removed on purpose; cook, armory and workbench are one station.
 The owner asked (2026-11-11) that heroes and weapons must NOT resemble Soul Knight: the cast is
 creatures and constructs (Brassheart, Lantern, Kestrel, Veil, Croak, Ramskull, Rivet, Mosscap) and
 weapons are horns, pods, bells, lenses and the like, not guns. Keep new content in that style and
@@ -53,7 +57,9 @@ traits and homing/returning shots (`src/arms.gd`), mire and pits (`dg.terr`, gen
 seed drops and a five-plot garden, pet skills with hearts and exclusive passives (`src/pets.gd`), Word Forge (`src/forge.gd`), two starting
 weapons, hub name plates and rugs, harder bullet-dense tuning, element fields and three-element
 storms (`src/combo.gd`), generated pose frames and spawn/attack/death animation, floor decor, hand-drawn wind-up and
-attack frames for every hero, foe shape and boss (`src/frames.gd`: add an entry there when adding a sprite). Next steps are in `rebirth/ROADMAP.md`.
+attack frames for every hero, foe shape and boss (`src/frames.gd`: add an entry there when adding a sprite),
+reactive rooms and pool hijacking (`src/env.gd`), typed wishes and named skills (`src/wish.gd`),
+nemesis (`src/nemesis.gd`). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested
