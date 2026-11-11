@@ -19,6 +19,12 @@ const BUTTONS = {
 	"pause": [Vector2(240, 12), 9.0, "II", KEY_ESCAPE],
 }
 
+# Where a control really sits, in HUD coordinates: controls keep their distance from the
+# nearest screen edge, so on a wide phone they move out to where the thumbs are.
+static func at(g, v: Vector2) -> Vector2:
+	var o = Vector2(g.hud_edge, g.hud_off.y)
+	return v + Vector2(o.x if v.x > 300.0 else (-o.x if v.x < 180.0 else 0.0), o.y if v.y > 100.0 else -o.y)
+
 static func fresh() -> Dictionary:
 	return {on = false, mv = Vector2.ZERO, aim = Vector2.ZERO, fire = false, tap = Vector2(240, 135),
 		l_id = -1, l_base = Vector2.ZERO, l_pos = Vector2.ZERO, r_id = -1, r_base = Vector2.ZERO, r_pos = Vector2.ZERO, held = {}}
@@ -27,7 +33,7 @@ static func handle(g, ev: InputEvent) -> void:
 	var t = g.tin
 	if ev is InputEventScreenTouch:
 		t.on = true
-		var pos: Vector2 = ev.position
+		var pos: Vector2 = ev.position - g.hud_off
 		if ev.pressed:
 			t.tap = pos
 			g.jp["m1"] = true
@@ -35,7 +41,7 @@ static func handle(g, ev: InputEvent) -> void:
 				return
 			for id in BUTTONS:
 				var b = BUTTONS[id]
-				if pos.distance_to(b[0]) <= b[1] + 3.0:
+				if pos.distance_to(at(g, b[0])) <= b[1] + 5.0:
 					g.jp[b[3]] = true
 					t.held[ev.index] = id
 					return
@@ -59,11 +65,11 @@ static func handle(g, ev: InputEvent) -> void:
 				t.aim = Vector2.ZERO
 	elif ev is InputEventScreenDrag:
 		if ev.index == t.l_id:
-			t.l_pos = ev.position
+			t.l_pos = ev.position - g.hud_off
 			var d: Vector2 = (t.l_pos - t.l_base) / STICK_R
 			t.mv = d.limit_length(1.0) if d.length() > 0.18 else Vector2.ZERO
 		elif ev.index == t.r_id:
-			t.r_pos = ev.position
+			t.r_pos = ev.position - g.hud_off
 			var d: Vector2 = (t.r_pos - t.r_base) / STICK_R
 			t.aim = d.limit_length(1.0) if d.length() > 0.35 else Vector2.ZERO
 
@@ -84,12 +90,12 @@ static func draw(g, ci: CanvasItem) -> void:
 	if not t.on or g.state != "play":
 		return
 	var faint = Color(1, 1, 1, 0.16)
-	var lb: Vector2 = t.l_base if t.l_id != -1 else Vector2(64, 204)
+	var lb: Vector2 = t.l_base if t.l_id != -1 else at(g, Vector2(64, 204))
 	var lp: Vector2 = lb + t.mv * STICK_R
 	ci.draw_circle(lb, STICK_R, Color(1, 1, 1, 0.07))
 	ci.draw_arc(lb, STICK_R, 0.0, TAU, 24, faint, 1.0)
 	ci.draw_circle(lp, 10.0, Color(1, 1, 1, 0.3))
-	var rb: Vector2 = t.r_base if t.r_id != -1 else Vector2(412, 208)
+	var rb: Vector2 = t.r_base if t.r_id != -1 else at(g, Vector2(412, 208))
 	var rp: Vector2 = rb + t.aim * STICK_R
 	ci.draw_circle(rb, STICK_R, Color(1.0, 0.4, 0.4, 0.09 if not t.fire else 0.16))
 	ci.draw_arc(rb, STICK_R, 0.0, TAU, 24, Color(1.0, 0.6, 0.6, 0.3), 1.0)
@@ -99,6 +105,7 @@ static func draw(g, ci: CanvasItem) -> void:
 	for id in BUTTONS:
 		var b = BUTTONS[id]
 		var down = t.held.values().has(id)
-		ci.draw_circle(b[0], b[1], Color(1, 1, 1, 0.3 if down else 0.1))
-		ci.draw_arc(b[0], b[1], 0.0, TAU, 18, Color(1, 1, 1, 0.35), 1.0)
-		Px.ctext(ci, b[0] + Vector2(0, -3), b[2], Color(1, 1, 1, 0.7), 1, false)
+		var bp: Vector2 = at(g, b[0])
+		ci.draw_circle(bp, b[1], Color(1, 1, 1, 0.3 if down else 0.1))
+		ci.draw_arc(bp, b[1], 0.0, TAU, 18, Color(1, 1, 1, 0.35), 1.0)
+		Px.ctext(ci, bp + Vector2(0, -3), b[2], Color(1, 1, 1, 0.7), 1, false)

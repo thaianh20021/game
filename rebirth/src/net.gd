@@ -351,7 +351,7 @@ static func client_tick(g, dt: float) -> void:
 		var td = g.Touch.aim_dir(g)
 		if td != Vector2.ZERO:
 			p.aim = td
-	var mw: Vector2 = g.mouse() + g.cam_tl
+	var mw: Vector2 = g.mworld()
 	if not g.tin.on and (mw - g.pcenter()).length() > 1.0:
 		p.aim = (mw - g.pcenter()).normalized()
 	g.rpc_id(1, "net_input", mv, mw, g.firing())

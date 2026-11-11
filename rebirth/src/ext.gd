@@ -148,7 +148,7 @@ static func cast(g, slot: int, mw: Vector2) -> void:
 	p.sk.dmg = d0
 	p.sk.area = a0
 	if (slot == 0 and p.sk.twice) or (slot == 1 and p.sk.echo):
-		g.after(0.5, func(): do_skill(g, id, g.mouse() + g.cam_tl, el))
+		g.after(0.5, func(): do_skill(g, id, g.mworld(), el))
 	if p.sk.siphon:
 		p.en = minf(p.men, p.en + 15.0)
 	if p.sk.fleet:

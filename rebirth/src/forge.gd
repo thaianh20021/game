@@ -226,7 +226,7 @@ static func confirm(g) -> void:
 static func draw(g, ci: CanvasItem, Hud) -> void:
 	var f = g.forge
 	var p = g.p
-	ci.draw_rect(Rect2(0, 0, 480, 270), Color(0.02, 0.01, 0.05, 0.78))
+	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.78))
 	Hud.panel(ci, Rect2(60, 34, 360, 196), Color(0.07, 0.05, 0.12, 0.97), Color("ffd24a"))
 	Px.ctext(ci, Vector2(240, 42), "WORD FORGE", Color("ffd24a"), 2)
 	if p.weapons[1] != null:

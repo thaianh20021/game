@@ -87,7 +87,7 @@ static func draw(g, ci: CanvasItem) -> void:
 				"dead": draw_end(g, ci, false)
 				"win": draw_end(g, ci, true)
 	if g.fade > 0.0:
-		ci.draw_rect(Rect2(0, 0, VW, VH), Color(0.02, 0.01, 0.04, minf(1.0, g.fade)))
+		ci.draw_rect(g.full(), Color(0.02, 0.01, 0.04, minf(1.0, g.fade)))
 	if g.tin.on:
 		Touch.draw(g, ci)
 		if g.state == "menu":
@@ -107,8 +107,9 @@ static func draw(g, ci: CanvasItem) -> void:
 
 static func draw_title(g, ci: CanvasItem) -> void:
 	var t = g.time
+	ci.draw_rect(g.full(), Color("160f24"))
 	for i in 9:
-		ci.draw_rect(Rect2(0, i * 30, VW, 30), Color("0d0a16").lerp(Color("241a38"), i / 9.0))
+		ci.draw_rect(Rect2(-g.hud_off.x, i * 30, g.VW, 30), Color("0d0a16").lerp(Color("241a38"), i / 9.0))
 	for i in 70:
 		var s = float(i) * 12.9898
 		var x = fmod(absf(sin(s) * 43758.5) * VW + sin(t * 0.3 + i) * 12.0, VW)
@@ -173,6 +174,10 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	if p.is_empty():
 		return
 	var t = g.time
+	# On a screen wider than the 480 sheet the status block hugs the left edge, the map (and,
+	# without touch buttons, the weapon panel) the right edge; banners stay in the middle.
+	var edge = Vector2(g.hud_edge, 0)
+	ci.draw_set_transform(-edge)
 	panel(ci, Rect2(3, 3, 104, 36))
 	big(ci, Art.T["heart"], Vector2(6, 5), 1.0)
 	bar(ci, Vector2(18, 7), 60, p.hp, p.mhp, Color("e0444c"), true)
@@ -269,9 +274,11 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		big(ci, Art.T["relic_" + p.relics[i]], Vector2(4 + i * 11, 246), 1.0)
 
 	if not g.in_lobby:
+		ci.draw_set_transform(edge)
 		draw_minimap(g, ci)
 
 	# weapons
+	ci.draw_set_transform(Vector2.ZERO if g.tin.on else edge)
 	var wx = 182.0 if g.tin.on else 360.0
 	var wr = Rect2(wx, 231, 117, 36)
 	var w = p.weapons[p.wi]
@@ -324,6 +331,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 			if nat.has(p.els[i]) or w.el == "prism":
 				ci.draw_rect(Rect2(slx + 2, 226, 16, 1), D.EL_COL[p.els[i]])
 
+	ci.draw_set_transform(-edge)
 	if g.in_lobby:
 		Px.text(ci, Vector2(5, 259), "THE HEARTH - " + p.name, DIM)
 		Px.text(ci, Vector2(5, 249), Hub.boon_text(), Color("a6e84e"))
@@ -331,6 +339,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		var bi = g.floor_i / 2
 		Px.text(ci, Vector2(5, 259), "%s %d-%d" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1] + ("" if Wx.now(g) == "clear" else "  " + Wx.NAME[Wx.now(g)]), DIM)
 
+	ci.draw_set_transform(Vector2.ZERO)
 	if g.boss != null:
 		var b = g.boss
 		var bw = 220.0
@@ -428,7 +437,7 @@ static func state_text(row: Dictionary) -> Array:
 	return [str(row.cost), GEM if Meta.S.gems >= row.cost else Color("ff6a6a")]
 
 static func draw_menu(g, ci: CanvasItem) -> void:
-	ci.draw_rect(Rect2(0, 0, VW, VH), Color(0.02, 0.01, 0.05, 0.72))
+	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.72))
 	var kind: String = g.menu.kind
 	panel(ci, Rect2(88, 28, 304, 218), Color(0.07, 0.05, 0.12, 0.97), GOLD)
 	Px.text(ci, Vector2(98, 37), MENU_TITLE[kind] + " - " + g.p.name, GOLD)
@@ -501,7 +510,7 @@ static func draw_talk(g, ci: CanvasItem) -> void:
 	Px.text(ci, Vector2(88, 244), "%d/%d" % [tk.i + 1, tk.lines.size()], DIM)
 
 static func draw_pause(g, ci: CanvasItem) -> void:
-	ci.draw_rect(Rect2(0, 0, VW, VH), Color(0.02, 0.01, 0.05, 0.78))
+	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.78))
 	Px.ctext(ci, Vector2(240, 18), "PAUSED", GOLD, 3)
 	Px.text(ci, Vector2(30, 52), "ELEMENT REACTIONS", PALE)
 	for i in REACT_HELP.size():
@@ -555,7 +564,7 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 		Px.ctext(ci, Vector2(240, 236), g.Pad.hint(g, "ESC RESUME    O SETTINGS    Q " + ("QUIT TO TITLE" if g.in_lobby else "ABANDON RUN")), GOLD)
 
 static func draw_buff(g, ci: CanvasItem) -> void:
-	ci.draw_rect(Rect2(0, 0, VW, VH), Color(0.02, 0.01, 0.05, 0.8))
+	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.8))
 	Px.ctext(ci, Vector2(240, 36), ("P%d: CHOOSE A BLESSING" % (g.buff_turn + 1)) if g.local_coop() else "CHOOSE A BLESSING", GOLD if g.buff_turn == 0 else Color("ffb84a"), 2)
 	Px.ctext(ci, Vector2(240, 58), "THE CORE REWARDS THOSE WHO DESCEND", DIM)
 	var m = g.mouse()
@@ -574,7 +583,7 @@ static func draw_buff(g, ci: CanvasItem) -> void:
 
 static func draw_end(g, ci: CanvasItem, win: bool) -> void:
 	var a = clampf(g.state_t, 0.0, 1.0)
-	ci.draw_rect(Rect2(0, 0, VW, VH), Color(0.02, 0.01, 0.05, 0.8 * a))
+	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.8 * a))
 	if win:
 		Px.ctext(ci, Vector2(240, 44), "THE CORE IS YOURS", GOLD, 3)
 		Px.ctext(ci, Vector2(240, 76), "THE DUNGEON FALLS SILENT. FOR NOW.", PALE)

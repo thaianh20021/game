@@ -34,8 +34,15 @@ const Puzzle = preload("res://src/puzzle.gd")
 const Spell = preload("res://src/spell.gd")
 const Chem = preload("res://src/chem.gd")
 
-const VW = 480.0
-const VH = 270.0
+# The view. The HUD and menus are laid out on a 480 x 270 sheet (UW x UH) that sits in the
+# middle of the screen; on a wider or taller screen the world simply shows more (VW x VH)
+# and the sheet is offset by hud_off. Touch controls hug the real edges.
+const UW = 480.0
+const UH = 270.0
+var VW = 480.0
+var VH = 270.0
+var hud_off = Vector2.ZERO
+var hud_edge = 0.0
 const TS = 16
 const LAST_FLOOR = 5
 const BDEF = {team = 0, dmg = 1.0, el = "", r = 2.0, life = 1.5, pierce = 0, bounce = 0, aoe = 0.0, kind = "orb", lob = false}
@@ -256,6 +263,8 @@ func _ready() -> void:
 	hud.size = Vector2(VW, VH)
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hl.add_child(hud)
+	get_viewport().size_changed.connect(fit)
+	fit()
 
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	tin.on = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile")
@@ -455,18 +464,51 @@ func key(k: int) -> bool:
 		return false
 	return sim.has(k) or Input.is_physical_key_pressed(k)
 
+# Matches the layers to the real screen (called at boot and whenever the window changes).
+func fit() -> void:
+	var sz: Vector2 = get_viewport().get_visible_rect().size
+	if DisplayServer.get_name() == "headless":
+		sz = Vector2(UW, UH)  # tests have no real window; keep the sheet size
+	VW = maxf(UW, floorf(sz.x))
+	VH = maxf(UH, floorf(sz.y))
+	hud_off = ((Vector2(VW, VH) - Vector2(UW, UH)) / 2.0).floor()
+	light_vp.size = Vector2i(int(VW), int(VH))
+	light_bg.size = Vector2(VW, VH)
+	post.size = Vector2(VW, VH)
+	hud.position = hud_off
+	# how far edge-hugging HUD parts and touch controls may slide out: all the way, minus the
+	# notch and rounded corners of a phone
+	var inset = 0.0
+	if OS.has_feature("mobile"):
+		var sa: Rect2i = DisplayServer.get_display_safe_area()
+		var ws: Vector2i = DisplayServer.window_get_size()
+		if ws.x > 0:
+			inset = maxf(float(sa.position.x), float(ws.x - sa.end.x)) * VW / float(ws.x)
+		inset = maxf(inset, 8.0)
+	hud_edge = maxf(0.0, hud_off.x - inset)
+
+# The whole screen in HUD coordinates (for dimming and weather that must reach the edges).
+func full() -> Rect2:
+	return Rect2(-hud_off, Vector2(VW, VH))
+
+# The aim point in the world.
+func mworld() -> Vector2:
+	return mouse() + hud_off + cam_tl
+
+# Pointer in HUD coordinates.
+
 func mouse() -> Vector2:
 	if cin != null:
-		return cin.mw - cam_tl
+		return cin.mw - cam_tl - hud_off
 	if p1_pad and state == "play" and not p.is_empty():
-		return pcenter() - cam_tl + p.aim * 60.0
+		return pcenter() - cam_tl - hud_off + p.aim * 60.0
 	if sim.has("mouse"):
-		return sim["mouse"]
+		return sim["mouse"] - hud_off
 	if tin.on:
 		if state == "play" and not p.is_empty():
-			return pcenter() - cam_tl + p.aim * 80.0
+			return pcenter() - cam_tl - hud_off + p.aim * 80.0
 		return tin.tap
-	return get_viewport().get_mouse_position()
+	return get_viewport().get_mouse_position() - hud_off
 
 func firing() -> bool:
 	if cin != null:
@@ -547,7 +589,7 @@ func _process(dt: float) -> void:
 	if state != "title" and me < players.size():
 		bind(players[me])
 	if state != "title" and not p.is_empty():
-		var target = p.pos + (mouse() - Vector2(VW, VH) / 2.0) * 0.16
+		var target = p.pos + (mouse() - Vector2(UW, UH) / 2.0) * 0.16
 		if local_coop():
 			# shared screen: keep the camera between the heroes still standing
 			var sum = Vector2.ZERO
@@ -1205,7 +1247,7 @@ func update_player(dt: float) -> void:
 		var td = Touch.aim_dir(self)
 		if td != Vector2.ZERO:
 			p.aim = td
-	var mw = mouse() + cam_tl
+	var mw = mworld()
 	var aim = mw - pcenter()
 	if aim.length() > 1.0 and not (tin.on and cin == null):
 		p.aim = aim.normalized()
@@ -1457,7 +1499,7 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 				burst(end, 1, col, 50.0, 0.2)
 				Sfx.play("shoot_ice" if el == "" else "shoot_" + el, 1.4, -8.0)
 		"lob":
-			var to = mouse() + cam_tl
+			var to = mworld()
 			var d = to - p.pos
 			if d.length() > w.range:
 				to = p.pos + d.normalized() * w.range

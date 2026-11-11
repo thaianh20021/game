@@ -165,7 +165,7 @@ static func clean(text: String) -> String:
 	return out.strip_edges().substr(0, 14)
 
 static func draw_say(g, ci: CanvasItem, Hud) -> void:
-	ci.draw_rect(Rect2(0, 0, 480, 270), Color(0.02, 0.01, 0.05, 0.78))
+	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.78))
 	if g.say_mode.begins_with("rc"):
 		var r = g.Spell.parse(g.say)
 		Hud.panel(ci, Rect2(60, 56, 360, 158), Color(0.07, 0.05, 0.12, 0.97), Color("7adfff"))
