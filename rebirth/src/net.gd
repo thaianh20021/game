@@ -335,7 +335,7 @@ static func floor_event(g, data: Dictionary) -> void:
 
 # ---- guest: per-frame work -------------------------------------------------------
 
-const KEYS = [KEY_SPACE, KEY_SHIFT, KEY_F, KEY_R, KEY_C, KEY_G, KEY_Q, KEY_E, "m2", "m4", "m5"]
+const KEYS = [KEY_SPACE, KEY_SHIFT, KEY_F, KEY_R, KEY_C, KEY_G, KEY_Q, KEY_E, "m2", "m4", "m5", KEY_1, KEY_2, KEY_3, KEY_TAB]
 
 static func client_tick(g, dt: float) -> void:
 	var n = g.net

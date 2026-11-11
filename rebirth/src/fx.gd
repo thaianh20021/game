@@ -94,6 +94,7 @@ static func status(g, ci: CanvasItem, e: Dictionary, base: Vector2, topy: float)
 		ci.draw_rect(Rect2(e.pos.x - w, base.y - 1.0, w * 2.0, 1), Color(0.3, 0.68, 0.3, 0.6))
 	if e.vuln > 0.0:
 		ci.draw_arc(c, e.h2 + 4.0 + sin(t * 8.0), 0.0, TAU, 14, Color(0.43, 0.88, 0.69, 0.7), 1.0)
+	g.Chem.draw_status(g, ci, e)
 
 # ---- reactions: one signature burst each -----------------------------------------
 

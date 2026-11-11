@@ -1,13 +1,24 @@
 extends RefCounted
 # All tunable game content: elements, weapons, heroes, enemies, biomes, buffs.
 
+# The four old elements: foes, traps and barrels use only these.
 const EL = ["fire", "ice", "bolt", "tox"]
-const EL_NAME = {"": "NEUTRAL", "fire": "FIRE", "ice": "ICE", "bolt": "STORM", "tox": "VENOM", "prism": "PRISM"}
-const EL_PREFIX = {"": "", "fire": "EMBER ", "ice": "FROST ", "bolt": "STORM ", "tox": "VENOM ", "prism": "PRISM "}
+# The newer ones, painted only by heroes. chem.gd builds their reactions.
+const EL2 = ["stone", "wind", "light", "void", "water", "leaf", "earth", "metal", "wood", "mech", "x"]
+const ALL = ["fire", "ice", "bolt", "tox", "stone", "wind", "light", "void", "water", "leaf", "earth", "metal", "wood", "mech", "x"]
+const EL_NAME = {"": "NEUTRAL", "fire": "FIRE", "ice": "ICE", "bolt": "STORM", "tox": "VENOM", "prism": "PRISM",
+	"stone": "STONE", "wind": "WIND", "light": "LIGHT", "void": "VOID",
+	"water": "WATER", "leaf": "LEAF", "earth": "EARTH", "metal": "METAL", "wood": "WOOD", "mech": "GEAR", "x": "X"}
+const EL_PREFIX = {"": "", "fire": "EMBER ", "ice": "FROST ", "bolt": "STORM ", "tox": "VENOM ", "prism": "PRISM ",
+	"stone": "STONE ", "wind": "WIND ", "light": "LIGHT ", "void": "VOID ",
+	"water": "TIDE ", "leaf": "LEAF ", "earth": "EARTH ", "metal": "IRON ", "wood": "TIMBER ", "mech": "GEAR ", "x": "X "}
 
 static var EL_COL = {
 	"": Color("f1ead8"), "fire": Color("ff8a3a"), "ice": Color("7adfff"),
 	"bolt": Color("ffe45c"), "tox": Color("a6e84e"), "prism": Color("e58cff"),
+	"stone": Color("c99b5c"), "wind": Color("b8f0d0"), "light": Color("fff2ae"), "void": Color("9352cb"),
+	"water": Color("4aa8ff"), "leaf": Color("6fd66a"), "earth": Color("b5562f"), "metal": Color("b8c8d8"),
+	"wood": Color("8f6a34"), "mech": Color("e0b040"), "x": Color("ff5fb0"),
 }
 
 # reaction key = the two elements sorted and joined with "+"
@@ -18,6 +29,107 @@ static var REACT = {
 	"bolt+ice": ["SHATTER", Color("b8c8ff")],
 	"ice+tox": ["BLIGHT", Color("6fe0b0")],
 	"bolt+tox": ["PLAGUE", Color("d4f04a")],
+	# pairs with a new element: effects are generated in chem.gd from the two aspects
+	"bolt+light": ["FLARE", Color("fff7c2")],
+	"bolt+stone": ["MAGNET", Color("d9b36a")],
+	"bolt+void": ["RIFT", Color("c58cff")],
+	"bolt+wind": ["TEMPEST", Color("d8f7a0")],
+	"fire+light": ["SUNBURST", Color("ffd98a")],
+	"fire+stone": ["MAGMA", Color("ff7a3a")],
+	"fire+void": ["HELLFIRE", Color("d9506a")],
+	"fire+wind": ["FIREWHIRL", Color("ffb05a")],
+	"ice+light": ["AURORA", Color("c8fff0")],
+	"ice+stone": ["FROSTROCK", Color("a8c8d8")],
+	"ice+void": ["DEEP COLD", Color("8a9cff")],
+	"ice+wind": ["WHITEOUT", Color("e0f6ff")],
+	"light+stone": ["CRYSTAL", Color("f0e0b0")],
+	"light+tox": ["PURGE", Color("e0ff9a")],
+	"light+void": ["ECLIPSE", Color("b8a0e0")],
+	"light+wind": ["MIRAGE", Color("f0ffd8")],
+	"stone+tox": ["TAR", Color("8a9a4a")],
+	"stone+void": ["GRAVITY", Color("a070b0")],
+	"stone+wind": ["SANDSTORM", Color("e0c890")],
+	"tox+void": ["DECAY", Color("9a70c0")],
+	"tox+wind": ["SPORES", Color("c0f080")],
+	"void+wind": ["VACUUM", Color("b0a0f0")],
+	# pairs with the seven newest elements
+	"bolt+earth": ["GROUNDING", Color("e3b573")],
+	"bolt+leaf": ["SPARKLEAF", Color("c9e58a")],
+	"bolt+mech": ["OVERCLOCK", Color("f3d77a")],
+	"bolt+metal": ["CONDUCTOR", Color("e4e0b3")],
+	"bolt+water": ["LIVE TIDE", Color("bbd4c1")],
+	"bolt+wood": ["SPLINTER", Color("d5bd75")],
+	"bolt+x": ["GLITCH", Color("ffb8a4")],
+	"earth+fire": ["KILN", Color("e39367")],
+	"earth+ice": ["PERMAFROST", Color("b1b3b1")],
+	"earth+leaf": ["MEADOW", Color("adb079")],
+	"earth+light": ["HARVEST", Color("e3ba92")],
+	"earth+mech": ["EXCAVATE", Color("d7a269")],
+	"earth+metal": ["ORE VEIN", Color("c8aba2")],
+	"earth+stone": ["BEDROCK", Color("cf9a73")],
+	"earth+tox": ["FALLOW", Color("c1b76e")],
+	"earth+void": ["SINKHOLE", Color("ba7e9d")],
+	"earth+water": ["MUDSLIDE", Color("9f9fb1")],
+	"earth+wind": ["DUSTBOWL", Color("c8ba9f")],
+	"earth+wood": ["ROOTBED", Color("b98764")],
+	"earth+x": ["FAULTLINE", Color("e38393")],
+	"fire+leaf": ["ASHFALL", Color("c9c37d")],
+	"fire+mech": ["FURNACE", Color("f3b56d")],
+	"fire+metal": ["SLAG", Color("e4bea6")],
+	"fire+water": ["GEYSER", Color("bbb2b5")],
+	"fire+wood": ["BONFIRE", Color("d59b69")],
+	"fire+x": ["NOVA", Color("ff9797")],
+	"ice+leaf": ["HOARFROST", Color("97e3c7")],
+	"ice+mech": ["JAMMED", Color("c1d5b7")],
+	"ice+metal": ["BRITTLE", Color("b2def0")],
+	"ice+water": ["ICEBERG", Color("89d2ff")],
+	"ice+wood": ["FROSTBARK", Color("a3bbb2")],
+	"ice+x": ["ABSOLUTE", Color("cdb7e1")],
+	"leaf+light": ["BLOSSOM", Color("c9eaa8")],
+	"leaf+mech": ["GRAFT", Color("bdd27f")],
+	"leaf+metal": ["RAZORLEAF", Color("aedbb8")],
+	"leaf+stone": ["LICHEN", Color("b4ca8a")],
+	"leaf+tox": ["NETTLE", Color("a7e784")],
+	"leaf+void": ["WITHER", Color("a0aeb3")],
+	"leaf+water": ["LOTUS", Color("85cfc7")],
+	"leaf+wind": ["PETALSTORM", Color("aeeab5")],
+	"leaf+wood": ["CANOPY", Color("9fb77b")],
+	"leaf+x": ["MUTATION", Color("c9b3a9")],
+	"light+mech": ["BEACON", Color("f3dc99")],
+	"light+metal": ["MIRROR", Color("e4e5d2")],
+	"light+water": ["RAINBOW", Color("bbd9e0")],
+	"light+wood": ["SUNDIAL", Color("d5c294")],
+	"light+x": ["HALO", Color("ffbec3")],
+	"mech+metal": ["PISTON", Color("d8cca8")],
+	"mech+stone": ["GRINDER", Color("dfbb7a")],
+	"mech+tox": ["EXHAUST", Color("d2d875")],
+	"mech+void": ["DARK ENGINE", Color("caa0a3")],
+	"mech+water": ["TURBINE", Color("afc0b7")],
+	"mech+wind": ["WINDMILL", Color("d8dba5")],
+	"mech+wood": ["CATAPULT", Color("c9a96b")],
+	"mech+x": ["ANOMALY", Color("f3a599")],
+	"metal+stone": ["ANVIL", Color("d0c4b3")],
+	"metal+tox": ["RUST", Color("c3e1ae")],
+	"metal+void": ["BLACK IRON", Color("bba9dc")],
+	"metal+water": ["QUENCH", Color("a0c9f0")],
+	"metal+wind": ["SHRAPNEL", Color("c9e4de")],
+	"metal+wood": ["HATCHET", Color("bab2a4")],
+	"metal+x": ["ALLOY", Color("e4aed2")],
+	"stone+water": ["EROSION", Color("a6b8c1")],
+	"stone+wood": ["PETRIFY", Color("c0a175")],
+	"stone+x": ["MONOLITH", Color("ea9da4")],
+	"tox+water": ["SWAMP", Color("99d5bc")],
+	"tox+wood": ["FUNGUS", Color("b3be70")],
+	"tox+x": ["PANDEMIC", Color("ddba9f")],
+	"void+water": ["ABYSS", Color("929deb")],
+	"void+wood": ["DEADWOOD", Color("ac869f")],
+	"void+x": ["OBLIVION", Color("d682cd")],
+	"water+wind": ["MONSOON", Color("a0d8ed")],
+	"water+wood": ["DRIFTWOOD", Color("91a6b2")],
+	"water+x": ["MAELSTROM", Color("bba2e1")],
+	"wind+wood": ["SAWDUST", Color("bac1a1")],
+	"wind+x": ["JETSTREAM", Color("e4bdcf")],
+	"wood+x": ["HEARTWOOD", Color("d58b95")],
 }
 
 static var RAR_COL = [Color("d9d4c7"), Color("6fb7ff"), Color("ffb84a")]
@@ -77,7 +189,7 @@ const SKILLS = {
 }
 
 # each element is weak to one other element
-const WEAK = {"fire": "ice", "ice": "fire", "bolt": "tox", "tox": "bolt"}
+const WEAK = {"fire": "ice", "ice": "fire", "bolt": "tox", "tox": "bolt", "stone": "wind", "wind": "stone", "light": "void", "void": "light"}
 
 const HEROES = [
 	{id = "warden", name = "BRASSHEART", hp = 7, ar = 5, en = 160, start = "blade", start2 = "pistol", skill = "whirl", skill2 = "bulwark", skill_name = "WHIRLWIND", skill_cd = 7.0,

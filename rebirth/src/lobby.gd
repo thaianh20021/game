@@ -60,8 +60,8 @@ static func populate(g) -> void:
 	for i in Meta.hero_count():
 		if i != Meta.S.hero:
 			g.inter.append({kind = "hero", i = i, pos = tp(5 + i * 2.7, 8)})
-	for i in 4:
-		g.inter.append({kind = "crystal", i = i, pos = tp(4 + i * 2.5, 16.5)})
+	for i in D.ALL.size():
+		g.inter.append({kind = "crystal", i = i, pos = tp(3.9 + (i % 8) * 1.12, 16.1 + (i / 8) * 1.25)})
 	g.inter.append({kind = "npc", menu = "tree", spr = "npc_mentor", name = "MENTOR: SKILL TREE", pos = tp(4, 10)})
 	g.inter.append({kind = "npc", menu = "armor", spr = "npc_armorer", name = "ARMORER: HERO UPGRADES", pos = tp(26, 10)})
 	g.inter.append({kind = "npc", menu = "beast", spr = "npc_keeper", name = "KEEPER: PETS AND MOUNTS", pos = tp(24, 16)})
@@ -115,9 +115,9 @@ static func interact(g, it: Dictionary) -> void:
 				g.players[1].pos = pos
 				return
 			"crystal":
-				g.p.weapons[0].el = D.EL[it.i]
+				g.p.weapons[0].el = D.ALL[it.i]
 				Sfx.play("pick")
-				g.label(g.p.pos + Vector2(0, -24), D.EL_NAME[D.EL[it.i]] + " ATTUNED", D.EL_COL[D.EL[it.i]])
+				g.label(g.p.pos + Vector2(0, -24), D.EL_NAME[D.ALL[it.i]] + " ATTUNED", D.EL_COL[D.ALL[it.i]])
 				return
 			"gate":
 				pass
@@ -142,13 +142,18 @@ static func interact(g, it: Dictionary) -> void:
 			g.burst(g.pcenter(), 14, Color.WHITE, 80.0, 0.4)
 			g.label(g.p.pos + Vector2(0, -24), g.p.name, Color("ffd24a"))
 		"crystal":
-			Meta.S.el = it.i
+			var cel: String = D.ALL[it.i]
+			Meta.pick_slot(cel)
 			Meta.save()
 			g.prism_next = false
-			g.p.weapons[0].el = D.EL[it.i]
+			for pl in g.players:
+				pl.els = Meta.slots()
+				pl.eli = 0
+			g.p.weapons[0].el = cel
 			Sfx.play("pick")
-			g.flash(it.pos, 70.0, D.EL_COL[D.EL[it.i]], 0.4)
-			g.label(g.p.pos + Vector2(0, -24), D.EL_NAME[D.EL[it.i]] + " ATTUNED", D.EL_COL[D.EL[it.i]])
+			g.flash(it.pos, 70.0, D.EL_COL[cel], 0.4)
+			var sl = Meta.slots()
+			g.label(g.p.pos + Vector2(0, -24), "1 %s  2 %s  3 %s" % [D.EL_NAME[sl[0]], D.EL_NAME[sl[1]], D.EL_NAME[sl[2]]], D.EL_COL[cel])
 		"npc":
 			if it.get("notalk", false):
 				g.open_menu(it.menu)
@@ -389,7 +394,7 @@ static func rows(g, kind: String) -> Array:
 				out.append({name = "WIN A RUN TO UNLOCK HEAT 1", desc = "EACH HEAT LEVEL ADDS A CURSE AND STACKS", cost = 0, state = "locked", tag = "", fn = func(): pass})
 		"codex":
 			var cats = [["WEAPONS", "weapons", D.WEAPONS.size()], ["FOES", "foes", D.ENEMIES.size() - 10], ["BOSSES", "bosses", 9],
-				["REACTIONS", "reactions", 6], ["RELICS", "relics", D.RELICS.size()], ["SYNERGIES", "synergies", D.SYNERGIES.size()]]
+				["REACTIONS", "reactions", 28], ["RELICS", "relics", D.RELICS.size()], ["SYNERGIES", "synergies", D.SYNERGIES.size()]]
 			var have = 0
 			var total = 0
 			for c in cats:
@@ -409,7 +414,7 @@ static func rows(g, kind: String) -> Array:
 					line = line.substr(0, 41) + "..."
 				out.append({name = "%s %d/%d" % [c[0], n, c[2]], desc = line if line != "" else "NOTHING FOUND YET", cost = 0, tag = "DONE" if n >= c[2] else "",
 					state = "on" if n >= c[2] else "owned", fn = func(): pass})
-			out.push_front({name = "ALCHEMY NOTEBOOK %d/%d" % [Meta.S.book.size(), Book.DEF.size()], desc = "WHAT YOU DISCOVERED, UNDER THE NAMES YOU GAVE", cost = 0, state = "owned", tag = "OPEN",
+			out.push_front({name = "ALCHEMY NOTEBOOK %d/%d" % [Meta.S.book.size(), Book.total()], desc = "WHAT YOU DISCOVERED, UNDER THE NAMES YOU GAVE", cost = 0, state = "owned", tag = "OPEN",
 				fn = func():
 					g.book_page = 0
 					g.menu_next = "book"})
@@ -528,7 +533,7 @@ const SIGN = {
 # [tile rect, colour, floor caption]
 const RUGS = [
 	[Rect2(4, 6.9, 23.6, 2.4), "ffd24a", "CHOOSE A HERO"],
-	[Rect2(3.2, 15.6, 9.2, 2.2), "7adfff", "STARTING ELEMENT"],
+	[Rect2(3.2, 15.6, 9.2, 2.2), "7adfff", "CARRY THREE ELEMENTS"],
 	[Rect2(20.2, 4.5, 6.6, 2.1), "a6e84e", "GARDEN"],
 	[Rect2(13.4, 4.2, 3.2, 2.4), "e58cff", ""],
 	[Rect2(6.6, 21.4, 7.4, 2.4), "ffd24a", "DAILY"],
@@ -574,9 +579,8 @@ static func draw_signs(g, ci: CanvasItem) -> void:
 				text = Meta.hero(it.i).name
 				up = 20.0 + (it.i % 2) * 10.0
 			"crystal":
-				text = D.EL_NAME[D.EL[it.i]]
-				col = D.EL_COL[D.EL[it.i]]
-				up = 20.0
+				# fifteen plates would overlap: each crystal wears its icon, the prompt names it
+				ci.draw_texture(g.Art.T["ic_" + D.ALL[it.i]], (it.pos + Vector2(-3, -27 if it.i < 8 else 7)).round())
 			"gate":
 				text = "DUNGEON GATE"
 				col = Color("ffd24a")

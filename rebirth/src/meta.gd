@@ -208,7 +208,7 @@ static func defaults() -> Dictionary:
 		gen_seed = 0, weaves = 0, codex = {}, heat = 0, heat_max = 0, daily = {}, boons = {hp = 0, relic = 0},
 		garden = [{kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}, {kind = "", left = 0}], last_seed = 0,
 		stats = {}, quests = {day = 0, list = []}, trophies = {}, dyes = [], dye = -1, gift_day = 0, streak = 0,
-		skillmod = {}, nemesis = {}, book = {}, graves = [], ally = {}, recipes = [],
+		skillmod = {}, nemesis = {}, book = {}, graves = [], ally = {}, recipes = [], slots = ["fire", "ice", "bolt"],
 		blueprints = [], scrap = 0, mats = {ore = 0, ess = 0, fib = 0}, seeds = {}, treats = 0, bond = {},
 		opts = {music = 4, sfx = 4, full = false, shake = true}, tips = {}, run = {},
 		ai = {cunning = 0.25, lead = [2.0, 1.0, 2.0, 1.0], bw = {}},
@@ -261,6 +261,24 @@ static func stat(name: String, n: int = 1) -> void:
 	for q in S.quests.get("list", []):
 		if q.id == name and int(q.have) < int(q.need):
 			q.have = int(q.have) + n
+
+# The three elements carried into a run (keys 1 2 3). Always three different valid ones.
+static func slots() -> Array:
+	var out = []
+	for el in S.get("slots", []):
+		if D.ALL.has(el) and not out.has(el) and out.size() < 3:
+			out.append(el)
+	for el in D.ALL:
+		if out.size() < 3 and not out.has(el):
+			out.append(el)
+	return out
+
+# Choosing an element puts it first; the one carried longest drops out.
+static func pick_slot(el: String) -> void:
+	var cur = slots()
+	cur.erase(el)
+	cur.push_front(el)
+	S.slots = cur.slice(0, 3)
 
 static func mat(k: String) -> int:
 	return int(S.mats.get(k, 0))

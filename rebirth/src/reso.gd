@@ -11,7 +11,9 @@ const D = preload("res://src/data.gd")
 const Sfx = preload("res://src/sfx.gd")
 const Meta = preload("res://src/meta.gd")
 
-const NAME = {"fire": "ERUPTION", "ice": "GLACIER", "bolt": "THUNDERSTRIKE", "tox": "BLOOM"}
+const NAME = {"fire": "ERUPTION", "ice": "GLACIER", "bolt": "THUNDERSTRIKE", "tox": "BLOOM",
+	"stone": "LANDSLIDE", "wind": "CYCLONE", "light": "SUNFLARE", "void": "IMPLOSION",
+	"water": "DELUGE", "leaf": "OVERGROWTH", "earth": "EARTHQUAKE", "metal": "BLADESTORM", "wood": "THORNWALL", "mech": "CLOCKBURST", "x": "PARADOX"}
 
 static func count(g, el: String) -> int:
 	var n = 0
@@ -117,6 +119,13 @@ static func burst(g, e: Dictionary, el: String) -> void:
 			g.rings.append({pos = c, r = 50.0, t = 0.0, col = col})
 			for i in 12:
 				g.parts.append({pos = c + Vector2(g.rng.randf_range(-24, 24), g.rng.randf_range(-10, 10)), vel = Vector2(0, -16), life = 0.9, max = 0.9, col = col, size = 2, grav = -20.0})
+		_:
+			# the new elements: a blast that lays the element's aspect on everything close, twice over
+			g.explode(c, 44.0, base * 1.4, "", 0, col)
+			for o in g.enemies:
+				if not o.dead and g.center(o).distance_to(c) < 50.0:
+					g.Chem.touch(g, o, el, base, c, col)
+					g.Chem.touch(g, o, el, base, c, col)
 
 # Stacks circle the foe; the ring closes as the burst gets near.
 static func draw(g, ci: CanvasItem, e: Dictionary) -> void:

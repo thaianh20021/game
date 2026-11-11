@@ -14,6 +14,7 @@ const BUTTONS = {
 	"burst": [Vector2(364, 118), 12.0, "R", KEY_R],
 	"item": [Vector2(336, 138), 12.0, "C", KEY_C],
 	"swap": [Vector2(330, 172), 12.0, "Q", KEY_Q],
+	"el": [Vector2(302, 198), 12.0, "EL", KEY_TAB],
 	"use": [Vector2(346, 206), 13.0, "E", KEY_E],
 	"pause": [Vector2(240, 12), 9.0, "II", KEY_ESCAPE],
 }

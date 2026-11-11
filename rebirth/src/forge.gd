@@ -17,6 +17,17 @@ const ELEMENTS = {
 	"ice": ["ice", "frost", "cold", "freeze", "snow", "bang", "lanh", "tuyet"],
 	"bolt": ["storm", "bolt", "lightning", "thunder", "shock", "electric", "set", "sam", "dien"],
 	"tox": ["poison", "venom", "toxic", "acid", "doc", "axit"],
+	"stone": ["stone", "rock", "boulder", "da"],
+	"wind": ["wind", "air", "gale", "breeze", "gio", "phong"],
+	"light": ["light", "sun", "holy", "radiant", "sang", "quang", "nang"],
+	"void": ["void", "dark", "shadow", "night", "toi", "bong", "hu"],
+	"water": ["water", "tide", "sea", "river", "aqua", "nuoc", "thuy", "song"],
+	"leaf": ["leaf", "grass", "vine", "herb", "la", "co"],
+	"earth": ["earth", "soil", "mud", "sand", "clay", "dat", "tho", "cat"],
+	"metal": ["metal", "iron", "steel", "kim", "sat", "thep"],
+	"wood": ["wood", "tree", "timber", "log", "go", "moc", "cay"],
+	"mech": ["mech", "gear", "machine", "clock", "robot", "engine", "khi", "cokhi", "banhrang"],
+	"x": ["x", "chaos", "unknown", "wild", "loan", "bian"],
 }
 const TRAITS = {
 	"multi": ["many", "multi", "spread", "split", "triple", "double", "nhieu", "chum", "toa"],

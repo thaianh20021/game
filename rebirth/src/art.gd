@@ -11,6 +11,8 @@ static var PAL = {
 	"n": Color("4fae4c"), "N": Color("2b6a40"), "l": Color("a9e150"),
 	"p": Color("9352cb"), "P": Color("55307f"), "m": Color("e56db2"),
 	"s": Color("f3bb8e"), "S": Color("c88560"), "t": Color("8b5b3b"), "T": Color("553423"), "e": Color("c99b5c"),
+	"a": Color("3f8fe8"), "A": Color("9fd8ff"), "f": Color("6fd66a"), "F": Color("c8f5a0"), "i": Color("8fa3b8"), "I": Color("d8e4f0"),
+	"u": Color("8f6a34"), "U": Color("c99a5a"), "d": Color("c9a227"), "D": Color("f0d870"), "x": Color("ff5fb0"), "q": Color("b5562f"), "Q": Color("e08a5a"),
 }
 static var OUT = Color("120e18")
 
@@ -541,6 +543,94 @@ nnnnnnnn
 nllllllN
 nnnnnnnN
 .NN..NN.""",
+	"ic_stone": """
+.......
+..eee..
+.essee.
+eeseete
+ettetTe
+.tTTTt.
+.......""",
+	"ic_wind": """
+..ww...
+....w..
+wwww...
+.......
+CCCCC..
+.....C.
+...CC..""",
+	"ic_light": """
+...y...
+.y.Y.y.
+..YwY..
+yYwwwYy
+..YwY..
+.y.Y.y.
+...y...""",
+	"ic_water": """
+...a...
+..aAa..
+..aAa..
+.aAAaa.
+.aAaaa.
+.aaaaa.
+..aaa..""",
+	"ic_leaf": """
+.....ff
+...fFFf
+..fFFNf
+.fFFNf.
+.fFNff.
+Nfff...
+N......""",
+	"ic_earth": """
+.......
+...q...
+..qQq..
+.qQQqq.
+qQqqTqq
+qTqqqTq
+TTTTTTT""",
+	"ic_metal": """
+.......
+..iiii.
+.iIIIig
+iIIIigg
+iiiiigg
+.ggggg.
+.......""",
+	"ic_wood": """
+.......
+.uuuuu.
+uUuuuTu
+uUuTuTu
+uUuuuTu
+.uuuuu.
+.......""",
+	"ic_mech": """
+.d.d.d.
+ddDDDdd
+.DdkdD.
+dDkkkDd
+.DdkdD.
+ddDDDdd
+.d.d.d.""",
+	"ic_x": """
+x.....x
+.x...x.
+..xwx..
+...w...
+..xwx..
+.x...x.
+x.....x""",
+	"ic_void": """
+..ppp..
+.pPPPp.
+pPkkkPp
+pPkmkPp
+pPkkkPp
+.pPPPp.
+..ppp..""",
 	"ic_fire": """
 ...o...
 ..oo...
@@ -1332,6 +1422,17 @@ static func el_swap(el: String) -> Dictionary:
 		"bolt": return {"c": "y", "C": "Y", "b": "o"}
 		"tox": return {"c": "n", "C": "l", "b": "N"}
 		"prism": return {"c": "m", "C": "Y", "b": "p"}
+		"stone": return {"c": "e", "C": "s", "b": "t"}
+		"wind": return {"c": "l", "C": "w", "b": "n"}
+		"light": return {"c": "Y", "C": "w", "b": "y"}
+		"void": return {"c": "p", "C": "m", "b": "P"}
+		"water": return {"c": "a", "C": "A", "b": "B"}
+		"leaf": return {"c": "f", "C": "F", "b": "N"}
+		"earth": return {"c": "q", "C": "Q", "b": "T"}
+		"metal": return {"c": "i", "C": "I", "b": "g"}
+		"wood": return {"c": "u", "C": "U", "b": "T"}
+		"mech": return {"c": "d", "C": "D", "b": "t"}
+		"x": return {"c": "x", "C": "w", "b": "P"}
 	return {"c": "G", "C": "w", "b": "g"}
 
 static func build() -> void:
@@ -1348,13 +1449,13 @@ static func build() -> void:
 		if d.get("walk", false):
 			walk_frames("e_" + id)
 	for base in WSPR:
-		for el in ["", "fire", "ice", "bolt", "tox", "prism"]:
+		for el in ["", "prism"] + D.ALL:
 			make("w_" + base + "_" + el, MAPS[base], el_swap(el))
 	for n in ["coin", "orb", "heart", "chest", "chest_open", "potion", "cell", "tome", "crate", "torch", "pedestal"]:
 		make(n, MAPS[n])
 	for el in ["fire", "ice", "bolt", "tox"]:
 		make("barrel_" + el, MAPS["barrel"], el_swap(el))
-	for el in ["", "fire", "ice", "bolt", "tox"]:
+	for el in [""] + D.ALL:
 		var c = D.EL_COL[el]
 		reg("b_" + el, orb(3, c, c.darkened(0.45), Color.WHITE))
 		reg("B_" + el, orb(5, c, c.darkened(0.45), Color.WHITE))
@@ -1379,9 +1480,9 @@ static func build() -> void:
 	make("npc_cook", MAPS["goblin"], {"t": "w", "e": "G", "T": "g"})
 	make("npc_tailor", MAPS["mage"], {"p": "m", "P": "p"})
 	make("npc_quarter", MAPS["guard"], {"r": "n", "o": "l"})
-	for n in ["cat", "jukebox", "tomb", "altar", "anvil", "cauldron", "fountain", "pet_pup", "pet_owl", "pet_mote", "pet_toad", "ic_fire", "ic_ice", "ic_bolt", "ic_tox", "gem"]:
+	for n in ["cat", "jukebox", "tomb", "altar", "anvil", "cauldron", "fountain", "pet_pup", "pet_owl", "pet_mote", "pet_toad", "ic_fire", "ic_ice", "ic_bolt", "ic_tox", "ic_stone", "ic_wind", "ic_light", "ic_void", "ic_water", "ic_leaf", "ic_earth", "ic_metal", "ic_wood", "ic_mech", "ic_x", "gem"]:
 		make(n, MAPS[n])
-	for el in ["fire", "ice", "bolt", "tox"]:
+	for el in D.ALL:
 		make("crystal_" + el, MAPS["crystal"], el_swap(el))
 	make("crystal_prism", MAPS["crystal"], el_swap("prism"))
 	make("npc_mentor", MAPS["mage"], {"p": "b", "P": "B"})

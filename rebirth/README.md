@@ -36,11 +36,21 @@ You do not shoot foes down; you build weather, and you forge with words.
   lightning through mire to a rod. A barrel of the needed element always stands in the room.
 - Graves. Where a run ends, a grave stands on that floor in later runs: it seeps the element
   you used most and gives back the weapon you died holding.
-- Combine (prototype). At the lectern you write up to two recipes in words: two elements, a
-  shape (wall, vortex, wave) and a motion (push, pull), e.g. "fire ice wall push" or "xoay set
-  doc hut". In a fight, V gathers the elements lying near the aim point (fields, pools, burning
-  or chilled foes), uses them up and casts the matching recipe there. Automatic reactions are
-  unchanged. Not in LAN snapshots yet and no touch button.
+- Fifteen elements. Fire, ice, storm and venom are the old four (foes, traps and barrels use
+  only those). Heroes can also paint stone, wind, light, void, water, leaf, earth, metal,
+  wood, gear and X. You carry three into a run (keys 1 2 3 pick which one your weapon
+  paints); walk into a crystal in the Hearth to put its element in slot one. Every pair
+  reacts and leaves a field (105 of them), every triple makes a storm (455). Only the old
+  six reactions and four storms are hand-made; the rest are built in `src/chem.gd` from one
+  behaviour per element: stone staggers and stops bullets, wind shoves, light exposes, void
+  drags in and slows bullets, water washes foes and bullets outward, leaf is thorns, earth
+  quakes under walkers, metal cuts and turns bullets back, wood roots, gear shoots shards
+  at the next foe, X acts as a random other element each time.
+- Recipes. At the lectern you write up to three recipes in words: two elements, a shape
+  (wall, vortex, wave, rain, orbit, lance), a motion (push, pull, hold, burst) and optional
+  size words (big, long, strong), e.g. "fire ice wall push", "xoay set doc hut", "nuoc kim
+  mua no to". Nothing has to be pressed in a fight: when the two elements of a recipe react
+  on a foe, the spell appears there and that recipe rests for a few seconds.
 
 ## Run
 
@@ -247,7 +257,8 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/sky.gd` | Weather of a floor (loaded as `Wx`: `Sky` is a Godot class name) |
 | `src/book.gd` | The alchemy notebook: discoveries and the names you give them |
 | `src/puzzle.gd` | Puzzle rooms: chasm, braziers, conduit |
-| `src/spell.gd` | Combine: word recipes, gathering elements, wall / vortex / wave spells |
+| `src/spell.gd` | Recipes: word spells set off by reactions (six shapes, four motions) |
+| `src/chem.gd` | Chemistry generator: aspects of the fifteen elements, generated reactions, fields and storms |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
@@ -276,7 +287,8 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `chem.gd` | Room chemistry, hijacking, wishes, named skills, nemesis, prep station |
 | `combo.gd` | Fields, storms, cataclysm |
 | `world.gd` | Weather, notebook, puzzle rooms, sparing the nemesis, graves |
-| `spell.gd` | Combine recipes: parsing, gathering, the three shapes, push and pull |
+| `recipes.gd` | Fifteen elements, generated reactions and storms, element slots, recipes |
+| `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |
 | `forge.gd` | Word Forge and the starting loadout |
 | `anim.gd` | Pose frames and animation states |
 | `pets.gd` | Materials, seeds, garden, recipes, pets |

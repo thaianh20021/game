@@ -96,7 +96,7 @@ static func draw(g, ci: CanvasItem) -> void:
 	var m = g.mouse().round()
 	var cc = Color("f6f2e6")
 	if g.state == "play" and not g.p.is_empty():
-		cc = D.EL_COL[g.p.weapons[g.p.wi].el]
+		cc = D.EL_COL[g.act_el(g.p)]
 	for d in [Vector2(-5, 0), Vector2(3, 0), Vector2(0, -5), Vector2(0, 3)]:
 		ci.draw_rect(Rect2(m + d + Vector2(-1, -1), Vector2(5, 3) if d.y == 0.0 else Vector2(3, 5)), INK)
 	for d in [Vector2(-5, 0), Vector2(3, 0), Vector2(0, -5), Vector2(0, 3)]:
@@ -221,7 +221,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 			ci.draw_rect(Rect2(46 + i * 6, 43, 5, 6), INK)
 			ci.draw_rect(Rect2(47 + i * 6, 44, 3, 4), Color("c99b5c") if i < p.mount.hp else Color("3a3346"))
 
-	var wel: String = p.weapons[p.wi].el
+	var wel: String = g.act_el(p)
 	var ecol: Color = D.EL_COL[wel]
 	skill_box(g, ci, 54, 0, "LB" if g.p1_pad else ("1" if g.tin.on else "RMB"), ecol)
 	skill_box(g, ci, 76, 1, "RB" if g.p1_pad else ("2" if g.tin.on else "F"), ecol)
@@ -312,14 +312,17 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	for i in att.size():
 		big(ci, Art.T["ic_" + att[i]], Vector2(wx - 22, 204 - i * 11), 1.0)
 		Px.text(ci, Vector2(wx - 12, 206 - i * 11), "X2 ATTUNED", D.EL_COL[att[i]])
-	if all.size() >= 2:
-		var pair = [all[0], all[1]]
-		pair.sort()
-		var info = D.REACT[pair[0] + "+" + pair[1]]
-		big(ci, Art.T["ic_" + all[0]], Vector2(wx - 22, 216), 1.0)
-		Px.text(ci, Vector2(wx - 12, 218), "+", DIM)
-		big(ci, Art.T["ic_" + all[1]], Vector2(wx - 5, 216), 1.0)
-		Px.text(ci, Vector2(wx + 7, 218), Book.shown(pair[0] + "+" + pair[1]), info[1])
+	# the three elements you carry: 1 2 3 pick what the weapon paints; a bar marks the weapon's own
+	if p.has("els"):
+		var nat = weapon_els(w)
+		for i in p.els.size():
+			var slx = wx - 4 + i * 22
+			var on = i == p.eli
+			panel(ci, Rect2(slx, 211, 20, 18), Color(0.07, 0.05, 0.12, 0.9), D.EL_COL[p.els[i]] if on else DIM)
+			big(ci, Art.T["ic_" + p.els[i]], Vector2(slx + 9, 216), 1.0, Color.WHITE if on else Color(1, 1, 1, 0.45))
+			Px.text(ci, Vector2(slx + 2, 213), str(i + 1), GOLD if on else DIM)
+			if nat.has(p.els[i]) or w.el == "prism":
+				ci.draw_rect(Rect2(slx + 2, 226, 16, 1), D.EL_COL[p.els[i]])
 
 	if g.in_lobby:
 		Px.text(ci, Vector2(5, 259), "THE HEARTH - " + p.name, DIM)

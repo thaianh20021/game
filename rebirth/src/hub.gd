@@ -277,7 +277,7 @@ static func apply_boons(g, More) -> void:
 		p.active = {id = act, n = D.ACTIVES[act].max}
 	var wid = str(Meta.S.boons.get("weapon", ""))
 	if D.WEAPONS.has(wid):
-		p.weapons[1] = {id = wid, el = D.EL[(int(Meta.S.el) + 1) % 4], el2 = "", lv = 0}
+		p.weapons[1] = {id = wid, el = Meta.slots()[1], el2 = "", lv = 0}
 	Meta.S.boons = {}
 
 # ---- idle chatter -----------------------------------------------------------------

@@ -10,6 +10,7 @@ const D = preload("res://src/data.gd")
 const Sfx = preload("res://src/sfx.gd")
 const Px = preload("res://src/font.gd")
 const Book = preload("res://src/book.gd")
+const Chem = preload("res://src/chem.gd")
 
 # pair key (sorted, as in D.REACT) -> [name, colour, what it does]
 const FIELD = {
@@ -34,7 +35,9 @@ static func name_of(f: Dictionary) -> String:
 	return Book.name(f.key if f.tier == 2 else "s_" + f.key)
 
 static func col_of(f: Dictionary) -> Color:
-	return Color(FIELD[f.key][1] if f.tier == 2 else STORM[f.key][1])
+	if f.tier == 2:
+		return Color(FIELD[f.key][1]) if FIELD.has(f.key) else D.REACT[f.key][1]
+	return Color(STORM[f.key][1]) if STORM.has(f.key) else Chem.storm_col(f.key)
 
 # A reaction happened at pos.
 static func spawn(g, pos: Vector2, key: String) -> void:
@@ -61,14 +64,12 @@ static func touch(g, pos: Vector2, el: String, rad: float = 0.0) -> void:
 		if f.tier == 2:
 			f.els.append(el)
 			f.tier = 3
-			for q in D.EL:
-				if not f.els.has(q):
-					f.key = q
+			f.key = Chem.storm_key(f.els)
 			f.r = STORM_R
 			f.life = 6.0
 			f.tick = 0.0
 			col = col_of(f)
-			g.banner = {text = Book.find(g, "s_" + f.key), sub = STORM[f.key][2], t = 2.6}
+			g.banner = {text = Book.find(g, "s_" + f.key), sub = STORM[f.key][2] if STORM.has(f.key) else Chem.storm_note(f.key), t = 2.6}
 			g.charge_res(1.0)
 			Sfx.play("roar", 1.6, -4.0)
 		else:
@@ -103,6 +104,7 @@ static func update(g, dt: float) -> void:
 				if b.team == 1 and not b.lob and not b.dead and b.pos.distance_to(f.pos) < f.r:
 					b.dead = true
 					g.parts.append({pos = b.pos, vel = Vector2(0, -20), life = 0.3, max = 0.3, col = col, size = 2, grav = 0.0})
+		Chem.bullets(g, f.els, f.pos, f.r, col)
 		if f.tick > 0.0:
 			continue
 		f.tick = 0.5 if f.tier == 2 else 0.35
@@ -132,6 +134,8 @@ static func update(g, dt: float) -> void:
 						e.st["tox"] = 4.0
 						e.tox_n = max(e.tox_n, 4)
 						g.hurt_enemy(e, m * (1.0 + fl * 0.4), "", Vector2.ZERO, true, col)
+					_:
+						Chem.tick(g, f.els, [e], f.pos, m * (1.2 + fl * 0.4), col)
 			continue
 		match f.key:
 			"tox":
@@ -161,6 +165,8 @@ static func update(g, dt: float) -> void:
 					g.hurt_enemy(e, m * (2.0 + fl * 0.7), "", Vector2.ZERO, true, col)
 					if not e.dead:
 						e.frz = maxf(e.frz, 0.15 if e.is_boss else 0.5)
+			_:
+				Chem.tick(g, f.els, inside, f.pos, m * (2.2 + fl * 0.7), col)
 	g.fields = g.fields.filter(func(f): return f.life > 0.0)
 
 # ---- drawing ---------------------------------------------------------------------

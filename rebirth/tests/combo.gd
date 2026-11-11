@@ -65,7 +65,7 @@ func _init():
 	check(g.bullets.filter(func(b): return b.team == 1 and not b.dead).is_empty(), "the cataclysm clears enemy bullets")
 	# every pair and every triple has a name
 	for key in g.D.REACT:
-		check(Combo.FIELD.has(key), "field for " + key)
+		check(Combo.FIELD.has(key) or g.Chem.field_name(key) != "", "field for " + key)
 	g.fields.clear()
 	g.enemies.clear()
 	var names = {}

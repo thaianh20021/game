@@ -32,6 +32,7 @@ const Wx = preload("res://src/sky.gd")
 const Book = preload("res://src/book.gd")
 const Puzzle = preload("res://src/puzzle.gd")
 const Spell = preload("res://src/spell.gd")
+const Chem = preload("res://src/chem.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -142,7 +143,8 @@ var pending_say = ""
 var say_mode = ""
 var sky_t = 3.0
 var spells = []
-var spell_cd = 0.0
+var spell_cds = [0.0, 0.0, 0.0]
+var roll_slot = 0
 # sprite afterimages: dying foes squash flat, dashing bosses leave trails
 var echoes = []
 var tin = Touch.fresh()
@@ -285,6 +287,9 @@ func resume_run() -> void:
 	pl.idx = 0
 	pl.down = false
 	pl.spr = Art.look(pl.look)
+	if not pl.has("els"):
+		pl.els = Meta.slots()
+		pl.eli = 0
 	players = [pl]
 	me = 0
 	bind(pl)
@@ -629,7 +634,7 @@ func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
 		idx = idx, down = false, hero_i = hi, look = look, spr = Art.look(look),
 		hero = h, name = nm, hkey = hkey, tkey = tkey, haste_t = 0.0, rage_t = 0.0, skills = [h.skill, sk2], pos = Vector2.ZERO, r = 4.0,
 		hp = hp, mhp = hp, ar = ar, mar = ar, en = float(en), men = en,
-		weapons = [{id = h.start, el = el, el2 = "", lv = 0}, {id = h.get("start2", "pistol"), el = D.EL[(D.EL.find(el) + 1) % 4], el2 = "", lv = 0}], wi = 0,
+		weapons = [{id = h.start, el = el, el2 = "", lv = 0}, {id = h.get("start2", "pistol"), el = D.EL[(D.EL.find(el) + 1) % 4], el2 = "", lv = 0}], wi = 0, els = Meta.slots(), eli = 0,
 		cd = 0.0, dash_t = 0.0, dash_cd = 0.0, dash_dir = Vector2.RIGHT, dash_hit = [], inv = 0.0, ar_t = 0.0, ar_tick = 0.0,
 		skill_cd = 0.0, skill2_cd = 0.0, face = 1, aim = Vector2.RIGHT, walk = 0.0, moving = false, gold = 0, buffs = [],
 		slow = 0.0, flash = 0.0, kick = 0.0, swing = 0.0, spin = 0.0, spin_tick = 0.0, beam_n = 0, noregen = 0.0,
@@ -656,7 +661,7 @@ func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
 func make_player() -> void:
 	if Meta.S.gen_seed != 0:
 		Art.gen_hero(Meta.S.gen_seed)
-	var pl = build_player(Meta.S.hero, Meta.S.fuse if Meta.S.fuse_unlocked else -1, "prism" if prism_next else D.EL[Meta.S.el], 0)
+	var pl = build_player(Meta.S.hero, Meta.S.fuse if Meta.S.fuse_unlocked else -1, "prism" if prism_next else Meta.slots()[0], 0)
 	if players.is_empty():
 		players = [pl]
 	else:
@@ -690,7 +695,7 @@ func set_local2(on: bool) -> void:
 	if on:
 		if local2_hero < 0 or local2_hero >= Meta.hero_count():
 			local2_hero = (Meta.S.hero + 1) % Meta.hero_count()
-		var pl = build_player(local2_hero, -1, D.EL[(Meta.S.el + 1) % 4], 1)
+		var pl = build_player(local2_hero, -1, Meta.slots()[1], 1)
 		pl.pos = players[0].pos + Vector2(16, 0)
 		if pl.pet != null:
 			pl.pet.pos = pl.pos
@@ -871,7 +876,7 @@ func new_floor() -> void:
 				for pl in players:
 					pl.pos = c + Vector2(pl.idx * 14.0, 0)
 				if floor_i == 0:
-					var el = D.EL[(Meta.S.el + 1 + rng.randi() % 3) % 4]
+					var el = Meta.slots()[1 + rng.randi() % 2]
 					inter.append({kind = "weapon", w = {id = ["pistol", "scatter", "needle"][rng.randi() % 3], el = el, el2 = "", lv = 0}, pos = c + Vector2(34, 0)})
 			"chest":
 				inter.append({kind = "chest", pos = c, loot = "weapon", open = false})
@@ -948,7 +953,7 @@ func random_weapon() -> Dictionary:
 	var el = ""
 	var er = rng.randf()
 	if er < 0.74:
-		el = D.EL[rng.randi() % 4]
+		el = D.ALL[rng.randi() % D.ALL.size()]
 	elif er < 0.80 and floor_i >= 1:
 		el = "prism"
 	return {id = pick, el = el, el2 = "", lv = 0}
@@ -1272,8 +1277,11 @@ func update_player(dt: float) -> void:
 		Ext.cast(self, 1, mw)
 	if jpk(KEY_R):
 		Ext.burst(self)
-	if jpk(KEY_V):
-		Spell.combine(self)
+	for i in 3:
+		if jpk(KEY_1 + i):
+			set_el(i)
+	if jpk(KEY_TAB):
+		set_el((int(p.get("eli", 0)) + 1) % 3)
 	if jpk(KEY_E) and near != null:
 		interact(near)
 		if state != "play":
@@ -1284,16 +1292,31 @@ func update_player(dt: float) -> void:
 			p.ar_tick = 0.0
 			p.ar += 1
 
+# The element a hero is painting with: the chosen one of the three carried.
+func act_el(pl: Dictionary) -> String:
+	if pl.has("els"):
+		return pl.els[clampi(int(pl.eli), 0, pl.els.size() - 1)]
+	return pl.weapons[pl.wi].el
+
+# A weapon is at home in its own element(s); anything else it paints a little weaker.
+func native(w: Dictionary, el: String) -> bool:
+	return w.el == "prism" or w.el == el or w.get("el2", "") == el
+
+func set_el(i: int) -> void:
+	if not p.has("els") or i >= p.els.size() or i == p.eli:
+		return
+	p.eli = i
+	var el: String = p.els[i]
+	Sfx.play("pick", 1.4, -4.0)
+	rings.append({pos = pcenter(), r = 16.0, t = 0.0, col = D.EL_COL[el]})
+	label(p.pos + Vector2(0, -22), D.EL_NAME[el] + ("" if native(p.weapons[p.wi], el) else "  80%"), D.EL_COL[el])
+	tip("slots", "1 2 3 CHANGE YOUR ELEMENT", "A WEAPON HITS FULL IN ITS OWN ELEMENT, 80% IN OTHERS")
+
 func cur_el() -> String:
 	var w = p.weapons[p.wi]
-	var el = w.el
-	if w.get("el2", "") != "":
-		w.flip = not w.get("flip", false)
-		if w.flip:
-			el = w.el2
-	if el == "prism":
-		el = D.EL[rng.randi() % 4]
-	return el
+	if w.el == "prism" and p.has("els"):
+		return p.els[rng.randi() % p.els.size()]
+	return act_el(p)
 
 func try_fire() -> void:
 	var wi = p.weapons[p.wi]
@@ -1311,8 +1334,10 @@ func try_fire() -> void:
 	p.kick = 3.0
 	# weapons are brushes: they paint elements, the weather does the killing
 	var lvm = 0.7 * Ext.wdmg(wi) * (1.4 if p.rage_t > 0.0 else 1.0) * float(wi.get("pow", 1.0))
-	if wi.el != "":
-		el_use[wi.el] = int(el_use.get(wi.el, 0)) + 1
+	var ael = act_el(p)
+	if not native(wi, ael):
+		lvm *= 0.9 if wi.el == "" else 0.8
+	el_use[ael] = int(el_use.get(ael, 0)) + 1
 	var trs: Array = [wi.get("trait", "")] + wi.get("traits", [])
 	if lvm != 1.0 or trs.size() > 1 or trs[0] != "":
 		w = w.duplicate()
@@ -2297,6 +2322,9 @@ func apply_el(e: Dictionary, el: String, dmg: float) -> void:
 		"tox":
 			e.st["tox"] = 5.0 * st.dur
 			e.tox_n = min(8 if p.syn.has("plaguedoc") else 5, e.tox_n + 1)
+		_:
+			e.st[el] = 4.0 * st.dur
+			Chem.on_hit(self, e, el)
 
 func react(e: Dictionary, key: String) -> void:
 	var info = D.REACT[key]
@@ -2310,6 +2338,7 @@ func react(e: Dictionary, key: String) -> void:
 	tip("react", "REACTION: " + info[0], "IT LEAVES A FIELD. ADD A THIRD ELEMENT FOR A STORM.")
 	Fx.react(self, c, key)
 	Combo.spawn(self, c, key)
+	Spell.on_react(self, key, c)
 	Meta.stat("reacts")
 	hitstop = maxf(hitstop, 0.04)
 	shake_add(3.0)
@@ -2355,6 +2384,8 @@ func react(e: Dictionary, key: String) -> void:
 				o.tox_n = max(o.tox_n, 3)
 				o.st["bolt"] = 4.0 * st.dur
 				hurt_enemy(o, base * 0.5, "", Vector2.ZERO, true, col)
+		_:
+			Chem.react(self, e, key, base, col)
 
 func kill(e: Dictionary) -> void:
 	if e.dead:
@@ -2944,11 +2975,13 @@ func draw_inter(ci: CanvasItem, it: Dictionary) -> void:
 			ci.draw_texture(sh, it.pos + Vector2(-8, 1))
 			spr(ci, "h_" + Meta.hero(it.i).id, it.pos + Vector2(0, 5), it.pos.x > p.pos.x)
 		"crystal":
-			var cel: String = D.EL[it.i]
+			var cel: String = D.ALL[it.i]
 			ci.draw_texture(sh, it.pos + Vector2(-8, 1))
 			spr(ci, "crystal_" + cel, it.pos + Vector2(0, 5))
-			if Meta.S.el == it.i and not prism_next:
+			var si = Meta.slots().find(cel)
+			if si >= 0 and not prism_next:
 				ci.draw_arc(it.pos + Vector2(0, -2), 10.0 + sin(time * 4.0), 0.0, TAU, 16, D.EL_COL[cel], 1.0)
+				Px.ctext(ci, it.pos + Vector2(0, -22), str(si + 1), Color("ffd24a"))
 		"blueprint":
 			ci.draw_texture(sh, it.pos + Vector2(-8, 2))
 			ci.draw_arc(it.pos + Vector2(0, -6), 9.0 + sin(time * 4.0), 0.0, TAU, 14, Color(0.36, 0.83, 0.95, 0.6), 1.0)
@@ -3265,8 +3298,8 @@ func draw_prompt(ci: CanvasItem) -> void:
 				txt = "PLANT A SEED" if gp.kind == "" else ("GROWING" if int(gp.left) > 0 else "HARVEST " + D.SEEDS[gp.kind].name)
 			"hero": txt = "PLAY AS " + Meta.hero(near.i).name
 			"crystal":
-				txt = D.EL_NAME[D.EL[near.i]] + " ELEMENT"
-				col = D.EL_COL[D.EL[near.i]]
+				txt = "CARRY " + D.EL_NAME[D.ALL[near.i]]
+				col = D.EL_COL[D.ALL[near.i]]
 			"npc", "egg", "talk": txt = near.name
 			"smith", "alch", "fuse": txt = near.name
 			"shrine": txt = "OFFER 1 MAX HEALTH FOR A BLESSING"
@@ -3333,7 +3366,7 @@ func draw_lights(ci: CanvasItem) -> void:
 			"chest":
 				if not it.open:
 					l.call(it.pos, 32.0, Color(0.3, 0.25, 0.1))
-			"crystal": l.call(it.pos, 30.0, D.EL_COL[D.EL[it.i]] * 0.35)
+			"crystal": l.call(it.pos, 30.0, D.EL_COL[D.ALL[it.i]] * 0.35)
 			_: l.call(it.pos + Vector2(0, -6), 34.0, Color(0.3, 0.28, 0.22))
 	for k in pickups:
 		if on_screen(k.pos):

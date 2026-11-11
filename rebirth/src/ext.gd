@@ -118,6 +118,7 @@ static func zone_touch(g, pos: Vector2, r: float, el: String) -> void:
 			pair.sort()
 			var info = D.REACT[pair[0] + "+" + pair[1]]
 			g.label(z.pos + Vector2(0, -14), g.Book.find(g, pair[0] + "+" + pair[1]), info[1], true)
+			g.Spell.on_react(g, pair[0] + "+" + pair[1], z.pos)
 			Sfx.play("react")
 			g.charge_res(0.5)
 			g.explode(z.pos, z.r + 22.0, (9.0 + g.floor_i * 3.0) * g.st.react * 1.2, "", 0, info[1])

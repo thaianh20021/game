@@ -63,6 +63,11 @@ static func touch(g, pos: Vector2, rad: float, el: String) -> void:
 						Sfx.play("freeze", 1.3, -8.0)
 						g.tip("env_ice", "FROZEN SOLID", "ICE HARDENS MIRE AND BRIDGES PITS")
 						g.Book.find(g, "e_ice")
+				"stone":
+					if t == 2:
+						patch(g, c, "rubble")
+						g.burst(cell_pos(c), 4, D.EL_COL["stone"], 40.0, 0.4)
+						g.Book.find(g, "e_stone")
 				"fire":
 					if t == 4:
 						ignite(g, c)
@@ -155,6 +160,11 @@ static func draw(g, ci: CanvasItem) -> void:
 				ci.draw_rect(Rect2(o + Vector2(0, 15), Vector2(16, 1)), Color("3f76dc"))
 				ci.draw_line(o + Vector2(3, 4), o + Vector2(8, 9), Color(1, 1, 1, 0.8), 1.0)
 				ci.draw_line(o + Vector2(10, 3), o + Vector2(13, 6), Color(1, 1, 1, 0.6), 1.0)
+			"rubble":
+				ci.draw_rect(Rect2(o, Vector2(16, 16)), Color("8b5b3b"))
+				ci.draw_rect(Rect2(o, Vector2(16, 1)), Color("c99b5c"))
+				for i in 5:
+					ci.draw_rect(Rect2(o + Vector2(1 + (i * 7 + q.cell.x * 3) % 11, 2 + (i * 5 + q.cell.y) % 10), Vector2(4, 3)), Color("c99b5c") if i % 2 == 0 else Color("553423"))
 			"ash":
 				ci.draw_rect(Rect2(o + Vector2(1, 1), Vector2(14, 14)), Color(0.06, 0.05, 0.07, 0.75))
 				for i in 4:

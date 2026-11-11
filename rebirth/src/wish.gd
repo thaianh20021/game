@@ -12,7 +12,7 @@ const Sfx = preload("res://src/sfx.gd")
 const Forge = preload("res://src/forge.gd")
 const Meta = preload("res://src/meta.gd")
 
-const MAXLEN = 28
+const MAXLEN = 40
 const BUFF_WORDS = {
 	"vital": ["health", "heart", "hp", "life", "mau", "tim", "song"],
 	"plating": ["armor", "armour", "shield", "giap", "khien"],
@@ -179,14 +179,18 @@ static func draw_say(g, ci: CanvasItem, Hud) -> void:
 			Px.text(ci, Vector2(x + 11, 128), D.EL_NAME[el], D.EL_COL[el])
 			x += 22 + Px.width(D.EL_NAME[el])
 		if r.els.size() < 2:
-			Px.text(ci, Vector2(x, 128), "NEEDS TWO DIFFERENT ELEMENTS" if g.say != "" else "FIRE ICE WALL PUSH   /   XOAY SET DOC HUT", Color("ff6a6a") if g.say != "" else Color("6b6779"))
-		Px.text(ci, Vector2(96, 142), g.Spell.SHAPE_NAME[r.shape] + ": " + g.Spell.NOTE[r.shape], Color("ffd24a"))
-		Px.text(ci, Vector2(96, 153), r.verb.to_upper() + ": " + g.Spell.NOTE[r.verb], Color("ffd24a"))
-		Px.ctext(ci, Vector2(240, 172), "IN A FIGHT: PAINT BOTH ELEMENTS, THEN PRESS V", Color("a6e84e"))
+			Px.text(ci, Vector2(x, 128), "NEEDS TWO DIFFERENT ELEMENTS" if g.say != "" else "STONE WIND RAIN BURST BIG  /  XOAY SET DOC HUT", Color("ff6a6a") if g.say != "" else Color("6b6779"))
+		Px.text(ci, Vector2(96, 140), r.shape.to_upper() + ": " + g.Spell.NOTE[r.shape], Color("ffd24a"))
+		Px.text(ci, Vector2(96, 150), r.verb.to_upper() + ": " + g.Spell.NOTE[r.verb], Color("ffd24a"))
+		var ml = "RESTS %d SECONDS" % int(g.Spell.rest_of(r))
+		for m in r.mods:
+			ml = g.Spell.NOTE[m] + ". " + ml
+		Px.text(ci, Vector2(96, 160), ml, Color("7adfff"))
+		Px.ctext(ci, Vector2(240, 174), "IT CASTS ITSELF WHEN THE TWO ELEMENTS REACT", Color("a6e84e"))
 		Px.ctext(ci, Vector2(240, 190), "ENTER: SAVE     EMPTY + ENTER: CLEAR     ESC: CANCEL", Color("d9d4c7"))
 		return
 	if g.say_mode != "":
-		var def = g.Book.DEF[g.say_mode]
+		var def = [g.Book.default_name(g.say_mode), g.Book.note(g.say_mode)]
 		Hud.panel(ci, Rect2(70, 70, 340, 110), Color(0.07, 0.05, 0.12, 0.97), Color("ffd24a"))
 		Px.ctext(ci, Vector2(240, 78), "NAME THIS DISCOVERY", Color("ffd24a"), 2)
 		Px.ctext(ci, Vector2(240, 102), def[1], Color("a8a7b8"))
