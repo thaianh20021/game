@@ -31,6 +31,7 @@ const Nemesis = preload("res://src/nemesis.gd")
 const Wx = preload("res://src/sky.gd")
 const Book = preload("res://src/book.gd")
 const Puzzle = preload("res://src/puzzle.gd")
+const Spell = preload("res://src/spell.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -140,6 +141,8 @@ var book_page = 0
 var pending_say = ""
 var say_mode = ""
 var sky_t = 3.0
+var spells = []
+var spell_cd = 0.0
 # sprite afterimages: dying foes squash flat, dashing bosses leave trails
 var echoes = []
 var tin = Touch.fresh()
@@ -831,6 +834,7 @@ func clear_world() -> void:
 	allies.clear()
 	traps = []
 	fields = []
+	spells = []
 	patches = []
 
 func rebake() -> void:
@@ -1154,6 +1158,7 @@ func update_play(dt: float) -> void:
 	update_bullets(dt)
 	update_zones(dt)
 	Combo.update(self, dt)
+	Spell.update(self, dt)
 	if not in_lobby:
 		Traps.update(self, dt)
 		Wx.update(self, dt)
@@ -1267,6 +1272,8 @@ func update_player(dt: float) -> void:
 		Ext.cast(self, 1, mw)
 	if jpk(KEY_R):
 		Ext.burst(self)
+	if jpk(KEY_V):
+		Spell.combine(self)
 	if jpk(KEY_E) and near != null:
 		interact(near)
 		if state != "play":
@@ -2815,6 +2822,7 @@ func draw_scene(ci: CanvasItem) -> void:
 		ci.draw_arc(z.pos, z.r, 0.0, TAU, 20, Color(c.r, c.g, c.b, 0.6 * a), 1.0)
 	Env.draw(self, ci)
 	Combo.draw(self, ci)
+	Spell.draw(self, ci)
 	Traps.draw(self, ci)
 	for t in teles:
 		var k = t.t / t.dur

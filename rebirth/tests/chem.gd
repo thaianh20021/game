@@ -160,6 +160,8 @@ func _init():
 	var lect = g.inter.filter(func(it): return it.get("egg", "") == "lectern")
 	check(lect.size() == 1, "the hub has a lectern")
 	g.interact(lect[0])
+	check(g.state == "menu" and g.menu.kind == "spell", "the lectern opens its menu")
+	g.Lobby.activate(g, g.menu.rows[0])
 	check(g.state == "say", "the lectern opens the naming prompt")
 	type("bão lửa mạnh")
 	await frames(8)

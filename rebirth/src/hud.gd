@@ -14,6 +14,7 @@ const Combo = preload("res://src/combo.gd")
 const Wish = preload("res://src/wish.gd")
 const Nemesis = preload("res://src/nemesis.gd")
 const Book = preload("res://src/book.gd")
+const Spell = preload("res://src/spell.gd")
 const Wx = preload("res://src/sky.gd")
 
 const VW = 480.0
@@ -33,7 +34,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - LEAVES ROT: +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - LEAVES MIASMA: POISONS ALL"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER", "book": "ALCHEMY NOTEBOOK"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER", "book": "ALCHEMY NOTEBOOK", "spell": "LECTERN"}
 
 static func buff_rect(i: int) -> Rect2:
 	return Rect2(55 + i * 127, 84, 116, 112)
@@ -232,6 +233,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	for i in range(1, 5):
 		ci.draw_rect(Rect2(4 + i * 12, 100, 1, 4), INK)
 	Px.text(ci, Vector2(68, 98), "R BURST" if full else "BURST", rcol if full else DIM)
+	Spell.draw_hud(g, ci)
 	ci.draw_rect(Rect2(3, 108, 22, 3), INK)
 	ci.draw_rect(Rect2(4, 109, 20.0 * (1.0 - clampf(p.dash_cd / 0.75, 0.0, 1.0)), 1), Color("c6f4ff"))
 

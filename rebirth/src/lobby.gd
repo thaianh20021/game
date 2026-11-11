@@ -12,6 +12,7 @@ const Pets = preload("res://src/pets.gd")
 const Wish = preload("res://src/wish.gd")
 const Nemesis = preload("res://src/nemesis.gd")
 const Book = preload("res://src/book.gd")
+const Spell = preload("res://src/spell.gd")
 const Wx = preload("res://src/sky.gd")
 
 const TRACKS = ["CAVE THEME", "FORGE THEME", "ARCHIVE THEME", "BOSS THEME", "HEARTH THEME"]
@@ -85,7 +86,7 @@ static func populate(g) -> void:
 	g.inter.append({kind = "deco", spr = "cauldron", pos = tp(17, 22.6)})
 	g.inter.append({kind = "deco", spr = "bench", pos = tp(22.4, 23.6)})
 	g.inter.append({kind = "npc", menu = "prep", spr = "npc_quarter", name = "QUARTERMASTER: MEALS, WEAPONS, CRAFTING", pos = tp(18.8, 23.2), notalk = true})
-	g.inter.append({kind = "egg", egg = "lectern", spr = "tome", name = "LECTERN: NAME YOUR SKILL", pos = tp(4, 12.6)})
+	g.inter.append({kind = "egg", egg = "lectern", spr = "tome", name = "LECTERN: WRITE YOUR SPELLS", pos = tp(4, 12.6)})
 	g.inter.append({kind = "deco", spr = "mannequin", pos = tp(6.6, 28)})
 	g.inter.append({kind = "npc", menu = "tailor", spr = "npc_tailor", name = "TAILOR: DYES", pos = tp(8.2, 28)})
 	g.inter.append({kind = "egg", egg = "capsule", spr = "capsule", name = "CAPSULE MACHINE: %d GEMS" % Hub.CAPSULE_COST, pos = tp(22.5, 28)})
@@ -188,7 +189,7 @@ static func interact(g, it: Dictionary) -> void:
 
 static func egg(g, it: Dictionary) -> void:
 	if it.egg == "lectern":
-		Wish.open_skill(g)
+		g.open_menu("spell")
 		return
 	if it.egg == "bowl":
 		Pets.feed(g, it)
@@ -295,6 +296,8 @@ static func rows(g, kind: String) -> Array:
 		return Hub.rows(g, kind)
 	if kind == "book":
 		return Book.rows(g)
+	if kind == "spell":
+		return Spell.rows(g)
 	var out = []
 	var hid: String = g.p.hkey
 	var me = Meta.hero(Meta.S.hero)
@@ -467,6 +470,10 @@ static func activate(g, row: Dictionary) -> void:
 		g.set_state("play")
 		Net.start(g)
 		return
+	if g.pending_say == "skill":
+		g.pending_say = ""
+		Wish.open_skill(g)
+		return
 	if g.pending_say != "":
 		g.say_mode = g.pending_say
 		g.pending_say = ""
@@ -515,7 +522,7 @@ const SIGN = {
 	"tree": ["SKILL TREE", "7adfff"], "armor": ["HERO RANKS", "7adfff"], "beast": ["PETS", "a6e84e"], "fuse": ["HERO FUSION", "e58cff"],
 	"loom": ["SOUL LOOM", "e58cff"], "board": ["RUN BOARD", "ffd24a"], "codex": ["CODEX", "d9d4c7"], "coop": ["CO-OP", "ffd24a"],
 	"quest": ["BOUNTIES", "ffd24a"], "trophy": ["TROPHIES", "ffd24a"], "armory": ["ARMORY", "ffb84a"], "brew": ["KITCHEN", "ffb84a"],
-	"tailor": ["TAILOR", "e56db2"], "prep": ["QUARTERMASTER", "ffb84a"], "lectern": ["NAME SKILL", "7adfff"],
+	"tailor": ["TAILOR", "e56db2"], "prep": ["QUARTERMASTER", "ffb84a"], "lectern": ["SPELLS", "7adfff"],
 	"fountain": ["WISHES", "7adfff"], "jukebox": ["MUSIC", "e58cff"], "capsule": ["CAPSULES", "e56db2"], "mail": ["MAIL", "7adfff"], "bowl": ["PET BOWL", "a6e84e"],
 }
 # [tile rect, colour, floor caption]

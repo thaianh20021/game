@@ -114,6 +114,20 @@ static func open_skill(g) -> void:
 static func update_say(g) -> void:
 	if g.state_t < 0.15:
 		return
+	if g.say_mode.begins_with("rc"):
+		# writing a combine recipe
+		if g.jpk(KEY_ESCAPE):
+			g.say_mode = ""
+			g.open_menu("spell")
+		elif g.jpk(KEY_ENTER) or g.jpk(KEY_KP_ENTER):
+			if g.Spell.write(int(g.say_mode.substr(2)), g.say):
+				Meta.save()
+				Sfx.play("chest")
+				g.say_mode = ""
+				g.open_menu("spell")
+			else:
+				Sfx.play("deny")
+		return
 	if g.say_mode != "":
 		# naming a notebook entry
 		if g.jpk(KEY_ESCAPE) or g.jpk(KEY_ENTER) or g.jpk(KEY_KP_ENTER):
@@ -152,6 +166,25 @@ static func clean(text: String) -> String:
 
 static func draw_say(g, ci: CanvasItem, Hud) -> void:
 	ci.draw_rect(Rect2(0, 0, 480, 270), Color(0.02, 0.01, 0.05, 0.78))
+	if g.say_mode.begins_with("rc"):
+		var r = g.Spell.parse(g.say)
+		Hud.panel(ci, Rect2(60, 56, 360, 158), Color(0.07, 0.05, 0.12, 0.97), Color("7adfff"))
+		Px.ctext(ci, Vector2(240, 64), "WRITE A RECIPE", Color("7adfff"), 2)
+		Px.ctext(ci, Vector2(240, 88), "TWO ELEMENTS, A SHAPE, A MOTION. ENGLISH OR VIETNAMESE.", Color("6b6779"))
+		Hud.panel(ci, Rect2(90, 100, 300, 18), Color(0.02, 0.01, 0.05, 1.0), Color("7adfff"))
+		Px.text(ci, Vector2(96, 106), Forge.fold(g.say).to_upper() + ("_" if int(g.time * 3.0) % 2 == 0 else ""), Color.WHITE)
+		var x = 96
+		for el in r.els:
+			ci.draw_texture(g.Art.T["ic_" + el], Vector2(x, 126))
+			Px.text(ci, Vector2(x + 11, 128), D.EL_NAME[el], D.EL_COL[el])
+			x += 22 + Px.width(D.EL_NAME[el])
+		if r.els.size() < 2:
+			Px.text(ci, Vector2(x, 128), "NEEDS TWO DIFFERENT ELEMENTS" if g.say != "" else "FIRE ICE WALL PUSH   /   XOAY SET DOC HUT", Color("ff6a6a") if g.say != "" else Color("6b6779"))
+		Px.text(ci, Vector2(96, 142), g.Spell.SHAPE_NAME[r.shape] + ": " + g.Spell.NOTE[r.shape], Color("ffd24a"))
+		Px.text(ci, Vector2(96, 153), r.verb.to_upper() + ": " + g.Spell.NOTE[r.verb], Color("ffd24a"))
+		Px.ctext(ci, Vector2(240, 172), "IN A FIGHT: PAINT BOTH ELEMENTS, THEN PRESS V", Color("a6e84e"))
+		Px.ctext(ci, Vector2(240, 190), "ENTER: SAVE     EMPTY + ENTER: CLEAR     ESC: CANCEL", Color("d9d4c7"))
+		return
 	if g.say_mode != "":
 		var def = g.Book.DEF[g.say_mode]
 		Hud.panel(ci, Rect2(70, 70, 340, 110), Color(0.07, 0.05, 0.12, 0.97), Color("ffd24a"))

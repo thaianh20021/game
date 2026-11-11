@@ -62,7 +62,8 @@ reactive rooms and pool hijacking (`src/env.gd`), typed wishes and named skills 
 nemesis that talks and can be spared into a boss-fight ally, graves that return the weapon you
 died with (`src/nemesis.gd`), per-floor weather with a daily forecast (`src/sky.gd`, preloaded as
 `Wx` because `Sky` is a native class), self-written alchemy notebook (`src/book.gd`), puzzle rooms
-(`src/puzzle.gd`). Next steps are in `rebirth/ROADMAP.md`.
+(`src/puzzle.gd`), Combine prototype: word recipes cast with V from the elements on the field
+(`src/spell.gd`; pad D-pad down, player two Y; not in LAN snapshots, no touch button). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested

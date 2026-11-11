@@ -36,6 +36,11 @@ You do not shoot foes down; you build weather, and you forge with words.
   lightning through mire to a rod. A barrel of the needed element always stands in the room.
 - Graves. Where a run ends, a grave stands on that floor in later runs: it seeps the element
   you used most and gives back the weapon you died holding.
+- Combine (prototype). At the lectern you write up to two recipes in words: two elements, a
+  shape (wall, vortex, wave) and a motion (push, pull), e.g. "fire ice wall push" or "xoay set
+  doc hut". In a fight, V gathers the elements lying near the aim point (fields, pools, burning
+  or chilled foes), uses them up and casts the matching recipe there. Automatic reactions are
+  unchanged. Not in LAN snapshots yet and no touch button.
 
 ## Run
 
@@ -53,6 +58,7 @@ Open this `rebirth` folder in Godot 4.7 and press F5, or:
 | Right click / Shift | Skill one |
 | F | Skill two |
 | R | Elemental Burst (when the bar is full) |
+| V | Combine: cast a written recipe from the elements near the aim point |
 | Space | Dash (invulnerable) |
 | Q | Swap weapon |
 | E | Talk, open, pick up, buy, enter |
@@ -241,6 +247,7 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/sky.gd` | Weather of a floor (loaded as `Wx`: `Sky` is a Godot class name) |
 | `src/book.gd` | The alchemy notebook: discoveries and the names you give them |
 | `src/puzzle.gd` | Puzzle rooms: chasm, braziers, conduit |
+| `src/spell.gd` | Combine: word recipes, gathering elements, wall / vortex / wave spells |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
@@ -269,6 +276,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `chem.gd` | Room chemistry, hijacking, wishes, named skills, nemesis, prep station |
 | `combo.gd` | Fields, storms, cataclysm |
 | `world.gd` | Weather, notebook, puzzle rooms, sparing the nemesis, graves |
+| `spell.gd` | Combine recipes: parsing, gathering, the three shapes, push and pull |
 | `forge.gd` | Word Forge and the starting loadout |
 | `anim.gd` | Pose frames and animation states |
 | `pets.gd` | Materials, seeds, garden, recipes, pets |
