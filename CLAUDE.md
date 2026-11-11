@@ -70,7 +70,7 @@ when their two elements react (`src/spell.gd`), terrain reactions for every elem
 prompts that follow the gamepad (`Pad.hint`: wrap any new on-screen key name in it). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
-physical controller; a debug APK builds (SDK path is in `rebirth/README.md`, adb is `C:/adb/adb`) but it has not been confirmed running on a phone; LAN was tested
+physical controller; a debug APK builds and installs on the owner's phone (SDK path is in `rebirth/README.md`; use the adb in that SDK's platform-tools, `C:/adb/adb` is from 2015 and loses the device) but nobody has reported how it plays there; LAN was tested
 only between two processes on one PC; text is English only.
 
 Work happens on branch `done`; `main` still has only the old prototype.

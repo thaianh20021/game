@@ -122,7 +122,7 @@ needs the Android SDK set in Godot's Editor Settings; then: `godot --headless --
 
 Built on 2026-11-11 with the SDK at
 `C:/Users/ADMIN/Documents/Codex/2026-11-05/la/work/android-sdk` (set as Godot's Android SDK path),
-install with `adb install -r build/dungeon-core.apk`. The project needs
+install with that SDK's `platform-tools/adb install -r build/dungeon-core.apk` (the old `C:/adb/adb` loses the device). The project needs
 `textures/vram_compression/import_etc2_astc=true` for this export; it is set.
 
 ## The Hearth (lobby)
