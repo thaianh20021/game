@@ -128,3 +128,65 @@ static func read_kb(g, pl: Dictionary) -> Dictionary:
 		if g.jp.has(k):
 			out.jp[KB2[k]] = true
 	return out
+
+# ---- prompts ---------------------------------------------------------------------
+# While player one is on a pad every key name on screen becomes the name printed on
+# that pad's buttons. Godot numbers buttons by position, so a Nintendo pad swaps letters.
+
+const NAMES = {
+	"xbox": {"SPACE": "A", "ENTER": "A", "ESC": "B", "E": "X", "Q": "Y", "RMB": "LB", "F": "RB", "LMB": "RT", "R": "R3"},
+	"ps": {"SPACE": "CROSS", "ENTER": "CROSS", "ESC": "CIRCLE", "E": "SQUARE", "Q": "TRIANGLE", "RMB": "L1", "F": "R1", "LMB": "R2", "R": "R3"},
+	"nin": {"SPACE": "B", "ENTER": "B", "ESC": "A", "E": "Y", "Q": "X", "RMB": "L", "F": "R", "LMB": "ZR", "R": "R3"},
+}
+const COMMON = {"WASD": "L-STICK", "MOUSE": "R-STICK", "W/S": "D-PAD", "1 2 3": "D-PAD", "ENTER OR CLICK": "", "O": "O"}
+static var _rx: RegEx = null
+static var _cache = {}
+
+# Which family of pad player one holds: "" (keyboard), "xbox", "ps" or "nin".
+static func style(g) -> String:
+	if not g.p1_pad:
+		return ""
+	if g.sim.has("pad_style"):
+		return g.sim.pad_style
+	var dev = device_for(g, 0)
+	if dev == -1:
+		return "xbox"
+	var n = Input.get_joy_name(dev).to_lower()
+	for w in ["ps3", "ps4", "ps5", "playstation", "dualshock", "dualsense", "sony"]:
+		if n.contains(w):
+			return "ps"
+	for w in ["nintendo", "switch", "joy-con", "joycon", "pro controller"]:
+		if n.contains(w):
+			return "nin"
+	return "xbox"
+
+# Name of one key ("E", "SPACE", "RMB"...) on what player one is holding.
+static func key_name(g, k: String) -> String:
+	var st = style(g)
+	return k if st == "" else str(NAMES[st].get(k, k))
+
+# A whole hint line with every key name in it swapped.
+static func hint(g, text: String) -> String:
+	var st = style(g)
+	if st == "":
+		return text
+	var id = st + text
+	if _cache.has(id):
+		return _cache[id]
+	if _rx == null:
+		_rx = RegEx.new()
+		_rx.compile("(?<![A-Z0-9])(ENTER OR CLICK|1 2 3|W/S|WASD|MOUSE|SPACE|ENTER|ESC|RMB|LMB|E|Q|F|R)(?![A-Z0-9'])")
+	var out = ""
+	var at = 0
+	for m in _rx.search_all(text):
+		var k = m.get_string()
+		var rep = str(COMMON[k]) if COMMON.has(k) else str(NAMES[st][k])
+		if k == "ENTER OR CLICK":
+			rep = str(NAMES[st]["ENTER"])
+		out += text.substr(at, m.get_start() - at) + rep
+		at = m.get_end()
+	out += text.substr(at)
+	if _cache.size() > 400:
+		_cache.clear()
+	_cache[id] = out
+	return out

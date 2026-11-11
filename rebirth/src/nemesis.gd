@@ -140,7 +140,7 @@ static func try_yield(g, e: Dictionary) -> bool:
 	e.st = {}
 	e.kb = Vector2.ZERO
 	g.inter.append({kind = "spare", pos = e.pos, uid = e.uid, name = e.nem_name})
-	g.banner = {text = e.nem_name + " YIELDS", sub = "E: SPARE IT AND IT WILL OWE YOU. OR FINISH IT.", t = 5.0}
+	g.banner = {text = e.nem_name + " YIELDS", sub = g.Pad.key_name(g, "E") + ": SPARE IT AND IT WILL OWE YOU. OR FINISH IT.", t = 5.0}
 	g.rings.append({pos = g.center(e), r = 30.0, t = 0.0, col = Color.WHITE})
 	Sfx.play("door", 0.7)
 	for b in g.bullets:

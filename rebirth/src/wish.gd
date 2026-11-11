@@ -73,7 +73,7 @@ static func draw_buff_line(g, ci: CanvasItem, Hud) -> void:
 	else:
 		Px.text(ci, Vector2(116, 211), Forge.fold(g.say).to_upper() + ("_" if int(g.time * 3.0) % 2 == 0 else ""), Color.WHITE)
 	if id != "":
-		Px.ctext(ci, Vector2(240, 228), "ENTER: THE CORE GRANTS " + buff_name(id), Color("ffd24a"))
+		Px.ctext(ci, Vector2(240, 228), g.Pad.key_name(g, "ENTER") + ": THE CORE GRANTS " + buff_name(id), Color("ffd24a"))
 	elif g.say != "":
 		Px.ctext(ci, Vector2(240, 228), "THE CORE DOES NOT UNDERSTAND", Color("ff6a6a"))
 

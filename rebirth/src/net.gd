@@ -249,7 +249,7 @@ static func apply(g, data: PackedByteArray) -> void:
 	g.traps = snap.tr
 	g.fields = snap.fd
 	for q in snap.pa.slice(g.patches.size()):
-		g.dg.terr[q.cell.y * g.dg.w + q.cell.x] = 0
+		g.dg.terr[q.cell.y * g.dg.w + q.cell.x] = g.Env.TURNS.get(q.kind, 0)
 	g.patches = snap.pa
 	g.nums = snap.nums
 	g.rings = snap.rings

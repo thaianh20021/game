@@ -77,6 +77,8 @@ static func zap(g, tr: Dictionary, r: float, el: String) -> void:
 
 static func update(g, dt: float) -> void:
 	for tr in g.traps:
+		if tr.get("off", false):
+			continue
 		tr.tick -= dt
 		if tr.kind == "rune":
 			tr.t -= dt
@@ -123,6 +125,11 @@ static func draw(g, ci: CanvasItem) -> void:
 	for tr in g.traps:
 		var p: Vector2 = tr.pos
 		if not g.on_screen(p, 60.0):
+			continue
+		if tr.get("off", false):
+			ci.draw_rect(Rect2(p + Vector2(-5, -5), Vector2(10, 10)), Color(0.1, 0.08, 0.12, 0.7))
+			ci.draw_line(p + Vector2(-4, -4), p + Vector2(4, 4), Color("e0b040"), 1.0)
+			ci.draw_line(p + Vector2(4, -4), p + Vector2(-4, 4), Color("e0b040"), 1.0)
 			continue
 		match tr.kind:
 			"spike":
@@ -184,7 +191,7 @@ static func draw(g, ci: CanvasItem) -> void:
 
 static func lights(g, l: Callable) -> void:
 	for tr in g.traps:
-		if not g.on_screen(tr.pos, 60.0):
+		if not g.on_screen(tr.pos, 60.0) or tr.get("off", false):
 			continue
 		match tr.kind:
 			"spore":

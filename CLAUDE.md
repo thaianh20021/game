@@ -66,10 +66,11 @@ died with (`src/nemesis.gd`), per-floor weather with a daily forecast (`src/sky.
 fields and storms generated from one aspect per element (`src/chem.gd`; a new element needs entries
 in `data.gd`, `chem.gd`, `art.gd` el_swap + icon, `forge.gd` words, `reso.gd`, `spell.gd` EL_WORD,
 and `tests/recipes.gd` checks it), three carried element slots, word recipes that cast themselves
-when their two elements react (`src/spell.gd`). Next steps are in `rebirth/ROADMAP.md`.
+when their two elements react (`src/spell.gd`), terrain reactions for every element (`src/env.gd`),
+prompts that follow the gamepad (`Pad.hint`: wrap any new on-screen key name in it). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
-physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested
+physical controller; a debug APK builds (SDK path is in `rebirth/README.md`, adb is `C:/adb/adb`) but it has not been confirmed running on a phone; LAN was tested
 only between two processes on one PC; text is English only.
 
 Work happens on branch `done`; `main` still has only the old prototype.

@@ -4,6 +4,11 @@ extends RefCounted
 #   fire  burns crates and sets dry brush alight (it spreads tile to tile)
 #   storm runs through a whole patch of mire and shocks everything standing in it
 #   venom eats through cracked walls
+#   stone fills pits                       earth fills pits and firms up mire
+#   water floods pits into mire, puts out fire pools
+#   leaf  overgrows mire into dry brush      wood  lays planks across pits
+#   metal cuts crates and cracked walls      gear  jams traps for good
+#   X     does what a random other element would do
 # and any element thrown into an ENEMY pool of a different element steals it: the pool
 # becomes one of your reaction fields (fire pool + ice = steam that swallows bullets).
 
@@ -20,24 +25,60 @@ static func terr(g, c: Vector2i) -> int:
 		return 0
 	return g.dg.terr[c.y * g.dg.w + c.x]
 
+# Patches that turn a tile into another terrain instead of plain floor.
+const TURNS = {"pond": 1, "growth": 4}
+
 static func patch(g, c: Vector2i, kind: String) -> void:
-	g.dg.terr[c.y * g.dg.w + c.x] = 0
+	g.dg.terr[c.y * g.dg.w + c.x] = TURNS.get(kind, 0)
 	g.patches.append({cell = c, kind = kind})
 
 # Something of element el happened at pos with radius rad.
 static func touch(g, pos: Vector2, rad: float, el: String) -> void:
 	if el == "" or el == "prism" or g.in_lobby:
 		return
+	if el == "x":
+		# the unknown element behaves as any of the others
+		var pool = D.ALL.filter(func(q): return q != "x")
+		el = pool[g.rng.randi() % pool.size()]
 	hijack(g, pos, rad, el)
 	g.Puzzle.touch(g, pos, rad, el)
-	if el == "tox":
+	if el == "tox" or el == "metal":
 		for c in g.dg.cracks:
 			if not c.open and cell_pos(c.cell).distance_to(pos) < rad + 14.0:
 				c.hp = 1
 				g.More.hit_crack(g, c.cell.x, c.cell.y)
-				g.tip("env_tox", "CORRODED", "VENOM EATS THROUGH CRACKED WALLS")
-				g.Book.find(g, "e_tox")
+				if el == "tox":
+					g.tip("env_tox", "CORRODED", "VENOM EATS THROUGH CRACKED WALLS")
+				else:
+					g.tip("env_metal", "CUT THROUGH", "METAL CUTS CRATES AND CRACKED WALLS")
+				g.Book.find(g, "e_" + el)
+		if el == "tox":
+			return
+		for pr in g.props:
+			if not pr.dead and pr.kind == "crate" and pr.pos.distance_to(pos) < rad + 7.0:
+				g.hurt_prop(pr, 99.0)
+				g.tip("env_metal", "CUT THROUGH", "METAL CUTS CRATES AND CRACKED WALLS")
+				g.Book.find(g, "e_metal")
 		return
+	if el == "mech":
+		for tr in g.traps:
+			if not tr.get("off", false) and tr.pos.distance_to(pos) < rad + 14.0:
+				tr.off = true
+				tr.st = "idle"
+				g.burst(tr.pos, 6, D.EL_COL["mech"], 50.0, 0.4)
+				g.label(tr.pos + Vector2(0, -14), "JAMMED", D.EL_COL["mech"])
+				Sfx.play("door", 1.6, -6.0)
+				g.tip("env_mech", "JAMMED", "GEARS JAM TRAPS FOR GOOD")
+				g.Book.find(g, "e_mech")
+		return
+	if el == "water":
+		for z in g.zones:
+			if z.el == "fire" and z.life > 0.0 and z.life < 9000.0 and z.pos.distance_to(pos) < z.r + rad:
+				z.life = 0.0
+				g.burst(z.pos, 6, Color("d8f6ff"), 30.0, 0.7, -50.0)
+				Sfx.play("freeze", 0.7, -10.0)
+				g.tip("env_water", "DOUSED", "WATER PUTS OUT FIRE AND FLOODS PITS")
+				g.Book.find(g, "e_water")
 	if el == "fire":
 		for pr in g.props:
 			if not pr.dead and pr.kind == "crate" and pr.pos.distance_to(pos) < rad + 7.0:
@@ -68,6 +109,30 @@ static func touch(g, pos: Vector2, rad: float, el: String) -> void:
 						patch(g, c, "rubble")
 						g.burst(cell_pos(c), 4, D.EL_COL["stone"], 40.0, 0.4)
 						g.Book.find(g, "e_stone")
+				"earth":
+					if t == 1 or t == 2:
+						patch(g, c, "soil" if t == 1 else "rubble")
+						g.burst(cell_pos(c), 4, D.EL_COL["earth"], 40.0, 0.4)
+						g.tip("env_earth", "FILLED IN", "EARTH FILLS PITS AND FIRMS UP MIRE")
+						g.Book.find(g, "e_earth")
+				"water":
+					if t == 2:
+						patch(g, c, "pond")
+						g.burst(cell_pos(c), 4, D.EL_COL["water"], 40.0, 0.4)
+						g.tip("env_water", "FLOODED", "WATER FLOODS PITS INTO MIRE AND PUTS OUT FIRE")
+						g.Book.find(g, "e_water")
+				"leaf":
+					if t == 1:
+						patch(g, c, "growth")
+						g.burst(cell_pos(c), 4, D.EL_COL["leaf"], 40.0, 0.4)
+						g.tip("env_leaf", "OVERGROWN", "LEAF TURNS MIRE INTO DRY BRUSH. BRUSH BURNS.")
+						g.Book.find(g, "e_leaf")
+				"wood":
+					if t == 2:
+						patch(g, c, "plank")
+						g.burst(cell_pos(c), 4, D.EL_COL["wood"], 40.0, 0.4)
+						g.tip("env_wood", "BRIDGED", "WOOD LAYS PLANKS ACROSS PITS")
+						g.Book.find(g, "e_wood")
 				"fire":
 					if t == 4:
 						ignite(g, c)
@@ -165,6 +230,30 @@ static func draw(g, ci: CanvasItem) -> void:
 				ci.draw_rect(Rect2(o, Vector2(16, 1)), Color("c99b5c"))
 				for i in 5:
 					ci.draw_rect(Rect2(o + Vector2(1 + (i * 7 + q.cell.x * 3) % 11, 2 + (i * 5 + q.cell.y) % 10), Vector2(4, 3)), Color("c99b5c") if i % 2 == 0 else Color("553423"))
+			"soil":
+				ci.draw_rect(Rect2(o, Vector2(16, 16)), Color("7a4a2a"))
+				ci.draw_rect(Rect2(o, Vector2(16, 1)), Color("b5562f"))
+				for i in 4:
+					ci.draw_rect(Rect2(o + Vector2(2 + (i * 5 + q.cell.x * 3) % 11, 3 + (i * 7 + q.cell.y) % 10), Vector2(2, 1)), Color("553423"))
+			"pond":
+				ci.draw_rect(Rect2(o, Vector2(16, 16)), Color("234a6e"))
+				ci.draw_rect(Rect2(o, Vector2(16, 1)), Color("16121d"))
+				var wv = int(g.time * 3.0 + q.cell.x + q.cell.y) % 3
+				ci.draw_rect(Rect2(o + Vector2(2 + wv * 3, 5), Vector2(5, 1)), Color("4aa8ff"))
+				ci.draw_rect(Rect2(o + Vector2(8 - wv * 2, 11), Vector2(4, 1)), Color("9fd8ff"))
+			"growth":
+				ci.draw_rect(Rect2(o, Vector2(16, 16)), Color("2b6a40"))
+				for i in 6:
+					var bx = 1 + (i * 5 + q.cell.x * 3) % 13
+					var by = 3 + (i * 7 + q.cell.y * 5) % 10
+					ci.draw_rect(Rect2(o + Vector2(bx, by), Vector2(1, 4)), Color("6fd66a"))
+					ci.draw_rect(Rect2(o + Vector2(bx + 1, by + 1), Vector2(1, 2)), Color("c8f5a0"))
+			"plank":
+				ci.draw_rect(Rect2(o, Vector2(16, 16)), Color("8f6a34"))
+				for i in 4:
+					ci.draw_rect(Rect2(o + Vector2(0, i * 4), Vector2(16, 1)), Color("553423"))
+				ci.draw_rect(Rect2(o + Vector2(2, 1), Vector2(1, 1)), Color("c99a5a"))
+				ci.draw_rect(Rect2(o + Vector2(13, 9), Vector2(1, 1)), Color("c99a5a"))
 			"ash":
 				ci.draw_rect(Rect2(o + Vector2(1, 1), Vector2(14, 14)), Color(0.06, 0.05, 0.07, 0.75))
 				for i in 4:

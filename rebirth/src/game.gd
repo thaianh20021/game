@@ -192,6 +192,13 @@ var hud: HudLayer
 # ---- boot ------------------------------------------------------------------------
 
 func _ready() -> void:
+	Input.joy_connection_changed.connect(func(dev: int, on: bool):
+		# plugging a pad in switches every prompt to it at once; pulling it out switches back
+		if on and dev == Pad.device_for(self, 0):
+			p1_pad = true
+			pad_used = true
+		elif not on and Pad.device_for(self, 0) == -1:
+			p1_pad = false)
 	rng.randomize()
 	Art.build()
 	Px.build()
@@ -273,7 +280,7 @@ func tip(id: String, text: String, sub: String) -> void:
 	if in_lobby or Meta.S.tips.has(id):
 		return
 	Meta.S.tips[id] = true
-	banner = {text = text, sub = sub, t = 4.5}
+	banner = {text = text, sub = Pad.hint(self, sub) if id in ["burst", "swap"] else sub, t = 4.5}
 
 # Picks up the run saved at the start of its last floor.
 func resume_run() -> void:
@@ -1025,7 +1032,7 @@ func pick_buff(i: int) -> void:
 func charge_res(mult: float = 1.0) -> void:
 	p.res = minf(1.0, p.res + 0.2 * mult * st.res * (2.0 if p.sk.cat else 1.0))
 	if p.res >= 1.0:
-		tip("burst", "BURST READY", "PRESS R (R3 ON A PAD) TO HIT EVERYTHING ON SCREEN")
+		tip("burst", "BURST READY", "PRESS R TO HIT EVERYTHING ON SCREEN")
 
 # Where an enemy should shoot. arm 1 leads the target using the player's velocity.
 func aim_dir(from: Vector2, spd: float, arm: int) -> Vector2:
@@ -1310,7 +1317,7 @@ func set_el(i: int) -> void:
 	Sfx.play("pick", 1.4, -4.0)
 	rings.append({pos = pcenter(), r = 16.0, t = 0.0, col = D.EL_COL[el]})
 	label(p.pos + Vector2(0, -22), D.EL_NAME[el] + ("" if native(p.weapons[p.wi], el) else "  80%"), D.EL_COL[el])
-	tip("slots", "1 2 3 CHANGE YOUR ELEMENT", "A WEAPON HITS FULL IN ITS OWN ELEMENT, 80% IN OTHERS")
+	tip("slots", Pad.hint(self, "1 2 3") + " CHANGE YOUR ELEMENT", "A WEAPON HITS FULL IN ITS OWN ELEMENT, 80% IN OTHERS")
 
 func cur_el() -> String:
 	var w = p.weapons[p.wi]
@@ -3322,11 +3329,12 @@ func draw_prompt(ci: CanvasItem) -> void:
 						txt = D.RELICS[near.item.id].name
 						col = Color("ffd24a")
 		var at = near.pos + Vector2(0, -44 if (near.kind == "portal" or near.kind == "gate") else -30)
-		at.x = clampf(at.x, cam_tl.x + Px.width("E " + txt) / 2.0 + 6.0, cam_tl.x + VW - Px.width("E " + txt) / 2.0 - 6.0)
-		var wdt = Px.width("E " + txt)
+		var ekey = Pad.key_name(self, "E")
+		var wdt = Px.width(ekey + " " + txt)
+		at.x = clampf(at.x, cam_tl.x + wdt / 2.0 + 6.0, cam_tl.x + VW - wdt / 2.0 - 6.0)
 		ci.draw_rect(Rect2(at.x - wdt / 2.0 - 3, at.y - 2, wdt + 6, 11), Color(0.05, 0.03, 0.09, 0.8))
-		Px.text(ci, at - Vector2(wdt / 2.0, 0), "E", Color("ffd24a"))
-		Px.text(ci, at - Vector2(wdt / 2.0 - 12, 0), txt, col)
+		Px.text(ci, at - Vector2(wdt / 2.0, 0), ekey, Color("ffd24a"))
+		Px.text(ci, at - Vector2(wdt / 2.0 - Px.width(ekey + " "), 0), txt, col)
 
 func draw_lights(ci: CanvasItem) -> void:
 	if state == "title" or p.is_empty():

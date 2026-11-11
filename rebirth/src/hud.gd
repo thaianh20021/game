@@ -125,8 +125,8 @@ static func draw_title(g, ci: CanvasItem) -> void:
 		var tex: Texture2D = Art.T[["h_" + id + "_1", "h_" + id, "h_" + id + "_2", "h_" + id][int(t * 7.0 + i) % 4]]
 		big(ci, tex, Vector2(150 + i * 50, 140), 3.0)
 	var pulse = 0.5 + 0.5 * sin(t * 4.0)
-	Px.ctext(ci, Vector2(240, 208), "PRESS ENTER", GOLD.lerp(Color.WHITE, pulse), 2)
-	Px.ctext(ci, Vector2(240, 256), "WASD MOVE  MOUSE AIM  LMB FIRE  RMB + F SKILLS  R BURST  SPACE DASH  Q SWAP  E USE", DIM)
+	Px.ctext(ci, Vector2(240, 208), g.Pad.hint(g, "PRESS ENTER"), GOLD.lerp(Color.WHITE, pulse), 2)
+	Px.ctext(ci, Vector2(240, 256), g.Pad.hint(g, "WASD MOVE  MOUSE AIM  LMB FIRE  RMB + F SKILLS  R BURST  SPACE DASH  Q SWAP  E USE"), DIM)
 	if Meta.S.best > 0:
 		Px.text(ci, Vector2(6, 6), "BEST FLOOR %d" % Meta.S.best, DIM)
 	if Meta.S.wins > 0:
@@ -357,7 +357,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 			Px.ctext(ci, Vector2(VW / 2.0, by + 18.0), g.banner.sub, Color(PALE.r, PALE.g, PALE.b, a))
 	if g.floor_i == 0 and not g.in_lobby and g.run_time < 14.0 and g.state == "play" and not g.tin.on:
 		var a = clampf(14.0 - g.run_time, 0.0, 1.0)
-		Px.ctext(ci, Vector2(190, 246), "TWO WEAPONS: Q SWAPS - RMB, F SKILLS - SPACE DASH", Color(PALE.r, PALE.g, PALE.b, a))
+		Px.ctext(ci, Vector2(190, 246), g.Pad.hint(g, "TWO WEAPONS: Q SWAPS - RMB, F SKILLS - SPACE DASH"), Color(PALE.r, PALE.g, PALE.b, a))
 
 static func draw_minimap(g, ci: CanvasItem) -> void:
 	var rooms = g.dg.rooms
@@ -476,7 +476,7 @@ static func draw_menu(g, ci: CanvasItem) -> void:
 				Px.text(ci, Vector2(r.end.x - 6 - Px.width(stx[0]), r.position.y + 6), stx[0], stx[1])
 	if g.menu.msg != "":
 		Px.ctext(ci, Vector2(240, 224), g.menu.msg, Color("ff6a6a"))
-	Px.ctext(ci, Vector2(240, 235), "W/S CHOOSE   ENTER OR CLICK CONFIRM   ESC CLOSE", DIM)
+	Px.ctext(ci, Vector2(240, 235), g.Pad.hint(g, "W/S CHOOSE   ENTER OR CLICK CONFIRM   ESC CLOSE"), DIM)
 
 static func draw_talk(g, ci: CanvasItem) -> void:
 	var tk = g.talk
@@ -497,7 +497,7 @@ static func draw_talk(g, ci: CanvasItem) -> void:
 		Px.text(ci, Vector2(88, 211 + k * 11), part, PALE)
 		left -= ls[k].length() + 1
 	if left >= 0 and int(g.time * 3.0) % 2 == 0:
-		Px.text(ci, Vector2(438, 244), "E >", GOLD)
+		Px.text(ci, Vector2(438, 244), g.Pad.key_name(g, "E") + " >", GOLD)
 	Px.text(ci, Vector2(88, 244), "%d/%d" % [tk.i + 1, tk.lines.size()], DIM)
 
 static func draw_pause(g, ci: CanvasItem) -> void:
@@ -541,8 +541,8 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 			y2 += 10
 	if not g.in_lobby:
 		Px.text(ci, Vector2(30, 248), "SEED %d   HEAT %d%s" % [g.run_seed, g.run_heat, "   DAILY" if g.run_daily else ""], DIM)
-	Px.ctext(ci, Vector2(240, 170), "WASD MOVE   MOUSE AIM   LMB FIRE   SPACE DASH   Q SWAP   E USE", PALE)
-	Px.ctext(ci, Vector2(240, 182), "RMB SKILL ONE   F SKILL TWO   R ELEMENTAL BURST WHEN CHARGED", PALE)
+	Px.ctext(ci, Vector2(240, 170), g.Pad.hint(g, "WASD MOVE   MOUSE AIM   LMB FIRE   SPACE DASH   Q SWAP   E USE"), PALE)
+	Px.ctext(ci, Vector2(240, 182), g.Pad.hint(g, "RMB SKILL ONE   F SKILL TWO   R ELEMENTAL BURST WHEN CHARGED"), PALE)
 	Px.ctext(ci, Vector2(240, 200), "THE FOES LEARN. CUNNING %d%%. THEY LEAD THEIR SHOTS %d%% OF THE TIME." % [int(Meta.cunning() * 100.0), int(Meta.lead_share() * 100.0)], Color("ff8a6a"))
 	if g.tin.on:
 		panel(ci, Rect2(120, 226, 110, 20), Color(0.1, 0.2, 0.1, 0.95), Color("a6e84e"))
@@ -552,7 +552,7 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 		panel(ci, Rect2(185, 204, 110, 18), Color(0.1, 0.1, 0.2, 0.95), PALE)
 		Px.ctext(ci, Vector2(240, 210), "SETTINGS", PALE)
 	else:
-		Px.ctext(ci, Vector2(240, 236), "ESC RESUME    O SETTINGS    Q " + ("QUIT TO TITLE" if g.in_lobby else "ABANDON RUN"), GOLD)
+		Px.ctext(ci, Vector2(240, 236), g.Pad.hint(g, "ESC RESUME    O SETTINGS    Q " + ("QUIT TO TITLE" if g.in_lobby else "ABANDON RUN")), GOLD)
 
 static func draw_buff(g, ci: CanvasItem) -> void:
 	ci.draw_rect(Rect2(0, 0, VW, VH), Color(0.02, 0.01, 0.05, 0.8))
@@ -596,4 +596,4 @@ static func draw_end(g, ci: CanvasItem, win: bool) -> void:
 		Px.text(ci, Vector2(130, 96 + i * 13), rows[i][0], DIM)
 		Px.text(ci, Vector2(230, 96 + i * 13), rows[i][1], GEM if i == 5 else PALE)
 	if g.state_t > 1.0:
-		Px.ctext(ci, Vector2(240, 214), "PRESS ENTER TO RETURN TO THE HEARTH", GOLD.lerp(Color.WHITE, 0.5 + 0.5 * sin(g.time * 4.0)))
+		Px.ctext(ci, Vector2(240, 214), g.Pad.hint(g, "PRESS ENTER TO RETURN TO THE HEARTH"), GOLD.lerp(Color.WHITE, 0.5 + 0.5 * sin(g.time * 4.0)))

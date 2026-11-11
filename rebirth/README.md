@@ -10,6 +10,10 @@ You do not shoot foes down; you build weather, and you forge with words.
 
 - Weapons are brushes. They deal modest damage and paint elements; fields and storms do the
   killing (a field out-damages a basic weapon roughly 2.5 to 1).
+- The newer elements work on the room too: stone and earth fill pits (earth also firms up
+  mire), water floods pits into mire and puts out fire pools, leaf overgrows mire into dry
+  brush (which burns), wood lays planks across pits, metal cuts crates and cracked walls,
+  gear jams traps for good, and X does what a random other element would.
 - The room reacts. Ice freezes mire into firm ground and bridges pits. Fire burns crates and
   walks through dry brush tile by tile. Lightning runs through a whole patch of mire and shocks
   everything standing in it, you included. Venom eats through cracked walls.
@@ -76,6 +80,10 @@ Open this `rebirth` folder in Godot 4.7 and press F5, or:
 
 ## Gamepad
 
+On-screen prompts follow what player one is holding: plug a pad in (or press anything on it) and
+every key name becomes that pad's button (Xbox letters, PlayStation shapes as words, Nintendo
+letters by position); touch a key or the mouse and they switch back. See `Pad.hint` / `Pad.key_name`.
+
 | Pad | Action |
 |---|---|
 | Left stick | Move |
@@ -111,6 +119,11 @@ Use the Link Stone in the Hearth.
 
 `export_presets.cfg` has an Android preset (arm64, landscape, network permissions). Building an APK
 needs the Android SDK set in Godot's Editor Settings; then: `godot --headless --path rebirth --export-debug Android build/dungeon-core.apk`.
+
+Built on 2026-11-11 with the SDK at
+`C:/Users/ADMIN/Documents/Codex/2026-11-05/la/work/android-sdk` (set as Godot's Android SDK path),
+install with `adb install -r build/dungeon-core.apk`. The project needs
+`textures/vram_compression/import_etc2_astc=true` for this export; it is set.
 
 ## The Hearth (lobby)
 
@@ -288,6 +301,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `combo.gd` | Fields, storms, cataclysm |
 | `world.gd` | Weather, notebook, puzzle rooms, sparing the nemesis, graves |
 | `recipes.gd` | Fifteen elements, generated reactions and storms, element slots, recipes |
+| `terra.gd` | The newer elements against terrain, crates, walls and traps; gamepad prompts |
 | `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |
 | `forge.gd` | Word Forge and the starting loadout |
 | `anim.gd` | Pose frames and animation states |
