@@ -23,6 +23,8 @@ static func wname(w: Dictionary) -> String:
 	else:
 		s += D.EL_PREFIX[w.el]
 	var tr: String = w.get("trait", "")
+	if w.has("fname"):
+		return s + str(w.fname)
 	return s + D.WEAPONS[w.id].name + (" OF " + Arms.TRAIT_NAME[tr] if tr != "" else "")
 
 static func station_cost(g, it: Dictionary) -> int:

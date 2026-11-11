@@ -20,63 +20,60 @@ static var tiles = []  # per biome: {floor: [Image], face: [Image]}
 
 const MAPS = {
 	"h_warden": """
-.....rr.....
-....GGGGr...
-...GwGGGGG..
-..GwGGGGGGg.
-..GGGkkkkkg.
-..GGGkckkcg.
-..GGGGGGGGg.
-...gGGGGgg..
-..BbbbbbbB..
-.GBbbyybbBG.
-.GBbbbbbbBG.
-..BBbbbbBB..
-..gg....gg..
-..KK....KK..""",
-	"h_arcanist": """
-......pp....
-.....pppP...
-....ppppP...
-...pppppPP..
-..yyyyyyyyy.
-.PpppppppppP
-..SsskssksS.
-..Ssssssss..
-...pppppp...
-..ppPyyPpp..
-.spppppppps.
-..pppppppp..
-..PppppppP..
-..PP....PP..""",
-	"h_ranger": """
-....nnnn....
-...nnnnnn...
-..nnNNNNnn..
-..nNsssssn..
-..nNskssks..
-..nNssssss..
-...nNssss...
-..tnnnnnnt..
-.snnNttNnns.
-..nnnttnnn..
-..NnnnnnnN..
-..tt....tt..
+....yyyy....
+...yeeeey...
+..yeeeeeey..
+..yekCCkey..
+..yeeeeeey..
+...yyyyyy...
+.gyeeeeeeyg.
+.gyeoyyoeyg.
+.gyeoYYoeyg.
+..yeeeeeey..
+..yy.gg.yy..
 ..TT....TT..""",
-	"h_nightblade": """
+	"h_arcanist": """
+.....KK.....
 ....KKKK....
-...KKKKKK...
-..KKKKKKKK..
-..KKgggggK..
-..KKwkgwkK..
-..KKKKKKKK..
-...rrrrrr.r.
-..KKKrrKKrr.
-.gKKKKKKKKg.
-..KKKmmKKK..
-..KKKKKKKK..
-..KK....KK..
-..gg....gg..""",
+...KyYYyK...
+...KYwwYK...
+...KyYYyK...
+....KKKK....
+...bbbbbb...
+..bbBbbBbb..
+.bbbbbbbbbb.
+.b.bbbbbb.b.
+...bbbbbb...
+..bbbbbbbb..
+..BB....BB..""",
+	"h_ranger": """
+.....tt.....
+....tttt....
+...teeeet...
+..tekeeket..
+..teeeeeyyy.
+..teeeeeey..
+...tttttt...
+..tteeeett..
+.ttteeeettt.
+.t.teeeet.t.
+...tttttt...
+...y....y...
+..yy...yy...""",
+	"h_nightblade": """
+..w......w..
+..ww....ww..
+..wwwwwwww..
+..wwwwwwww..
+..wkwwwwkw..
+..wwrwwrww..
+...wwkkww...
+..PPPPPPPP..
+.PPPpPPpPPP.
+..PPPPPPPP..
+..PPPPPPPP..
+..PP....PPw.
+..KK....KK..""",
 	"slime": """
 ....llll....
 ..llnnnnll..
@@ -277,10 +274,11 @@ RrrrrR.rooyyyyoor.RrrrrR
 ....P...PpppP...P.....
 ..........PP..........""",
 	"pistol": """
-gGGGGGc.
-gGGGGGGc
-tt.g....
-tt......""",
+......Gc
+...gGGCc
+ttGGGGCc
+tt.gGGCc
+......Gc""",
 	"kunai": """
 .....GG...
 tt.GGwwGG.
@@ -581,34 +579,32 @@ mmmmpp
 .mmpp.
 ..pp..""",
 	"h_alchemist": """
-....wwww....
-...wwwwww...
-..wwwwwwww..
-..wsssssssw.
-..ykcyykcy..
-..ssssssss..
-...sssSss...
+..nn....nn..
+.nwknnnnwkn.
+.nnnnnnnnnn.
+.nnnnnnnnnn.
+.nlllllllln.
 ..nnnnnnnn..
-.snnlnnlnns.
-..nnnyynnn..
-..NnnnnnnN..
-..tt....tt..
-..TT....TT..""",
-	"h_berserker": """
-.w........w.
-.ww.rrrr.ww.
-..wrrrrrrw..
-..rrrrrrrr..
-..rsssssss..
-..rskssksr..
-..sssrrsss..
-...srrrrs...
-.tSssssssSt.
-.sSsttttsSs.
-..ttttyttt..
+..ttttttttc.
+.nttettettC.
+.nttttttttc.
 ..tttttttt..
-..SS....SS..
-..TT....TT..""",
+..nn....nn..
+.nnn....nnn.""",
+	"h_berserker": """
+.GG......GG.
+G.GG....GG.G
+G..wwwwww..G
+...wwwwww...
+...wkwwkw...
+...wwwwww...
+....wkkw....
+..rrrrrrrr..
+.srrRrrRrrs.
+.s.rrrrrr.s.
+...rrrrrr...
+...tt..tt...
+..TTT..TTT..""",
 	"sk_whirl": """
 ...wwww...
 ..w....w..
@@ -959,22 +955,24 @@ ttyyCwwwwwwwwwwwc
 ..yyGGGGGGGGGGGc.
 ...y.............""",
 	"shotgun": """
-.KggggggggggK
-.gGGGGGGGGGGc
-ttgGGGGGGGGGc
-tttKggg......
-.tt..........""",
+...nnnnn..
+..ncncncnC
+ttnnnnnnnC
+..ncncncnC
+...nnnnn..""",
 	"smg": """
-..gGGGGGGGGc
-ttgGcCGGGGk.
-ttgggg.g....
-.tt..gg.....""",
+...yyyy...
+..yKyKyyc.
+ttyyyyyyCc
+..yKyKyyc.
+...yyyy...""",
 	"sprayer": """
-..KKKK.......
-.gGGGGgggggc.
-ttGcCGGGGGGCc
-ttgGGGggggc..
-.tt.KK.......""",
+.....gg...
+....gGGg..
+ttttGcCGc.
+....GcCGc.
+....gGGg..
+.....gg...""",
 	"coil": """
 .........c.c..
 ........cCcCc.
@@ -982,11 +980,12 @@ tttttttttCwC..
 ........cCcCc.
 .........c.c..""",
 	"mortar": """
-...KggggggK.
-..gGGGGGGGGc
-ttgGcCcGGGGc
-tt.KggggggK.
-ttt.........""",
+..tttttt.
+.tcccccct
+ttCwwwwCt
+ttcccccct
+..tttttt.
+..e....e.""",
 	"flask": """
 ....ww..
 ...GccG.
@@ -995,11 +994,9 @@ ttGccCcG
 ...GccG.
 ....GG..""",
 	"railgun": """
-..gggggggggggggg.
-.gGGcGGcGGcGGcGGc
-ttgKKKKKKKKKKKKK.
-ttgGGcGGcGGcGGcGc
-.tt.gggggggggggg.""",
+.....cCCCCCCCCCc.
+ttttcCwwwwwwwwwCc
+.....cCCCCCCCCCc.""",
 	"lance": """
 ..gGGGGGGGg....
 ttgGcCCCCCCCCCw
@@ -1083,10 +1080,12 @@ cCc...cCc
 Cc.....cC
 c.......c""",
 	"twins": """
-gGGGGc..
-tt......
-..gGGGGc
-..tt....""",
+.gGGc...
+gGcCGc..
+.gGGc...
+...gGGc.
+tt.GcCGc
+...gGGc.""",
 	"spear": """
 ..............c.
 tttttttttttttGCc
@@ -1112,38 +1111,41 @@ pPcCCcPp
 pwwwwwwp
 .PPPPPP.""",
 	"launcher": """
-.KggggggggggK.
-gGGGGGGGGGGGcC
-ttgGGcCcGGGGcC
-ttKggggggggK..
-.tt...........""",
+........gGc
+.....gGGGCc
+..gGGGGGGCc
+ttGGcCcGGCc
+tt.gGGGGGCc
+.....gGGGCc
+........gGc""",
 	"h_engineer": """
-...yyyyyy...
-..yyyyyyyy..
-.yyyyyyyyyy.
-..sGcsscGs..
-..ssssssss..
-...ssSSss...
-..tttttttt..
-.sttGttGtts.
-..ttyttytt..
-..tttttttt..
-..bb....bb..
-..KK....KK..""",
+.....r......
+.....g......
+...gggggg...
+..gGGGGGGg..
+..gGcCGcCg..
+..gGGGGGGg..
+...gggggg...
+..oooooooo..
+.goobooboog.
+.g.oooooo.g.
+...oooooo...
+...KK..KK...
+..KKK..KKK..""",
 	"h_wildheart": """
-..n......n..
-..nt.nn.tn..
-...tnnnnt...
-..nnnnnnnn..
-..nsssssss..
-..nskssksn..
-..nssssssn..
-...lnnnnl...
-.snnllllnns.
-..nnnttnnn..
-..NnnnnnnN..
-..ee....ee..
-..TT....TT..""",
+...rrrrrr...
+..rrwrrrwr..
+.rrrrrrrrrr.
+rrwrrrrrrwrr
+rrrrrrwrrrrr
+.RRRRRRRRRR.
+...eeeeee...
+...ekeeke...
+...eeeeee...
+..leeeeeel..
+...eeeeee...
+...ee..ee...
+...SS..SS...""",
 	"sk_turret": """
 ....ww....
 ...wGGw...

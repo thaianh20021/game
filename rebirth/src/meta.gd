@@ -159,17 +159,8 @@ static func hero_key(h: Dictionary) -> String:
 static func hero_lv(key: String) -> int:
 	return int(S.hero_lv.get(key, 0))
 
-const FUSE_NAMES = {
-	"arcanist+warden": "SPELLBLADE", "ranger+warden": "SENTINEL", "nightblade+warden": "DREADKNIGHT",
-	"arcanist+ranger": "RUNE ARCHER", "arcanist+nightblade": "HEXBLADE", "nightblade+ranger": "STALKER",
-	"alchemist+warden": "IRON CHEMIST", "alchemist+arcanist": "MAGISTER", "alchemist+ranger": "APOTHECARY",
-	"alchemist+nightblade": "POISONER", "berserker+warden": "WARLORD", "arcanist+berserker": "STORMCALLER",
-	"berserker+ranger": "HUNTSMAN", "berserker+nightblade": "REAVER", "alchemist+berserker": "MUTANT",
-	"alchemist+engineer": "ARTIFICER", "arcanist+engineer": "TECHNOMANCER", "engineer+warden": "IRONCLAD", "engineer+ranger": "SHARPSHOOTER",
-	"engineer+nightblade": "SABOTEUR", "berserker+engineer": "JUGGERNAUT", "engineer+wildheart": "GROVE TINKER",
-	"alchemist+wildheart": "HERBALIST", "arcanist+wildheart": "SHAMAN", "warden+wildheart": "OAKGUARD", "ranger+wildheart": "BEASTMASTER",
-	"nightblade+wildheart": "THORNSTALKER", "berserker+wildheart": "PRIMAL",
-}
+# fused heroes are named by splicing the two names together
+const FUSE_NAMES = {}
 
 static func fuse_key(a: Dictionary, b: Dictionary) -> String:
 	var pair = [hero_key(a), hero_key(b)]

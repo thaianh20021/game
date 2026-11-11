@@ -5,6 +5,7 @@ const D = preload("res://src/data.gd")
 const Meta = preload("res://src/meta.gd")
 const Lobby = preload("res://src/lobby.gd")
 const More = preload("res://src/more.gd")
+const Forge = preload("res://src/forge.gd")
 var g
 var fails = 0
 
@@ -139,6 +140,9 @@ func run_hero(hero: int, fuse: int, pet: String, mount: String) -> void:
 				g.p.pos = it.pos + Vector2(0, 6)
 				await step(2)
 				g.interact(it)
+				if g.state == "forge":
+					g.forge.text = ["lua nhanh", "ice bow many", "", "sấm nổ kiếm"][wk % 4]
+					Forge.confirm(g)
 				while g.state == "talk":
 					g.jp[KEY_E] = true
 					await step(8)

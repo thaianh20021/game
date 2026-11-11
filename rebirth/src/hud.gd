@@ -9,6 +9,7 @@ const Touch = preload("res://src/touch.gd")
 const Hub = preload("res://src/hub.gd")
 const Reso = preload("res://src/reso.gd")
 const Pets = preload("res://src/pets.gd")
+const Forge = preload("res://src/forge.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -36,6 +37,9 @@ static func menu_rect(kind: String, i: int) -> Rect2:
 	if kind == "tree":
 		return Rect2(98 + (i / 3) * 98, 80 + (i % 3) * 40, 88, 30)
 	return Rect2(100, 52 + i * 21, 280, 20)
+
+static func Hud_self():
+	return load("res://src/hud.gd")
 
 static func panel(ci: CanvasItem, r: Rect2, fill: Color = Color(0.07, 0.05, 0.12, 0.9), border: Color = Color("6b6779")) -> void:
 	ci.draw_rect(Rect2(r.position + Vector2(1, 1), r.size - Vector2(2, 2)), fill)
@@ -70,6 +74,7 @@ static func draw(g, ci: CanvasItem) -> void:
 				"pause": draw_pause(g, ci)
 				"buff": draw_buff(g, ci)
 				"menu": draw_menu(g, ci)
+				"forge": Forge.draw(g, ci, Hud_self())
 				"talk": draw_talk(g, ci)
 				"dead": draw_end(g, ci, false)
 				"win": draw_end(g, ci, true)
@@ -275,7 +280,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		Px.text(ci, Vector2(ex + 10, wr.position.y + 5), D.EL_NAME[k], D.EL_COL[k])
 		ex += 14 + Px.width(D.EL_NAME[k])
 	var lv = int(w.get("lv", 0))
-	Px.text(ci, wr.position + Vector2(40, 15), ("+%d " % lv if lv > 0 else "") + def.name, D.RAR_COL[def.rar])
+	Px.text(ci, wr.position + Vector2(40, 15), ("+%d " % lv if lv > 0 else "") + def.name, GOLD if w.has("fname") else D.RAR_COL[def.rar])
 	if def.cost > 0.0:
 		Px.text(ci, wr.position + Vector2(40, 25), "COST " + str(def.cost).trim_suffix(".0"), Color("4aa8f0") if p.en >= def.cost else Color("ff6a6a"))
 	else:
@@ -340,7 +345,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 			Px.ctext(ci, Vector2(VW / 2.0, by + 18.0), g.banner.sub, Color(PALE.r, PALE.g, PALE.b, a))
 	if g.floor_i == 0 and not g.in_lobby and g.run_time < 14.0 and g.state == "play" and not g.tin.on:
 		var a = clampf(14.0 - g.run_time, 0.0, 1.0)
-		Px.ctext(ci, Vector2(232, 246), "LMB FIRE - RMB AND F SKILLS - R BURST - SPACE DASH - Q SWAP", Color(PALE.r, PALE.g, PALE.b, a))
+		Px.ctext(ci, Vector2(232, 246), "YOU CARRY TWO WEAPONS: Q SWAPS - RMB AND F SKILLS - SPACE DASH", Color(PALE.r, PALE.g, PALE.b, a))
 
 static func draw_minimap(g, ci: CanvasItem) -> void:
 	var rooms = g.dg.rooms

@@ -12,7 +12,7 @@ const CHARGE = 1.0
 const MOVE = {"chase": "slam", "bat": "burst", "shoot": "volley", "spread": "double", "charge": "quake", "turret": "nova", "blink": "cross"}
 
 static func cooldown(g, e: Dictionary) -> float:
-	return g.rng.randf_range(6.0, 11.0) * (0.5 if e.elite else 1.0)
+	return g.rng.randf_range(4.0, 8.0) * (0.5 if e.elite else 1.0)
 
 # Returns true while the foe is busy charging (its normal behaviour is skipped).
 static func special(g, e: Dictionary, dt: float, dir: Vector2, dist: float) -> bool:

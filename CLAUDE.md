@@ -5,8 +5,12 @@ old prototype and is kept only for reference: do not edit it.
 
 ## What the game is
 
-Top-down roguelike shooter inspired by twin-weapon dungeon crawlers plus an elemental reaction
-system. Original names and art; never copy another game's characters, names or assets.
+Top-down roguelike shooter, bullet-hell leaning, built around an elemental reaction system.
+The owner asked (2026-11-11) that heroes and weapons must NOT resemble Soul Knight: the cast is
+creatures and constructs (Brassheart, Lantern, Kestrel, Veil, Croak, Ramskull, Rivet, Mosscap) and
+weapons are horns, pods, bells, lenses and the like, not guns. Keep new content in that style and
+never copy another game's characters, names or assets. Internal ids (warden, pistol, rail...) are
+old and do not match display names.
 All sprites, tiles, sounds and music are generated from code at boot (no asset files).
 In-game text is English capitals only (the pixel font has no other glyphs). The owner writes in Vietnamese.
 
@@ -46,7 +50,8 @@ settings menu, first-time hints, solo run save and continue, floor traps (spikes
 element/reaction/boss visual effects (`src/fx.gd`), elemental resonance (`src/reso.gd`), fusion
 traits and homing/returning shots (`src/arms.gd`), mire and pits (`dg.terr`, generated in
 `src/dungeon.gd`), blueprints, scrap and workbenches (`src/more.gd`, `src/hub.gd`), crafting materials and recipes,
-seed drops and a five-plot garden, pet skills with hearts and exclusive passives (`src/pets.gd`). Next steps are in `rebirth/ROADMAP.md`.
+seed drops and a five-plot garden, pet skills with hearts and exclusive passives (`src/pets.gd`), Word Forge (`src/forge.gd`), two starting
+weapons, hub name plates and rugs, harder bullet-dense tuning. Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested

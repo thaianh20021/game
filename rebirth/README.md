@@ -3,6 +3,7 @@
 | `src/pad.gd` | Gamepad input and local player two |
 | `src/touch.gd` | Touch sticks and buttons |
 | `src/pets.gd` | Pet skills, hearts, exclusive passives, the pet bowl |
+| `src/forge.gd` | Word Forge: command parsing (EN/VI/pad) and forged weapons |
 | `src/reso.gd` | Elemental resonance: stacks, the four bursts, attunement |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
@@ -79,6 +80,9 @@ needs the Android SDK set in Godot's Editor Settings; then: `godot --headless --
 
 ## The Hearth (lobby)
 
+Every station has a name plate and each area a coloured rug (heroes, starting element, garden,
+daily, supplies, craft). Arrows on the floor point to the shops in the south wing.
+
 Every run starts and ends here. Gems earned in runs are spent here and are kept forever.
 
 - Walk up to another hero and press E to play as them. Touch a crystal to pick your starting element.
@@ -110,14 +114,23 @@ Every run starts and ends here. Gems earned in runs are spent here and are kept 
 
 - Carry 2 weapons, each with an element (fire, ice, storm, venom). Two different elements on one foe
   trigger a reaction: Melt, Blast, Overload, Shatter, Blight, Plague. Reactions charge the Burst bar.
+- Word Forge (the altar in workshop rooms, 30 gold): melts both carried weapons into one stronger,
+  partly random weapon steered by a command. Type what you want in English or Vietnamese, with or
+  without accents ("fast fire bow", "cung lửa nhanh", "kiem bang manh"), or press pad buttons
+  (d-pad up/right/down/left = fire/storm/ice/venom, A many, B blast, X pierce, Y seek, RB fast,
+  R3 strong, LB undo, START forge, BACK cancel). Words pick element, shape and up to two traits;
+  anything not mentioned is rolled. The result gets +30-60% damage, +1 level, a trait inherited
+  from a parent and its own name. Keyword matching only, no AI model (`src/forge.gd`).
+- You start every run with two weapons of different elements; Q (Y on a pad) swaps. The other
+  weapon is carried on your back.
+- Difficulty is bullet-hell leaning: bigger waves, shooters fire three-shot fans, rings and fans are
+  denser, bosses rest less. A white dot on the hero marks the only spot enemy bullets can hit.
 - Resonance (for single-element builds): every direct hit of the same element on one foe adds a stack,
   shown as motes circling it. At 5 stacks (4 if the party carries that element twice, +2 on bosses) the
   element erupts: Eruption (fire: blast and burning ground), Glacier (ice: freezes the target and chills
   neighbours), Thunderstrike (storm: strike that chains to 5 foes and stuns), Bloom (venom: cloud that
   maxes poison). Stacks fade after 4 seconds; a different element or a reaction resets them. Pools and
   burns do not add stacks.
-- Weapon fusion keeps the rarer weapon, both elements, and one trait from the weapon melted into it:
-  Splitting, Piercing, Rebound, Blasting, Arcing, Seeking, Haste or The Edge.
 - Fire and ice counter each other, storm and venom counter each other (+50% damage).
 - Shooting an element pool with a different element detonates it.
 - Workshop rooms: upgrade a weapon (+1 to +5), change its element, or fuse both weapons into one
@@ -187,5 +200,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/forge.gd` checks the Word Forge and starting loadout; `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

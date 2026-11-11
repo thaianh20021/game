@@ -23,6 +23,7 @@ const Foes = preload("res://src/foes.gd")
 const Arms = preload("res://src/arms.gd")
 const Reso = preload("res://src/reso.gd")
 const Pets = preload("res://src/pets.gd")
+const Forge = preload("res://src/forge.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -140,6 +141,7 @@ var pending_coop = false
 var pending_resume = false
 var buff_sel = 0
 var buff_turn = 0
+var forge = {text = "", pad = [], it = null, idx = 0}
 var reso_src = true
 var pending_start = null
 var menu_close = false
@@ -393,6 +395,8 @@ func _input(ev: InputEvent) -> void:
 		return
 	if tin.on and ev is InputEventMouseButton:
 		return
+	if state == "forge" and ev is InputEventKey and ev.pressed:
+		Forge.key_input(self, ev)
 	if ev is InputEventKey and ev.pressed and not ev.echo:
 		jp[ev.physical_keycode] = true
 		p1_pad = false
@@ -475,6 +479,8 @@ func _process(dt: float) -> void:
 			update_buff()
 		"menu":
 			update_menu()
+		"forge":
+			Forge.update(self)
 		"talk":
 			talk.t += dt
 			if jpk(KEY_ESCAPE):
@@ -572,7 +578,7 @@ func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
 		idx = idx, down = false, hero_i = hi, look = look, spr = Art.look(look),
 		hero = h, name = nm, hkey = hkey, tkey = tkey, haste_t = 0.0, rage_t = 0.0, skills = [h.skill, sk2], pos = Vector2.ZERO, r = 4.0,
 		hp = hp, mhp = hp, ar = ar, mar = ar, en = float(en), men = en,
-		weapons = [{id = h.start, el = el, el2 = "", lv = 0}, null], wi = 0,
+		weapons = [{id = h.start, el = el, el2 = "", lv = 0}, {id = h.get("start2", "pistol"), el = D.EL[(D.EL.find(el) + 1) % 4], el2 = "", lv = 0}], wi = 0,
 		cd = 0.0, dash_t = 0.0, dash_cd = 0.0, dash_dir = Vector2.RIGHT, dash_hit = [], inv = 0.0, ar_t = 0.0, ar_tick = 0.0,
 		skill_cd = 0.0, skill2_cd = 0.0, face = 1, aim = Vector2.RIGHT, walk = 0.0, moving = false, gold = 0, buffs = [],
 		slow = 0.0, flash = 0.0, kick = 0.0, swing = 0.0, spin = 0.0, spin_tick = 0.0, beam_n = 0, noregen = 0.0,
@@ -821,7 +827,7 @@ func new_floor() -> void:
 				inter.append({kind = "smith", spr = "anvil", name = "UPGRADE WEAPON", pos = c + Vector2(-44, 4)})
 				inter.append({kind = "talk", who = "alch", spr = "npc_alch", name = "TALK", pos = c + Vector2(0, -22)})
 				inter.append({kind = "alch", spr = "cauldron", name = "CHANGE ELEMENT", pos = c + Vector2(0, 4)})
-				inter.append({kind = "fuse", spr = "altar", name = "FUSE BOTH WEAPONS", pos = c + Vector2(44, 4)})
+				inter.append({kind = "fuse", spr = "altar", name = "WORD FORGE: FUSE BY COMMAND", pos = c + Vector2(44, 4)})
 				inter.append({kind = "bench", spr = "bench", name = "CRAFT A BLUEPRINT WEAPON: 50 GOLD", pos = c + Vector2(0, 44), used = false})
 			"shrine":
 				inter.append({kind = "shrine", spr = "altar", pos = c, used = false})
@@ -1230,14 +1236,15 @@ func try_fire() -> void:
 	p.en -= cost
 	p.cd = w.cd * (0.6 if p.rage_t > 0.0 else 1.0) * st.rate
 	p.kick = 3.0
-	var lvm = Ext.wdmg(wi) * (1.4 if p.rage_t > 0.0 else 1.0)
-	var tr: String = wi.get("trait", "")
-	if lvm != 1.0 or tr != "":
+	var lvm = Ext.wdmg(wi) * (1.4 if p.rage_t > 0.0 else 1.0) * float(wi.get("pow", 1.0))
+	var trs: Array = [wi.get("trait", "")] + wi.get("traits", [])
+	if lvm != 1.0 or trs.size() > 1 or trs[0] != "":
 		w = w.duplicate()
 		w.dmg = w.dmg * lvm
-		Arms.apply(w, tr)
-		if tr == "swift":
-			p.cd *= 0.75
+		for tr in trs:
+			Arms.apply(w, tr)
+			if tr == "swift":
+				p.cd *= 0.75
 	fire_weapon(w, cur_el(), pcenter() + p.aim * 8.0, p.aim)
 
 func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> void:
@@ -1357,7 +1364,9 @@ func interact(it: Dictionary) -> void:
 	match it.kind:
 		"gate", "hero", "crystal", "npc", "egg", "plot":
 			Lobby.interact(self, it)
-		"smith", "alch", "fuse":
+		"fuse":
+			Forge.open(self, it)
+		"smith", "alch":
 			Ext.station(self, it)
 		"talk":
 			start_talk(it.who)
@@ -1610,11 +1619,11 @@ func spawn_wave(r: Dictionary) -> void:
 			shake_add(8.0)
 			burst(pos, 30, Color("ff5a6a"), 120.0, 0.6))
 		return
-	var budget = (3.0 + floor_i * 1.3 + r.wave * 1.2 + rng.randf() * 2.0) * (0.85 + 0.5 * Meta.cunning())
+	var budget = (3.0 + floor_i * 1.3 + r.wave * 1.2 + rng.randf() * 2.0) * (0.85 + 0.5 * Meta.cunning()) * 1.6
 	var roster = D.BIOMES[floor_i / 2].roster
 	var n = 0
 	for attempt in 60:
-		if budget < 1.0 or n >= 14:
+		if budget < 1.0 or n >= 20:
 			break
 		var id = roster[rng.randi() % roster.size()]
 		var c = D.ENEMIES[id].cost
@@ -1633,7 +1642,7 @@ func spawn_enemy(id: String, pos: Vector2) -> Dictionary:
 	var img: Image = Art.I["e_" + id]
 	var sc: float = d.get("sc", 1.0)
 	var is_boss = d.has("boss")
-	var hp = float(d.hp) * (1.0 if is_boss else 1.0 + 0.22 * floor_i) * (1.25 if (run_heat >= 1 and not in_lobby) else 1.0)
+	var hp = float(d.hp) * (1.45 if is_boss else 1.2 + 0.25 * floor_i) * (1.25 if (run_heat >= 1 and not in_lobby) else 1.0)
 	var e = {
 		id = id, d = d, uid = uid, pos = pos, kb = Vector2.ZERO, hp = hp, mhp = hp, r = float(d.r),
 		h2 = img.get_height() * sc / 2.0, hr = maxf(d.r, img.get_height() * sc * 0.4), el = d.get("el", ""),
@@ -1704,14 +1713,17 @@ func clear_room(r: Dictionary) -> void:
 # ---- enemies ---------------------------------------------------------------------
 
 func ebullet(pos: Vector2, vel: Vector2, el: String, arm: int = -1) -> void:
-	if bullets.size() < 600:
+	if bullets.size() < 900:
 		add_bullet(pos, vel * (1.2 if run_heat >= 2 else 1.0), {team = 1, el = el, r = 3.0, life = 6.0, arm = arm})
 
 func ring(pos: Vector2, n: int, spd: float, el: String, off: float = 0.0) -> void:
+	n = int(n * 1.4)
 	for i in n:
 		ebullet(pos, Vector2.from_angle(off + i * TAU / n) * spd, el)
 
 func fan(pos: Vector2, dir: Vector2, n: int, spread: float, spd: float, el: String) -> void:
+	if n >= 3:
+		n += 2
 	for i in n:
 		ebullet(pos, Vector2.from_angle(dir.angle() + (i - (n - 1) / 2.0) * spread / maxf(1.0, n - 1)) * spd, el)
 
@@ -1791,7 +1803,10 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 					for i in d.get("burst", 1):
 						after(i * 0.13, func():
 							if not e.dead and e.frz <= 0.0:
-								ebullet(center(e), aim_dir(center(e), d.bspd, arm) * d.bspd, e.el, arm)
+								var sd: Vector2 = aim_dir(center(e), d.bspd, arm) * d.bspd
+								ebullet(center(e), sd, e.el, arm)
+								ebullet(center(e), sd.rotated(0.24), e.el)
+								ebullet(center(e), sd.rotated(-0.24), e.el)
 								Sfx.play("shoot", 0.7, -8.0))
 			else:
 				var mvd = Vector2(-dir.y, dir.x) * (0.6 if e.uid % 2 == 0 else -0.6)
@@ -1801,7 +1816,7 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 					mvd = -dir
 				move(e, mvd * spd * dt)
 				if e.t <= 0.0 and dist < 200.0:
-					e.t = d.rate * rng.randf_range(0.85, 1.2)
+					e.t = d.rate * rng.randf_range(0.6, 0.85)
 					e.wind = 0.4
 		"spread":
 			if e.wind > 0.0:
@@ -1822,7 +1837,7 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 			else:
 				move(e, Vector2.from_angle(e.anim * 0.7 + e.uid) * spd * dt)
 				if e.t <= 0.0 and dist < 220.0:
-					e.t = d.rate * rng.randf_range(0.85, 1.2)
+					e.t = d.rate * rng.randf_range(0.6, 0.85)
 					e.wind = 0.5
 		"charge":
 			match e.state:
@@ -1862,10 +1877,10 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 				return
 		"turret":
 			if e.t <= 0.0:
-				e.t = 0.6
-				e.ang += 0.4
-				for i in 4:
-					ebullet(center(e), Vector2.from_angle(e.ang + i * PI / 2.0) * 85.0, e.el)
+				e.t = 0.5
+				e.ang += 0.3
+				for i in 6:
+					ebullet(center(e), Vector2.from_angle(e.ang + i * TAU / 6.0) * 85.0, e.el)
 		"blink":
 			steer(e, dir, spd, dt)
 			if e.t <= 0.0:
@@ -1932,7 +1947,7 @@ func boss_ai(e: Dictionary, dt: float, dir: Vector2) -> void:
 		"busy":
 			if e.t <= 0.0:
 				e.state = ""
-				e.t = (0.8 if rage else 1.4) * (1.15 - 0.4 * Meta.cunning())
+				e.t = (0.45 if rage else 0.9) * (1.15 - 0.4 * Meta.cunning())
 			return
 	move(e, dir * e.d.spd * (1.4 if rage else 1.0) * dt)
 	if e.t > 0.0:
@@ -2674,6 +2689,8 @@ func on_screen(pos: Vector2, m: float = 40.0) -> bool:
 func draw_scene(ci: CanvasItem) -> void:
 	if state == "title" or p.is_empty():
 		return
+	if in_lobby:
+		Lobby.draw_floor(self, ci)
 	for z in zones:
 		var c: Color = D.EL_COL[z.el]
 		var a = minf(1.0, z.life) * (0.8 if z.team == 0 else 1.0)
@@ -2943,6 +2960,13 @@ func draw_player(ci: CanvasItem) -> void:
 		mod = Color(0.6, 0.85, 1.0, a)
 	ci.draw_texture(Art.T["shadow"], p.pos + Vector2(-8, p.r - 3.0))
 	Fx.fuse_aura(self, ci, p)
+	# the weapon in the other hand rides on the back
+	var ow = p.weapons[1 - p.wi]
+	if ow != null:
+		var ot: Texture2D = Art.T[Art.wtex(ow)]
+		ci.draw_set_transform((p.pos + Vector2(-2.0 * p.face, -4.0 - plift())).round(), -2.2 if p.face > 0 else -0.94, Vector2(0.8, 0.8))
+		ci.draw_texture(ot, Vector2(-ot.get_width() / 2.0, -ot.get_height() / 2.0), Color(0.6, 0.6, 0.68))
+		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var behind = p.aim.y < -0.35
 	if behind:
 		draw_weapon(ci)
@@ -2961,6 +2985,10 @@ func draw_player(ci: CanvasItem) -> void:
 		spr(ci, fr, base, p.face < 0, Color(1, 1, 1, 0.8), Vector2.ONE, true)
 	if not behind:
 		draw_weapon(ci)
+	if not in_lobby and not enemies.is_empty():
+		# the only spot enemy bullets can hit
+		ci.draw_rect(Rect2(pcenter().round() - Vector2(2, 2), Vector2(4, 4)), Color("120e18"))
+		ci.draw_rect(Rect2(pcenter().round() - Vector2(1, 1), Vector2(2, 2)), Color.WHITE)
 	if players.size() > 1:
 		Px.ctext(ci, p.pos + Vector2(0, -25.0 - plift()), "P%d" % (p.idx + 1), Color("7adfff") if p.idx == 0 else Color("ffb84a"))
 
@@ -3031,6 +3059,8 @@ func draw_top(ci: CanvasItem) -> void:
 		ci.draw_rect(Rect2(cp + Vector2(15, -56), Vector2(96, 128)), D.BIOMES[0].cap)
 		for seg in [[2, 3, 5, 7], [5, 7, 3, 11], [5, 7, 9, 9], [9, 9, 8, 13]]:
 			ci.draw_line(cp + Vector2(seg[0], seg[1]), cp + Vector2(seg[2], seg[3]), Color(0.05, 0.03, 0.08, 0.9), 1.0)
+	if in_lobby and state == "play":
+		Lobby.draw_signs(self, ci)
 	# every hero on this screen gets its own prompt
 	for pl in (players if local_coop() else [players[me]]):
 		if not pl.down:

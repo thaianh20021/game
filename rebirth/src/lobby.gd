@@ -481,3 +481,76 @@ static func activate(g, row: Dictionary) -> void:
 		populate(g)
 		g.flash(g.pcenter(), 160.0, Color("e58cff"), 0.6)
 	g.menu.rows = rows(g, g.menu.kind)
+
+# ---- signage: every station carries a name plate, areas get coloured rugs ---------
+
+const SIGN = {
+	"tree": ["SKILL TREE", "7adfff"], "armor": ["HERO RANKS", "7adfff"], "beast": ["PETS", "a6e84e"], "fuse": ["HERO FUSION", "e58cff"],
+	"loom": ["SOUL LOOM", "e58cff"], "board": ["RUN BOARD", "ffd24a"], "codex": ["CODEX", "d9d4c7"], "coop": ["CO-OP", "ffd24a"],
+	"quest": ["BOUNTIES", "ffd24a"], "trophy": ["TROPHIES", "ffd24a"], "armory": ["ARMORY", "ffb84a"], "brew": ["KITCHEN", "ffb84a"],
+	"tailor": ["TAILOR", "e56db2"], "bench": ["WORKBENCH", "5cd3f2"],
+	"fountain": ["WISHES", "7adfff"], "jukebox": ["MUSIC", "e58cff"], "capsule": ["CAPSULES", "e56db2"], "mail": ["MAIL", "7adfff"], "bowl": ["PET BOWL", "a6e84e"],
+}
+# [tile rect, colour, floor caption]
+const RUGS = [
+	[Rect2(4, 6.9, 23.6, 2.4), "ffd24a", "CHOOSE A HERO"],
+	[Rect2(3.2, 15.6, 9.2, 2.2), "7adfff", "STARTING ELEMENT"],
+	[Rect2(20.2, 4.5, 6.6, 2.1), "a6e84e", "GARDEN"],
+	[Rect2(13.4, 4.2, 3.2, 2.4), "e58cff", ""],
+	[Rect2(6.6, 21.4, 7.4, 2.4), "ffd24a", "DAILY"],
+	[Rect2(17.2, 21.4, 7.6, 2.6), "ffb84a", "SUPPLIES"],
+	[Rect2(5.6, 26.6, 9, 2.8), "5cd3f2", "CRAFT AND STYLE"],
+	[Rect2(16.6, 28.4, 4, 2), "a6e84e", ""],
+]
+
+static func draw_floor(g, ci: CanvasItem) -> void:
+	for r in RUGS:
+		var rc = Rect2(r[0].position * 16.0, r[0].size * 16.0)
+		var c = Color(r[1])
+		ci.draw_rect(rc, Color(c.r, c.g, c.b, 0.1))
+		ci.draw_rect(rc, Color(c.r, c.g, c.b, 0.5), false, 1.0)
+		ci.draw_rect(rc.grow(-3.0), Color(c.r, c.g, c.b, 0.22), false, 1.0)
+		if r[2] != "":
+			g.Px.ctext(ci, Vector2(rc.get_center().x, rc.end.y - 9.0), r[2], Color(c.r, c.g, c.b, 0.55), 1, false)
+	# the way down to the shops, and back up
+	for i in 3:
+		var y = 18.2 * 16.0 + i * 5.0 + fmod(g.time * 6.0, 5.0)
+		ci.draw_line(Vector2(15.0 * 16.0, y), Vector2(15.5 * 16.0, y + 4.0), Color(1.0, 0.72, 0.3, 0.7), 1.0)
+		ci.draw_line(Vector2(16.0 * 16.0, y), Vector2(15.5 * 16.0, y + 4.0), Color(1.0, 0.72, 0.3, 0.7), 1.0)
+	g.Px.ctext(ci, Vector2(15.5 * 16.0, 17.2 * 16.0), "SHOPS BELOW", Color(1.0, 0.72, 0.3, 0.8), 1, false)
+	g.Px.ctext(ci, Vector2(15.5 * 16.0, 21.4 * 16.0), "HALL ABOVE", Color(1.0, 0.72, 0.3, 0.6), 1, false)
+
+static func draw_signs(g, ci: CanvasItem) -> void:
+	for it in g.inter:
+		if not g.on_screen(it.pos, 30.0):
+			continue
+		var text = ""
+		var col = Color("d9d4c7")
+		var up = 24.0
+		match it.kind:
+			"npc":
+				if SIGN.has(it.menu):
+					text = SIGN[it.menu][0]
+					col = Color(SIGN[it.menu][1])
+			"egg":
+				if SIGN.has(it.egg):
+					text = SIGN[it.egg][0]
+					col = Color(SIGN[it.egg][1])
+			"hero":
+				text = Meta.hero(it.i).name
+				up = 20.0 + (it.i % 2) * 10.0
+			"crystal":
+				text = D.EL_NAME[D.EL[it.i]]
+				col = D.EL_COL[D.EL[it.i]]
+				up = 20.0
+			"gate":
+				text = "DUNGEON GATE"
+				col = Color("ffd24a")
+				up = 40.0
+		if text == "" or (g.near != null and g.near == it):
+			continue
+		var w = g.Px.width(text)
+		var at = it.pos + Vector2(0, -up)
+		ci.draw_rect(Rect2(at.x - w / 2.0 - 2.0, at.y - 2.0, w + 4.0, 10.0), Color(0.05, 0.03, 0.09, 0.7))
+		ci.draw_rect(Rect2(at.x - w / 2.0 - 2.0, at.y + 8.0, w + 4.0, 1.0), Color(col.r, col.g, col.b, 0.8))
+		g.Px.ctext(ci, at, text, col, 1, false)

@@ -134,11 +134,11 @@ func _init():
 	Meta.S.scrap = 15
 	Meta.S.mats = {ore = 6, ess = 0, fib = 1}
 	g.open_menu("bench")
-	row = g.menu.rows.filter(func(r): return r.name == "QUAKE HAMMER")[0]
+	row = g.menu.rows.filter(func(r): return r.name == "QUAKE BELL")[0]
 	check(row.state == "locked", "not enough ore: cannot craft")
 	Meta.add_mat("ore", 1)
 	g.open_menu("bench")
-	row = g.menu.rows.filter(func(r): return r.name == "QUAKE HAMMER")[0]
+	row = g.menu.rows.filter(func(r): return r.name == "QUAKE BELL")[0]
 	check(row.state == "owned", "with the materials it can be crafted")
 	Lobby.activate(g, row)
 	check(Meta.mat("ore") == 0 and Meta.mat("fib") == 0 and int(Meta.S.scrap) == 0 and Meta.S.boons.get("weapon", "") == "quake", "crafting spends the recipe")

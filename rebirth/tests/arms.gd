@@ -34,7 +34,7 @@ func _init():
 	Meta.S.pet = ""
 	g.goto_lobby()
 	g.start_run(8, false)
-	check(g.p.name == "ENGINEER" and g.p.weapons[0].id == "crossbow", "engineer should start with a crossbow")
+	check(g.p.name == "RIVET" and g.p.weapons[0].id == "crossbow", "engineer should start with a crossbow")
 	var c = g.p.pos
 	g.sim["mouse"] = Vector2(340, 135)
 	# every new weapon fires and hurts a foe in front of the hero
@@ -139,7 +139,7 @@ func _init():
 		await frames(20)
 	check(g.allies.size() == 1, "sentry should be deployed")
 	check(e3.frz > 0.0 or e3.stun > 0.0, "vines or pulse should hold the foe")
-	check(Meta.fuse_name(D.HEROES[6], D.HEROES[7]) == "GROVE TINKER", "new fusion names")
+	check(Meta.fuse_name(D.HEROES[6], D.HEROES[7]) == "RIVSCAP", "fusion names are spliced: " + Meta.fuse_name(D.HEROES[6], D.HEROES[7]))
 	if vis:
 		g.goto_lobby()
 		g.p.pos = Vector2(14 * 16, 10 * 16)

@@ -8,7 +8,10 @@ func shot(n):
 	im.resize(1440, 810, Image.INTERPOLATE_NEAREST)
 	im.save_png(OUT + "rb_" + n + ".png")
 func frames(n):
-	for i in n: await process_frame
+	for i in n:
+		if g.state == "play" and not g.in_lobby:
+			g.p.hp = g.p.mhp
+		await process_frame
 func _init() -> void:
 	Meta.PATH = "user://rebirth_shot.json"
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Meta.PATH))
@@ -16,26 +19,24 @@ func _init() -> void:
 	root.add_child(g)
 	g.sim["mouse"] = Vector2(300, 120)
 	await frames(10)
-	Meta.S.gems = 500
-	Meta.S.codex = {"weapons": {"rail": true, "coil": true, "mortar": true, "bow": true, "blade": true}}
-	Meta.S.stats = {"kills": 640, "reacts": 120}
-	Meta.S.dyes = [2]
-	Meta.S.dye = 2
-	Meta.S.boons = {"hp": 1, "gold": 30}
 	g.goto_lobby()
-	g.set_local2(true)
+	g.p.pos = Lobby.tp(15, 11)
+	await frames(200)
+	shot("n_hall")
 	g.p.pos = Lobby.tp(15, 25)
-	g.players[1].pos = Lobby.tp(13, 24)
-	await frames(90)
-	shot("h_wing")
-	for k in ["quest", "trophy", "armory", "brew", "tailor"]:
-		g.open_menu(k)
-		await frames(3)
-		shot("h_" + k)
-	g.set_state("play")
-	g.start_run(5, false)
-	g.next_floor()
-	g.pick_buff(0)
-	await frames(3)
-	shot("h_buff2")
+	await frames(60)
+	shot("n_wing")
+	g.start_run(77, false)
+	g.floor_i = 3
+	g.new_floor()
+	for r in g.dg.rooms:
+		if r.type == "fight":
+			g.p.pos = g.rc(r) + Vector2(0, 30)
+			break
+	g.sim["fire"] = true
+	for i in 260:
+		if not g.enemies.is_empty():
+			g.sim["mouse"] = g.center(g.enemies[0]) - g.cam_tl
+		await frames(1)
+	shot("n_fight")
 	quit(0)
