@@ -5,16 +5,17 @@ extends RefCounted
 const Art = preload("res://src/art.gd")
 const D = preload("res://src/data.gd")
 const Traps = preload("res://src/traps.gd")
+const Puzzle = preload("res://src/puzzle.gd")
 const CW = 28
 const CH = 22
 const TS = 16
 
 const SIZES = {
-	"start": [[11, 9]], "exit": [[9, 9]], "chest": [[9, 7]], "shop": [[13, 9]], "workshop": [[13, 9]], "shrine": [[9, 7]], "secret": [[7, 7]], "boss": [[23, 15]],
+	"start": [[11, 9]], "exit": [[9, 9]], "chest": [[9, 7]], "shop": [[13, 9]], "workshop": [[13, 9]], "shrine": [[9, 7]], "secret": [[7, 7]], "boss": [[23, 15]], "puzzle": [[13, 9]],
 	"fight": [[15, 11], [17, 11], [17, 13], [19, 13], [21, 13]],
 }
 
-static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Dictionary:
+static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weather: String = "clear") -> Dictionary:
 	var n_main = 4 + floor_i / 2 + (0 if boss else 1)
 	var cells = [Vector2i(0, 0)]
 	var used = {Vector2i(0, 0): 0}
@@ -42,6 +43,8 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Di
 	var sides = ["chest", "shop", "workshop"]
 	if rng.randf() < 0.5:
 		sides.append("shrine")
+	if rng.randf() < 0.6:
+		sides.append("puzzle")
 	for type in sides:
 		for attempt in 40:
 			var base = 1 + rng.randi() % (n_main - 2)
@@ -75,7 +78,7 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Di
 	var h = (maxy - miny + 1) * CH + 2
 	var grid = PackedByteArray()
 	grid.resize(w * h)
-	var d = {w = w, h = h, grid = grid, rooms = rooms, props = [], torches = [], cracks = [], traps = [], terr = PackedByteArray()}
+	var d = {w = w, h = h, grid = grid, rooms = rooms, props = [], torches = [], cracks = [], traps = [], terr = PackedByteArray(), weather = weather}
 
 	for r in rooms:
 		r.cell = Vector2i(r.cell.x, r.cell.y - miny)
@@ -144,6 +147,8 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool) -> Di
 			Traps.place(rng, d, r, floor_i)
 		elif r.type == "boss":
 			Traps.place(rng, d, r, floor_i)
+		elif r.type == "puzzle":
+			Puzzle.build(rng, d, r, r.cell.y > rooms[r.links[0]].cell.y)
 		var ty = r.rect.position.y - 1
 		for x in range(r.rect.position.x + 1, r.rect.end.x, 4):
 			if grid[ty * w + x] == 0:
@@ -219,10 +224,19 @@ static func _terrain(rng: RandomNumberGenerator, d: Dictionary, r: Dictionary) -
 	if d.terr.size() == 0:
 		d.terr.resize(d.w * d.h)
 	var inner: Rect2i = r.rect.grow(-1)
+	# the weather decides how wet or dry the floor is
+	var wx: String = d.get("weather", "clear")
 	for kind in [1, 2, 4]:
-		if rng.randf() > (0.6 if kind == 1 else 0.5):
+		var chance = 0.5
+		if kind == 1:
+			chance = {"rain": 0.95, "drought": 0.2}.get(wx, 0.6)
+		elif kind == 4:
+			chance = {"rain": 0.25, "drought": 0.95}.get(wx, 0.5)
+		if rng.randf() > chance:
 			continue
 		var want = (8 + rng.randi() % 8) if kind != 2 else (4 + rng.randi() % 5)
+		if (kind == 1 and wx == "rain") or (kind == 4 and wx == "drought"):
+			want *= 2
 		var blob = []
 		for attempt in 200:
 			if blob.size() >= want:

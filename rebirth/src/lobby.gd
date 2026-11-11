@@ -11,6 +11,8 @@ const Hub = preload("res://src/hub.gd")
 const Pets = preload("res://src/pets.gd")
 const Wish = preload("res://src/wish.gd")
 const Nemesis = preload("res://src/nemesis.gd")
+const Book = preload("res://src/book.gd")
+const Wx = preload("res://src/sky.gd")
 
 const TRACKS = ["CAVE THEME", "FORGE THEME", "ARCHIVE THEME", "BOSS THEME", "HEARTH THEME"]
 const CRACK = Vector2i(29, 11)
@@ -291,6 +293,8 @@ static func rows(g, kind: String) -> Array:
 		return rs
 	if Hub.KINDS.has(kind):
 		return Hub.rows(g, kind)
+	if kind == "book":
+		return Book.rows(g)
 	var out = []
 	var hid: String = g.p.hkey
 	var me = Meta.hero(Meta.S.hero)
@@ -371,7 +375,7 @@ static func rows(g, kind: String) -> Array:
 			out.append({name = "NORMAL RUN", desc = "A FRESH RANDOM DUNGEON AT HEAT %d" % Meta.S.heat, cost = 0, state = "owned", tag = "START",
 				fn = func(): g.pending_start = [0, false]})
 			var tk = str(Meta.today())
-			out.append({name = "DAILY RUN " + tk, desc = "SAME DUNGEON FOR ALL TODAY. BEST %d" % int(Meta.S.daily.get(tk, 0)), cost = 0, state = "owned", tag = "START",
+			out.append({name = "DAILY RUN %s  BEST %d" % [tk, int(Meta.S.daily.get(tk, 0))], desc = "SKY: " + Wx.forecast(Meta.today()), cost = 0, state = "owned", tag = "START",
 				fn = func(): g.pending_start = [Meta.today(), true]})
 			out.append({name = "SEEDED RUN: " + (g.seed_in if g.seed_in != "" else "TYPE DIGITS"), desc = "SAME SEED, SAME DUNGEON. LAST SEED %d" % Meta.S.last_seed, cost = 0, tag = "START",
 				state = "owned" if g.seed_in != "" else "locked", fn = func(): g.pending_start = [int(g.seed_in), false]})
@@ -402,6 +406,10 @@ static func rows(g, kind: String) -> Array:
 					line = line.substr(0, 41) + "..."
 				out.append({name = "%s %d/%d" % [c[0], n, c[2]], desc = line if line != "" else "NOTHING FOUND YET", cost = 0, tag = "DONE" if n >= c[2] else "",
 					state = "on" if n >= c[2] else "owned", fn = func(): pass})
+			out.push_front({name = "ALCHEMY NOTEBOOK %d/%d" % [Meta.S.book.size(), Book.DEF.size()], desc = "WHAT YOU DISCOVERED, UNDER THE NAMES YOU GAVE", cost = 0, state = "owned", tag = "OPEN",
+				fn = func():
+					g.book_page = 0
+					g.menu_next = "book"})
 			out.push_front({name = "CODEX %d%% COMPLETE" % int(100.0 * have / total), desc = "EVERYTHING YOU HAVE MET IN THE DUNGEON", cost = 0, state = "owned", tag = "", fn = func(): pass})
 		"garden":
 			for id in D.SEEDS:
@@ -458,6 +466,12 @@ static func activate(g, row: Dictionary) -> void:
 		g.pending_coop = false
 		g.set_state("play")
 		Net.start(g)
+		return
+	if g.pending_say != "":
+		g.say_mode = g.pending_say
+		g.pending_say = ""
+		g.say = ""
+		g.set_state("say")
 		return
 	if g.menu_next != "":
 		var nk: String = g.menu_next

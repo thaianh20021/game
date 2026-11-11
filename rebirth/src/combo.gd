@@ -9,6 +9,7 @@ extends RefCounted
 const D = preload("res://src/data.gd")
 const Sfx = preload("res://src/sfx.gd")
 const Px = preload("res://src/font.gd")
+const Book = preload("res://src/book.gd")
 
 # pair key (sorted, as in D.REACT) -> [name, colour, what it does]
 const FIELD = {
@@ -30,7 +31,7 @@ const FIELD_R = 30.0
 const STORM_R = 72.0
 
 static func name_of(f: Dictionary) -> String:
-	return FIELD[f.key][0] if f.tier == 2 else STORM[f.key][0]
+	return Book.name(f.key if f.tier == 2 else "s_" + f.key)
 
 static func col_of(f: Dictionary) -> Color:
 	return Color(FIELD[f.key][1] if f.tier == 2 else STORM[f.key][1])
@@ -39,13 +40,15 @@ static func col_of(f: Dictionary) -> Color:
 static func spawn(g, pos: Vector2, key: String) -> void:
 	if g.in_lobby and false:
 		return
+	Book.find(g, key)
+	var life = 5.0 * g.Wx.field_life(g, key)
 	for f in g.fields:
 		if f.tier == 2 and f.key == key and f.pos.distance_to(pos) < 26.0:
-			f.life = 5.0
+			f.life = life
 			return
 	if g.fields.size() >= 6:
 		g.fields.pop_front()
-	g.fields.append({pos = pos, r = FIELD_R, key = key, els = Array(key.split("+")), life = 5.0, tick = 0.0, tier = 2, t = 0.0})
+	g.fields.append({pos = pos, r = FIELD_R, key = key, els = Array(key.split("+")), life = life, tick = 0.0, tier = 2, t = 0.0})
 
 # Something of element el struck at pos: fields it touches move up a tier.
 static func touch(g, pos: Vector2, el: String, rad: float = 0.0) -> void:
@@ -65,14 +68,14 @@ static func touch(g, pos: Vector2, el: String, rad: float = 0.0) -> void:
 			f.life = 6.0
 			f.tick = 0.0
 			col = col_of(f)
-			g.banner = {text = STORM[f.key][0], sub = STORM[f.key][2], t = 2.6}
+			g.banner = {text = Book.find(g, "s_" + f.key), sub = STORM[f.key][2], t = 2.6}
 			g.charge_res(1.0)
 			Sfx.play("roar", 1.6, -4.0)
 		else:
 			# all four elements: one enormous blast, and every enemy bullet is gone
 			f.life = 0.0
 			col = Color.WHITE
-			g.banner = {text = "CATACLYSM", sub = "ALL FOUR ELEMENTS", t = 2.6}
+			g.banner = {text = Book.find(g, "cata"), sub = "ALL FOUR ELEMENTS", t = 2.6}
 			g.explode(f.pos, 110.0, (30.0 + g.floor_i * 8.0) * g.st.react, "", 0, Color.WHITE)
 			for b in g.bullets:
 				if b.team == 1:

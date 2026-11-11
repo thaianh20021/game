@@ -60,7 +60,7 @@ static func burst(g, e: Dictionary, el: String) -> void:
 	var c: Vector2 = g.center(e)
 	var col: Color = D.EL_COL[el]
 	var base = (8.0 + g.floor_i * 2.5) * g.st.react
-	g.label(c + Vector2(0, -e.h2 - 14.0), NAME[el], col, true)
+	g.label(c + Vector2(0, -e.h2 - 14.0), g.Book.find(g, "r_" + el) if g.Book.DEF.has("r_" + el) else NAME[el], col, true)
 	g.tip("reso", "RESONANCE: " + NAME[el], "SAME ELEMENT, SAME FOE, AGAIN AND AGAIN")
 	g.charge_res(0.5)
 	g.hitstop = maxf(g.hitstop, 0.03)

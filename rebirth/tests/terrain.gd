@@ -52,8 +52,10 @@ func _init():
 					start = r
 			var seen = reach(Vector2i(start.center.x, start.rect.position.y))
 			for r in g.dg.rooms:
-				if r.type != "secret":
+				if r.type != "secret" and r.get("puzzle", "") != "chasm":
 					check(seen.has(Vector2i(r.center.x, r.rect.position.y)) and seen.has(Vector2i(r.rect.position.x, r.center.y)), "seed %d floor %d: room %s must stay reachable on foot" % [seed, fl, r.type])
+				if r.get("puzzle", "") == "chasm":
+					check(seen.has(Vector2i(r.center.x, r.rect.position.y)) or seen.has(Vector2i(r.center.x, r.rect.end.y - 1)), "seed %d floor %d: the door side of a chasm room must be reachable" % [seed, fl])
 			for y in g.dg.h:
 				for x in g.dg.w:
 					var t = g.dg.terr[y * g.dg.w + x]

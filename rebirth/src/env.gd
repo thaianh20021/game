@@ -29,12 +29,14 @@ static func touch(g, pos: Vector2, rad: float, el: String) -> void:
 	if el == "" or el == "prism" or g.in_lobby:
 		return
 	hijack(g, pos, rad, el)
+	g.Puzzle.touch(g, pos, rad, el)
 	if el == "tox":
 		for c in g.dg.cracks:
 			if not c.open and cell_pos(c.cell).distance_to(pos) < rad + 14.0:
 				c.hp = 1
 				g.More.hit_crack(g, c.cell.x, c.cell.y)
 				g.tip("env_tox", "CORRODED", "VENOM EATS THROUGH CRACKED WALLS")
+				g.Book.find(g, "e_tox")
 		return
 	if el == "fire":
 		for pr in g.props:
@@ -42,6 +44,7 @@ static func touch(g, pos: Vector2, rad: float, el: String) -> void:
 				g.hurt_prop(pr, 99.0)
 				g.zones.append({pos = pr.pos, r = 10.0, el = "fire", life = 2.0, team = 0, tick = 0.2})
 				g.tip("env_fire", "FIRE SPREADS", "IT BURNS CRATES AND DRY BRUSH")
+				g.Book.find(g, "e_fire")
 	if g.dg.terr.size() == 0:
 		return
 	var reach = int(ceil(rad / TS))
@@ -59,6 +62,7 @@ static func touch(g, pos: Vector2, rad: float, el: String) -> void:
 						g.burst(cell_pos(c), 4, D.EL_COL["ice"], 40.0, 0.4)
 						Sfx.play("freeze", 1.3, -8.0)
 						g.tip("env_ice", "FROZEN SOLID", "ICE HARDENS MIRE AND BRIDGES PITS")
+						g.Book.find(g, "e_ice")
 				"fire":
 					if t == 4:
 						ignite(g, c)
@@ -74,11 +78,13 @@ static func ignite(g, c: Vector2i) -> void:
 	var p = cell_pos(c)
 	g.zones.append({pos = p, r = 10.0, el = "fire", life = 2.2, team = 0, tick = 0.1})
 	g.burst(p, 4, D.EL_COL["fire"], 40.0, 0.5, -60.0)
+	g.Puzzle.touch(g, p, 10.0, "fire")
 	g.tip("env_fire", "FIRE SPREADS", "IT BURNS CRATES AND DRY BRUSH")
+	g.Book.find(g, "e_fire")
 	for d in N4:
 		var n = c + d
 		if terr(g, n) == 4:
-			g.after(0.22, func(): ignite(g, n))
+			g.after(g.Wx.spread_delay(g), func(): ignite(g, n))
 
 # Lightning runs through every connected tile of mire.
 static func conduct(g, c: Vector2i) -> void:
@@ -103,11 +109,13 @@ static func conduct(g, c: Vector2i) -> void:
 	g.flash(cell_pos(c), 90.0, col, 0.3)
 	Sfx.play("shoot_bolt", 0.6)
 	g.tip("env_bolt", "CONDUCTED", "LIGHTNING RUNS THROUGH MIRE. STAY OUT OF IT.")
+	g.Book.find(g, "e_bolt")
+	g.Puzzle.conducted(g, seen)
 	for e in g.enemies:
 		if e.dead or e.d.get("fly", false):
 			continue
 		if seen.has(Vector2i((e.pos / TS).floor())):
-			g.hurt_enemy(e, (8.0 + g.floor_i * 3.0) * g.st.react, "", Vector2.ZERO, true, col)
+			g.hurt_enemy(e, (8.0 + g.floor_i * 3.0) * g.st.react * g.Wx.conduct_mult(g), "", Vector2.ZERO, true, col)
 			if not e.dead:
 				e.stun = maxf(e.stun, 0.3 if e.is_boss else 0.9)
 				e.st["bolt"] = 4.0
@@ -133,6 +141,7 @@ static func hijack(g, pos: Vector2, rad: float, el: String) -> void:
 			g.charge_res(0.5)
 			Sfx.play("react", 1.2)
 			g.tip("hijack", "HIJACKED", "ENEMY POOLS BECOME YOUR FIELDS")
+			g.Book.find(g, "hijack")
 
 static func draw(g, ci: CanvasItem) -> void:
 	for q in g.patches:

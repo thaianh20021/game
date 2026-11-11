@@ -318,7 +318,7 @@ static func floor_event(g, data: Dictionary) -> void:
 	g.floor_i = data.floor
 	var bi = g.floor_i / 2
 	g.drng.seed = hash([g.run_seed, g.floor_i])
-	g.dg = Dungeon.generate(g.drng, g.floor_i, g.floor_i % 2 == 1)
+	g.dg = Dungeon.generate(g.drng, g.floor_i, g.floor_i % 2 == 1, g.Wx.weather_for(g.run_seed, g.floor_i))
 	g.dg.boss_id = data.boss
 	g.rebake()
 	g.props = []
@@ -330,7 +330,7 @@ static func floor_event(g, data: Dictionary) -> void:
 			g.players[g.me].pos = g.net.pred
 	g.cam = g.net.pred
 	g.fade = 1.0
-	g.banner = {text = D.BIOMES[bi].name, sub = "FLOOR %d-%d" % [bi + 1, g.floor_i % 2 + 1], t = 3.2}
+	g.banner = {text = D.BIOMES[bi].name, sub = "FLOOR %d-%d" % [bi + 1, g.floor_i % 2 + 1] + g.Wx.sub(g), t = 3.2}
 	Sfx.play_music(bi)
 
 # ---- guest: per-frame work -------------------------------------------------------

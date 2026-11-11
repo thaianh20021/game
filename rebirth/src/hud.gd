@@ -13,6 +13,8 @@ const Forge = preload("res://src/forge.gd")
 const Combo = preload("res://src/combo.gd")
 const Wish = preload("res://src/wish.gd")
 const Nemesis = preload("res://src/nemesis.gd")
+const Book = preload("res://src/book.gd")
+const Wx = preload("res://src/sky.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -31,7 +33,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - LEAVES ROT: +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - LEAVES MIASMA: POISONS ALL"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER", "book": "ALCHEMY NOTEBOOK"}
 
 static func buff_rect(i: int) -> Rect2:
 	return Rect2(55 + i * 127, 84, 116, 112)
@@ -72,6 +74,7 @@ static func draw(g, ci: CanvasItem) -> void:
 		"title":
 			draw_title(g, ci)
 		_:
+			Wx.draw(g, ci)
 			draw_play(g, ci)
 			match g.state:
 				"pause": draw_pause(g, ci)
@@ -314,14 +317,14 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		big(ci, Art.T["ic_" + all[0]], Vector2(wx - 22, 216), 1.0)
 		Px.text(ci, Vector2(wx - 12, 218), "+", DIM)
 		big(ci, Art.T["ic_" + all[1]], Vector2(wx - 5, 216), 1.0)
-		Px.text(ci, Vector2(wx + 7, 218), info[0], info[1])
+		Px.text(ci, Vector2(wx + 7, 218), Book.shown(pair[0] + "+" + pair[1]), info[1])
 
 	if g.in_lobby:
 		Px.text(ci, Vector2(5, 259), "THE HEARTH - " + p.name, DIM)
 		Px.text(ci, Vector2(5, 249), Hub.boon_text(), Color("a6e84e"))
 	else:
 		var bi = g.floor_i / 2
-		Px.text(ci, Vector2(5, 259), "%s %d-%d" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1], DIM)
+		Px.text(ci, Vector2(5, 259), "%s %d-%d" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1] + ("" if Wx.now(g) == "clear" else "  " + Wx.NAME[Wx.now(g)]), DIM)
 
 	if g.boss != null:
 		var b = g.boss
@@ -394,6 +397,7 @@ static func draw_minimap(g, ci: CanvasItem) -> void:
 			"exit": col = Color("9352cb")
 			"workshop": col = Color("5cd3f2")
 			"shrine": col = GEM
+			"puzzle": col = Color("e58cff")
 			"secret": col = Color("f6f2e6")
 		if r.type == "fight":
 			col = Color("8479a0") if r.cleared else Color("c0704c")
@@ -501,7 +505,7 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 		big(ci, Art.T["ic_" + rh[0]], Vector2(30, y - 2), 1.0)
 		Px.text(ci, Vector2(41, y), "+", DIM)
 		big(ci, Art.T["ic_" + rh[1]], Vector2(48, y - 2), 1.0)
-		Px.text(ci, Vector2(62, y), rh[2], D.REACT[rh[0] + "+" + rh[1]][1])
+		Px.text(ci, Vector2(62, y), rh[2] if Book.known(rh[0] + "+" + rh[1]) else "??? NOT IN YOUR NOTEBOOK YET", D.REACT[rh[0] + "+" + rh[1]][1])
 	Px.text(ci, Vector2(30, 138), "A THIRD ELEMENT ON A FIELD MAKES A STORM. THE FOURTH: CATACLYSM.", GOLD)
 	var si = 0
 	for miss in Combo.STORM:
@@ -512,7 +516,7 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 			if el != miss:
 				big(ci, Art.T["ic_" + el], Vector2(ex2, sy2 - 2), 1.0)
 				ex2 += 9
-		Px.text(ci, Vector2(sx2 + 30, sy2), Combo.STORM[miss][0], Color(Combo.STORM[miss][1]))
+		Px.text(ci, Vector2(sx2 + 30, sy2), Book.shown("s_" + miss), Color(Combo.STORM[miss][1]))
 		si += 1
 	Px.text(ci, Vector2(320, 52), "BLESSINGS", PALE)
 	var counts = {}

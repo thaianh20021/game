@@ -100,7 +100,7 @@ static func hit(g, e: Dictionary, dmg: float, el: String, kb: Vector2) -> void:
 static func add_zone(g, pos: Vector2, r: float, el: String, life: float, extra: Dictionary = {}) -> void:
 	zone_touch(g, pos, r, el)
 	g.Env.touch(g, pos, r, el)
-	var z = {pos = pos, r = r, el = el, life = life, team = 0, tick = 0.3}
+	var z = {pos = pos, r = r, el = el, life = life * g.Wx.zone_life(g, el), team = 0, tick = 0.3}
 	for k in extra:
 		z[k] = extra[k]
 	g.zones.append(z)
@@ -117,7 +117,7 @@ static func zone_touch(g, pos: Vector2, r: float, el: String) -> void:
 			var pair = [el, z.el]
 			pair.sort()
 			var info = D.REACT[pair[0] + "+" + pair[1]]
-			g.label(z.pos + Vector2(0, -14), info[0], info[1], true)
+			g.label(z.pos + Vector2(0, -14), g.Book.find(g, pair[0] + "+" + pair[1]), info[1], true)
 			Sfx.play("react")
 			g.charge_res(0.5)
 			g.explode(z.pos, z.r + 22.0, (9.0 + g.floor_i * 3.0) * g.st.react * 1.2, "", 0, info[1])

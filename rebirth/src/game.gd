@@ -28,6 +28,9 @@ const Combo = preload("res://src/combo.gd")
 const Env = preload("res://src/env.gd")
 const Wish = preload("res://src/wish.gd")
 const Nemesis = preload("res://src/nemesis.gd")
+const Wx = preload("res://src/sky.gd")
+const Book = preload("res://src/book.gd")
+const Puzzle = preload("res://src/puzzle.gd")
 
 const VW = 480.0
 const VH = 270.0
@@ -133,6 +136,10 @@ var say = ""
 var el_use = {}
 var nem_met = false
 var menu_next = ""
+var book_page = 0
+var pending_say = ""
+var say_mode = ""
+var sky_t = 3.0
 # sprite afterimages: dying foes squash flat, dashing bosses leave trails
 var echoes = []
 var tin = Touch.fresh()
@@ -374,6 +381,7 @@ func update_menu() -> void:
 func end_run(won: bool) -> void:
 	if not won and not in_lobby and players.all(func(q): return q.hp <= 0):
 		Nemesis.on_death(self)
+		Nemesis.bury(self)
 	Meta.S.run = {}
 	if net.mode == "host" and players.size() > 1 and players[1].get("remote", false):
 		rpc("net_event", "end", {floor = floor_i, won = won})
@@ -711,7 +719,7 @@ func find_near() -> void:
 	near = null
 	var bd = 24.0
 	for it in inter:
-		if (it.kind == "chest" and it.open) or it.kind == "deco" or (it.kind == "shrine" and it.used):
+		if (it.kind == "chest" and it.open) or it.kind == "deco" or it.kind == "brazier" or it.kind == "rod" or (it.kind == "shrine" and it.used):
 			continue
 		var d = it.pos.distance_to(p.pos)
 		if d < bd:
@@ -838,7 +846,7 @@ func new_floor() -> void:
 	var bi = floor_i / 2
 	# the layout of a floor depends only on the run seed, so seeds can be shared
 	drng.seed = hash([run_seed, floor_i])
-	dg = Dungeon.generate(drng, floor_i, floor_i % 2 == 1)
+	dg = Dungeon.generate(drng, floor_i, floor_i % 2 == 1, Wx.weather_for(run_seed, floor_i))
 	dg.boss_id = D.BIOMES[bi].bosses[drng.randi() % D.BIOMES[bi].bosses.size()]
 	rebake()
 	props = dg.props
@@ -870,6 +878,8 @@ func new_floor() -> void:
 				More.drop_blueprint(self, c + Vector2(0, 20))
 			"exit":
 				inter.append({kind = "portal", pos = c})
+			"puzzle":
+				Puzzle.place(self, r)
 			"workshop":
 				inter.append({kind = "talk", who = "smith", spr = "npc_smith", name = "TALK", pos = c + Vector2(-44, -22)})
 				inter.append({kind = "smith", spr = "anvil", name = "UPGRADE WEAPON", pos = c + Vector2(-44, 4)})
@@ -900,9 +910,11 @@ func new_floor() -> void:
 	for pl in players:
 		if pl.pet != null:
 			pl.pet.pos = pl.pos
+	bind(players[0])
+	Nemesis.place_grave(self)
 	cam = players[me].pos
 	fade = 1.0
-	banner = {text = D.BIOMES[bi].name, sub = "FLOOR %d-%d" % [bi + 1, floor_i % 2 + 1], t = 3.2}
+	banner = {text = D.BIOMES[bi].name, sub = "FLOOR %d-%d" % [bi + 1, floor_i % 2 + 1] + Wx.sub(self), t = 3.2 if Wx.sub(self) == "" else 4.5}
 	Sfx.play_music(bi)
 	if net.mode == "host" and players.size() > 1 and players[1].get("remote", false):
 		rpc("net_event", "floor", {floor = floor_i, boss = dg.boss_id})
@@ -1144,6 +1156,7 @@ func update_play(dt: float) -> void:
 	Combo.update(self, dt)
 	if not in_lobby:
 		Traps.update(self, dt)
+		Wx.update(self, dt)
 		if state != "play":
 			return
 	update_pickups(dt)
@@ -1427,6 +1440,10 @@ func interact(it: Dictionary) -> void:
 			Ext.station(self, it)
 		"talk":
 			start_talk(it.who)
+		"spare":
+			Nemesis.spare(self, it)
+		"grave":
+			Nemesis.take_grave(self, it)
 		"relic":
 			it.gone = true
 			More.take_relic(self, it.id)
@@ -1460,6 +1477,10 @@ func interact(it: Dictionary) -> void:
 		"chest":
 			if it.open:
 				return
+			if it.get("sealed", false):
+				Sfx.play("deny")
+				label(p.pos + Vector2(0, -22), Puzzle.sealed_text(it), Color("ff6a6a"))
+				return
 			it.open = true
 			Meta.stat("chests")
 			Sfx.play("chest")
@@ -1469,6 +1490,8 @@ func interact(it: Dictionary) -> void:
 				Lobby.open_nook_chest(self)
 			elif it.loot == "weapon":
 				inter.append({kind = "weapon", w = random_weapon(), pos = it.pos + Vector2(0, 18)})
+			elif it.loot == "puzzle":
+				Puzzle.open(self, it)
 			else:
 				drop("coin", it.pos, 5 + rng.randi() % 4 + floor_i)
 				if rng.randf() < 0.3:
@@ -1673,6 +1696,7 @@ func spawn_wave(r: Dictionary) -> void:
 			banner = {text = D.ENEMIES[bid].name, sub = "BOSS", t = 2.6}
 			if dg.get("nem_boss", false) and not nem_met:
 				Nemesis.empower(self, boss)
+			Nemesis.call_ally(self)
 			Sfx.play("roar")
 			Sfx.play_music(3)
 			shake_add(8.0)
@@ -2181,6 +2205,9 @@ func separate() -> void:
 func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector2.ZERO, dot: bool = false, col = null) -> void:
 	if e.dead:
 		return
+	# a nemesis that has yielded: stray damage does not decide its fate for you
+	if e.get("yielded", false) and (dot or time < e.mercy):
+		return
 	var mult = 1.0 if dot else st.dmg
 	var crit = false
 	var resist = el != "" and e.el == el
@@ -2219,7 +2246,8 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 			bolt(center(e), center(o), D.EL_COL["bolt"])
 			hurt_enemy(o, (2.0 + floor_i) * (3.0 if p.syn.has("stormfront") else 1.0), "", Vector2.ZERO, true, D.EL_COL["bolt"])
 	if e.hp <= 0.0:
-		kill(e)
+		if not Nemesis.try_yield(self, e):
+			kill(e)
 
 func apply_el(e: Dictionary, el: String, dmg: float) -> void:
 	if reso_src:
@@ -2268,7 +2296,7 @@ func react(e: Dictionary, key: String) -> void:
 	var col: Color = info[1]
 	var base = (9.0 + floor_i * 3.0) * st.react
 	var c = center(e)
-	label(c + Vector2(0, -e.h2 - 14.0), info[0], col, true)
+	label(c + Vector2(0, -e.h2 - 14.0), Book.find(self, key), col, true)
 	Sfx.play("react")
 	charge_res()
 	Meta.record("reactions", key)
@@ -2496,7 +2524,7 @@ func hurt_prop(pr: Dictionary, dmg: float) -> void:
 	else:
 		after(0.08, func():
 			explode(pr.pos, 42.0, 12.0 + floor_i * 3.0, pr.el, 0)
-			Ext.add_zone(self, pr.pos, 30.0, pr.el, 3.0)
+			Ext.add_zone(self, pr.pos, 56.0 if pr.get("pz", false) else 30.0, pr.el, 3.0)
 			if p.pos.distance_to(pr.pos) < 40.0:
 				hurt_player(1, pr.el))
 
@@ -2586,6 +2614,8 @@ func update_bullets(dt: float) -> void:
 					Env.touch(self, b.pos, 5.0, b.el)
 				if not zones.is_empty():
 					Env.hijack(self, b.pos, b.r, b.el)
+				if b.el == "fire":
+					Puzzle.touch(self, b.pos, b.r + 3.0, "fire")
 		var np = b.pos + b.vel * dt
 		if solid_at(np.x, np.y) and not b.get("ghost", false):
 			if b.bounce > 0:
@@ -2867,6 +2897,10 @@ func draw_scene(ci: CanvasItem) -> void:
 				draw_player(ci)
 			6:
 				ci.draw_texture(sh, o.pos + Vector2(-8, 1))
+				if o.get("friend", false):
+					spr(ci, o.spr, o.pos + Vector2(0, 5), o.face < 0, Color(0.75, 1.0, 0.7) if (o.life > 3.0 or int(time * 10.0) % 2 == 0) else Color(1, 1, 1, 0.4))
+					Px.ctext(ci, o.pos + Vector2(0, -26), o.name, Color("a6e84e"))
+					continue
 				spr(ci, "e_turret", o.pos + Vector2(0, 5), false, Color(0.7, 1.0, 0.8) if (o.life > 1.5 or int(time * 10.0) % 2 == 0) else Color(1, 1, 1, 0.4))
 			5:
 				var hop = absf(sin(time * 9.0)) * 2.0 if o.moving else 0.0
@@ -2885,6 +2919,11 @@ func draw_inter(ci: CanvasItem, it: Dictionary) -> void:
 			ci.draw_texture(sh, it.pos + Vector2(-8, 2))
 			ci.draw_arc(it.pos + Vector2(0, -6), 9.0 + sin(time * 4.0), 0.0, TAU, 14, Color(1.0, 0.82, 0.3, 0.5) if it.kind == "relic" else Color(0.36, 0.83, 0.95, 0.5), 1.0)
 			ci.draw_texture(rt, (it.pos + Vector2(-rt.get_width() / 2.0, -6.0 - rt.get_height() / 2.0 + sin(time * 3.0 + it.pos.x) * 2.0)).round())
+		"brazier", "rod":
+			Puzzle.draw(self, ci, it)
+		"spare":
+			if int(time * 3.0) % 2 == 0:
+				Px.ctext(ci, it.pos + Vector2(0, -40), "YIELDS", Color.WHITE)
 		"lchest":
 			ci.draw_texture(sh, it.pos + Vector2(-8, 1))
 			spr(ci, "chest_lock", it.pos + Vector2(0, 5))
@@ -2906,7 +2945,7 @@ func draw_inter(ci: CanvasItem, it: Dictionary) -> void:
 			ci.draw_texture(sh, it.pos + Vector2(-8, 2))
 			ci.draw_arc(it.pos + Vector2(0, -6), 9.0 + sin(time * 4.0), 0.0, TAU, 14, Color(0.36, 0.83, 0.95, 0.6), 1.0)
 			spr(ci, "blueprint", it.pos + Vector2(0, -2.0 + sin(time * 3.0 + it.pos.x) * 2.0))
-		"npc", "egg", "deco", "talk", "smith", "alch", "fuse", "shrine", "bench":
+		"npc", "egg", "deco", "talk", "smith", "alch", "fuse", "shrine", "bench", "grave":
 			ci.draw_texture(sh, it.pos + Vector2(-8, 1))
 			var nb = 0.0
 			if it.spr.begins_with("npc_"):
@@ -3223,7 +3262,9 @@ func draw_prompt(ci: CanvasItem) -> void:
 			"npc", "egg", "talk": txt = near.name
 			"smith", "alch", "fuse": txt = near.name
 			"shrine": txt = "OFFER 1 MAX HEALTH FOR A BLESSING"
-			"chest": txt = "OPEN"
+			"chest": txt = "SEALED" if near.get("sealed", false) else "OPEN"
+			"spare": txt = "SPARE " + near.name
+			"grave": txt = "TAKE BACK " + wname(near.w)
 			"portal": txt = "DESCEND" if floor_i < LAST_FLOOR else "ESCAPE"
 			"weapon":
 				txt = wname(near.w)
@@ -3254,7 +3295,7 @@ func draw_lights(ci: CanvasItem) -> void:
 	var l = func(pos: Vector2, r: float, col: Color):
 		ci.draw_texture_rect(lt, Rect2(pos + off - Vector2(r, r), Vector2(r * 2.0, r * 2.0)), false, col)
 	for pl in players:
-		l.call(pl.pos + Vector2(0, -6), 112.0 * (0.55 if (lock != null and lock.mod == "dark") else 1.0), Color(0.36, 0.34, 0.31))
+		l.call(pl.pos + Vector2(0, -6), 112.0 * Wx.sight(self) * (0.55 if (lock != null and lock.mod == "dark") else 1.0), Color(0.36, 0.34, 0.31))
 		l.call(pl.pos + Vector2(0, -6), 44.0, Color(0.06, 0.06, 0.05))
 	for t in dg.torches:
 		if on_screen(t, 80.0):

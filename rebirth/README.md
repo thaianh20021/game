@@ -20,8 +20,22 @@ You do not shoot foes down; you build weather, and you forge with words.
   ("health", "xuyen", "hoi sinh"). At the lectern in the Hearth you name skill one and shape it
   ("frost comet big", "bao lua manh"): an element word locks its element, big / fast / strong
   trade area, cooldown and damage. The Word Forge fuses weapons the same way.
-- A nemesis. Whatever kills you gets a name, comes back tougher in a later run and resists the
-  element you used most. Kill it for gems and a relic; die to it again and it gains a rank.
+- A nemesis that talks. Whatever kills you gets a name, comes back tougher in a later run,
+  resists the element you used most and greets you with how you died ("last time your energy
+  ran out"). Beat it and it yields: finish it for gems and a relic, or press E to spare it and
+  it fights beside you in your next two boss battles. Die to it again and it gains a rank.
+- Weather. Every floor after the first has a sky decided by the seed: rain (mire everywhere,
+  lightning through mire hits harder, fire dies fast), drought (brush everywhere, fire runs),
+  fog (short sight, steam lingers) or gale (lightning strikes the room on its own, foes
+  included). The Run Board shows the forecast of the daily run.
+- A notebook you write yourself. No reaction is listed anywhere until you make it happen; each
+  discovery is written down, pays 3 gems, and can be renamed at the Archive. The game then uses
+  your names for fields, storms and bursts.
+- Puzzle rooms. Some side rooms have no foes, only a reward and a problem the room's chemistry
+  solves: freeze a bridge over a chasm, let fire walk along brush to three braziers, send
+  lightning through mire to a rod. A barrel of the needed element always stands in the room.
+- Graves. Where a run ends, a grave stands on that floor in later runs: it seeps the element
+  you used most and gives back the weapon you died holding.
 
 ## Run
 
@@ -223,7 +237,10 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/reso.gd` | Elemental resonance: stacks, the four bursts, attunement |
 | `src/forge.gd` | Word Forge: command parsing (EN/VI/pad) and forged weapons |
 | `src/wish.gd` | Typed wishes for blessings; naming and shaping skill one |
-| `src/nemesis.gd` | The foe that killed you returns |
+| `src/nemesis.gd` | The foe that killed you returns, talks, can be spared into an ally; graves |
+| `src/sky.gd` | Weather of a floor (loaded as `Wx`: `Sky` is a Godot class name) |
+| `src/book.gd` | The alchemy notebook: discoveries and the names you give them |
+| `src/puzzle.gd` | Puzzle rooms: chasm, braziers, conduit |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
@@ -251,6 +268,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 |---|---|
 | `chem.gd` | Room chemistry, hijacking, wishes, named skills, nemesis, prep station |
 | `combo.gd` | Fields, storms, cataclysm |
+| `world.gd` | Weather, notebook, puzzle rooms, sparing the nemesis, graves |
 | `forge.gd` | Word Forge and the starting loadout |
 | `anim.gd` | Pose frames and animation states |
 | `pets.gd` | Materials, seeds, garden, recipes, pets |

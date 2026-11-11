@@ -105,6 +105,7 @@ static func parse_skill(text: String) -> Dictionary:
 
 static func open_skill(g) -> void:
 	g.say = ""
+	g.say_mode = ""
 	g.set_state("say")
 	Sfx.play("ui")
 	if g.tin.on:
@@ -112,6 +113,16 @@ static func open_skill(g) -> void:
 
 static func update_say(g) -> void:
 	if g.state_t < 0.15:
+		return
+	if g.say_mode != "":
+		# naming a notebook entry
+		if g.jpk(KEY_ESCAPE) or g.jpk(KEY_ENTER) or g.jpk(KEY_KP_ENTER):
+			if not g.jpk(KEY_ESCAPE):
+				Meta.S.book[g.say_mode] = clean(g.say)
+				Meta.save()
+				Sfx.play("chest")
+			g.say_mode = ""
+			g.open_menu("book")
 		return
 	if g.jpk(KEY_ESCAPE):
 		g.set_state("play")
@@ -131,8 +142,26 @@ static func update_say(g) -> void:
 	if g.state != "say" and g.tin.on:
 		DisplayServer.virtual_keyboard_hide()
 
+# Capitals, digits and spaces only (the pixel font has nothing else), at most 14 long.
+static func clean(text: String) -> String:
+	var out = ""
+	for ch in Forge.fold(text).to_upper():
+		if (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == " ":
+			out += ch
+	return out.strip_edges().substr(0, 14)
+
 static func draw_say(g, ci: CanvasItem, Hud) -> void:
 	ci.draw_rect(Rect2(0, 0, 480, 270), Color(0.02, 0.01, 0.05, 0.78))
+	if g.say_mode != "":
+		var def = g.Book.DEF[g.say_mode]
+		Hud.panel(ci, Rect2(70, 70, 340, 110), Color(0.07, 0.05, 0.12, 0.97), Color("ffd24a"))
+		Px.ctext(ci, Vector2(240, 78), "NAME THIS DISCOVERY", Color("ffd24a"), 2)
+		Px.ctext(ci, Vector2(240, 102), def[1], Color("a8a7b8"))
+		Hud.panel(ci, Rect2(100, 116, 280, 18), Color(0.02, 0.01, 0.05, 1.0), Color("ffd24a"))
+		Px.text(ci, Vector2(106, 122), clean(g.say) + ("_" if int(g.time * 3.0) % 2 == 0 else ""), Color.WHITE)
+		Px.ctext(ci, Vector2(240, 144), "IT IS CALLED " + g.Book.name(g.say_mode) + " NOW. EMPTY RESTORES " + def[0] + ".", Color("6b6779"))
+		Px.ctext(ci, Vector2(240, 162), "ENTER: WRITE IT DOWN     ESC: CANCEL", Color("d9d4c7"))
+		return
 	Hud.panel(ci, Rect2(70, 60, 340, 150), Color(0.07, 0.05, 0.12, 0.97), Color("7adfff"))
 	Px.ctext(ci, Vector2(240, 68), "NAME YOUR SKILL", Color("7adfff"), 2)
 	Px.ctext(ci, Vector2(240, 92), "IT REPLACES: " + D.SKILLS[g.p.skills[0]].name, Color("6b6779"))

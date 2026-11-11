@@ -54,6 +54,7 @@ func _init():
 			g.p.inv = 0.0
 			await process_frame
 			if g.p.hp + g.p.ar < 50 + g.p.mar: hit_hero = true
+			if hit_hero: g.p.hp = 50
 			if e.hp < 9999.0: hit_foe = true
 			if not e.st.is_empty(): el_seen = true
 		check(hit_hero, own + " should hurt the hero")

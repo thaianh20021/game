@@ -59,7 +59,10 @@ weapons, hub name plates and rugs, harder bullet-dense tuning, element fields an
 storms (`src/combo.gd`), generated pose frames and spawn/attack/death animation, floor decor, hand-drawn wind-up and
 attack frames for every hero, foe shape and boss (`src/frames.gd`: add an entry there when adding a sprite),
 reactive rooms and pool hijacking (`src/env.gd`), typed wishes and named skills (`src/wish.gd`),
-nemesis (`src/nemesis.gd`). Next steps are in `rebirth/ROADMAP.md`.
+nemesis that talks and can be spared into a boss-fight ally, graves that return the weapon you
+died with (`src/nemesis.gd`), per-floor weather with a daily forecast (`src/sky.gd`, preloaded as
+`Wx` because `Sky` is a native class), self-written alchemy notebook (`src/book.gd`), puzzle rooms
+(`src/puzzle.gd`). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; no Android APK was built (Android SDK missing on this machine); LAN was tested

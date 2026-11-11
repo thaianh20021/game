@@ -144,7 +144,9 @@ static func update_allies(g, dt: float) -> void:
 	for a in g.allies:
 		a.life -= dt
 		a.t -= dt
-		if a.t <= 0.0:
+		if a.get("friend", false):
+			g.Nemesis.ally_tick(g, a, dt)
+		elif a.t <= 0.0:
 			var e = g.nearest_enemy(a.pos, 130.0, [])
 			if e != null:
 				a.t = 0.22
