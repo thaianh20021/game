@@ -124,6 +124,8 @@ var code_i = 0
 var allies = []
 var traps = []
 var fields = []
+# sprite afterimages: dying foes squash flat, dashing bosses leave trails
+var echoes = []
 var tin = Touch.fresh()
 # every hero in the run; p and st always point at the one currently being simulated or drawn
 var players = []
@@ -769,7 +771,7 @@ func rc(r: Dictionary) -> Vector2:
 	return Vector2(r.center) * TS + Vector2(8, 8)
 
 func clear_world() -> void:
-	for l in [enemies, bullets, zones, pickups, inter, teles, timers, parts, nums, bolts, rings, slashes, flashes, ghosts]:
+	for l in [enemies, bullets, zones, pickups, inter, teles, timers, parts, nums, bolts, rings, slashes, flashes, ghosts, echoes]:
 		l.clear()
 	lock = null
 	room = null
@@ -1137,6 +1139,7 @@ func update_player(dt: float) -> void:
 	for k in ["cd", "dash_cd", "inv", "skill_cd", "skill2_cd", "shield_t", "haste_t", "rage_t", "flash", "swing", "slow", "noregen", "ar_t"]:
 		p[k] = maxf(0.0, p[k] - dt)
 	p.kick = maxf(0.0, p.kick - dt * 30.0)
+	p.pose = maxf(0.0, float(p.get("pose", 0.0)) - dt)
 
 	if jpk(KEY_SPACE) and p.dash_cd <= 0.0:
 		p.dash_t = 0.17
@@ -1188,7 +1191,11 @@ func update_player(dt: float) -> void:
 		p.safe = p.pos
 	p.moving = mv != Vector2.ZERO
 	if p.moving:
+		var step0 = int(p.walk)
 		p.walk += dt * 11.0
+		if int(p.walk) != step0 and int(p.walk) % 2 == 0 and p.dash_t <= 0.0:
+			# a puff of dust under every other step
+			parts.append({pos = p.pos + Vector2(-2.0 * p.face, p.r), vel = Vector2(-10.0 * p.face, -8), life = 0.3, max = 0.3, col = Color(0.8, 0.78, 0.9, 0.5), size = 2, grav = 0.0})
 
 	if (jpk(KEY_Q) or jpk("m4") or jpk("m5")) and p.weapons[1] != null:
 		p.wi = 1 - p.wi
@@ -1655,7 +1662,7 @@ func spawn_enemy(id: String, pos: Vector2) -> Dictionary:
 		anim = rng.randf() * 10.0, dir = Vector2.RIGHT, av = Vector2.ZERO, av_t = 0.0, ang = rng.randf() * TAU, atk = rng.randi() % 4, is_boss = is_boss,
 		col = img.get_pixel(img.get_width() / 2, img.get_height() / 2),
 		sc = sc, z = 0.0, elite = false, smart = rng.randf() < Meta.cunning(), dodge_t = 0.0, dodge_dir = Vector2.ZERO, weak_t = 0.0,
-		hop_from = pos, hop_to = pos, cast_t = 0.0,
+		hop_from = pos, hop_to = pos, cast_t = 0.0, born = 0.25, atk_t = 0.0,
 	}
 	enemies.append(e)
 	return e
@@ -1732,6 +1739,8 @@ func fan(pos: Vector2, dir: Vector2, n: int, spread: float, spd: float, el: Stri
 		ebullet(pos, Vector2.from_angle(dir.angle() + (i - (n - 1) / 2.0) * spread / maxf(1.0, n - 1)) * spd, el)
 
 func update_enemy(e: Dictionary, dt: float) -> void:
+	e.born = maxf(0.0, float(e.get("born", 0.0)) - dt)
+	e.atk_t = maxf(0.0, float(e.get("atk_t", 0.0)) - dt)
 	e.flash = maxf(0.0, e.flash - dt)
 	e.anim += dt
 	e.react_cd -= dt
@@ -1803,6 +1812,7 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 			if e.wind > 0.0:
 				e.wind -= dt
 				if e.wind <= 0.0:
+					e.atk_t = 0.3
 					var arm = Meta.lead_pick(rng)
 					for i in d.get("burst", 1):
 						after(i * 0.13, func():
@@ -1826,6 +1836,7 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 			if e.wind > 0.0:
 				e.wind -= dt
 				if e.wind <= 0.0:
+					e.atk_t = 0.3
 					var c = center(e)
 					if d.get("aimed", false):
 						fan(c, dir, d.n, 0.6, d.bspd, e.el)
@@ -1927,6 +1938,7 @@ func boss_ai(e: Dictionary, dt: float, dir: Vector2) -> void:
 			if e.t <= 0.0:
 				e.z = 0.0
 				e.state = "busy"
+				e.born = 0.2
 				e.t = 0.9
 				explode(e.pos, 42.0, 2.0, e.el, 1)
 				ring(center(e), 24 if rage else 16, 90.0, e.el, rng.randf() * TAU)
@@ -1938,6 +1950,8 @@ func boss_ai(e: Dictionary, dt: float, dir: Vector2) -> void:
 			return
 		"dash":
 			var hit = move(e, e.dir * 330.0 * dt)
+			if Engine.get_process_frames() % 3 == 0:
+				echoes.append({name = "e_" + e.id + "_l", pos = e.pos + Vector2(0, e.r), flip = e.face < 0, t = 0.0, dur = 0.3, sc = e.sc, squash = false, col = D.EL_COL[e.el] if e.el != "" else Color("ff5a6a")})
 			if int(e.anim * 30.0) % 2 == 0:
 				burst(e.pos + Vector2(0, e.r), 1, Color("a8a7b8"), 30.0, 0.3)
 			if hit or e.t <= 0.0:
@@ -2261,6 +2275,7 @@ func kill(e: Dictionary) -> void:
 		return
 	e.dead = true
 	kills += 1
+	echoes.append({name = "e_" + e.id, pos = e.pos + Vector2(0, e.r), flip = e.face < 0, t = 0.0, dur = 0.6 if e.is_boss else 0.32, sc = e.sc, squash = true, col = Color.WHITE})
 	Meta.stat("bosses" if e.is_boss else "kills")
 	Pets.on_kill(self)
 	Meta.record("bosses" if e.is_boss else "foes", e.id)
@@ -2681,6 +2696,9 @@ func update_fx(dt: float) -> void:
 	for q in ghosts:
 		q.t -= dt
 	ghosts = ghosts.filter(func(q): return q.t > 0.0)
+	for q in echoes:
+		q.t += dt
+	echoes = echoes.filter(func(q): return q.t < q.dur)
 
 # ---- drawing ---------------------------------------------------------------------
 
@@ -2736,6 +2754,12 @@ func draw_scene(ci: CanvasItem) -> void:
 			ci.draw_rect(Rect2(t + Vector2(-1, -5 + f), Vector2(2, 3 - f)), Color("fff2ae"))
 			if rng.randf() < 0.04:
 				parts.append({pos = t + Vector2(rng.randf_range(-2, 2), -7), vel = Vector2(rng.randf_range(-5, 5), -22), life = 0.6, max = 0.6, col = Color("ffb347"), size = 1, grav = 0.0})
+	for q in echoes:
+		var ek = q.t / q.dur
+		var esc = Vector2.ONE * q.sc
+		if q.squash:
+			esc *= Vector2(1.0 + 0.7 * ek, 1.0 - 0.9 * ek)
+		spr(ci, q.name, q.pos, q.flip, Color(q.col.r, q.col.g, q.col.b, (1.0 - ek) * (0.95 if q.squash else 0.5)), esc, true)
 	for q in ghosts:
 		spr(ci, q.get("spr", p.spr), q.pos + Vector2(0, p.r), q.flip, Color(0.6, 0.8, 1.0, q.t * 2.5), Vector2.ONE, true)
 
@@ -2875,10 +2899,28 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 	var d = e.d
 	var nm = "e_" + e.id
 	var fr = nm
-	if d.get("walk", false) and e.frz <= 0.0 and e.stun <= 0.0:
+	var charging = e.wind > 0.0 or float(e.get("sp_c", 0.0)) > 0.0 or e.state in ["wind", "fuse", "aim"]
+	if e.frz > 0.0:
+		pass
+	elif float(e.get("atk_t", 0.0)) > 0.0 or e.cast_t > 0.0 or e.state == "dash":
+		fr = nm + "_l"
+	elif charging:
+		fr = nm + "_b"
+	elif d.get("walk", false) and e.stun <= 0.0:
 		fr = [nm + "_1", nm, nm + "_2", nm][int(e.anim * 8.0) % 4]
+	elif not d.get("squash", false) and fmod(e.anim, 1.2) < 0.5:
+		fr = nm + "_b"
 	var sc = Vector2.ONE * e.sc * (1.0 + 0.4 * e.cast_t)
 	var off = -e.z
+	# rise out of the ground when spawned, squash when struck or landing
+	var born: float = e.get("born", 0.0)
+	if born > 0.0:
+		var bk = born / 0.25
+		sc *= Vector2(1.0 + 0.45 * bk, 1.0 - 0.75 * bk)
+	elif e.flash > 0.05 and not e.is_boss:
+		sc *= Vector2(1.14, 0.88)
+	elif charging:
+		sc *= Vector2(1.0 + 0.06 * sin(time * 40.0), 1.0)
 	if e.frz <= 0.0:
 		if d.get("squash", false):
 			var s = sin(e.anim * 6.0) * 0.09
@@ -2961,8 +3003,19 @@ func draw_player(ci: CanvasItem) -> void:
 		return
 	var nm: String = p.spr
 	var fr = nm
-	if p.moving:
+	var bob = 0.0
+	var psc = Vector2.ONE
+	if p.dash_t > 0.0:
+		# stretch along the dash
+		fr = nm + "_l"
+		psc = Vector2(1.3, 0.78) if absf(p.dash_dir.x) > absf(p.dash_dir.y) else Vector2(0.8, 1.25)
+	elif float(p.get("pose", 0.0)) > 0.0 or p.swing > 0.0 or p.kick > 1.2:
+		fr = nm + "_l"
+	elif p.moving:
 		fr = [nm + "_1", nm, nm + "_2", nm][int(p.walk) % 4]
+		bob = 1.0 if int(p.walk) % 2 == 1 else 0.0
+	elif fmod(time + p.idx * 0.4, 1.3) < 0.55:
+		fr = nm + "_b"
 	var a = 0.45 if (p.inv > 0.0 and p.dash_t <= 0.0 and int(time * 18.0) % 2 == 0) else 1.0
 	var mod = Color(1, 1, 1, a)
 	if p.slow > 0.0:
@@ -2979,11 +3032,11 @@ func draw_player(ci: CanvasItem) -> void:
 	var behind = p.aim.y < -0.35
 	if behind:
 		draw_weapon(ci)
-	var base = p.pos + Vector2(0, p.r + 1.0 - plift())
+	var base = p.pos + Vector2(0, p.r + 1.0 - plift() - bob)
 	if plift() > 0.0:
 		var mn = "m_" + p.mount.id
 		spr(ci, [mn + "_1", mn, mn + "_2", mn][int(p.walk) % 4] if p.moving else mn, p.pos + Vector2(0, p.r + 2.0), p.face < 0)
-	spr(ci, fr, base, p.face < 0, mod)
+	spr(ci, fr, base, p.face < 0, mod, psc)
 	if p.shield_t > 0.0:
 		var scol: Color = D.EL_COL[p.weapons[p.wi].el]
 		ci.draw_arc(pcenter(), 15.0 + sin(time * 12.0), 0.0, TAU, 20, Color(scol.r, scol.g, scol.b, 0.9), 2.0)

@@ -50,6 +50,7 @@ static func unleash(g, e: Dictionary, kind: String) -> void:
 	var aim: Vector2 = (g.pcenter() - c).normalized()
 	var spd: float = e.d.get("bspd", 100)
 	g.flash(c, 60.0, D.EL_COL[el] if el != "" else Color("ff5a6a"), 0.2)
+	e.atk_t = 0.35
 	match kind:
 		"slam":
 			# leaps to where the hero stood when the charge began

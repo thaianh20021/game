@@ -1238,6 +1238,69 @@ rrr..
 rmrr.
 rrrr.
 .rr..""",
+	"d_bone": """
+ww...ww
+.wwwww.
+ww...ww""",
+	"d_shroom": """
+.mmm.
+mwmmm
+..e..""",
+	"d_pebble": """
+.gg..
+gGGg.
+.gg.g""",
+	"d_grass": """
+n..n.
+.n.nn
+nnnn.""",
+	"d_ember": """
+o.y.
+.oy.
+.yo.
+y..o""",
+	"d_gear": """
+.g.g.
+gGGGg
+.GkG.
+gGGGg
+.g.g.""",
+	"d_chain": """
+gG
+Gg
+gG
+Gg
+gG""",
+	"d_ash": """
+K.K.
+.KKK
+K.K.""",
+	"d_shard": """
+..c.
+.cC.
+cCCc
+.cc.""",
+	"d_book": """
+bbbb.
+bwwwb
+bbbb.""",
+	"d_rune": """
+.c.
+c.c
+.c.
+c.c""",
+	"d_page": """
+ww.
+wGw
+www""",
+	"d_banner": """
+rrrrrr
+ryyyyr
+ryrryr
+ryyyyr
+rrrrrr
+rr..rr
+r....r""",
 	"pedestal": """
 .GGGGGGGGGG.
 GwGGGGGGGGGG
@@ -1276,9 +1339,11 @@ static func build() -> void:
 	for h in D.HEROES:
 		make("h_" + h.id, MAPS["h_" + h.id])
 		walk_frames("h_" + h.id)
+		pose_frames("h_" + h.id)
 	for id in D.ENEMIES:
 		var d = D.ENEMIES[id]
 		make("e_" + id, MAPS[d.spr], d.get("swap", {}))
+		pose_frames("e_" + id)
 		if d.get("walk", false):
 			walk_frames("e_" + id)
 	for base in WSPR:
@@ -1303,6 +1368,11 @@ static func build() -> void:
 		make("relic_" + id, MAPS["relic"], {"c": sw[0], "C": sw[1], "b": sw[2]})
 	for id in D.SEEDS:
 		make("plant_" + id, MAPS["plant"], D.SEEDS[id].sw)
+	for n in ["d_bone", "d_shroom", "d_pebble", "d_grass", "d_ember", "d_gear", "d_chain", "d_ash", "d_shard", "d_book", "d_rune", "d_page"]:
+		make(n, MAPS[n])
+	make("d_banner_0", MAPS["d_banner"], {"r": "p", "y": "m"})
+	make("d_banner_1", MAPS["d_banner"], {})
+	make("d_banner_2", MAPS["d_banner"], {"r": "b", "y": "c"})
 	for n in ["m_ore", "m_ess", "m_fib", "seed", "bowl", "treat", "bench", "blueprint", "scrap", "trophy", "capsule", "rack", "mailbox", "mannequin"]:
 		make(n, MAPS[n])
 	make("npc_cook", MAPS["goblin"], {"t": "w", "e": "G", "T": "g"})
@@ -1390,7 +1460,7 @@ static func gen_hero(seed: int, name: String = "h_gen") -> void:
 	var a: String = D.HEROES[rng.randi() % n].id
 	var b: String = D.HEROES[rng.randi() % n].id
 	var shift = rng.randf_range(0.15, 0.85)
-	for suf in ["", "_1", "_2"]:
+	for suf in SUF:
 		var ia: Image = I["h_" + a + suf]
 		var ib: Image = I["h_" + b + suf]
 		var img: Image = ia.duplicate()
@@ -1429,7 +1499,7 @@ static func look(l: Dictionary) -> String:
 		return name
 	var dn = "%s_d%d" % [name, int(dye * 100.0)]
 	if not T.has(dn):
-		for suf in ["", "_1", "_2"]:
+		for suf in SUF:
 			var img: Image = I[name + suf].duplicate()
 			for y in img.get_height():
 				for x in img.get_width():
@@ -1441,7 +1511,7 @@ static func look(l: Dictionary) -> String:
 
 # Character fusion: head of sprite a on the body and legs of sprite b.
 static func fuse_hero(a: String, b: String, name: String) -> void:
-	for suf in ["", "_1", "_2"]:
+	for suf in SUF:
 		var ia: Image = I[a + suf]
 		var ib: Image = I[b + suf]
 		var img: Image = ia.duplicate()
@@ -1455,6 +1525,32 @@ static func fuse_hero(a: String, b: String, name: String) -> void:
 				if img.get_pixel(x, y).is_equal_approx(OUT):
 					img.set_pixel(x, y, Color("7a5514"))
 		reg(name + suf, img)
+
+# every hero sprite exists in these variants: walk left foot, walk right foot, breathe, lean
+const SUF = ["", "_1", "_2", "_b", "_l"]
+const DECOR = [["d_bone", "d_shroom", "d_pebble", "d_grass"], ["d_ember", "d_gear", "d_chain", "d_ash"], ["d_shard", "d_book", "d_rune", "d_page"]]
+
+# Two pose frames made from the base sprite:
+#   _b  breathe / crouch: everything above the feet sinks one pixel
+#   _l  lean: the upper half shifts one pixel forward (used when attacking)
+static func pose_frames(name: String) -> void:
+	var base: Image = I[name]
+	var w = base.get_width()
+	var h = base.get_height()
+	var clear = Color(0, 0, 0, 0)
+	var b: Image = base.duplicate()
+	for y in range(h - 5, 0, -1):
+		for x in w:
+			b.set_pixel(x, y, base.get_pixel(x, y - 1))
+	for x in w:
+		b.set_pixel(x, 0, clear)
+	reg(name + "_b", b)
+	var l: Image = base.duplicate()
+	for y in h / 2:
+		for x in range(w - 1, 0, -1):
+			l.set_pixel(x, y, base.get_pixel(x - 1, y))
+		l.set_pixel(0, y, clear)
+	reg(name + "_l", l)
 
 # Two extra frames with one foot lifted each, for a cheap walk cycle.
 static func walk_frames(name: String) -> void:

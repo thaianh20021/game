@@ -189,6 +189,17 @@ Saved between runs in the same file as your progress:
 - "Cunning" rises when you clear rooms untouched and drops when you struggle. It raises spawn budgets,
   shortens boss rests, and makes more foes dodge shots and punish dashes.
 
+## Animation
+
+All frames are generated from each base sprite at boot (`Art.pose_frames`, `Art.walk_frames`).
+
+- Heroes: walk cycle with a body bob and dust under the feet, idle breathing, a forward lean when
+  firing, swinging or casting, and a stretch along the dash.
+- Foes and bosses: rise out of the ground when spawned, crouch and tremble while winding up or
+  charging, lean into the attack when they fire, squash when struck, and flatten and fade when
+  they die. Bosses leave afterimages while dashing and squash on landing.
+- Dungeon floors carry four kinds of small set dressing per biome and banners on the walls.
+
 ## Layout
 
 | File | What |
@@ -209,5 +220,5 @@ Saved between runs in the same file as your progress:
     godot --headless --fixed-fps 30 --path rebirth --script res://tests/smoke.gd
 
 Tours the lobby (buys everything, finds the secrets), then plays a full 6-floor run with each hero
-using a bot in god mode. Uses its own save file. `tests/combo.gd` checks fields, storms and the cataclysm; `tests/forge.gd` checks the Word Forge and starting loadout; `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
+using a bot in god mode. Uses its own save file. `tests/anim.gd` checks pose frames and animation states; `tests/combo.gd` checks fields, storms and the cataclysm; `tests/forge.gd` checks the Word Forge and starting loadout; `tests/pets.gd` checks materials, seeds, garden, recipes and pets; `tests/terrain.gd` checks mire, pits, blueprints and crafting; `tests/arms.gd` checks new weapons, fusion traits, the newest heroes and resonance; `tests/drops.gd` checks the drop and shop rules; `tests/foes.gd` checks charged specials, the newest bosses and weapon sprites; `tests/traps.gd` checks traps in every biome; `tests/resume.gd` checks settings, hints and continuing a saved run; `tests/coop.gd` plays local two-player co-op; `tests/net_host.gd` + `tests/net_client.gd` (run as two
 processes, host first) check a LAN session; `tests/touch.gd` and `tests/pad.gd` drive touch and pad input.

@@ -132,6 +132,7 @@ static func cast(g, slot: int, mw: Vector2) -> void:
 	p[key] = D.SKILLS[id].cd * p.sk.cdm
 	Sfx.play("skill")
 	g.label(p.pos + Vector2(0, -24), D.SKILLS[id].name, D.EL_COL[el])
+	p.pose = 0.3
 	do_skill(g, id, mw, el)
 	if (slot == 0 and p.sk.twice) or (slot == 1 and p.sk.echo):
 		g.after(0.5, func(): do_skill(g, id, g.mouse() + g.cam_tl, el))

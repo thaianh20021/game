@@ -311,11 +311,18 @@ static func bake(d: Dictionary, bi: int) -> Array:
 					ground.blend_rect(shade, Rect2i(0, 0, 16, 7), Vector2i(x * TS, y * TS))
 				if d.terr.size() > 0 and d.terr[y * w + x] != 0:
 					_terr_tile(ground, x, y, d.terr[y * w + x], bi, b, y == 0 or d.terr[(y - 1) * w + x] != 2)
+				elif d.rooms[0].type != "lobby" and (hsh / 13) % 8 == 0:
+					# small set dressing, different in every biome
+					var dim: Image = Art.I[Art.DECOR[bi][(hsh / 117) % 4]]
+					ground.blend_rect(dim, Rect2i(Vector2i.ZERO, dim.get_size()), Vector2i(x * TS + 2 + (hsh / 7) % 6, y * TS + 3 + (hsh / 11) % 6))
 			else:
 				var face = y + 1 < h and grid[(y + 1) * w + x] != 0
 				if face:
 					var fv = hsh % 9
 					ground.blit_rect(t.face[fv if fv < 4 else fv % 3], r16, Vector2i(x * TS, y * TS))
+					if d.rooms[0].type != "lobby" and (hsh / 5) % 9 == 0:
+						var bim: Image = Art.I["d_banner_%d" % bi]
+						ground.blend_rect(bim, Rect2i(Vector2i.ZERO, bim.get_size()), Vector2i(x * TS + 4, y * TS + 2))
 				for hy in ([2 * y - 2, 2 * y - 1] if face else [2 * y - 1, 2 * y]):
 					if hy >= 0:
 						mask[hy * w + x] = 1
