@@ -21,6 +21,10 @@ static var EL_COL = {
 	"wood": Color("8f6a34"), "mech": Color("e0b040"), "x": Color("ff5fb0"),
 }
 
+# Saturation of the three carried elements. Painting drains the chosen one; an empty one
+# paints nothing (plain damage) until it is back above "back". Seconds are of steady fire.
+const SAT = {drain = 7.0, rest = 4.0, idle = 9.0, back = 0.35}
+
 # reaction key = the two elements sorted and joined with "+"
 static var REACT = {
 	"fire+ice": ["MELT", Color("d8f6ff")],

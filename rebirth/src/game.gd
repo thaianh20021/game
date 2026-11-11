@@ -33,6 +33,7 @@ const Book = preload("res://src/book.gd")
 const Puzzle = preload("res://src/puzzle.gd")
 const Spell = preload("res://src/spell.gd")
 const Chem = preload("res://src/chem.gd")
+const Tutor = preload("res://src/tutor.gd")
 
 # The view. The HUD and menus are laid out on a 480 x 270 sheet (UW x UH) that sits in the
 # middle of the screen; on a wider or taller screen the world simply shows more (VW x VH)
@@ -43,6 +44,7 @@ var VW = 480.0
 var VH = 270.0
 var hud_off = Vector2.ZERO
 var hud_edge = 0.0
+var tut = {}  # the first lesson, see tutor.gd
 const TS = 16
 const LAST_FLOOR = 5
 const BDEF = {team = 0, dmg = 1.0, el = "", r = 2.0, life = 1.5, pierce = 0, bounce = 0, aoe = 0.0, kind = "orb", lob = false}
@@ -340,6 +342,9 @@ func goto_lobby() -> void:
 	fade = 1.0
 	Lobby.build(self)
 	set_state("play")
+	tut = {}
+	if Tutor.wanted(self):
+		Tutor.start(self)
 
 func start_talk(who: String, then: String = "") -> void:
 	talk = {who = who, name = Talk.WHO[who].name, spr = Talk.WHO[who].spr, lines = Talk.lines(self, who), i = 0, t = 0.0, then = then}
@@ -812,6 +817,7 @@ func net_event(kind: String, data: Dictionary) -> void:
 
 func start_run(seed: int = 0, daily: bool = false) -> void:
 	in_lobby = false
+	tut = {}
 	make_player()
 	prism_next = false
 	run_seed = seed if seed != 0 else rng.randi_range(1, 99999999)
@@ -1212,6 +1218,7 @@ func update_play(dt: float) -> void:
 	update_bullets(dt)
 	update_zones(dt)
 	Combo.update(self, dt)
+	Tutor.update(self, dt)
 	Spell.update(self, dt)
 	if not in_lobby:
 		Traps.update(self, dt)
@@ -1331,6 +1338,13 @@ func update_player(dt: float) -> void:
 			set_el(i)
 	if jpk(KEY_TAB):
 		set_el((int(p.get("eli", 0)) + 1) % 3)
+	if p.has("els"):
+		sat_init(p)
+		for i in 3:
+			var rate = 1.0 / D.SAT.rest if i != p.eli else (0.0 if firing() else 1.0 / D.SAT.idle)
+			p.sat[i] = minf(1.0, p.sat[i] + rate * dt)
+			if p.spent[i] and p.sat[i] >= D.SAT.back:
+				p.spent[i] = false
 	if jpk(KEY_E) and near != null:
 		interact(near)
 		if state != "play":
@@ -1360,6 +1374,29 @@ func set_el(i: int) -> void:
 	rings.append({pos = pcenter(), r = 16.0, t = 0.0, col = D.EL_COL[el]})
 	label(p.pos + Vector2(0, -22), D.EL_NAME[el] + ("" if native(p.weapons[p.wi], el) else "  80%"), D.EL_COL[el])
 	tip("slots", Pad.hint(self, "1 2 3") + " CHANGE YOUR ELEMENT", "A WEAPON HITS FULL IN ITS OWN ELEMENT, 80% IN OTHERS")
+
+func sat_init(pl: Dictionary) -> void:
+	if not pl.has("sat") or pl.sat.size() != 3:
+		pl.sat = [1.0, 1.0, 1.0]
+		pl.spent = [false, false, false]
+
+# The element this shot paints: the chosen one, unless it has been used up.
+func paint_el(shot_cd: float) -> String:
+	var el = cur_el()
+	if not p.has("els") or p.weapons[p.wi].el == "prism":
+		return el
+	sat_init(p)
+	var i: int = p.eli
+	if p.spent[i]:
+		return ""
+	p.sat[i] -= shot_cd / D.SAT.drain
+	if p.sat[i] <= 0.0:
+		p.sat[i] = 0.0
+		p.spent[i] = true
+		label(p.pos + Vector2(0, -22), D.EL_NAME[el] + " SPENT", Color("ff6a6a"))
+		Sfx.play("deny")
+		tip("sat", "ELEMENT SPENT", "SWITCH TO ANOTHER ONE. RESTING ELEMENTS REFILL.")
+	return el
 
 func cur_el() -> String:
 	var w = p.weapons[p.wi]
@@ -1395,7 +1432,7 @@ func try_fire() -> void:
 			Arms.apply(w, tr)
 			if tr == "swift":
 				p.cd *= 0.75
-	fire_weapon(w, cur_el(), pcenter() + p.aim * 8.0, p.aim)
+	fire_weapon(w, paint_el(p.cd), pcenter() + p.aim * 8.0, p.aim)
 
 func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> void:
 	var col = D.EL_COL[el]
@@ -2879,10 +2916,10 @@ func update_fx(dt: float) -> void:
 
 # ---- drawing ---------------------------------------------------------------------
 
-func spr(ci: CanvasItem, name: String, pos: Vector2, flip: bool = false, mod: Color = Color.WHITE, sc: Vector2 = Vector2.ONE, white: bool = false) -> void:
+func spr(ci: CanvasItem, name: String, pos: Vector2, flip: bool = false, mod: Color = Color.WHITE, sc: Vector2 = Vector2.ONE, white: bool = false, rot: float = 0.0) -> void:
 	var t: Texture2D = Art.W[name] if white else Art.T[name]
 	var s = t.get_size()
-	ci.draw_set_transform(pos.round(), 0.0, Vector2(-sc.x if flip else sc.x, sc.y))
+	ci.draw_set_transform(pos.round(), rot, Vector2(-sc.x if flip else sc.x, sc.y))
 	ci.draw_texture(t, Vector2(-floor(s.x / 2.0), -s.y), mod)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -3121,6 +3158,29 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 			sc.y *= 0.8 + 0.3 * absf(sin(e.anim * 14.0))
 	if e.state == "fuse":
 		sc *= 1.0 + 0.25 * absf(sin(e.t * 30.0))
+	# life between the drawn frames: breathing, a lean into every step, a hop while walking,
+	# recoil when struck, a lunge with each attack, and a slow sway for bosses
+	var rot = 0.0
+	var lunge = 0.0
+	var step: Vector2 = e.pos - e.get("dpos", e.pos)
+	if state == "play":
+		e.dpos = e.pos
+	if e.frz <= 0.0 and born <= 0.0 and d.ai != "dummy":
+		if not d.get("squash", false):
+			var br = sin(e.anim * 3.0 + float(e.uid)) * (0.045 if e.is_boss else 0.035)
+			sc *= Vector2(1.0 - br, 1.0 + br)
+		rot = clampf(step.x * 0.06, -0.17, 0.17)
+		if step.length() > 0.15 and not d.get("fly", false) and e.z <= 0.0:
+			off -= absf(sin(e.anim * 8.0)) * (2.0 if e.is_boss else 1.5)
+		if e.is_boss:
+			rot += sin(time * 1.6 + float(e.uid)) * 0.03
+		if e.flash > 0.0:
+			rot -= e.face * minf(e.flash, 0.2) * 0.7
+		if float(e.get("atk_t", 0.0)) > 0.0:
+			lunge = e.face * 2.0
+			rot += e.face * 0.1
+	elif d.ai == "dummy" and e.flash > 0.0:
+		rot = sin(time * 40.0) * e.flash * 1.2
 	var sh: Texture2D = Art.T["shadow"]
 	var sw = e.r * 2.6
 	ci.draw_texture_rect(sh, Rect2(e.pos.x - sw / 2.0, e.pos.y + e.r - 3.0, sw, 6.0 if e.r > 8.0 else 5.0), false)
@@ -3133,13 +3193,13 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 		mod = Color(1.0, 0.82, 0.7)
 	elif e.st.has("tox"):
 		mod = Color(0.82, 1.0, 0.7)
-	var base = e.pos + Vector2(0, e.r + off)
-	spr(ci, fr, base, e.face < 0, mod, sc)
+	var base = e.pos + Vector2(lunge, e.r + off)
+	spr(ci, fr, base, e.face < 0, mod, sc, false, rot)
 	if e.flash > 0.0:
-		spr(ci, fr, base, e.face < 0, Color(1, 1, 1, 0.85), sc, true)
+		spr(ci, fr, base, e.face < 0, Color(1, 1, 1, 0.85), sc, true, rot)
 	elif e.wind > 0.0 or e.state == "wind" or e.state == "fuse" or e.state == "aim":
 		if int(time * 16.0) % 2 == 0:
-			spr(ci, fr, base, e.face < 0, Color(1, 0.3, 0.3, 0.5), sc, true)
+			spr(ci, fr, base, e.face < 0, Color(1, 0.3, 0.3, 0.5), sc, true, rot)
 	var topy = base.y - e.h2 * 2.0
 	if e.frz > 0.0:
 		var rct = Rect2(base.x - e.h2 - 2.0, topy - 2.0, e.h2 * 2.0 + 4.0, e.h2 * 2.0 + 3.0)
@@ -3205,9 +3265,17 @@ func draw_player(ci: CanvasItem) -> void:
 		fr = nm + "_l"
 	elif p.moving:
 		fr = [nm + "_1", nm, nm + "_2", nm][int(p.walk) % 4]
-		bob = 1.0 if int(p.walk) % 2 == 1 else 0.0
+		bob = absf(sin(p.walk * PI / 2.0)) * 1.6
 	elif fmod(time + p.idx * 0.4, 1.3) < 0.55:
 		fr = nm + "_b"
+	# lean into the run, breathe when idle, rock back with every shot
+	var pstep: Vector2 = p.pos - p.get("dpos", p.pos)
+	if state == "play":
+		p.dpos = p.pos
+	var prot = clampf(pstep.x * 0.05, -0.15, 0.15) - p.face * p.kick * 0.025
+	if p.dash_t <= 0.0 and not p.moving:
+		var pbr = sin(time * 2.6 + p.idx) * 0.035
+		psc *= Vector2(1.0 - pbr, 1.0 + pbr)
 	var a = 0.45 if (p.inv > 0.0 and p.dash_t <= 0.0 and int(time * 18.0) % 2 == 0) else 1.0
 	var mod = Color(1, 1, 1, a)
 	if p.slow > 0.0:
@@ -3228,15 +3296,15 @@ func draw_player(ci: CanvasItem) -> void:
 	if plift() > 0.0:
 		var mn = "m_" + p.mount.id
 		spr(ci, [mn + "_1", mn, mn + "_2", mn][int(p.walk) % 4] if p.moving else mn, p.pos + Vector2(0, p.r + 2.0), p.face < 0)
-	spr(ci, fr, base, p.face < 0, mod, psc)
+	spr(ci, fr, base, p.face < 0, mod, psc, false, prot)
 	if p.shield_t > 0.0:
 		var scol: Color = D.EL_COL[p.weapons[p.wi].el]
 		ci.draw_arc(pcenter(), 15.0 + sin(time * 12.0), 0.0, TAU, 20, Color(scol.r, scol.g, scol.b, 0.9), 2.0)
 		ci.draw_circle(pcenter(), 14.0, Color(scol.r, scol.g, scol.b, 0.15))
 	if p.rage_t > 0.0:
-		spr(ci, fr, base, p.face < 0, Color(1.0, 0.2, 0.2, 0.3 + 0.2 * sin(time * 14.0)), Vector2.ONE, true)
+		spr(ci, fr, base, p.face < 0, Color(1.0, 0.2, 0.2, 0.3 + 0.2 * sin(time * 14.0)), psc, true, prot)
 	if p.flash > 0.0:
-		spr(ci, fr, base, p.face < 0, Color(1, 1, 1, 0.8), Vector2.ONE, true)
+		spr(ci, fr, base, p.face < 0, Color(1, 1, 1, 0.8), psc, true, prot)
 	if not behind:
 		draw_weapon(ci)
 	if not in_lobby and not enemies.is_empty():

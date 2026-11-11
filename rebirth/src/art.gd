@@ -623,6 +623,186 @@ x.....x
 ..xwx..
 .x...x.
 x.....x""",
+	"bl_battery": """
+...GGG...
+..bbbbb..
+..bCccb..
+..bCccb..
+..bcycb..
+..bcyyb..
+..bcycb..
+..bcccb..
+..bbbbb..""",
+	"bl_bounce": """
+.........
+y........
+.y.....yy
+..y...y.y
+...y.y...
+....y....
+.........
+ggggggggg
+GGGGGGGGG""",
+	"bl_catalyst": """
+...www...
+...wGw...
+...wGw...
+..wGGGw..
+..wmmmw..
+.wmmYmmw.
+.wmYmmmw.
+.wmmmmmw.
+..wwwww..""",
+	"bl_cond": """
+.........
+.ll...ll.
+lnnl.lnnl
+lnnlllnnl
+.ll.l.ll.
+....l....
+...lll...
+..lnnnl..
+...lll...""",
+	"bl_crit": """
+....y....
+.........
+..wwwww..
+.wwcccww.
+wwcckccww
+.wwcccww.
+..wwwww..
+.........
+....y....""",
+	"bl_free": """
+.........
+..nnnn.l.
+.n....nl.
+.n...lll.
+.n.......
+.n.....n.
+.n....n..
+..nnnn...
+.........""",
+	"bl_fury": """
+....r....
+...ror...
+...ror...
+..rooor..
+..royor..
+.rooyoor.
+.royyyor.
+.rooyoor.
+..rrrrr..""",
+	"bl_linger": """
+.ttttttt.
+..wpppw..
+..wpppw..
+...wpw...
+....p....
+...w.w...
+..w.p.w..
+..wpppw..
+.ttttttt.""",
+	"bl_magnet": """
+.........
+rr.....rr
+rr.....rr
+GG.....GG
+GG.....GG
+GG.....GG
+GGG...GGG
+.GGGGGGG.
+..ggggg..""",
+	"bl_pack": """
+.........
+..s...s..
+.sss.sss.
+..s...s..
+.s..s..s.
+...sss...
+..sssss..
+..sssss..
+...S.S...""",
+	"bl_pierce": """
+......www
+.....wGGw
+....wGGw.
+...wGGw..
+.o.GGw...
+..oGw....
+.ooo.....
+oo.o.....
+o........""",
+	"bl_plating": """
+.........
+GGGGGGGGG
+GwGGGGGgg
+GwGGyGGgg
+GGGyyyGgg
+GGGGyGGgg
+.GGGGGgg.
+..GGGgg..
+...Ggg...""",
+	"bl_surge": """
+.........
+..mmmmm..
+.m.....m.
+m..ppp..m
+m..pwp..m
+m..ppp..m
+.m.....m.
+..mmmmm..
+.........""",
+	"bl_swift": """
+.........
+..ww.....
+.www..tt.
+wwww..tt.
+.www..tt.
+..w..ttt.
+....ttttt
+....TTTTT
+.........""",
+	"bl_thorns": """
+....w....
+.w..G..w.
+..G.G.G..
+...GGG...
+wGGGrGGGw
+...GGG...
+..G.G.G..
+.w..G..w.
+....w....""",
+	"bl_vamp": """
+.........
+.w.....w.
+.ww...ww.
+.ww...ww.
+..w...w..
+....r....
+...rrr...
+...rRr...
+....r....""",
+	"bl_vital": """
+.........
+.rr...rr.
+rwrr.rrrr
+rrrrrrrrr
+rrrrrrrrR
+.rrrrrrR.
+..rrrrR..
+...rrR...
+....R....""",
+	"bl_wind2": """
+.........
+.y.....y.
+yyy...yyy
+yoyy.yyoy
+.yyyryyy.
+..yrrry..
+...rrr...
+....r....
+.........""",
 	"ic_void": """
 ..ppp..
 .pPPPp.
@@ -1482,6 +1662,9 @@ static func build() -> void:
 	make("npc_quarter", MAPS["guard"], {"r": "n", "o": "l"})
 	for n in ["cat", "jukebox", "tomb", "altar", "anvil", "cauldron", "fountain", "pet_pup", "pet_owl", "pet_mote", "pet_toad", "ic_fire", "ic_ice", "ic_bolt", "ic_tox", "ic_stone", "ic_wind", "ic_light", "ic_void", "ic_water", "ic_leaf", "ic_earth", "ic_metal", "ic_wood", "ic_mech", "ic_x", "gem"]:
 		make(n, MAPS[n])
+	for bl in D.BUFFS:
+		if MAPS.has("bl_" + bl.id):
+			make("bl_" + bl.id, MAPS["bl_" + bl.id])
 	for el in D.ALL:
 		make("crystal_" + el, MAPS["crystal"], el_swap(el))
 	make("crystal_prism", MAPS["crystal"], el_swap("prism"))

@@ -15,7 +15,8 @@ creatures and constructs (Brassheart, Lantern, Kestrel, Veil, Croak, Ramskull, R
 weapons are horns, pods, bells, lenses and the like, not guns. Keep new content in that style and
 never copy another game's characters, names or assets. Internal ids (warden, pistol, rail...) are
 old and do not match display names.
-All sprites, tiles, sounds and music are generated from code at boot (no asset files).
+All sprites, tiles, sounds and music are generated from code at boot (no asset files; the three
+`icon*.png` launcher images are themselves written by `tests/icon.gd`).
 In-game text is English capitals only (the pixel font has no other glyphs). The owner writes in Vietnamese.
 
 ## Run and test
@@ -67,7 +68,12 @@ fields and storms generated from one aspect per element (`src/chem.gd`; a new el
 in `data.gd`, `chem.gd`, `art.gd` el_swap + icon, `forge.gd` words, `reso.gd`, `spell.gd` EL_WORD,
 and `tests/recipes.gd` checks it), three carried element slots, word recipes that cast themselves
 when their two elements react (`src/spell.gd`), terrain reactions for every element (`src/env.gd`),
-prompts that follow the gamepad (`Pad.hint`: wrap any new on-screen key name in it). Next steps are in `rebirth/ROADMAP.md`.
+prompts that follow the gamepad (`Pad.hint`: wrap any new on-screen key name in it),
+element saturation (`D.SAT`, `game.paint_el`), first lesson (`src/tutor.gd`; headless tests only get it with
+`g.sim.tutor`), blessing emblems (`bl_<id>` maps in `art.gd`: add one with every new blessing), procedural
+motion in `draw_enemy`/`draw_player` (lean, breathing, hop, recoil), a view that fills wide screens
+(`game.fit`; HUD code draws on the 480x270 sheet, use `g.full()` for anything that must reach the
+edges and `g.mworld()` for the aim point), generated app icon (`tests/icon.gd`). Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; a debug APK builds and installs on the owner's phone (SDK path is in `rebirth/README.md`; use the adb in that SDK's platform-tools, `C:/adb/adb` is from 2015 and loses the device) but nobody has reported how it plays there; LAN was tested

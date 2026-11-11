@@ -125,6 +125,12 @@ func run_hero(hero: int, fuse: int, pet: String, mount: String) -> void:
 				{id = wids[(wk + 5) % wids.size()], el = ["", "fire", "ice", "bolt", "tox", "prism"][(wk + 1) % 6], el2 = "", lv = 0}]
 			wk += 1
 			g.p.pos = g.rc(r) + Vector2(0, 20)
+			# never land in a pit: the fall would throw the bot back into the previous room
+			for o in [Vector2(0, 20), Vector2(0, -20), Vector2(24, 0), Vector2(-24, 0), Vector2.ZERO, Vector2(32, 24), Vector2(-32, 24), Vector2(0, 40), Vector2(0, -40)]:
+				if g.terr_at(g.rc(r) + o) != 2:
+					g.p.pos = g.rc(r) + o
+					break
+			g.p.safe = g.p.pos
 			g.p.gold = 500
 			await step(20)
 			var n = 0

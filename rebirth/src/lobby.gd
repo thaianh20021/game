@@ -296,6 +296,11 @@ static func rows(g, kind: String) -> Array:
 				fn = func(): o[k[1]] = (int(o[k[1]]) + 1) % 5})
 		rs.append({name = "FULLSCREEN: " + ("ON" if o.full else "OFF"), desc = "SWITCH BETWEEN WINDOW AND FULL SCREEN", cost = 0, state = "owned", tag = "CHANGE", fn = func(): o.full = not o.full})
 		rs.append({name = "SCREEN SHAKE: " + ("ON" if o.shake else "OFF"), desc = "TURN OFF IF THE SHAKING BOTHERS YOU", cost = 0, state = "owned", tag = "CHANGE", fn = func(): o.shake = not o.shake})
+		if g.in_lobby:
+			rs.append({name = "REPLAY THE LESSON", desc = "THE FIRST LESSON AT THE TRAINING DUMMY, AGAIN", cost = 0, state = "owned", tag = "START",
+				fn = func():
+					g.set_state("play")
+					g.Tutor.start(g)})
 		return rs
 	if Hub.KINDS.has(kind):
 		return Hub.rows(g, kind)

@@ -14,6 +14,13 @@ You do not shoot foes down; you build weather, and you forge with words.
   mire), water floods pits into mire and puts out fire pools, leaf overgrows mire into dry
   brush (which burns), wood lays planks across pits, metal cuts crates and cracked walls,
   gear jams traps for good, and X does what a random other element would.
+- Elements run out. Each of the three carried elements has a bar: painting drains the chosen
+  one (about seven seconds of steady fire), resting ones refill in four. A spent element
+  paints nothing until it is a third full again, so the cost of an element is having to
+  rotate, and rotating is what makes reactions. Numbers are `D.SAT` in `src/data.gd`.
+- A first lesson. A new save starts beside the training dummy with ten steps done by doing
+  (move, dash, paint, switch, react, storm, rotate, skill, burst, go). Backspace, the pad's
+  Back button or a tap skips it; Settings in the Hearth replays it (`src/tutor.gd`).
 - The room reacts. Ice freezes mire into firm ground and bridges pits. Fire burns crates and
   walks through dry brush tile by tile. Lightning runs through a whole patch of mire and shocks
   everything standing in it, you included. Venom eats through cracked walls.
@@ -116,6 +123,12 @@ Use the Link Stone in the Hearth.
 - The host simulates everything and sends 20 snapshots a second; the guest predicts only its own walking.
 
 ## Android
+
+The view fills any screen: the world shows more on a wide phone, the 480 x 270 HUD sheet stays
+centred, and the status block, the map and the touch controls hug the real edges inside the
+safe area (`game.fit`, `hud_off`, `hud_edge`). The big button beside the fire stick changes
+element and shows how much of the current one is left. The launcher icon is painted by
+`tests/icon.gd` into `icon.png`, `icon_fg.png`, `icon_bg.png` (the only image files in the project).
 
 `export_presets.cfg` has an Android preset (arm64, landscape, network permissions). Building an APK
 needs the Android SDK set in Godot's Editor Settings; then: `godot --headless --path rebirth --export-debug Android build/dungeon-core.apk`.
@@ -272,6 +285,7 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/puzzle.gd` | Puzzle rooms: chasm, braziers, conduit |
 | `src/spell.gd` | Recipes: word spells set off by reactions (six shapes, four motions) |
 | `src/chem.gd` | Chemistry generator: aspects of the fifteen elements, generated reactions, fields and storms |
+| `src/tutor.gd` | The first lesson at the training dummy |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
@@ -302,6 +316,9 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `world.gd` | Weather, notebook, puzzle rooms, sparing the nemesis, graves |
 | `recipes.gd` | Fifteen elements, generated reactions and storms, element slots, recipes |
 | `terra.gd` | The newer elements against terrain, crates, walls and traps; gamepad prompts |
+| `lesson.gd` | Element saturation, blessing emblems, the first lesson, touch button layout |
+| `icon.gd` | Paints the app icon files (run headless after changing the design) |
+| `shot4.gd`, `shot5.gd` | Phone-shaped screenshots: wide view, lesson, blessing cards (`--resolution 1400x630`) |
 | `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |
 | `forge.gd` | Word Forge and the starting loadout |
 | `anim.gd` | Pose frames and animation states |

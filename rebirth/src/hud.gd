@@ -77,6 +77,7 @@ static func draw(g, ci: CanvasItem) -> void:
 		_:
 			Wx.draw(g, ci)
 			draw_play(g, ci)
+			g.Tutor.draw(g, ci, Hud_self())
 			match g.state:
 				"pause": draw_pause(g, ci)
 				"buff": draw_buff(g, ci)
@@ -329,7 +330,12 @@ static func draw_play(g, ci: CanvasItem) -> void:
 			big(ci, Art.T["ic_" + p.els[i]], Vector2(slx + 9, 216), 1.0, Color.WHITE if on else Color(1, 1, 1, 0.45))
 			Px.text(ci, Vector2(slx + 2, 213), str(i + 1), GOLD if on else DIM)
 			if nat.has(p.els[i]) or w.el == "prism":
-				ci.draw_rect(Rect2(slx + 2, 226, 16, 1), D.EL_COL[p.els[i]])
+				ci.draw_rect(Rect2(slx + 14, 213, 4, 1), D.EL_COL[p.els[i]])
+			if p.has("sat"):
+				# how much of this element is left: it drains while you paint with it, refills while it rests
+				var spent: bool = p.spent[i]
+				ci.draw_rect(Rect2(slx + 2, 227, 16, 2), INK)
+				ci.draw_rect(Rect2(slx + 2, 227, 16.0 * clampf(p.sat[i], 0.0, 1.0), 2), (Color("ff6a6a") if int(t * 8.0) % 2 == 0 else Color("6b6779")) if spent else D.EL_COL[p.els[i]])
 
 	ci.draw_set_transform(-edge)
 	if g.in_lobby:
@@ -573,7 +579,14 @@ static func draw_buff(g, ci: CanvasItem) -> void:
 		var r = buff_rect(i)
 		var hov = r.has_point(m) or (g.pad_used and i == g.buff_sel)
 		panel(ci, r, Color(0.16, 0.1, 0.24, 0.97) if hov else Color(0.09, 0.06, 0.15, 0.95), GOLD if hov else Color("9352cb"))
-		big(ci, Art.T["tome"], r.position + Vector2(58 - 15, 10), 3.0)
+		var bic = "bl_" + str(b.get("id", ""))
+		if Art.T.has(bic):
+			# its own emblem on a small plate that lights up under the pointer
+			ci.draw_rect(Rect2(r.position + Vector2(58 - 16, 8), Vector2(32, 32)), Color(0.04, 0.03, 0.08, 0.9))
+			ci.draw_rect(Rect2(r.position + Vector2(58 - 16, 8), Vector2(32, 32)), GOLD if hov else Color("55307f"), false, 1.0)
+			big(ci, Art.T[bic], r.position + Vector2(58 - 13.5, 10.5 + (sin(g.time * 4.0 + i) if hov else 0.0)), 3.0)
+		else:
+			big(ci, Art.T["tome"], r.position + Vector2(58 - 15, 10), 3.0)
 		Px.ctext(ci, r.position + Vector2(58, 44), b.name, GOLD)
 		var lines = wrap_text(b.desc, 17)
 		for k in lines.size():

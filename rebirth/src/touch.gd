@@ -12,10 +12,10 @@ const BUTTONS = {
 	"s1": [Vector2(430, 124), 13.0, "1", "m2"],
 	"s2": [Vector2(398, 112), 13.0, "2", KEY_F],
 	"burst": [Vector2(364, 118), 12.0, "R", KEY_R],
-	"item": [Vector2(336, 138), 12.0, "C", KEY_C],
-	"swap": [Vector2(330, 172), 12.0, "Q", KEY_Q],
-	"el": [Vector2(302, 198), 12.0, "EL", KEY_TAB],
-	"use": [Vector2(346, 206), 13.0, "E", KEY_E],
+	"swap": [Vector2(332, 146), 12.0, "Q", KEY_Q],
+	# changing element is the main verb after firing: a big button right beside the fire stick
+	"el": [Vector2(366, 172), 17.0, "", KEY_TAB],
+	"use": [Vector2(338, 212), 13.0, "E", KEY_E],
 	"pause": [Vector2(240, 12), 9.0, "II", KEY_ESCAPE],
 }
 
@@ -38,6 +38,8 @@ static func handle(g, ev: InputEvent) -> void:
 			t.tap = pos
 			g.jp["m1"] = true
 			if g.state != "play":
+				return
+			if not g.tut.is_empty() and g.Tutor.SKIP.grow(6.0).has_point(pos):
 				return
 			for id in BUTTONS:
 				var b = BUTTONS[id]
@@ -106,6 +108,21 @@ static func draw(g, ci: CanvasItem) -> void:
 		var b = BUTTONS[id]
 		var down = t.held.values().has(id)
 		var bp: Vector2 = at(g, b[0])
+		if id == "el" and g.p.has("els"):
+			# shows what you paint with now, how much of it is left, and what comes next
+			var cur: String = g.p.els[g.p.eli]
+			var nxt: String = g.p.els[(int(g.p.eli) + 1) % g.p.els.size()]
+			var ec: Color = g.D.EL_COL[cur]
+			var left = float(g.p.sat[g.p.eli]) if g.p.has("sat") else 1.0
+			ci.draw_circle(bp, b[1], Color(ec.r, ec.g, ec.b, 0.38 if down else 0.2))
+			ci.draw_arc(bp, b[1], 0.0, TAU, 24, Color(1, 1, 1, 0.25), 1.0)
+			ci.draw_arc(bp, b[1], -PI / 2.0, -PI / 2.0 + TAU * left, 24, Color(ec.r, ec.g, ec.b, 0.95), 2.0)
+			var it: Texture2D = g.Art.T["ic_" + cur]
+			ci.draw_set_transform(bp + Vector2(-7, -8), 0.0, Vector2(2, 2))
+			ci.draw_texture(it, Vector2.ZERO)
+			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			ci.draw_texture(g.Art.T["ic_" + nxt], bp + Vector2(8, 6), Color(1, 1, 1, 0.75))
+			continue
 		ci.draw_circle(bp, b[1], Color(1, 1, 1, 0.3 if down else 0.1))
 		ci.draw_arc(bp, b[1], 0.0, TAU, 18, Color(1, 1, 1, 0.35), 1.0)
 		Px.ctext(ci, bp + Vector2(0, -3), b[2], Color(1, 1, 1, 0.7), 1, false)
