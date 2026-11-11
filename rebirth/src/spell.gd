@@ -1,5 +1,7 @@
 extends RefCounted
-# Recipes: spells written in words before the run, set off by reactions during it.
+# Reaction spells, set off by reactions during a run, and skill training at the lectern.
+# (Spells used to be typed in words; the parser below is kept because the menu still
+# stores a spell as its words, but nothing in the game asks the player to type one.)
 #
 # At the lectern you write up to three recipes: two elements, a shape, a motion and
 # optional size words ("fire ice wall push", "xoay set doc hut", "stone wind rain burst
@@ -130,19 +132,115 @@ static func describe(r: Dictionary) -> String:
 		s += "  " + m.to_upper()
 	return s
 
-static func rows(g) -> Array:
-	var out = [{name = "SKILL ONE: " + g.skill_name(0), desc = "RENAME AND SHAPE IT WITH WORDS", cost = 0, state = "owned", tag = "WRITE", fn = func(): g.pending_say = "skill"}]
+# ---- the lectern: skill training -------------------------------------------------
+# No typing. Both skills are trained with gems (three levels each of power, reach and
+# haste for skill one; power and haste for skill two), skill one can be bound to one of
+# the carried elements, and the reaction spell is put together from three choices.
+
+const UP_COST = [15, 30, 50]
+const UP_MAX = 3
+const UPS = [
+	["p1", 0, "POWER", "+15% DAMAGE A LEVEL"], ["r1", 0, "REACH", "+12% AREA A LEVEL"], ["h1", 0, "HASTE", "8% QUICKER RECHARGE A LEVEL"],
+	["p2", 1, "POWER", "+15% DAMAGE A LEVEL"], ["h2", 1, "HASTE", "8% QUICKER RECHARGE A LEVEL"],
+]
+
+static func ups(hkey: String) -> Dictionary:
+	var all = Meta.S.get("skillup", {})
+	var u = all.get(hkey, {})
+	return u if u is Dictionary else {}
+
+static func set_up(hkey: String, k: String, v) -> void:
+	if not Meta.S.has("skillup"):
+		Meta.S["skillup"] = {}
+	var u = ups(hkey)
+	u[k] = v
+	Meta.S.skillup[hkey] = u
+
+# What training gives a hero: [damage, area, cooldown] for each skill, and skill one's element.
+static func trained(hkey: String) -> Dictionary:
+	var u = ups(hkey)
+	var el = str(u.get("el", ""))
+	return {
+		sk1 = [1.0 + 0.15 * int(u.get("p1", 0)), 1.0 + 0.12 * int(u.get("r1", 0)), 1.0 - 0.08 * int(u.get("h1", 0))],
+		sk2 = [1.0 + 0.15 * int(u.get("p2", 0)), 1.0, 1.0 - 0.08 * int(u.get("h2", 0))],
+		el = el if D.ALL.has(el) else "",
+	}
+
+static func pairs() -> Array:
+	var e = Meta.slots()
+	return [[e[0], e[1]], [e[0], e[2]], [e[1], e[2]]]
+
+# Rebuilds the one reaction spell from menu choices (step: which of the three to advance).
+static func choose(step: String) -> void:
+	var r = slot(0)
+	var ok: bool = r.get("ok", false)
+	var ps = pairs()
+	var pi = -1
+	for i in ps.size():
+		var q = ps[i].duplicate()
+		q.sort()
+		if ok and q == r.els:
+			pi = i
+	var shapes = SHAPES.keys()
+	var verbs = VERBS.keys()
+	var si = maxi(0, shapes.find(r.get("shape", "wave")))
+	var vi = maxi(0, verbs.find(r.get("verb", "push")))
+	match step:
+		"pair": pi += 1
+		"shape":
+			si = (si + 1) % shapes.size()
+			pi = maxi(pi, 0)
+		"verb":
+			vi = (vi + 1) % verbs.size()
+			pi = maxi(pi, 0)
+	while Meta.S.recipes.size() < SLOTS:
+		Meta.S.recipes.append({})
 	for i in SLOTS:
-		var r = slot(i)
-		var ok: bool = r.get("ok", false)
-		out.append({name = "RECIPE %d: %s" % [i + 1, r.name if ok else "EMPTY"], desc = describe(r) if ok else "TWO ELEMENTS, A SHAPE, A MOTION. ENGLISH OR VIETNAMESE.", cost = 0, state = "owned", tag = "WRITE",
-			fn = func(): g.pending_say = "rc%d" % i})
-	out.append({name = "ROLL A RANDOM RECIPE", desc = "THE LECTERN WRITES ONE FOR YOU INTO SLOT %d" % (g.roll_slot + 1), cost = 0, state = "owned", tag = "ROLL",
+		Meta.S.recipes[i] = {}
+	if pi < ps.size():
+		write(0, "%s %s %s %s" % [EL_WORD[ps[pi][0]], EL_WORD[ps[pi][1]], shapes[si], verbs[vi]])
+
+static func rows(g) -> Array:
+	var hk: String = g.p.hkey
+	var u = ups(hk)
+	var again = func(): g.menu.rows = rows(g)
+	var out = []
+	for q in UPS:
+		var lv = int(u.get(q[0], 0))
+		var full = lv >= UP_MAX
+		out.append({name = "%s  %s  %d/%d" % [g.skill_name(q[1]), q[2], lv, UP_MAX], desc = q[3], cost = 0 if full else UP_COST[lv],
+			state = "owned" if full else "buy", icon = "sk_" + str(g.p.skills[q[1]]),
+			fn = func():
+				if int(ups(hk).get(q[0], 0)) < UP_MAX:
+					set_up(hk, q[0], int(ups(hk).get(q[0], 0)) + 1)
+					g.Lobby.refresh_player(g)
+					Sfx.play("chest")
+				again.call()})
+		if full:
+			out.back().tag = "MAX"
+		if q[0] == "h1":
+			var el = str(trained(hk).el)
+			out.append({name = g.skill_name(0) + "  ELEMENT: " + (D.EL_NAME[el] if el != "" else "YOUR CHOSEN ONE"), desc = "BIND IT TO ONE OF THE THREE YOU CARRY", cost = 0, state = "owned", tag = "CHANGE",
+				icon = "ic_" + el if el != "" else "sk_" + str(g.p.skills[0]),
+				fn = func():
+					var opts = [""] + Meta.slots()
+					set_up(hk, "el", opts[(opts.find(str(trained(hk).el)) + 1) % opts.size()])
+					g.Lobby.refresh_player(g)
+					again.call()})
+	var r = slot(0)
+	var ok: bool = r.get("ok", false)
+	out.append({name = "REACTION SPELL: " + ("%s + %s" % [D.EL_NAME[r.els[0]], D.EL_NAME[r.els[1]]] if ok else "OFF"), desc = "WHEN THESE TWO REACT, THE SPELL CASTS ITSELF", cost = 0, state = "owned", tag = "CHANGE",
 		fn = func():
-			write(g.roll_slot, random_text(g.rng))
-			g.roll_slot = (g.roll_slot + 1) % SLOTS
-			g.menu_next = "spell"})
-	out.append({name = "HOW IT WORKS", desc = "WHEN A RECIPE'S TWO ELEMENTS REACT, IT CASTS ITSELF", cost = 0, state = "on", tag = "", fn = func(): pass})
+			choose("pair")
+			again.call()})
+	out.append({name = "SPELL SHAPE: " + str(r.get("shape", "wave")).to_upper(), desc = NOTE[r.get("shape", "wave")], cost = 0, state = "owned", tag = "CHANGE",
+		fn = func():
+			choose("shape")
+			again.call()})
+	out.append({name = "SPELL MOTION: " + str(r.get("verb", "push")).to_upper(), desc = NOTE[r.get("verb", "push")], cost = 0, state = "owned", tag = "CHANGE",
+		fn = func():
+			choose("verb")
+			again.call()})
 	return out
 
 # ---- casting ---------------------------------------------------------------------

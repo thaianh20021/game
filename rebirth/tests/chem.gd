@@ -161,14 +161,13 @@ func _init():
 	check(lect.size() == 1, "the hub has a lectern")
 	g.interact(lect[0])
 	check(g.state == "menu" and g.menu.kind == "spell", "the lectern opens its menu")
+	Meta.S.gems = 500
 	g.Lobby.activate(g, g.menu.rows[0])
-	check(g.state == "say", "the lectern opens the naming prompt")
-	type("bão lửa mạnh")
-	await frames(8)
+	g.Lobby.activate(g, g.menu.rows[0])
+	g.Lobby.activate(g, g.menu.rows[3])
 	shot("say")
-	g.jp[KEY_ENTER] = true
-	await frames(3)
-	check(g.state == "play" and g.skill_name(0) == "BAO LUA MANH" and g.p.sk_el == "fire" and g.p.sk1[0] > 1.2, "named skill: " + g.skill_name(0) + " " + str(g.p.sk1))
+	g.set_state("play")
+	check(Meta.S.gems == 500 - 15 - 30 and g.p.sk1[0] > 1.29 and g.p.sk_el == "fire", "trained skill: " + str(g.p.sk1) + " " + g.p.sk_el)
 	g.start_run(3, false)
 	g.p.weapons[0].el = "ice"
 	var t = g.spawn_enemy("goblin", g.p.pos + Vector2(20, 0))

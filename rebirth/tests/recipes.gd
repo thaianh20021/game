@@ -98,11 +98,14 @@ func _init():
 	check(kinds.size() >= 15, "and many different ones (%d)" % kinds.size())
 	check(not Spell.write(0, "big wall") and Spell.recipes().is_empty(), "a bad recipe is not saved")
 	check(Spell.write(0, "fire ice wall push") and Spell.write(1, "stone wind rain burst big") and Spell.recipes().size() == 2, "recipes are saved")
-	var rows = Lobby.rows(g, "spell")
-	check(rows.size() == 6 and rows[1].name.find("FIRE ICE WALL PUSH") >= 0, "the lectern lists them")
-	g.roll_slot = 2
-	rows[4].fn.call()
-	check(Spell.recipes().size() == 3 and g.menu_next == "spell", "the lectern can roll one")
+	g.open_menu("spell")
+	check(g.menu.rows.size() == 9 and g.menu.rows[6].name == "REACTION SPELL: FIRE + ICE" and g.menu.rows[7].name == "SPELL SHAPE: WALL", "the lectern shows the spell: " + g.menu.rows[6].name)
+	g.menu.rows[7].fn.call()
+	check(Spell.recipes().size() == 1 and Spell.slot(0).shape != "wall" and Spell.slot(0).els == ["fire", "ice"], "changing the shape keeps the pair and leaves one spell")
+	g.set_state("play")
+	Spell.write(0, "fire ice wall push")
+	Spell.write(1, "stone wind rain burst big")
+	Spell.write(2, Spell.random_text(g.rng))
 	g.menu_next = ""
 	check(Spell.write(2, ""), "a slot can be cleared")
 

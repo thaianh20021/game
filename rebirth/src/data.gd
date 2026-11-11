@@ -38,6 +38,11 @@ const CC_FREE = 1.5
 # reaction fields that may lie on the floor at once; only one three-element effect exists at a time
 const FIELDS_MAX = 3
 
+# Difficulty dials (owner asked for a harder game on 2026-11-11). count: how many foes a wave
+# brings; hp: health of ordinary foes; boss_hp; rate: how fast every foe's attack clock runs
+# (1.35 = it shoots 35% more often); waves: extra waves in a fight room from the third floor on.
+const DIFF = {count = 1.3, hp = 1.3, boss_hp = 1.3, rate = 1.35, cap = 26}
+
 # reaction key = the two elements sorted and joined with "+"
 static var REACT = {
 	"fire+ice": ["MELT", Color("d8f6ff")],

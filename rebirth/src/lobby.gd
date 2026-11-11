@@ -86,7 +86,7 @@ static func populate(g) -> void:
 	g.inter.append({kind = "deco", spr = "cauldron", pos = tp(17, 22.6)})
 	g.inter.append({kind = "deco", spr = "bench", pos = tp(22.4, 23.6)})
 	g.inter.append({kind = "npc", menu = "prep", spr = "npc_quarter", name = "QUARTERMASTER: MEALS, WEAPONS, CRAFTING", pos = tp(18.8, 23.2), notalk = true})
-	g.inter.append({kind = "egg", egg = "lectern", spr = "tome", name = "LECTERN: WRITE YOUR SPELLS", pos = tp(4, 12.6)})
+	g.inter.append({kind = "egg", egg = "lectern", spr = "tome", name = "LECTERN: TRAIN YOUR SKILLS", pos = tp(4, 12.6)})
 	g.inter.append({kind = "deco", spr = "mannequin", pos = tp(6.6, 28)})
 	g.inter.append({kind = "npc", menu = "tailor", spr = "npc_tailor", name = "TAILOR: DYES", pos = tp(8.2, 28)})
 	g.inter.append({kind = "egg", egg = "capsule", spr = "capsule", name = "CAPSULE MACHINE: %d GEMS" % Hub.CAPSULE_COST, pos = tp(22.5, 28)})
@@ -532,7 +532,7 @@ const SIGN = {
 	"tree": ["SKILL TREE", "7adfff"], "armor": ["HERO RANKS", "7adfff"], "beast": ["PETS", "a6e84e"], "fuse": ["HERO FUSION", "e58cff"],
 	"loom": ["SOUL LOOM", "e58cff"], "board": ["RUN BOARD", "ffd24a"], "codex": ["CODEX", "d9d4c7"], "coop": ["CO-OP", "ffd24a"],
 	"quest": ["BOUNTIES", "ffd24a"], "trophy": ["TROPHIES", "ffd24a"], "armory": ["ARMORY", "ffb84a"], "brew": ["KITCHEN", "ffb84a"],
-	"tailor": ["TAILOR", "e56db2"], "prep": ["QUARTERMASTER", "ffb84a"], "lectern": ["SPELLS", "7adfff"],
+	"tailor": ["TAILOR", "e56db2"], "prep": ["QUARTERMASTER", "ffb84a"], "lectern": ["SKILLS", "7adfff"],
 	"fountain": ["WISHES", "7adfff"], "jukebox": ["MUSIC", "e58cff"], "capsule": ["CAPSULES", "e56db2"], "mail": ["MAIL", "7adfff"], "bowl": ["PET BOWL", "a6e84e"],
 }
 # [tile rect, colour, floor caption]

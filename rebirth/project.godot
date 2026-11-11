@@ -18,7 +18,6 @@ window/size/window_height_override=810
 window/stretch/mode="viewport"
 window/stretch/aspect="expand"
 window/stretch/scale_mode="integer"
-window/stretch/scale_mode.mobile="fractional"
 window/handheld/orientation=4
 
 [rendering]

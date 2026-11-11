@@ -59,35 +59,45 @@ func _init():
 	await tap(Vector2(378, 38))
 	check(g.state == "play", "the X closes the menu")
 
-	# ---- naming a skill with touch only ----
+	# ---- training a skill with touch only ----
 	g.open_menu("spell")
 	await frames(10)
-	check(g.menu.rows[0].name.begins_with("SKILL ONE: "), "the lectern shows the current name: " + g.menu.rows[0].name)
-	await tap(Hud.menu_rect("spell", 0).get_center())
-	check(g.state == "say", "one tap on the chosen row opens the naming prompt")
+	var g0 = Meta.S.gems
+	await tap(Hud.menu_rect("spell", 1).get_center())
+	check(Meta.S.gems == g0, "first tap on a training row only chooses")
+	await tap(Hud.menu_rect("spell", 1).get_center())
+	check(Meta.S.gems == g0 - 15 and g.p.sk1[1] > 1.1 and g.state == "menu" and g.menu.sel == 1, "second tap trains reach and the menu stays put: " + str(g.p.sk1))
+	await tap(Hud.menu_rect("spell", 6).get_center())
+	await tap(Hud.menu_rect("spell", 6).get_center())
+	check(g.Spell.recipes().size() == 1 and g.menu.rows[6].name.begins_with("REACTION SPELL: FIRE"), "the reaction spell is chosen from the menu: " + g.menu.rows[6].name)
+	await tap(Vector2(378, 38))
+
+	# ---- naming a discovery with the on-screen keyboard ----
+	Meta.S.book["fire+ice"] = ""
+	g.open_menu("book")
+	await frames(10)
+	await tap(Hud.menu_rect("book", 0).get_center())
+	await tap(Hud.menu_rect("book", 0).get_center())
+	check(g.state == "say", "the notebook opens the naming prompt")
 	await frames(8)
 	check(g.kb_lift() > 40.0 and g.hud.position.y < g.hud_off.y - 40.0, "the prompt slides up above the keyboard")
-	check(Touch.ok_rect(g).position.y + g.hud.position.y - g.hud_off.y < 70.0, "OK sits in the top part of the screen")
-	type("sao choi lua to")
+	type("sao choi")
 	await frames(3)
-	check(g.say == "sao choi lua to", "keys without a physical code still type: " + g.say)
-	# a tap elsewhere must not close or confirm anything
+	check(g.say == "sao choi", "keys without a physical code still type: " + g.say)
 	await tap(Vector2(240, 120))
 	check(g.state == "say", "a stray tap keeps the prompt open")
 	await tap(Touch.ok_rect(g).get_center())
 	await frames(3)
-	check(g.state == "play" and g.skill_name(0) == "SAO CHOI LUA TO" and g.p.sk_el == "fire", "OK saves the name: " + g.skill_name(0))
+	check(g.state == "menu" and Meta.S.book["fire+ice"] == "SAO CHOI", "OK saves the name: " + str(Meta.S.book["fire+ice"]))
 	check(g.hud.position == g.hud_off, "the sheet comes back down")
-	g.open_menu("spell")
-	check(g.menu.rows[0].name == "SKILL ONE: SAO CHOI LUA TO", "and the lectern shows it")
-	# cancel leaves it alone
-	await frames(10)
-	await tap(Hud.menu_rect("spell", 0).get_center())
+	await tap(Hud.menu_rect("book", 0).get_center())
+	await tap(Hud.menu_rect("book", 0).get_center())
 	type("xyz")
 	await frames(8)
 	await tap(Touch.no_rect(g).get_center())
 	await frames(3)
-	check(g.state == "play" and g.skill_name(0) == "SAO CHOI LUA TO", "CANCEL keeps the old name")
+	check(Meta.S.book["fire+ice"] == "SAO CHOI", "CANCEL keeps the old name")
+	g.set_state("play")
 
 	# ---- the phone's Back button is Escape ----
 	g.open_menu("tree")
@@ -99,6 +109,6 @@ func _init():
 	# ---- the name is used in a run ----
 	g.start_run(3, false)
 	await frames(5)
-	check(g.skill_name(0) == "SAO CHOI LUA TO", "the name follows into the dungeon")
+	check(g.p.sk1[1] > 1.1, "training follows into the dungeon")
 	print("TYPING OK" if fails == 0 else "TYPING FAILED %d" % fails)
 	quit(1 if fails > 0 else 0)

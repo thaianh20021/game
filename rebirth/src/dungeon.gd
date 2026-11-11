@@ -90,7 +90,7 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weath
 		r.cleared = not (r.type in ["fight", "boss"])
 		r.seen = false
 		r.wave = 0
-		r.waves = 1 if r.type == "boss" else (2 + (1 if (floor_i >= 2 and rng.randf() < 0.5) else 0))
+		r.waves = 1 if r.type == "boss" else (2 + (1 if (floor_i >= 2 and rng.randf() < 0.75) else 0) + (1 if (floor_i >= 4 and rng.randf() < 0.4) else 0))
 		r.mod = ""
 		r.elite = false
 		r.trial = false

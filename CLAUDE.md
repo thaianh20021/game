@@ -79,7 +79,9 @@ motion in `draw_enemy`/`draw_player` (lean, breathing, hop, recoil), a view that
 edges and `g.mworld()` for the aim point), generated app icon (`tests/icon.gd`), three-element effects that take one of
 fourteen forms from the completing element (`src/storm.gd`; a new element needs a `FORM` and `SCALE` entry),
 touch typing screens that lift above the keyboard (`game.kb_lift`, `kb_show`, `kb_h`: never call
-`DisplayServer.virtual_keyboard_*` directly, headless has none) with OK/CANCEL in `touch.gd`. Next steps are in `rebirth/ROADMAP.md`.
+`DisplayServer.virtual_keyboard_*` directly, headless has none) with OK/CANCEL in `touch.gd`, a pause
+menu (`game.update_pause`), difficulty dials (`D.DIFF`). Keep `window/stretch/scale_mode` integer: the owner
+found fractional scaling blurry on the phone. Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; a debug APK builds and installs on the owner's phone (SDK path is in `rebirth/README.md`; use the adb in that SDK's platform-tools, `C:/adb/adb` is from 2015 and loses the device) but nobody has reported how it plays there; LAN was tested

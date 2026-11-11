@@ -174,6 +174,9 @@ var sim_p2 = null
 var pending_coop = false
 var pending_resume = false
 var buff_sel = 0
+var pause_sel = 0
+var pause_page = ""  # "" the list, "guide" the reference sheet
+var pause_arm = ""   # the row that asked "are you sure"
 var buff_turn = 0
 var forge = {text = "", pad = [], it = null, idx = 0}
 var reso_src = true
@@ -328,6 +331,78 @@ func resume_run() -> void:
 func set_state(s: String) -> void:
 	state = s
 	state_t = 0.0
+
+# ---- pause menu ------------------------------------------------------------------
+
+func pause_rows() -> Array:
+	var out = [["resume", "RESUME", ""], ["opts", "SETTINGS", "SOUND, MUSIC, SCREEN SHAKE"], ["guide", "GUIDE", "REACTIONS, YOUR BLESSINGS, CONTROLS"]]
+	if in_lobby:
+		out.append(["title", "QUIT TO TITLE", ""])
+	elif net.mode == "client":
+		out.append(["leave", "LEAVE THE GAME", "BACK TO YOUR OWN HEARTH"])
+	else:
+		out.append(["abandon", "ABANDON RUN", "THE RUN ENDS HERE AND COUNTS AS A DEFEAT"])
+	out.append(["exit", "EXIT GAME", "PROGRESS IS SAVED" if (in_lobby or net.mode != "" or players.size() > 1) else "YOU CAN CONTINUE FROM THE START OF THIS FLOOR"])
+	return out
+
+func pause_rect(i: int) -> Rect2:
+	return Rect2(160, 64 + i * 26, 160, 22)
+
+func update_pause() -> void:
+	if state_t < 0.02:
+		pause_sel = 0
+		pause_page = ""
+		pause_arm = ""
+	var rows = pause_rows()
+	if pause_page == "guide":
+		if state_t > 0.2 and (jpk(KEY_ESCAPE) or jpk(KEY_ENTER) or jpk(KEY_E) or jpk(KEY_SPACE) or jpk("m1")):
+			pause_page = ""
+			Sfx.play("ui")
+		return
+	if jpk(KEY_ESCAPE):
+		set_state("play")
+		return
+	var was = pause_sel
+	if jpk(KEY_S) or jpk(KEY_DOWN):
+		pause_sel = (pause_sel + 1) % rows.size()
+	if jpk(KEY_W) or jpk(KEY_UP):
+		pause_sel = (pause_sel + rows.size() - 1) % rows.size()
+	var go = jpk(KEY_ENTER) or jpk(KEY_SPACE) or jpk(KEY_E)
+	var m = mouse()
+	for i in rows.size():
+		if pause_rect(i).has_point(m):
+			if jpk("m1"):
+				pause_sel = i
+				go = true
+			elif not tin.on and sim.is_empty() and Input.get_last_mouse_velocity().length() > 1.0:
+				pause_sel = i
+	if pause_sel != was:
+		pause_arm = ""
+		Sfx.play("ui")
+	if not go or state_t < 0.2:
+		return
+	var id: String = rows[pause_sel][0]
+	if id in ["abandon", "leave", "exit", "title"] and pause_arm != id:
+		# anything that throws the game away asks once more
+		pause_arm = id
+		Sfx.play("warn")
+		return
+	pause_arm = ""
+	match id:
+		"resume": set_state("play")
+		"opts": open_menu("opts")
+		"guide":
+			pause_page = "guide"
+			state_t = 0.03
+			Sfx.play("ui")
+		"title": goto_title()
+		"leave":
+			Net.leave(self)
+			goto_lobby()
+		"abandon": end_run(false)
+		"exit":
+			Meta.save()
+			get_tree().quit()
 
 func goto_title() -> void:
 	set_state("title")
@@ -584,19 +659,7 @@ func _process(dt: float) -> void:
 				update_play(dt)
 				update_fx(dt)
 		"pause":
-			var tq = tin.on and jpk("m1") and state_t > 0.2
-			if jpk(KEY_O) or jpk(KEY_E) or (tq and Rect2(185, 204, 110, 18).has_point(mouse())):
-				open_menu("opts")
-			elif jpk(KEY_ESCAPE) or (tq and not Rect2(250, 226, 110, 20).has_point(mouse())):
-				set_state("play")
-			elif jpk(KEY_Q) or tq:
-				if in_lobby:
-					goto_title()
-				elif net.mode == "client":
-					Net.leave(self)
-					goto_lobby()
-				else:
-					end_run(false)
+			update_pause()
 		"buff":
 			update_buff()
 		"menu":
@@ -739,10 +802,12 @@ func build_player(hi: int, fi: int, el: String, idx: int) -> Dictionary:
 		shield_t = 0.0, res = 0.0, v = Vector2.ZERO, room_hits = 0, wind2 = false, lvdmg = lv >= 4, pet = null, mount = null,
 	}
 	pl.sk = Meta.calc_sk(tkey)
-	var sm: Dictionary = Meta.S.skillmod.get(hkey, {})
-	pl.sk_name = str(sm.get("name", ""))
-	pl.sk_el = str(sm.get("el", ""))
-	pl.sk1 = [float(sm.get("dmg", 1.0)), float(sm.get("area", 1.0)), float(sm.get("cdm", 1.0))]
+	# training bought at the lectern (spell.gd)
+	var tr = Spell.trained(hkey)
+	pl.sk_name = ""
+	pl.sk_el = tr.el
+	pl.sk1 = tr.sk1
+	pl.sk2 = tr.sk2
 	if Meta.S.pet != "" and Meta.PETS.has(Meta.S.pet):
 		pl.pet = {id = Meta.S.pet, pos = Vector2.ZERO, t = 1.0, face = 1, moving = false, sk = 4.0, guard = true, hearts = Pets.hearts(Meta.S.pet)}
 	if Meta.S.mount != "" and Meta.MOUNTS.has(Meta.S.mount):
@@ -2004,11 +2069,11 @@ func spawn_wave(r: Dictionary) -> void:
 			shake_add(8.0)
 			burst(pos, 30, Color("ff5a6a"), 120.0, 0.6))
 		return
-	var budget = (3.0 + floor_i * 1.3 + r.wave * 1.2 + rng.randf() * 2.0) * (0.85 + 0.5 * Meta.cunning()) * 1.6
+	var budget = (3.0 + floor_i * 1.3 + r.wave * 1.2 + rng.randf() * 2.0) * (0.85 + 0.5 * Meta.cunning()) * 1.6 * D.DIFF.count
 	var roster = D.BIOMES[floor_i / 2].roster
 	var n = 0
 	for attempt in 60:
-		if budget < 1.0 or n >= 20:
+		if budget < 1.0 or n >= D.DIFF.cap:
 			break
 		var id = roster[rng.randi() % roster.size()]
 		var c = D.ENEMIES[id].cost
@@ -2029,7 +2094,7 @@ func spawn_enemy(id: String, pos: Vector2) -> Dictionary:
 	var img: Image = Art.I["e_" + id]
 	var sc: float = d.get("sc", 1.0)
 	var is_boss = d.has("boss")
-	var hp = float(d.hp) * (1.45 if is_boss else 1.2 + 0.25 * floor_i) * (1.25 if (run_heat >= 1 and not in_lobby) else 1.0)
+	var hp = float(d.hp) * (1.45 * D.DIFF.boss_hp if is_boss else (1.2 + 0.25 * floor_i) * (1.0 if d.ai == "dummy" else D.DIFF.hp)) * (1.25 if (run_heat >= 1 and not in_lobby) else 1.0)
 	var e = {
 		id = id, d = d, uid = uid, pos = pos, kb = Vector2.ZERO, hp = hp, mhp = hp, r = float(d.r),
 		h2 = img.get_height() * sc / 2.0, hr = maxf(d.r, img.get_height() * sc * 0.4), el = d.get("el", ""),
@@ -2170,7 +2235,7 @@ func update_enemy(e: Dictionary, dt: float) -> void:
 	if absf(dir.x) > 0.15 and e.state != "dash":
 		e.face = 1 if dir.x > 0.0 else -1
 	var spd = d.spd * (0.55 if e.st.has("ice") else 1.0) * (0.6 if (terr_at(e.pos) == 1 and not d.get("fly", false)) else 1.0) * (1.25 if (lock != null and lock.mod == "haste") else 1.0)
-	e.t -= dt
+	e.t -= dt * D.DIFF.rate
 	e.weak_t -= dt
 	e.cast_t = maxf(0.0, e.cast_t - dt)
 	# cunning foes sidestep shots that are about to hit them

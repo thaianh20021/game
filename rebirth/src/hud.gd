@@ -34,7 +34,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - LEAVES ROT: +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - LEAVES MIASMA: POISONS ALL"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER", "book": "ALCHEMY NOTEBOOK", "spell": "LECTERN"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER", "book": "ALCHEMY NOTEBOOK", "spell": "SKILL TRAINING"}
 
 static func buff_rect(i: int) -> Rect2:
 	return Rect2(55 + i * 127, 84, 116, 112)
@@ -196,7 +196,8 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	# On a screen wider than the 480 sheet the status block hugs the left edge, the map (and,
 	# without touch buttons, the weapon panel) the right edge; banners stay in the middle.
 	var edge = Vector2(g.hud_edge, 0)
-	ci.draw_set_transform(-edge)
+	var up = Vector2(0, g.hud_off.y)
+	ci.draw_set_transform(-edge - up)
 	panel(ci, Rect2(3, 3, 104, 36))
 	big(ci, Art.T["heart"], Vector2(6, 5), 1.0)
 	bar(ci, Vector2(18, 7), 60, p.hp, p.mhp, Color("e0444c"), true)
@@ -300,11 +301,11 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		big(ci, Art.T["relic_" + p.relics[i]], Vector2(4 + i * 11, 246), 1.0)
 
 	if not g.in_lobby:
-		ci.draw_set_transform(edge)
+		ci.draw_set_transform(edge - up)
 		draw_minimap(g, ci)
 
 	# weapons
-	ci.draw_set_transform(Vector2.ZERO if g.tin.on else edge)
+	ci.draw_set_transform((Vector2.ZERO if g.tin.on else edge) + up)
 	var wx = 182.0 if g.tin.on else 360.0
 	var wr = Rect2(wx, 231, 117, 36)
 	var w = p.weapons[p.wi]
@@ -360,7 +361,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 				ci.draw_rect(Rect2(slx + 2, 227, 16, 2), INK)
 				ci.draw_rect(Rect2(slx + 2, 227, 16.0 * clampf(p.sat[i], 0.0, 1.0), 2), (Color("ff6a6a") if int(t * 8.0) % 2 == 0 else Color("6b6779")) if spent else D.EL_COL[p.els[i]])
 
-	ci.draw_set_transform(-edge)
+	ci.draw_set_transform(-edge + up)
 	if g.in_lobby:
 		Px.text(ci, Vector2(5, 259), "THE HEARTH - " + p.name, DIM)
 		Px.text(ci, Vector2(5, 249), Hub.boon_text(), Color("a6e84e"))
@@ -540,7 +541,24 @@ static func draw_talk(g, ci: CanvasItem) -> void:
 
 static func draw_pause(g, ci: CanvasItem) -> void:
 	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.78))
-	Px.ctext(ci, Vector2(240, 18), "PAUSED", GOLD, 3)
+	if g.pause_page != "guide":
+		Px.ctext(ci, Vector2(240, 26), "PAUSED", GOLD, 3)
+		var rows: Array = g.pause_rows()
+		for i in rows.size():
+			var r: Rect2 = g.pause_rect(i)
+			var sel = i == g.pause_sel
+			var armed = sel and g.pause_arm == rows[i][0]
+			var danger = rows[i][0] in ["abandon", "leave", "exit", "title"]
+			var col = Color("ff6a6a") if danger else (Color("a6e84e") if i == 0 else PALE)
+			panel(ci, r, Color(0.3, 0.08, 0.08, 0.97) if armed else (Color(0.16, 0.1, 0.24, 0.97) if sel else Color(0.09, 0.06, 0.15, 0.92)), Color.WHITE if sel else col.darkened(0.3))
+			Px.ctext(ci, r.position + Vector2(r.size.x / 2.0, 8), "SURE? AGAIN TO CONFIRM" if armed else rows[i][1], Color.WHITE if armed else col)
+		Px.ctext(ci, Vector2(240, 64 + rows.size() * 26 + 6), rows[g.pause_sel][2], DIM)
+		if not g.in_lobby:
+			var bi = g.floor_i / 2
+			Px.ctext(ci, Vector2(240, 232), "%s %d-%d   SEED %d   HEAT %d%s" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1, g.run_seed, g.run_heat, "   DAILY" if g.run_daily else ""], DIM)
+		Px.ctext(ci, Vector2(240, 246), "TAP A ROW" if g.tin.on else g.Pad.hint(g, "W/S CHOOSE   ENTER CONFIRM   ESC RESUME"), DIM)
+		return
+	Px.ctext(ci, Vector2(240, 18), "GUIDE", GOLD, 3)
 	Px.text(ci, Vector2(30, 52), "ELEMENT REACTIONS", PALE)
 	for i in REACT_HELP.size():
 		var rh = REACT_HELP[i]
@@ -582,15 +600,7 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 	Px.ctext(ci, Vector2(240, 170), g.Pad.hint(g, "WASD MOVE   MOUSE AIM   LMB FIRE   SPACE DASH   Q SWAP   E USE"), PALE)
 	Px.ctext(ci, Vector2(240, 182), g.Pad.hint(g, "RMB SKILL ONE   F SKILL TWO   R ELEMENTAL BURST WHEN CHARGED"), PALE)
 	Px.ctext(ci, Vector2(240, 200), "THE FOES LEARN. CUNNING %d%%. THEY LEAD THEIR SHOTS %d%% OF THE TIME." % [int(Meta.cunning() * 100.0), int(Meta.lead_share() * 100.0)], Color("ff8a6a"))
-	if g.tin.on:
-		panel(ci, Rect2(120, 226, 110, 20), Color(0.1, 0.2, 0.1, 0.95), Color("a6e84e"))
-		Px.ctext(ci, Vector2(175, 233), "RESUME", Color("a6e84e"))
-		panel(ci, Rect2(250, 226, 110, 20), Color(0.2, 0.08, 0.08, 0.95), Color("ff6a6a"))
-		Px.ctext(ci, Vector2(305, 233), "QUIT TO TITLE" if g.in_lobby else "ABANDON RUN", Color("ff6a6a"))
-		panel(ci, Rect2(185, 204, 110, 18), Color(0.1, 0.1, 0.2, 0.95), PALE)
-		Px.ctext(ci, Vector2(240, 210), "SETTINGS", PALE)
-	else:
-		Px.ctext(ci, Vector2(240, 236), g.Pad.hint(g, "ESC RESUME    O SETTINGS    Q " + ("QUIT TO TITLE" if g.in_lobby else "ABANDON RUN")), GOLD)
+	Px.ctext(ci, Vector2(240, 236), "TAP TO GO BACK" if g.tin.on else g.Pad.hint(g, "ESC OR ENTER: BACK"), GOLD)
 
 static func draw_buff(g, ci: CanvasItem) -> void:
 	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.8))

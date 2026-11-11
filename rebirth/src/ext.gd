@@ -131,19 +131,18 @@ static func cast(g, slot: int, mw: Vector2) -> void:
 		return
 	var id: String = p.skills[slot]
 	var el: String = g.cur_el()
-	# skill one can be renamed and reshaped with words (wish.gd)
-	var own = slot == 0 and p.has("sk1")
-	if own and str(p.sk_el) != "":
+	# training from the lectern: [damage, area, cooldown] per skill; skill one may be bound to an element
+	var up: Array = p.get("sk1" if slot == 0 else "sk2", [1.0, 1.0, 1.0])
+	if slot == 0 and str(p.get("sk_el", "")) != "":
 		el = p.sk_el
-	p[key] = D.SKILLS[id].cd * p.sk.cdm * (p.sk1[2] if own else 1.0)
+	p[key] = D.SKILLS[id].cd * p.sk.cdm * up[2]
 	Sfx.play("skill")
 	g.label(p.pos + Vector2(0, -24), g.skill_name(slot), D.EL_COL[el])
 	p.pose = 0.3
 	var d0: float = p.sk.dmg
 	var a0: float = p.sk.area
-	if own:
-		p.sk.dmg *= p.sk1[0]
-		p.sk.area *= p.sk1[1]
+	p.sk.dmg *= up[0]
+	p.sk.area *= up[1]
 	do_skill(g, id, mw, el)
 	p.sk.dmg = d0
 	p.sk.area = a0

@@ -106,13 +106,13 @@ static func draw(g, ci: CanvasItem) -> void:
 			ci.draw_rect(g.full(), Color(0.1, 0.16, 0.3, 0.12))
 			for i in 46:
 				var x = fmod(i * 53.7 + t * 90.0 + float(int(g.cam_tl.x) % 480), g.VW + 20.0) - 10.0 - g.hud_off.x
-				var y = fmod(i * 31.3 + t * (260.0 + (i % 5) * 30.0), 290.0) - 10.0
+				var y = fmod(i * 31.3 + t * (260.0 + (i % 5) * 30.0), g.VH + 20.0) - 10.0 - g.hud_off.y
 				ci.draw_line(Vector2(x, y), Vector2(x - 3, y + 8), Color(0.6, 0.78, 1.0, 0.35), 1.0)
 		"drought":
 			ci.draw_rect(g.full(), Color(0.5, 0.3, 0.05, 0.1))
 			for i in 22:
 				var x = fmod(i * 71.3 + t * 26.0, 500.0) - 10.0
-				var y = fmod(i * 43.1 + sin(t * 0.7 + i) * 8.0 + 400.0, 270.0)
+				var y = fmod(i * 43.1 + sin(t * 0.7 + i) * 8.0 + 400.0, g.VH) - g.hud_off.y
 				ci.draw_rect(Rect2(x, y, 1, 1), Color(1.0, 0.82, 0.4, 0.5))
 		"fog":
 			for i in 7:
@@ -124,5 +124,5 @@ static func draw(g, ci: CanvasItem) -> void:
 			ci.draw_rect(g.full(), Color(0.05, 0.03, 0.12, 0.14))
 			for i in 16:
 				var x = fmod(i * 61.0 - t * 240.0 + 9000.0, 520.0) - 20.0
-				var y = fmod(i * 47.0 + t * 30.0, 270.0)
+				var y = fmod(i * 47.0 + t * 30.0, g.VH) - g.hud_off.y
 				ci.draw_line(Vector2(x, y), Vector2(x + 14, y + 2), Color(0.85, 0.85, 1.0, 0.22), 1.0)

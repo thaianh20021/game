@@ -37,6 +37,12 @@ You do not shoot foes down; you build weather, and you forge with words.
   burst, lance, seeker, arc, beam, chain, lob); the element decides what it does. Every
   element hits the same through any weapon. The hero wears the chosen element as a ring
   underfoot and three orbiting motes.
+- Pause menu (Esc, Start, the II button or the phone's Back): resume, settings, guide (the
+  reaction sheet, your blessings and the controls), abandon run or quit to title, exit game.
+  Rows that throw something away ask once more. Exiting a solo run keeps the save from the
+  start of the floor.
+- Difficulty dials in `D.DIFF`: 30% more foes a wave, 30% more health on foes and bosses,
+  attack clocks 35% faster, more waves from the third floor on.
 - Limits. At most three reaction fields lie on the floor and only one three-element effect
   exists at a time (a new one replaces the old). A foe that gets free of a stun, freeze or
   root cannot be held again for 1.5 s (a chevron shows over it). `D.FIELDS_MAX`, `D.CC_FREE`.
@@ -82,11 +88,13 @@ You do not shoot foes down; you build weather, and you forge with words.
   drags in and slows bullets, water washes foes and bullets outward, leaf is thorns, earth
   quakes under walkers, metal cuts and turns bullets back, wood roots, gear shoots shards
   at the next foe, X acts as a random other element each time.
-- Recipes. At the lectern you write up to three recipes in words: two elements, a shape
-  (wall, vortex, wave, rain, orbit, lance), a motion (push, pull, hold, burst) and optional
-  size words (big, long, strong), e.g. "fire ice wall push", "xoay set doc hut", "nuoc kim
-  mua no to". Nothing has to be pressed in a fight: when the two elements of a recipe react
-  on a foe, the spell appears there and that recipe rests for a few seconds.
+- Skill training. The lectern in the Hearth trains both skills with gems, no typing: three
+  levels each of power (+15% damage), reach (+12% area) and haste (8% quicker) for skill one,
+  power and haste for skill two (15, 30, 50 gems a level, per hero). Skill one can be bound
+  to one of the three carried elements. The same menu puts together one reaction spell from
+  three choices: which pair sets it off, its shape (wall, vortex, wave, rain, orbit, lance)
+  and its motion (push, pull, hold, burst). When that pair reacts on a foe the spell appears
+  there, then rests for a few seconds.
 
 ## Run
 
@@ -154,7 +162,7 @@ by a stray touch). Typing screens (naming a skill, recipes, notebook, Word Forge
 up above the on-screen keyboard and get OK and CANCEL buttons beside the panel; tapping the wish
 line on the blessing screen opens the keyboard. The phone's Back button is Escape.
 
-The view fills any screen: the world shows more on a wide phone, the 480 x 270 HUD sheet stays
+The view fills any screen at a whole-number pixel scale (sharp pixels; a fractional scale blurred on phones): the world shows more on a wide or tall screen, the 480 x 270 HUD sheet stays
 centred, and the status block, the map and the touch controls hug the real edges inside the
 safe area (`game.fit`, `hud_off`, `hud_edge`). The big button beside the fire stick changes
 element and shows how much of the current one is left. The launcher icon is painted by
@@ -313,7 +321,7 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/sky.gd` | Weather of a floor (loaded as `Wx`: `Sky` is a Godot class name) |
 | `src/book.gd` | The alchemy notebook: discoveries and the names you give them |
 | `src/puzzle.gd` | Puzzle rooms: chasm, braziers, conduit |
-| `src/spell.gd` | Recipes: word spells set off by reactions (six shapes, four motions) |
+| `src/spell.gd` | Lectern: skill training, and the reaction spell (six shapes, four motions) |
 | `src/chem.gd` | Chemistry generator: aspects of the fifteen elements, generated reactions, fields and storms |
 | `src/tutor.gd` | The first lesson at the training dummy |
 | `src/storm.gd` | The fourteen forms a three-element effect can take |
@@ -351,6 +359,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `forms.gd` | Every three-element form runs, hurts and has its own name (pictures when not headless) |
 | `mana.gd` | Mana pools, reaction costs, field limits, control immunity, gathered casts |
 | `typing.gd` | Touch-only menus and typing screens: tap twice to confirm, naming a skill, Back is Escape |
+| `pause.gd` | Pause menu rows, confirmation of destructive rows, difficulty dials |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |
 | `shot4.gd`, `shot5.gd` | Phone-shaped screenshots: wide view, lesson, blessing cards (`--resolution 1400x630`) |
 | `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |
