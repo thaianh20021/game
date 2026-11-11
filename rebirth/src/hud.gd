@@ -92,7 +92,8 @@ static func draw(g, ci: CanvasItem) -> void:
 	if g.tin.on:
 		Touch.draw(g, ci)
 		if g.state == "menu":
-			Px.text(ci, Vector2(374, 37), "X", Color("ff6a6a"))
+			panel(ci, Rect2(368, 31, 20, 16), Color(0.2, 0.08, 0.08, 0.95), Color("ff6a6a"))
+			Px.text(ci, Vector2(375, 36), "X", Color("ff6a6a"))
 		return
 	var m = g.mouse().round()
 	var cc = Color("f6f2e6")
@@ -513,7 +514,7 @@ static func draw_menu(g, ci: CanvasItem) -> void:
 				Px.text(ci, Vector2(r.end.x - 6 - Px.width(stx[0]), r.position.y + 6), stx[0], stx[1])
 	if g.menu.msg != "":
 		Px.ctext(ci, Vector2(240, 224), g.menu.msg, Color("ff6a6a"))
-	Px.ctext(ci, Vector2(240, 235), g.Pad.hint(g, "W/S CHOOSE   ENTER OR CLICK CONFIRM   ESC CLOSE"), DIM)
+	Px.ctext(ci, Vector2(240, 235), "TAP TO CHOOSE   TAP AGAIN TO CONFIRM   X CLOSES" if g.tin.on else g.Pad.hint(g, "W/S CHOOSE   ENTER OR CLICK CONFIRM   ESC CLOSE"), DIM)
 
 static func draw_talk(g, ci: CanvasItem) -> void:
 	var tk = g.talk

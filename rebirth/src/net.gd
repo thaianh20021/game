@@ -354,7 +354,7 @@ static func client_tick(g, dt: float) -> void:
 	var mw: Vector2 = g.mworld()
 	if not g.tin.on and (mw - g.pcenter()).length() > 1.0:
 		p.aim = (mw - g.pcenter()).normalized()
-	g.rpc_id(1, "net_input", mv, mw, g.firing())
+	g.rpc_id(1, "net_input", mv, mw, g.firing(), g.el_held())
 	for k in KEYS:
 		if g.jpk(k):
 			g.rpc_id(1, "net_press", k)

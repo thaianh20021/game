@@ -116,11 +116,11 @@ static func open(g, it: Dictionary) -> void:
 	g.set_state("forge")
 	Sfx.play("ui")
 	if g.tin.on:
-		DisplayServer.virtual_keyboard_show("")
+		g.kb_show(true)
 
 static func close(g) -> void:
 	if g.tin.on:
-		DisplayServer.virtual_keyboard_hide()
+		g.kb_show(false)
 	g.set_state("play")
 
 static func key_input(g, ev: InputEventKey) -> void:
@@ -157,11 +157,6 @@ static func update(g) -> void:
 		close(g)
 	elif g.jpk(KEY_ENTER) or g.jpk(KEY_KP_ENTER):
 		confirm(g)
-	elif g.tin.on and g.jpk("m1"):
-		if Rect2(140, 196, 90, 18).has_point(g.mouse()):
-			confirm(g)
-		elif Rect2(250, 196, 90, 18).has_point(g.mouse()):
-			close(g)
 
 static func build(g, text: String, pad: Array) -> Dictionary:
 	var p = g.p
@@ -263,10 +258,7 @@ static func draw(g, ci: CanvasItem, Hud) -> void:
 	Px.ctext(ci, Vector2(240, 174), "TRY: FAST FIRE BOW   /   CUNG LUA NHANH   /   KIEM BANG MANH", Color("6b6779"))
 	Px.ctext(ci, Vector2(240, 184), "PAD: D-PAD ELEMENT, A MANY, B BLAST, X PIERCE, Y SEEK, RB FAST", Color("6b6779"))
 	if g.tin.on:
-		Hud.panel(ci, Rect2(140, 196, 90, 18), Color(0.1, 0.2, 0.1, 0.95), Color("a6e84e"))
-		Px.ctext(ci, Vector2(185, 202), "FORGE", Color("a6e84e"))
-		Hud.panel(ci, Rect2(250, 196, 90, 18), Color(0.2, 0.08, 0.08, 0.95), Color("ff6a6a"))
-		Px.ctext(ci, Vector2(295, 202), "CANCEL", Color("ff6a6a"))
+		Px.ctext(ci, Vector2(240, 202), "OK: FORGE FOR %d GOLD" % COST, Color("ffd24a"))
 	else:
 		Px.ctext(ci, Vector2(240, 202), "ENTER OR START: FORGE FOR %d GOLD      ESC OR BACK: CANCEL" % COST, Color("ffd24a"))
 	Px.ctext(ci, Vector2(240, 216), "BOTH WEAPONS ARE CONSUMED. THE RESULT IS ALWAYS STRONGER.", Color("d9d4c7"))

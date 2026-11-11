@@ -128,6 +128,10 @@ static func read_kb(g, pl: Dictionary) -> Dictionary:
 	for k in KB2:
 		if g.jp.has(k):
 			out.jp[KB2[k]] = true
+	out.elh = false
+	for k in [KEY_Y, KEY_KP_7, KEY_KP_8, KEY_KP_9]:
+		if Input.is_physical_key_pressed(k):
+			out.elh = true
 	return out
 
 # ---- prompts ---------------------------------------------------------------------

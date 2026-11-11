@@ -25,7 +25,7 @@ You do not shoot foes down; you build weather, and you forge with words.
   and its form ("MAGMA TORNADO"). See `src/storm.gd`.
 - Mana by element. There is no shared energy bar: each of the three carried elements has
   its own pool (a third of the hero's max mana). Painting drains the chosen pool (about
-  seven seconds of steady fire), resting pools refill in four. A reaction takes 15% from
+  seven seconds of steady fire), resting pools refill in ten. A reaction takes 15% from
   both pools, the element that completes a three-element effect pays 35%, weapons with a
   cost draw on the chosen pool, and everything that used to give energy fills the emptiest
   pool. An empty pool paints nothing until it is a third full. Numbers: `D.SAT`.
@@ -148,6 +148,11 @@ Use the Link Stone in the Hearth.
 - The host simulates everything and sends 20 snapshots a second; the guest predicts only its own walking.
 
 ## Android
+
+Touch menus: the first tap chooses a row, a second tap on it confirms (so nothing is bought
+by a stray touch). Typing screens (naming a skill, recipes, notebook, Word Forge, wishes) slide
+up above the on-screen keyboard and get OK and CANCEL buttons beside the panel; tapping the wish
+line on the blessing screen opens the keyboard. The phone's Back button is Escape.
 
 The view fills any screen: the world shows more on a wide phone, the 480 x 270 HUD sheet stays
 centred, and the status block, the map and the touch controls hug the real edges inside the
@@ -345,6 +350,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `lesson.gd` | Element saturation, blessing emblems, the first lesson, touch button layout |
 | `forms.gd` | Every three-element form runs, hurts and has its own name (pictures when not headless) |
 | `mana.gd` | Mana pools, reaction costs, field limits, control immunity, gathered casts |
+| `typing.gd` | Touch-only menus and typing screens: tap twice to confirm, naming a skill, Back is Escape |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |
 | `shot4.gd`, `shot5.gd` | Phone-shaped screenshots: wide view, lesson, blessing cards (`--resolution 1400x630`) |
 | `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |

@@ -131,7 +131,7 @@ static func describe(r: Dictionary) -> String:
 	return s
 
 static func rows(g) -> Array:
-	var out = [{name = "NAME SKILL ONE", desc = "RENAME AND SHAPE YOUR FIRST SKILL", cost = 0, state = "owned", tag = "WRITE", fn = func(): g.pending_say = "skill"}]
+	var out = [{name = "SKILL ONE: " + g.skill_name(0), desc = "RENAME AND SHAPE IT WITH WORDS", cost = 0, state = "owned", tag = "WRITE", fn = func(): g.pending_say = "skill"}]
 	for i in SLOTS:
 		var r = slot(i)
 		var ok: bool = r.get("ok", false)

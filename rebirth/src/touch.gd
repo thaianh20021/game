@@ -25,6 +25,13 @@ static func at(g, v: Vector2) -> Vector2:
 	var o = Vector2(g.hud_edge, g.hud_off.y)
 	return v + Vector2(o.x if v.x > 300.0 else (-o.x if v.x < 180.0 else 0.0), o.y if v.y > 100.0 else -o.y)
 
+# Confirm and cancel for the typing screens, beside the panel and above the keyboard.
+static func ok_rect(g) -> Rect2:
+	return Rect2(424, 40 + g.kb_lift(), 52, 24)
+
+static func no_rect(g) -> Rect2:
+	return Rect2(4, 40 + g.kb_lift(), 52, 24)
+
 static func fresh() -> Dictionary:
 	return {on = false, mv = Vector2.ZERO, aim = Vector2.ZERO, fire = false, tap = Vector2(240, 135),
 		l_id = -1, l_base = Vector2.ZERO, l_pos = Vector2.ZERO, r_id = -1, r_base = Vector2.ZERO, r_pos = Vector2.ZERO, held = {}}
@@ -33,10 +40,20 @@ static func handle(g, ev: InputEvent) -> void:
 	var t = g.tin
 	if ev is InputEventScreenTouch:
 		t.on = true
-		var pos: Vector2 = ev.position - g.hud_off
+		var pos: Vector2 = ev.position - g.hud.position
 		if ev.pressed:
 			t.tap = pos
 			g.jp["m1"] = true
+			if g.state in ["say", "forge"] or (g.state == "buff" and g.say != ""):
+				if ok_rect(g).has_point(pos):
+					g.jp[KEY_ENTER] = true
+				elif no_rect(g).has_point(pos):
+					g.jp[KEY_ESCAPE] = true
+				elif g.kb_h() <= 0:
+					# the keyboard was put away: any other tap brings it back
+					g.kb_show(true)
+				g.jp.erase("m1")
+				return
 			if g.state != "play":
 				return
 			if not g.tut.is_empty() and g.Tutor.SKIP.grow(6.0).has_point(pos):
@@ -67,11 +84,11 @@ static func handle(g, ev: InputEvent) -> void:
 				t.aim = Vector2.ZERO
 	elif ev is InputEventScreenDrag:
 		if ev.index == t.l_id:
-			t.l_pos = ev.position - g.hud_off
+			t.l_pos = ev.position - g.hud.position
 			var d: Vector2 = (t.l_pos - t.l_base) / STICK_R
 			t.mv = d.limit_length(1.0) if d.length() > 0.18 else Vector2.ZERO
 		elif ev.index == t.r_id:
-			t.r_pos = ev.position - g.hud_off
+			t.r_pos = ev.position - g.hud.position
 			var d: Vector2 = (t.r_pos - t.r_base) / STICK_R
 			t.aim = d.limit_length(1.0) if d.length() > 0.35 else Vector2.ZERO
 
@@ -89,6 +106,13 @@ static func aim_dir(g) -> Vector2:
 
 static func draw(g, ci: CanvasItem) -> void:
 	var t = g.tin
+	if t.on and (g.state in ["say", "forge"] or (g.state == "buff" and g.say != "")):
+		for q in [[ok_rect(g), "OK", Color("a6e84e")], [no_rect(g), "CANCEL", Color("ff6a6a")]]:
+			var r: Rect2 = q[0]
+			ci.draw_rect(r, Color(0.05, 0.03, 0.1, 0.95))
+			ci.draw_rect(r, q[2], false, 1.0)
+			Px.ctext(ci, r.position + Vector2(r.size.x / 2.0, 9), q[1], q[2])
+		return
 	if not t.on or g.state != "play":
 		return
 	var faint = Color(1, 1, 1, 0.16)
@@ -122,6 +146,10 @@ static func draw(g, ci: CanvasItem) -> void:
 			ci.draw_texture(it, Vector2.ZERO)
 			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			ci.draw_texture(g.Art.T["ic_" + nxt], bp + Vector2(8, 6), Color(1, 1, 1, 0.75))
+			var gch: float = g.p.get("chg", 0.0)
+			if gch > 0.25:
+				var gk = clampf((gch - 0.25) / (g.D.SAT.charge - 0.25), 0.0, 1.0)
+				ci.draw_arc(bp, b[1] + 4.0, -PI / 2.0, -PI / 2.0 + TAU * gk, 24, Color.WHITE, 3.0)
 			continue
 		ci.draw_circle(bp, b[1], Color(1, 1, 1, 0.3 if down else 0.1))
 		ci.draw_arc(bp, b[1], 0.0, TAU, 18, Color(1, 1, 1, 0.35), 1.0)

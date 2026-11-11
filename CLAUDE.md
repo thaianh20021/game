@@ -71,13 +71,15 @@ when their two elements react (`src/spell.gd`), terrain reactions for every elem
 prompts that follow the gamepad (`Pad.hint`: wrap any new on-screen key name in it),
 mana held in three per-element pools instead of one energy bar (`D.SAT`, `game.paint_el`, `mana_cost`; `p.en` is
 only their sum and `mana_sync` moves any change made to it into the pools), gathered casts on a held
-element key (`game.cast_big`; not sent by LAN guests or keyboard player two), field and control limits
+element key (`game.cast_big`), field and control limits
 (`D.FIELDS_MAX`, `D.CC_FREE`), weapons as foci with no off-element penalty, first lesson (`src/tutor.gd`; headless tests only get it with
 `g.sim.tutor`), blessing emblems (`bl_<id>` maps in `art.gd`: add one with every new blessing), procedural
 motion in `draw_enemy`/`draw_player` (lean, breathing, hop, recoil), a view that fills wide screens
 (`game.fit`; HUD code draws on the 480x270 sheet, use `g.full()` for anything that must reach the
 edges and `g.mworld()` for the aim point), generated app icon (`tests/icon.gd`), three-element effects that take one of
-fourteen forms from the completing element (`src/storm.gd`; a new element needs a `FORM` and `SCALE` entry). Next steps are in `rebirth/ROADMAP.md`.
+fourteen forms from the completing element (`src/storm.gd`; a new element needs a `FORM` and `SCALE` entry),
+touch typing screens that lift above the keyboard (`game.kb_lift`, `kb_show`, `kb_h`: never call
+`DisplayServer.virtual_keyboard_*` directly, headless has none) with OK/CANCEL in `touch.gd`. Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; a debug APK builds and installs on the owner's phone (SDK path is in `rebirth/README.md`; use the adb in that SDK's platform-tools, `C:/adb/adb` is from 2015 and loses the device) but nobody has reported how it plays there; LAN was tested

@@ -109,11 +109,13 @@ static func open_skill(g) -> void:
 	g.set_state("say")
 	Sfx.play("ui")
 	if g.tin.on:
-		DisplayServer.virtual_keyboard_show("")
+		g.kb_show(true)
 
 static func update_say(g) -> void:
 	if g.state_t < 0.15:
 		return
+	if g.tin.on and g.state_t < 0.3 and g.kb_h() <= 0:
+		g.kb_show(true)
 	if g.say_mode.begins_with("rc"):
 		# writing a combine recipe
 		if g.jpk(KEY_ESCAPE):
@@ -154,7 +156,7 @@ static func update_say(g) -> void:
 		g.flash(g.pcenter(), 120.0, Color("7adfff"), 0.4)
 		g.banner = {text = g.skill_name(0), sub = "YOUR SKILL, YOUR WORDS", t = 3.0}
 	if g.state != "say" and g.tin.on:
-		DisplayServer.virtual_keyboard_hide()
+		g.kb_show(false)
 
 # Capitals, digits and spaces only (the pixel font has nothing else), at most 14 long.
 static func clean(text: String) -> String:
@@ -187,7 +189,7 @@ static func draw_say(g, ci: CanvasItem, Hud) -> void:
 			ml = g.Spell.NOTE[m] + ". " + ml
 		Px.text(ci, Vector2(96, 160), ml, Color("7adfff"))
 		Px.ctext(ci, Vector2(240, 174), "IT CASTS ITSELF WHEN THE TWO ELEMENTS REACT", Color("a6e84e"))
-		Px.ctext(ci, Vector2(240, 190), "ENTER: SAVE     EMPTY + ENTER: CLEAR     ESC: CANCEL", Color("d9d4c7"))
+		Px.ctext(ci, Vector2(240, 190), "OK AND CANCEL ARE BESIDE THIS PANEL" if g.tin.on else "ENTER: SAVE     EMPTY + ENTER: CLEAR     ESC: CANCEL", Color("d9d4c7"))
 		return
 	if g.say_mode != "":
 		var def = [g.Book.default_name(g.say_mode), g.Book.note(g.say_mode)]
@@ -197,7 +199,7 @@ static func draw_say(g, ci: CanvasItem, Hud) -> void:
 		Hud.panel(ci, Rect2(100, 116, 280, 18), Color(0.02, 0.01, 0.05, 1.0), Color("ffd24a"))
 		Px.text(ci, Vector2(106, 122), clean(g.say) + ("_" if int(g.time * 3.0) % 2 == 0 else ""), Color.WHITE)
 		Px.ctext(ci, Vector2(240, 144), "IT IS CALLED " + g.Book.name(g.say_mode) + " NOW. EMPTY RESTORES " + def[0] + ".", Color("6b6779"))
-		Px.ctext(ci, Vector2(240, 162), "ENTER: WRITE IT DOWN     ESC: CANCEL", Color("d9d4c7"))
+		Px.ctext(ci, Vector2(240, 162), "OK AND CANCEL ARE BESIDE THIS PANEL" if g.tin.on else "ENTER: WRITE IT DOWN     ESC: CANCEL", Color("d9d4c7"))
 		return
 	Hud.panel(ci, Rect2(70, 60, 340, 150), Color(0.07, 0.05, 0.12, 0.97), Color("7adfff"))
 	Px.ctext(ci, Vector2(240, 68), "NAME YOUR SKILL", Color("7adfff"), 2)
@@ -216,4 +218,4 @@ static func draw_say(g, ci: CanvasItem, Hud) -> void:
 	if m.el == "" and m.notes.is_empty():
 		Px.text(ci, Vector2(106, y), "WORDS LIKE FIRE, BIG, FAST, STRONG / LUA, RONG, NHANH, MANH SHAPE IT", Color("6b6779"))
 	Px.ctext(ci, Vector2(240, 180), "TRY: FROST COMET BIG   /   BAO LUA MANH", Color("6b6779"))
-	Px.ctext(ci, Vector2(240, 194), "ENTER: KEEP    EMPTY + ENTER: RESET    ESC: CANCEL", Color("ffd24a"))
+	Px.ctext(ci, Vector2(240, 194), "OK AND CANCEL ARE BESIDE THIS PANEL" if g.tin.on else "ENTER: KEEP    EMPTY + ENTER: RESET    ESC: CANCEL", Color("ffd24a"))

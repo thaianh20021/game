@@ -90,7 +90,7 @@ func _init():
 	check(g.paint_el(0.5) == "", "a spent element paints nothing")
 	g.set_el(1)
 	check(g.paint_el(0.2) == g.p.els[1], "the next element still paints")
-	await frames(60)
+	await frames(130)
 	check(not g.p.spent[0] and g.p.sat[0] > D.SAT.back, "a resting element comes back")
 	check(g.p.sat[2] >= 1.0, "an untouched element stays full")
 	# touch layout: the element button is big and beside the fire stick

@@ -360,7 +360,7 @@ func open_menu(kind: String) -> void:
 
 func update_menu() -> void:
 	var n = menu.rows.size()
-	if jpk(KEY_ESCAPE) or (jpk(KEY_E) and state_t > 0.2) or (tin.on and jpk("m1") and Rect2(364, 28, 28, 18).has_point(mouse())):
+	if jpk(KEY_ESCAPE) or (jpk(KEY_E) and state_t > 0.2) or (tin.on and jpk("m1") and Rect2(360, 24, 36, 26).has_point(mouse())):
 		set_state("play")
 		return
 	var step = 3 if menu.kind == "tree" else 1
@@ -399,8 +399,11 @@ func update_menu() -> void:
 	for i in n:
 		if Hud.menu_rect(menu.kind, i).has_point(m):
 			if jpk("m1"):
+				if not tin.on or menu.sel == i:
+					go = true
+				else:
+					Sfx.play("ui")
 				menu.sel = i
-				go = true
 			elif sim.is_empty() and Input.get_last_mouse_velocity().length() > 1.0:
 				menu.sel = i
 	if go and state_t > 0.2:
@@ -452,7 +455,8 @@ func _input(ev: InputEvent) -> void:
 	if state == "forge" and ev is InputEventKey and ev.pressed:
 		Forge.key_input(self, ev)
 	if ev is InputEventKey and ev.pressed and not ev.echo:
-		jp[ev.physical_keycode] = true
+		# an on-screen keyboard sends keys with no physical code
+		jp[ev.physical_keycode if ev.physical_keycode != KEY_NONE else ev.keycode] = true
 		p1_pad = false
 	elif ev is InputEventMouseButton and ev.pressed:
 		jp["m%d" % ev.button_index] = true
@@ -492,9 +496,36 @@ func fit() -> void:
 		inset = maxf(inset, 8.0)
 	hud_edge = maxf(0.0, hud_off.x - inset)
 
+# The on-screen keyboard, on devices that have one.
+func kb_h() -> int:
+	return DisplayServer.virtual_keyboard_get_height() if DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD) else 0
+
+func kb_show(on: bool) -> void:
+	if not DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD):
+		return
+	if on:
+		DisplayServer.virtual_keyboard_show("")
+	else:
+		DisplayServer.virtual_keyboard_hide()
+
+# How far the HUD sheet is lifted to keep a typing screen above the keyboard.
+func kb_lift() -> float:
+	if not tin.on:
+		return 0.0
+	match state:
+		"forge": return 30.0
+		"say": return 52.0 if say_mode.begins_with("rc") else (66.0 if say_mode != "" else 56.0)
+		"buff": return 100.0 if (say != "" or kb_h() > 0) else 0.0
+	return 0.0
+
+# The phone's Back button is Escape (it used to quit the game).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		jp[KEY_ESCAPE] = true
+
 # The whole screen in HUD coordinates (for dimming and weather that must reach the edges).
 func full() -> Rect2:
-	return Rect2(-hud_off, Vector2(VW, VH))
+	return Rect2(-hud.position, Vector2(VW, VH))
 
 # The aim point in the world.
 func mworld() -> Vector2:
@@ -526,6 +557,10 @@ func firing() -> bool:
 
 func _process(dt: float) -> void:
 	dt = minf(dt, 1.0 / 30.0)
+	# typing screens slide up on a touch device so the on-screen keyboard cannot cover them
+	hud.position = hud_off - Vector2(0, kb_lift())
+	if tin.on and not state in ["say", "forge", "buff"] and kb_h() > 0:
+		kb_show(false)
 	time += dt
 	state_t += dt
 	fade = maxf(0.0, fade - dt * 1.6)
@@ -631,6 +666,14 @@ func skill_name(slot: int) -> String:
 func update_buff() -> void:
 	var pick = -1
 	var nb = buff_choices.size()
+	if tin.on and jpk("m1") and Rect2(110, 204, 260, 20).has_point(mouse()):
+		# tapping the wish line brings up the keyboard
+		kb_show(true)
+		return
+	if tin.on and say != "" and jpk(KEY_ESCAPE):
+		say = ""
+		kb_show(false)
+		return
 	if say != "":
 		# a typed wish overrides the three offers
 		if (jpk(KEY_ENTER) or jpk(KEY_KP_ENTER)) and state_t > 0.3:
@@ -796,8 +839,9 @@ func net_hello(pd: Dictionary) -> void:
 		Net.on_hello(self, pd)
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
-func net_input(mv: Vector2, mw: Vector2, fire: bool) -> void:
+func net_input(mv: Vector2, mw: Vector2, fire: bool, elh: bool = false) -> void:
 	if net.mode == "host":
+		net.rin.elh = elh
 		net.rin.mv = mv.limit_length(1.0)
 		net.rin.mw = mw
 		net.rin.fire = fire
@@ -3443,8 +3487,10 @@ func draw_player(ci: CanvasItem) -> void:
 		var ac: Color = D.EL_COL[act_el(p)]
 		var foot: Vector2 = p.pos + Vector2(0, p.r)
 		ci.draw_set_transform(foot, 0.0, Vector2(1.0, 0.45))
-		ci.draw_arc(Vector2.ZERO, 10.0 + sin(time * 4.0), 0.0, TAU, 20, Color(ac.r, ac.g, ac.b, 0.45), 1.0)
-		ci.draw_circle(Vector2.ZERO, 9.0, Color(ac.r, ac.g, ac.b, 0.1))
+		ci.draw_arc(Vector2.ZERO, 14.0 + sin(time * 4.0), 0.0, TAU, 24, Color(ac.r, ac.g, ac.b, 0.7), 2.0)
+		ci.draw_arc(Vector2.ZERO, 18.0 + sin(time * 4.0 + 1.0), time * 2.0, time * 2.0 + 2.2, 10, Color(ac.r, ac.g, ac.b, 0.5), 1.0)
+		ci.draw_arc(Vector2.ZERO, 18.0 + sin(time * 4.0 + 1.0), time * 2.0 + PI, time * 2.0 + PI + 2.2, 10, Color(ac.r, ac.g, ac.b, 0.5), 1.0)
+		ci.draw_circle(Vector2.ZERO, 13.0, Color(ac.r, ac.g, ac.b, 0.16))
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	Fx.fuse_aura(self, ci, p)
 	# the weapon in the other hand rides on the back
@@ -3476,15 +3522,19 @@ func draw_player(ci: CanvasItem) -> void:
 		var ac2: Color = D.EL_COL[act_el(p)]
 		for i in 3:
 			var oa = time * 3.2 + i * TAU / 3.0
-			var op: Vector2 = p.pos + Vector2(cos(oa) * 11.0, -7.0 - plift() + sin(oa) * 4.0)
-			ci.draw_rect(Rect2(op.round() - Vector2(1, 1), Vector2(2, 2)), Color(ac2.r, ac2.g, ac2.b, 0.9))
+			var op: Vector2 = p.pos + Vector2(cos(oa) * 14.0, -7.0 - plift() + sin(oa) * 5.0)
+			ci.draw_rect(Rect2(op.round() - Vector2(2, 2), Vector2(4, 4)), Color(ac2.r, ac2.g, ac2.b, 0.35))
+			ci.draw_rect(Rect2(op.round() - Vector2(1, 1), Vector2(3, 3)), Color(ac2.r, ac2.g, ac2.b, 0.95))
 			ci.draw_rect(Rect2(op.round(), Vector2(1, 1)), Color(1, 1, 1, 0.8))
 		var chg: float = p.get("chg", 0.0)
 		if chg > 0.25:
 			var ck = clampf((chg - 0.25) / (D.SAT.charge - 0.25), 0.0, 1.0)
 			var rdy = chg >= D.SAT.charge
-			ci.draw_arc(pcenter(), 24.0 - 9.0 * ck, -PI / 2.0, -PI / 2.0 + TAU * ck, 28, Color.WHITE if (rdy and int(time * 12.0) % 2 == 0) else ac2, 2.0)
-			ci.draw_circle(pcenter(), 6.0 * ck, Color(ac2.r, ac2.g, ac2.b, 0.35))
+			ci.draw_arc(pcenter(), 34.0 - 12.0 * ck, 0.0, TAU, 32, Color(ac2.r, ac2.g, ac2.b, 0.25), 1.0)
+			ci.draw_arc(pcenter(), 34.0 - 12.0 * ck, -PI / 2.0, -PI / 2.0 + TAU * ck, 32, Color.WHITE if (rdy and int(time * 12.0) % 2 == 0) else ac2, 4.0)
+			ci.draw_circle(pcenter(), 10.0 * ck, Color(ac2.r, ac2.g, ac2.b, 0.4))
+			if rdy:
+				Px.ctext(ci, pcenter() + Vector2(0, -34), "RELEASE", Color.WHITE)
 	if not in_lobby and not enemies.is_empty():
 		# the only spot enemy bullets can hit
 		ci.draw_rect(Rect2(pcenter().round() - Vector2(2, 2), Vector2(4, 4)), Color("120e18"))
