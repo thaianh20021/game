@@ -25,7 +25,7 @@ You do not shoot foes down; you build weather, and you forge with words.
   and its form ("MAGMA TORNADO"). See `src/storm.gd`.
 - Mana by element. There is no shared energy bar: each of the three carried elements has
   its own pool (a third of the hero's max mana). Painting drains the chosen pool (about
-  seven seconds of steady fire), resting pools refill in ten. A reaction takes 15% from
+  seven seconds of steady fire), resting pools refill in fifteen. A reaction takes 15% from
   both pools, the element that completes a three-element effect pays 35%, weapons with a
   cost draw on the chosen pool, and everything that used to give energy fills the emptiest
   pool. An empty pool paints nothing until it is a third full. Numbers: `D.SAT`.

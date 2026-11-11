@@ -27,12 +27,13 @@ static var EL_COL = {
 # paints nothing until it is back above "back". A reaction takes "react" of both pools, the
 # element that completes a three-element effect pays "storm", a gathered cast (hold the
 # element key for "charge" seconds) pays "cast". Costs shrink as max mana grows.
-# Budget at these numbers: two resting pools bring in 20% of a pool per second together;
-# steady painting spends 14%, a reaction 30% (15% x 2), an effect 35%, a cast 40%. So one
-# reaction every two seconds can be kept up for ever, one every second cannot.
+# Budget at these numbers (owner settled on 1.5 times slower refill on 2026-11-11; 2.5 times
+# left elements dead for too long): two resting pools bring in 13% of a pool per second together; steady painting spends 14%, a reaction 30%
+# (15% x 2), an effect 35%, a cast 40%. Waiting alone pays for one reaction every two and a
+# half seconds; anything faster has to be earned with a close weapon or mana orbs.
 # Close weapons are the way to earn mana back: painting with one drains at "melee" of the
 # rate, and each strike that lands gives "strike" to both resting pools (up to three foes).
-const SAT = {drain = 7.0, rest = 10.0, idle = 14.0, back = 0.35, react = 0.15, storm = 0.35, cast = 0.4, charge = 0.8, base = 160.0, melee = 0.5, strike = 0.06}
+const SAT = {drain = 7.0, rest = 15.0, idle = 21.0, back = 0.35, react = 0.15, storm = 0.35, cast = 0.4, charge = 0.8, base = 160.0, melee = 0.5, strike = 0.06}
 # seconds a foe cannot be stunned, frozen or rooted again after it gets free
 const CC_FREE = 1.5
 # reaction fields that may lie on the floor at once; only one three-element effect exists at a time
