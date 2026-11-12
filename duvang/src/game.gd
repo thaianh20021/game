@@ -3628,6 +3628,7 @@ func add_shield(n: float) -> void:
 	if n <= 0.0 or p.state == "dead":
 		return
 	p.shield = minf(shield_cap(), p.shield + n)
+	p.shield_hit = t   # a fresh shield waits its four seconds too
 	if tree.has("share"):
 		p.hp = minf(stats.mhp, p.hp + n * 0.1 * tree.share)
 	if tree.has("pl_share"):

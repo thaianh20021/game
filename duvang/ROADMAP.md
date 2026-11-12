@@ -320,3 +320,9 @@ Kiểm tra nhanh: `gen/forge.gd`.
 (`tools/icon.gd`), nút Back mở menu. Đã build được `build/du-vang.apk` (30 MB, bản debug). Đã thử cảm ứng bằng sự kiện giả lập
 (`gen/touch.gd`: cần gạt đi được, nút đánh tự nhắm và trúng quái phía sau, nút kỹ năng, nút túi). Chưa chạy trên điện thoại thật:
 lần cài đầu điện thoại từ chối vì chưa ai bấm cho phép.
+
+## Cập nhật 2026-11-12 (test cho 5 mastery viết sau)
+
+`tests/masteries.gd`: nhịp riêng, mọi kỹ năng chủ động, các then chốt chính và tuyệt kỹ của Thuật Sĩ Linh Hồn, Hộ Vệ, Thợ Săn,
+Tư Tế, Kỹ Sư Cổ Vật, và luật Độc Tấu. Tìm ra một lỗi thật: Khiên mới dựng mà chưa từng bị đánh thì hao ngay lập tức thay vì đợi
+4 giây (đồng hồ chỉ đặt lại khi trúng đòn); giờ nhận Khiên cũng đặt lại đồng hồ. Chưa kiểm từng node của 28 cây giao thoa.
