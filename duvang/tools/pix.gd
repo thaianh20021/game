@@ -68,7 +68,18 @@ func _init() -> void:
 		comps.append(c)
 	# big pieces are figures; small loose bits (sparks, drips) join the nearest figure or are dropped
 	var big = comps.filter(func(c): return c[1] >= 150)
-	big.sort_custom(func(p, q): return p[2] < q[2])
+	# reading order: a sheet may come in more than one row (Gemini often wraps six poses 4 + 2), so figures
+	# whose middles sit apart by more than half a figure's height are in different rows; rows top to bottom,
+	# then left to right inside a row
+	var tall = 0
+	for c in big:
+		tall = maxi(tall, c[5] - c[3])
+	big.sort_custom(func(p, q):
+		var py = (p[3] + p[5]) / 2.0
+		var qy = (q[3] + q[5]) / 2.0
+		if absf(py - qy) > tall * 0.5:
+			return py < qy
+		return p[2] < q[2])
 	for c in comps:
 		if c[1] >= 150:
 			continue
@@ -180,8 +191,8 @@ func shrink(id: int, x0: int, y0: int, x1: int, y1: int, cell: float, raw: bool 
 				if best == null or votes[k][0] > votes[best][0]:
 					best = k
 			var s = votes[best][1] / float(votes[best][0])
-			if s.r > s.g + 0.18 and s.b > s.g + 0.18:
-				continue   # pink fringe from the background
+			if s.r > 0.6 and s.b > 0.55 and s.r > s.g + 0.3 and s.b > s.g + 0.3:
+				continue   # pink fringe from the background (bright magenta only: purple cloaks stay)
 			out.set_pixel(tx, ty, Color(s.r, s.g, s.b, 1.0))
 	if raw:
 		return out
