@@ -359,3 +359,15 @@ Từ Soul Knight Prequel lấy ý tưởng hai bộ vũ khí, mỗi bộ một t
 cũng đổi bộ: mặc vũ khí A, nhấn C để cất A sang bộ phụ, rồi mặc vũ khí B. Vũ khí bộ phụ hiện bên trái thanh kỹ năng.
 Các hệ khác của game đó Dư Vang đã có tương đương (lớp ghép hai nghề, rèn và rã đồ, thưởng theo nhóm trang bị).
 Kiểm tra nhanh: `gen/swap.gd`.
+
+## Cập nhật 2026-11-12 (điện thoại: nút cứng ngoài trận và toàn màn hình)
+
+Chủ game thử trên máy (2800x1260): thiếu nút để nói chuyện, mở menu kỹ năng và các thao tác chỉ có phím; game chỉ hiện một
+khung nhỏ giữa màn hình. Đã sửa:
+- Cột nút ngữ cảnh ở mép phải cho túi, cửa hàng, cây kỹ năng, hội thoại, tạm dừng, cài đặt, nhật ký và tạo nhân vật
+  (`Touch.ctx`). Trên túi, cửa hàng và cây, chạm chỉ để chọn và xem thẻ; nút mới làm (không lỡ tay bán hay học).
+- Nút E khi chơi đổi chữ thành NÓI hoặc XEM và sáng lên khi có người hay vật trong tầm; chữ trên đầu NPC là "BẤM NÚT NÓI".
+- Hướng dẫn bàn phím đổi thành hướng dẫn chạm; trên điện thoại chế độ chạm bật ngay từ đầu.
+- `game.fit_view` chọn hệ số nguyên lớn nhất còn chừa 640x360 rồi cho khung nhìn lớn theo màn hình (933x420 ở x3).
+  Camera căn giữa vùng nhỏ hơn khung nhìn.
+Chưa kiểm: cảm giác bấm thật trên máy (kích cỡ nút, vị trí cột nút với máy 16:9 hẹp hơn, nơi cột nút có thể chạm khung cây kỹ năng).

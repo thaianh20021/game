@@ -197,7 +197,7 @@ static func draw(g, view: Vector2) -> void:
 			Txt.ctext(g, Vector2(view.x / 2.0, 62), "DƯ VANG", GOLD, 6)
 			Txt.ctext(g, Vector2(view.x / 2.0, 122), "TIẾNG CÒN LẠI SAU KHI CHUÔNG ĐÃ NGỪNG", IVORY)
 			list(g, view)
-			Txt.ctext(g, Vector2(view.x / 2.0, view.y - 16), "W S HOẶC CHUỘT ĐỂ CHỌN.   E HOẶC BẤM CHUỘT ĐỂ XÁC NHẬN.", DIM)
+			Txt.ctext(g, Vector2(view.x / 2.0, view.y - 16), "CHẠM ĐỂ CHỌN." if g.touch_on else "W S HOẶC CHUỘT ĐỂ CHỌN.   E HOẶC BẤM CHUỘT ĐỂ XÁC NHẬN.", DIM)
 		"pause", "settings":
 			g.draw_rect(Rect2(Vector2.ZERO, view), Color(0.04, 0.03, 0.07, 0.6))
 			var n = items(g).size()
@@ -206,7 +206,7 @@ static func draw(g, view: Vector2) -> void:
 			Txt.ctext(g, Vector2(view.x / 2.0, top - 20), "TẠM DỪNG" if g.mode == "pause" else "CÀI ĐẶT", GOLD)
 			list(g, view)
 			if g.mode == "settings":
-				Txt.ctext(g, Vector2(view.x / 2.0, top + n * 18 + 22), "E HOẶC BẤM CHUỘT ĐỂ ĐỔI GIÁ TRỊ.   ESC ĐỂ QUAY LẠI.", DIM)
+				Txt.ctext(g, Vector2(view.x / 2.0, top + n * 18 + 22), "CHẠM ĐỂ ĐỔI GIÁ TRỊ." if g.touch_on else "E HOẶC BẤM CHUỘT ĐỂ ĐỔI GIÁ TRỊ.   ESC ĐỂ QUAY LẠI.", DIM)
 		"create", "second":
 			create(g, view)
 		"journal":
@@ -247,7 +247,7 @@ static func create(g, view: Vector2) -> void:
 	g.draw_rect(sr, GOLD)
 	g.draw_rect(Rect2(sr.position + Vector2(1, 1), sr.size - Vector2(2, 2)), Color("7a4b2a") if sr.has_point(g.ui_mouse()) else Color("3a3046"))
 	Txt.ctext(g, sr.position + Vector2(sr.size.x / 2.0, 5), ("CHỌN: " if sec2 else "BẮT ĐẦU: ") + CLASSES[g.csel].n, GOLD)
-	Txt.ctext(g, Vector2(view.x / 2.0, view.y - 16), "CHỌN MỘT THẺ RỒI BẤM NÚT HOẶC E." + ("" if sec2 else "   ESC ĐỂ QUAY LẠI."), DIM)
+	Txt.ctext(g, Vector2(view.x / 2.0, view.y - 16), "CHỌN MỘT THẺ RỒI CHẠM NÚT." if g.touch_on else "CHỌN MỘT THẺ RỒI BẤM NÚT HOẶC E." + ("" if sec2 else "   ESC ĐỂ QUAY LẠI."), DIM)
 
 static func journal(g, view: Vector2) -> void:
 	g.draw_rect(Rect2(Vector2.ZERO, view), Color(0.04, 0.03, 0.07, 0.6))

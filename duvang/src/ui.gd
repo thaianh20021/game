@@ -171,7 +171,7 @@ static func hud(g, view: Vector2) -> void:
 		var q = g.toasts[i]
 		Txt.ctext(g, Vector2(view.x / 2.0, 92 + i * 11), q.txt, Color(q.col.r, q.col.g, q.col.b, clampf(q.t, 0.0, 1.0)))
 	if g.lvl == 1 and g.qs.size() <= 1 and g.mode == "play":
-		Txt.ctext(g, Vector2(view.x / 2.0, view.y - 50), "WASD ĐI   CHUỘT TRÁI CHÉM   SPACE NÉ   E NÓI   I TÚI   T KỸ NĂNG   F BÌNH MÁU   ESC TẠM DỪNG", Color(IVORY.r, IVORY.g, IVORY.b, 0.8))
+		Txt.ctext(g, Vector2(view.x / 2.0, 36.0 if g.touch_on else view.y - 50), ("KÉO NỬA TRÁI ĐỂ ĐI   NÚT LỚN ĐỂ CHÉM   NÉ ĐỂ LĂN   NÓI KHI ĐỨNG CẠNH NGƯỜI   TÚI, KN Ở GÓC PHẢI" if g.touch_on else "WASD ĐI   CHUỘT TRÁI CHÉM   SPACE NÉ   E NÓI   I TÚI   T KỸ NĂNG   F BÌNH MÁU   ESC TẠM DỪNG"), Color(IVORY.r, IVORY.g, IVORY.b, 0.8))
 	if g.mode != "tree":
 		skill_bar(g, view)
 	if g.p.state == "dead":
@@ -255,9 +255,16 @@ static func inv_update(g) -> void:
 		g.inv_pad = true
 		g.isel = inv_step(g, g.isel, nav)
 	g.nav_prev = nk
-	if m != g.mouse_prev:
+	if m != g.mouse_prev and not g.touch_on:
 		g.inv_pad = false
-		g.mouse_prev = m
+	g.mouse_prev = m
+	# on a phone a tap only chooses the cell (its card shows); the buttons at the right edge act on it
+	if g.touch_on and g.pressed("atk"):
+		var tc = cell_at(g, view, m)
+		if tc >= 0:
+			g.isel = tc
+			g.inv_pad = true
+			return
 	if g.pressed("dodge"):
 		inv_act(g, g.isel)
 		return
@@ -417,6 +424,8 @@ static func inv_draw(g, view: Vector2) -> void:
 	var hint = "BẤM VÀO MÓN ĐỒ ĐỂ MẶC (HOẶC DI CHUYỂN RỒI SPACE).  I ĐỂ ĐÓNG."
 	if g.shop:
 		hint = "BẤM HOẶC SPACE ĐỂ BÁN.  X BÁN HẾT ĐỒ THƯỜNG.  B MUA BÌNH MÁU (%d VÀNG).  I ĐỂ ĐÓNG." % D.POTION_COST
+	if g.touch_on:
+		hint = ("CHẠM MÓN ĐỒ ĐỂ XEM, RỒI BÁN, RÈN HOẶC TÁCH BẰNG NÚT BÊN PHẢI.  BÌNH MÁU %d VÀNG." % D.POTION_COST) if g.shop else "CHẠM MÓN ĐỒ ĐỂ XEM, RỒI DÙNG NÚT BÊN PHẢI."
 	Txt.ctext(g, Vector2(view.x / 2.0, r.end.y - 12), hint, DIM)
 
 # ---------------------------------------------------------------- skill bar and skill tree
@@ -435,7 +444,7 @@ static func skill_bar(g, view: Vector2) -> void:
 		Txt.text(g, ar.position + Vector2(1, -9), "C", DIM)
 	if g.tree.is_empty():
 		if g.points_left() > 0 and g.mode == "play" and int(g.t * 2.0) % 2 == 0:
-			Txt.ctext(g, Vector2(view.x / 2.0, view.y - 20), "T: CÂY KỸ NĂNG  (%d ĐIỂM)" % g.points_left(), Color("ffe9a3"))
+			Txt.ctext(g, Vector2(view.x / 2.0, view.y - 20), ("KN: CÂY KỸ NĂNG  (%d ĐIỂM)" if g.touch_on else "T: CÂY KỸ NĂNG  (%d ĐIỂM)") % g.points_left(), Color("ffe9a3"))
 		return
 	for i in (7 if g.tree.has("prototype") else 6):
 		var id = g.bar[i] if i < 5 else (g.cur_ult() if i == 5 else g.proto)
@@ -497,9 +506,23 @@ static func tree_update(g) -> void:
 		g.tree_pad = true
 		g.tsel = tree_step(g, view, nav)
 	g.nav_prev = nk
-	if g.ui_mouse() != g.mouse_prev:
+	if g.ui_mouse() != g.mouse_prev and not g.touch_on:
 		g.tree_pad = false
-		g.mouse_prev = g.ui_mouse()
+	g.mouse_prev = g.ui_mouse()
+	# on a phone a tap on a node only chooses it (its card shows); HỌC and the GẮN Ô buttons act on it
+	if g.touch_on and g.pressed("atk"):
+		var m = g.ui_mouse()
+		for i in g.tabs().size():
+			if tab_rect(view, i).has_point(m):
+				g.tab = g.tabs()[i]
+				g.tsel = ""
+				return
+		for nid in Sk.NODES:
+			if Sk.NODES[nid].get("m", 0) == g.tab and tree_cell(view, nid).has_point(m):
+				g.tsel = nid
+				g.tree_pad = true
+				return
+		return
 	if g.pressed("tabn"):
 		var ts = g.tabs()
 		g.tab = ts[(ts.find(g.tab) + 1) % ts.size()]
@@ -595,7 +618,7 @@ static func tree_draw(g, view: Vector2) -> void:
 		var why = Sk.blocked(g.tree, hover, g.lvl, second, g.main_m, g.sec())
 		var ny = ty + 17 + lines.size() * 10
 		if why == "":
-			Txt.text(g, Vector2(r.position.x + 12, ny), "BẤM ĐỂ HỌC", Color("8fe08a"))
+			Txt.text(g, Vector2(r.position.x + 12, ny), "BẤM HỌC Ở BÊN PHẢI" if g.touch_on else "BẤM ĐỂ HỌC", Color("8fe08a"))
 		else:
 			Txt.text(g, Vector2(r.position.x + 12, ny), why, Color("ff9a8a") if why != Sk.FULL else DIM)
 		if N.kind == "a" and g.tree.has(hover):
@@ -634,7 +657,7 @@ static func tree_draw(g, view: Vector2) -> void:
 	else:
 		Txt.text(g, Vector2(r.position.x + 12, ty), "MỖI CẤP MỘT ĐIỂM. HÀNG HAI CỦA NHÁNH CẦN 2 ĐIỂM TRONG NHÁNH, THEN CHỐT CẦN 5.", DIM)
 		Txt.text(g, Vector2(r.position.x + 12, ty + 12), "VIỀN SÁNG: KỸ NĂNG ĐỂ BẤM. VIỀN VÀNG: THEN CHỐT, ĐỔI MỘT LUẬT VÀ CÓ CÁI GIÁ.", DIM)
-	Txt.ctext(g, Vector2(view.x / 2.0, r.end.y - 12), "BẤM VÀO THẺ HOẶC NÚT (HOẶC DI CHUYỂN RỒI SPACE, G ĐỔI THẺ).   X LẤY LẠI TOÀN BỘ ĐIỂM.   T ĐỂ ĐÓNG.", DIM)
+	Txt.ctext(g, Vector2(view.x / 2.0, r.end.y - 12), "CHẠM THẺ ĐỂ ĐỔI TRANG, CHẠM MỘT Ô ĐỂ XEM, RỒI DÙNG NÚT BÊN PHẢI." if g.touch_on else "BẤM VÀO THẺ HOẶC NÚT (HOẶC DI CHUYỂN RỒI SPACE, G ĐỔI THẺ).   X LẤY LẠI TOÀN BỘ ĐIỂM.   T ĐỂ ĐÓNG.", DIM)
 	skill_bar(g, view)
 
 # where the inventory cursor goes from cell i

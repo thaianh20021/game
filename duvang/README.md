@@ -13,7 +13,7 @@ Godot 4.7, GDScript, GL Compatibility, 640x360 internal, integer scaling.
 - Play: `<godot> --path duvang`
 - After adding or changing a PNG in `assets/`: `<godot> --headless --path duvang --import`
 - Regression (about 1 minute, plays the whole chapter, 58 checks): `<godot> --headless --fixed-fps 60 --path duvang --script res://tests/smoke.gd`
-- Skill tree (48 checks): same command with `res://tests/skills.gd`; second mastery and links (43 checks): `res://tests/second.gd`; foes, elites and the gate: `res://tests/foes.gd`; items, filter and the elite hunt: `res://tests/loot.gd`; chapter two: `res://tests/ch2.gd`; menus and the Elementalist: `res://tests/menu.gd`; the Assassin and its links: `res://tests/rogue.gd`; chapters three to five, side chains, tide, stones, reforging (30 checks): `res://tests/late.gd`; the five later masteries and the solo trees (74 checks): `res://tests/masteries.gd`; all 28 link trees, every node read and every pair in a fight (30 checks): `res://tests/links.gd`; font: `tests/font.gd`; music: `tests/music.gd`
+- Skill tree (48 checks): same command with `res://tests/skills.gd`; second mastery and links (43 checks): `res://tests/second.gd`; foes, elites and the gate: `res://tests/foes.gd`; items, filter and the elite hunt: `res://tests/loot.gd`; chapter two: `res://tests/ch2.gd`; menus and the Elementalist: `res://tests/menu.gd`; the Assassin and its links: `res://tests/rogue.gd`; chapters three to five, side chains, tide, stones, reforging (30 checks): `res://tests/late.gd`; the five later masteries and the solo trees (74 checks): `res://tests/masteries.gd`; all 28 link trees, every node read and every pair in a fight (30 checks): `res://tests/links.gd`; phone buttons on the bag, shop, tree and talk (20 checks): `res://tests/touch.gd`; font: `tests/font.gd`; music: `tests/music.gd`
 - Screenshots (no `--headless`): `--script res://tests/shot.gd` and `tests/shot_tree.gd`, PNGs go to `duvang/shots/`
 
 The save is `user://duvang_save.json`; delete it to start over. Tests use their own file (`D.SAVE_PATH`).
@@ -190,7 +190,15 @@ only been played by the test bot.
 `platform-tools/adb install -r build/du-vang.apk` (accept the install prompt on the phone).
 The launcher icons (`icon.png`, `icon_fg.png`, `icon_bg.png`) are cut from a generated picture by `tools/icon.gd`.
 
-Touch controls (`src/touch.gd`) appear once a finger touches the screen: a floating stick on the left half, and on the right
-the attack button, dodge, five skills with their icons, the ultimate, a potion, E (talk, look), and the bag, skill tree and
-pause at the right edge. Attacks and skills aim at the nearest foe. Menus, the bag, the shop and the skill tree work by tapping.
-The phone's Back button opens and closes the pause menu. Not yet tried on a phone.
+Touch controls (`src/touch.gd`) are on from the start on a phone (and on a PC once a finger touches the screen): a floating
+stick on the left half, and on the right the attack button, dodge, five skills with their icons, the ultimate, a potion, the
+talk button (it reads NÓI or XEM and glows when someone is in reach), and the bag, skill tree and pause at the right edge.
+Attacks and skills aim at the nearest foe. On the bag, shop and skill tree a tap only chooses a cell and shows its card; a
+column of buttons at the right edge acts on it (BÁN, RÈN, TÁCH, MUA BÌNH, BÁN RÁC; MẶC / THÁO, ĐỔI BỘ VŨ KHÍ; HỌC, GẮN Ô 1-6,
+CHỌN TUYỆT KỸ, TRANG KẾ, ĐẶT LẠI) and ĐÓNG / QUAY LẠI closes. Talk has TIẾP. The phone's Back button opens and closes the
+pause menu. Keyboard hints turn into touch hints. Tested by `tests/touch.gd` (20 checks); on the owner's phone (2800x1260) only the full-screen view and the title were checked.
+
+The view fills any screen with whole-number pixels (`game.fit_view`): the largest whole scale that leaves at least 640x360,
+and the view grows to what that scale leaves (933x420 at x3 on a 2800x1260 phone; 640x360 on a 1080p monitor). Godot's own
+`expand` kept the height at 360 and floored the scale, which left wide black borders on the phone. Zones smaller than the
+view sit in the middle. `tests/shot_phone.gd` (run with `--resolution 1866x840`) shows play, the shop and the tree at 20:9.

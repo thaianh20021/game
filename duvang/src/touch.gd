@@ -27,7 +27,7 @@ static func buttons(view: Vector2) -> Array:
 		["s5", Vector2(w - 146, h - 54), 15.0, ""],
 		["ult", Vector2(w - 142, h - 98), 15.0, "R"],
 		["potion", Vector2(w - 176, h - 22), 13.0, ""],
-		["use", Vector2(w - 130, h - 140), 14.0, "E"],
+		["use", Vector2(w - 130, h - 140), 16.0, "E"],
 		["swap", Vector2(w - 176, h - 62), 13.0, "ĐỔI"],
 		["s6", Vector2(w - 16, h - 152), 13.0, "6"],
 		["menu", Vector2(w - 16, 40), 12.0, "II"],
@@ -60,6 +60,10 @@ static func event(g, ev: InputEvent) -> void:
 
 static func hit(g, view: Vector2, pos: Vector2) -> String:
 	if g.mode != "play":
+		var bs = ctx(g)
+		for i in bs.size():
+			if ctx_rect(view, i).grow(2.0).has_point(pos):
+				return bs[i][0]
 		return ""
 	for b in buttons(view):
 		if b[0] == "s6" and not g.tree.has("prototype"):
@@ -67,6 +71,50 @@ static func hit(g, view: Vector2, pos: Vector2) -> String:
 		if pos.distance_to(b[1]) < b[2] + 6.0:
 			return b[0]
 	return ""
+
+# buttons for the screens that are not play, as [key, label]: a column at the right edge. In the bag and
+# the skill tree a tap only chooses a cell; these buttons act on it, so nothing is sold or learnt by a stray tap.
+static func ctx(g) -> Array:
+	match g.mode:
+		"talk":
+			if not g.talk.opts.is_empty() and g.talk.i == g.talk.lines.size() - 1:
+				return []
+			return [["use", "TIẾP"]]
+		"inv":
+			if g.shop:
+				return [["dodge", "BÁN"], ["upg", "RÈN"], ["salv", "TÁCH"], ["buy", "MUA BÌNH"], ["reset", "BÁN RÁC"], ["inv", "ĐÓNG"]]
+			return [["dodge", "MẶC / THÁO"], ["swap", "ĐỔI BỘ VŨ KHÍ"], ["inv", "ĐÓNG"]]
+		"tree":
+			var b = [["dodge", "HỌC"], ["s1", "GẮN Ô 1"], ["s2", "GẮN Ô 2"], ["s3", "GẮN Ô 3"], ["s4", "GẮN Ô 4"], ["s5", "GẮN Ô 5"]]
+			if g.tree.has("prototype"):
+				b.append(["s6", "GẮN Ô 6"])
+			b.append_array([["ult", "CHỌN TUYỆT KỸ"], ["tabn", "TRANG KẾ"], ["reset", "ĐẶT LẠI"], ["tree", "ĐÓNG"]])
+			return b
+		"pause", "settings", "journal", "create":
+			return [["menu", "QUAY LẠI"]]
+	return []
+
+static func ctx_rect(view: Vector2, i: int) -> Rect2:
+	return Rect2(view.x - 84, 24 + i * 26, 80, 22)
+
+# a finger is resting on a button (so the emulated mouse click under it is not a click on the screen)
+static func on_button(g) -> bool:
+	for v in g.touch_fingers.values():
+		if v != "stick":
+			return true
+	return false
+
+static func draw_ctx(g, view: Vector2) -> void:
+	if not g.touch_on or g.mode == "play":
+		return
+	var bs = ctx(g)
+	for i in bs.size():
+		var r = ctx_rect(view, i)
+		var on = held(g, bs[i][0])
+		g.draw_rect(Rect2(r.position - Vector2(1, 1), r.size + Vector2(2, 2)), INK)
+		g.draw_rect(r, Color(0.35, 0.3, 0.42, 0.95) if on else Color(0.16, 0.13, 0.2, 0.92))
+		g.draw_rect(r, RIM, false, 1.0)
+		Txt.ctext(g, r.get_center() + Vector2(0, -3), bs[i][1], Color("ffe9a3"))
 
 static func held(g, n: String) -> bool:
 	return g.touch_on and g.touch_fingers.values().has(n)
@@ -117,5 +165,12 @@ static func draw(g, view: Vector2) -> void:
 			Txt.ctext(g, b[1] + Vector2(7, 2), str(g.potions), Color.WHITE)
 		elif k == "atk":
 			g.draw_line(b[1] + Vector2(-8, 8), b[1] + Vector2(8, -8), RIM, 3.0)
+		elif k == "use":
+			# named after what is in reach, and glowing so a player knows there is someone to talk to
+			var near = g.near_target()
+			if near != null:
+				g.draw_circle(b[1], b[2] + 1.0, Color(1.0, 0.9, 0.55, 0.25 + 0.2 * sin(g.t * 6.0)))
+				g.draw_arc(b[1], b[2] + 2.0, 0.0, TAU, 28, Color("ffe9a3"), 1.0)
+			Txt.ctext(g, b[1] + Vector2(0, -3), ("NÓI" if near.kind == "npc" else "XEM") if near != null else "E", Color("ffe9a3") if near != null else RIM)
 		elif b[3] != "":
 			Txt.ctext(g, b[1] + Vector2(0, -3), b[3], RIM)

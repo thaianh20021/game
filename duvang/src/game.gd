@@ -133,6 +133,17 @@ var touch_fingers = {}   # finger index -> the button it holds, or "stick"
 var touch_stick = {}     # {"centre", "at"} while a finger drives the stick
 var back_t = 0           # frames left of a phone Back press, read as "menu"
 
+# Fill any screen with whole-number pixels: the largest whole scale that still leaves at least 640x360, and the
+# view grows to whatever that scale leaves (a 2800x1260 phone gets 933x420 at x3, a 1080p monitor stays 640x360).
+# Godot's own expand keeps the height at 360 and then floors the scale, which left wide borders on the phone.
+func fit_view() -> void:
+	var win = get_window()
+	var s: Vector2i = win.size
+	if s.x <= 0 or s.y <= 0:
+		return
+	var k = maxi(1, mini(s.x / 640, s.y / 360))
+	win.content_scale_size = Vector2i(s.x / k, s.y / k)
+
 func _notification(what: int) -> void:
 	# the phone's Back button opens or closes the menu instead of leaving the game
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
@@ -140,6 +151,12 @@ func _notification(what: int) -> void:
 
 func _ready() -> void:
 	get_tree().set_quit_on_go_back(false)
+	if DisplayServer.get_name() != "headless":
+		get_window().size_changed.connect(fit_view)
+		fit_view()
+	# on a phone the touch hints and buttons show from the start, not only after the first tap
+	if OS.has_feature("mobile"):
+		touch_on = true
 	Txt.build()
 	Art.build()
 	Sfx.init(self)
@@ -466,7 +483,7 @@ func held(n: String) -> bool:
 		return true
 	match n:
 		"atk":
-			return (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not (touch_on and mode == "play")) or Input.is_key_pressed(KEY_J) or Input.is_joy_button_pressed(0, JOY_BUTTON_X)
+			return (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not (touch_on and (mode == "play" or Touch.on_button(self)))) or Input.is_key_pressed(KEY_J) or Input.is_joy_button_pressed(0, JOY_BUTTON_X)
 		"dodge":
 			return Input.is_key_pressed(KEY_SPACE) or Input.is_key_pressed(KEY_SHIFT) or Input.is_joy_button_pressed(0, JOY_BUTTON_A)
 		"s1":
@@ -658,8 +675,9 @@ func update_cam(dt: float) -> void:
 	var look = (aim_pos() - p.pos).limit_length(120.0) * 0.2 if mode == "play" else Vector2.ZERO
 	cam = cam.lerp(p.pos + look + Vector2(0, -14), 1.0 - exp(-10.0 * dt))
 	var tl = cam - view / 2.0
-	tl.x = clampf(tl.x, 0.0, maxf(0.0, zone.w * TS - view.x))
-	tl.y = clampf(tl.y, 0.0, maxf(0.0, zone.h * TS - view.y))
+	# a zone smaller than a wide phone screen sits in the middle instead of against the left or top edge
+	tl.x = clampf(tl.x, 0.0, zone.w * TS - view.x) if zone.w * TS > view.x else (zone.w * TS - view.x) / 2.0
+	tl.y = clampf(tl.y, 0.0, zone.h * TS - view.y) if zone.h * TS > view.y else (zone.h * TS - view.y) / 2.0
 	if shake > 0.0:
 		tl += Vector2(randf_range(-shake, shake), randf_range(-shake, shake)) * opt.shake / 100.0
 	cam_tl = tl.floor()
@@ -2664,7 +2682,7 @@ func _draw() -> void:
 	var near = near_target()
 	if near != null and mode == "play":
 		Txt.ctext(self, near.pos + Vector2(0, -near.h), near.name, Color("ffe9a3"))
-		Txt.ctext(self, near.pos + Vector2(0, -near.h + 10), "E: NÓI CHUYỆN" if near.kind == "npc" else "E: XEM", IVORY)
+		Txt.ctext(self, near.pos + Vector2(0, -near.h + 10), ("BẤM NÚT NÓI" if near.kind == "npc" else "BẤM NÚT XEM") if touch_on else ("E: NÓI CHUYỆN" if near.kind == "npc" else "E: XEM"), IVORY)
 	draw_set_transform(Vector2.ZERO)
 	if zone.dark:
 		draw_rect(Rect2(Vector2.ZERO, view), Color(0.03, 0.06, 0.16, 0.34))
@@ -2692,6 +2710,7 @@ func _draw() -> void:
 		Menu.draw(self, view)
 	elif mode == "fade":
 		draw_rect(Rect2(Vector2.ZERO, view), Color(0.04, 0.03, 0.07, 1.0 - absf(fade_t - 0.25) / 0.25))
+	Touch.draw_ctx(self, view)
 
 func cone_pts(o: Vector2, dir: Vector2, r: float, half: float) -> PackedVector2Array:
 	var pts = PackedVector2Array([o])
