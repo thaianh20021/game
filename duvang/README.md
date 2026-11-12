@@ -13,7 +13,7 @@ Godot 4.7, GDScript, GL Compatibility, 640x360 internal, integer scaling.
 - Play: `<godot> --path duvang`
 - After adding or changing a PNG in `assets/`: `<godot> --headless --path duvang --import`
 - Regression (about 1 minute, plays the whole chapter, 58 checks): `<godot> --headless --fixed-fps 60 --path duvang --script res://tests/smoke.gd`
-- Skill tree (48 checks): same command with `res://tests/skills.gd`; second mastery and links (43 checks): `res://tests/second.gd`; foes, elites and the gate: `res://tests/foes.gd`; items, filter and the elite hunt: `res://tests/loot.gd`; chapter two: `res://tests/ch2.gd`; menus and the Elementalist: `res://tests/menu.gd`; the Assassin and its links: `res://tests/rogue.gd`; font: `tests/font.gd`; music: `tests/music.gd`
+- Skill tree (48 checks): same command with `res://tests/skills.gd`; second mastery and links (43 checks): `res://tests/second.gd`; foes, elites and the gate: `res://tests/foes.gd`; items, filter and the elite hunt: `res://tests/loot.gd`; chapter two: `res://tests/ch2.gd`; menus and the Elementalist: `res://tests/menu.gd`; the Assassin and its links: `res://tests/rogue.gd`; chapters three to five, side chains, tide, stones, reforging (30 checks): `res://tests/late.gd`; font: `tests/font.gd`; music: `tests/music.gd`
 - Screenshots (no `--headless`): `--script res://tests/shot.gd` and `tests/shot_tree.gd`, PNGs go to `duvang/shots/`
 
 The save is `user://duvang_save.json`; delete it to start over. Tests use their own file (`D.SAVE_PATH`).
