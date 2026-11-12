@@ -222,3 +222,14 @@ niêm làng thì sân làng tắt đèn, lũ trẻ và bà Mận biến mất, �
 giữ làng thì sân làng đông thêm trẻ con, đá niêm nằm úp, và người ba làng hạ lưu kéo xe dời lên trấn. Bà Cả Sậy, Ngải,
 thầy Khâm, Giám Lặng, lão Rêu và bà Mận có thoại riêng cho mỗi nhánh (`D.AFTER_CHAT`). Đá niêm cũ bị thay, nên không chọn lại được.
 Đã thử cả hai nhánh (`gen/fate.gd`, không phải test chính thức). Thay đổi hiện ra ở lần vào khu kế tiếp, không phải ngay lúc chọn.
+
+## Cập nhật 2026-11-12 (chương 3: Hạm đội không nước, theo Hồi 3 của brief)
+
+Hai khu mới (`world.gd`): **Biển Muối Ngân** (`salt`, đáy biển cạn phía nam Đầm Lau, trại của Phường, bãi xác tàu, vũng nước mặn;
+đi từ con đê ở bờ nam Đầm Lau, mở khi nhận m12) và **Hạm Đội Mắc Cạn** (`fleet`, dungeon năm thân tàu nối bằng ván cầu; mở khi nhận m15).
+Bảng màu muối `Art.THEMES.salt`. Ba quái mới mượn cách đánh của quái cũ qua khóa `"ai"` trong `D.FOES` (`game.ai(f)`):
+Cua Muối (như Phu Phà), Hải Âu Tro (như Đỉa Bùn), Thợ Lặn Chìm (như Kẻ Gieo Bào Tử, ném muối trắng). Boss **Đô Đốc Sảnh Muối**
+dùng bộ đòn của Người Gác Phà, gọi Thợ Lặn Chìm ở 66% và 33% máu, rơi Muối Áo Đô Đốc (đồ độc nhất: đòn chí mạng làm Lạnh).
+Nhiệm vụ m12 tới m16 và s4, NPC chị Vành (Phường) và Lạc (người mua của Lò Đúc), cảnh đọc sổ hàng trong hầm hai (`manifest`).
+Kết chương: Thầy Khâm bỏ đi cùng hòm tiếng để bán cho Ô Kha (không còn ở trấn); Ngải vừa lên dây mảnh vừa bán đồ.
+Kiểm tra nhanh: `gen/ch3.gd`.

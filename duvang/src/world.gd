@@ -50,6 +50,8 @@ static func build(id: String) -> Dictionary:
 		"dungeon": return dungeon()
 		"forest": return forest()
 		"heart": return heart()
+		"salt": return salt()
+		"fleet": return fleet()
 	return town()
 
 # ---------------------------------------------------------------- Woodclapper Town
@@ -161,6 +163,8 @@ static func field() -> Dictionary:
 	z.portals.append({"rect": Rect2(tp(0, 21), Vector2(TS * 1.2, TS * 4)), "to": "town", "at": tp(43.0, 15.0), "label": "VỀ TRẤN", "need": ""})
 	z.portals.append({"rect": Rect2(tp(61, 0), Vector2(TS * 4, TS * 1.5)), "to": "dungeon", "at": tp(5.0, 15.5), "label": "BẾN PHÀ CŨ", "need": "m5"})
 	z.portals.append({"rect": Rect2(tp(69.6, 21), Vector2(TS * 1.4, TS * 4)), "to": "forest", "at": tp(3.0, 26.0), "label": "RỪNG THỞ", "need": "m7"})
+	fill(z, 36, 36, 39, 45, 3)      # the causeway south to the Silver Salt Sea
+	z.portals.append({"rect": Rect2(tp(36, 44.6), Vector2(TS * 4, TS * 1.4)), "to": "salt", "at": tp(45.5, 2.5), "label": "BIỂN MUỐI NGÂN", "need": "m12"})
 	z.respawn = true
 	z.start = tp(3.0, 23.0)
 	# foes: reeds in the west and middle, herons east and south, the porter on the ferry road
@@ -433,3 +437,115 @@ static func fate(z: Dictionary, village: int) -> void:
 			z.decor.append({"tex": "cart", "pos": tp(39.5, 21.0), "solid": true})
 			z.decor.append({"tex": "crates", "pos": tp(41.5, 19.6), "solid": true})
 			z.things.append({"id": "refugee_cart", "pos": tp(39.5, 22.2), "h": 30.0})
+
+# ---------------------------------------------------------------- chapter three: the Silver Salt Sea
+# A dry sea floor south of the marsh: the salvagers' camp at the north edge, the wreck field in the middle,
+# brine pools to the east, and the Stranded Fleet entered from the south.
+static func salt() -> Dictionary:
+	var z = empty("salt", "BIỂN MUỐI NGÂN", 92, 50)
+	z.theme = "salt"
+	z.respawn = true
+	z.tier = 2
+	z.mult = 2.6
+	for y in z.h:
+		for x in z.w:
+			var dx = (x - 46.0) / 42.0
+			var dy = (y - 25.0) / 22.0
+			var a = atan2(dy, dx)
+			var d = sqrt(dx * dx + dy * dy) + sin(a * 5.0 + 1.1) * 0.05 + sin(a * 11.0 + 0.3) * 0.03
+			if d < 1.0:
+				var n = int(Art.noise(x * 0.15, y * 0.21, 53) * 100.0) - 30
+				z.grid[y][x] = 2 if n < 25 else 1
+	for pool in [[70, 18, 4.5, 2.6], [74, 32, 3.6, 2.2], [62, 40, 3.0, 1.8], [24, 34, 3.2, 2.0]]:
+		for y in z.h:
+			for x in z.w:
+				if Vector2((x - pool[0]) / pool[2], (y - pool[1]) / pool[3]).length() < 1.0:
+					z.grid[y][x] = 0
+	fill(z, 44, 0, 47, 8, 3)        # the causeway down from the marsh
+	fill(z, 36, 6, 56, 12, 2)       # the salvagers' camp
+	fill(z, 45, 12, 46, 46, 3)      # boardwalk across the flats
+	fill(z, 42, 44, 49, 49, 3)      # down to the Stranded Fleet
+	z.portals.append({"rect": Rect2(tp(44, 0), Vector2(TS * 4, TS * 1.2)), "to": "field", "at": tp(37.5, 41.0), "label": "VỀ ĐẦM LAU", "need": ""})
+	z.portals.append({"rect": Rect2(tp(43, 48.6), Vector2(TS * 6, TS * 1.4)), "to": "fleet", "at": tp(5.0, 16.0), "label": "HẠM ĐỘI MẮC CẠN", "need": "m15"})
+	z.start = tp(45.5, 3.0)
+	z.decor.append({"tex": "tent", "pos": tp(39.0, 9.0), "solid": true})
+	z.decor.append({"tex": "tent", "pos": tp(52.5, 8.6), "solid": true})
+	z.decor.append({"tex": "crates", "pos": tp(42.0, 10.6), "solid": true})
+	z.decor.append({"tex": "cart", "pos": tp(55.0, 11.2), "solid": true})
+	for q in [[37.5, 11.5], [54.5, 6.5], [45.0, 13.0], [46.8, 24.0], [44.0, 36.0]]:
+		lantern(z, q[0], q[1])
+	z.npcs = [{"id": "vanh", "pos": tp(41.0, 11.0)}, {"id": "buyer", "pos": tp(50.5, 10.4)}]
+	# the wreck field: hulls lying in the salt
+	for q in [[30, 20], [58, 24], [36, 30], [60, 36], [28, 42]]:
+		z.decor.append({"tex": "wreck", "pos": tp(q[0], q[1]), "solid": true, "bw": 70.0})
+	for q in [[20, 16], [64, 14], [52, 30], [38, 40], [70, 42], [16, 28]]:
+		z.decor.append({"tex": "saltpile", "pos": land(z, q[0], q[1]), "solid": true, "bw": 20.0})
+	# three salvagers' markers, each an anchor stuck in the salt
+	var ids = ["marker_a", "marker_b", "marker_c"]
+	var at = [[22, 24], [66, 28], [50, 44]]
+	for i in 3:
+		var mp = land(z, at[i][0], at[i][1])
+		z.decor.append({"tex": "anchor", "pos": mp, "solid": true, "bw": 16.0})
+		z.things.append({"id": ids[i], "pos": mp + Vector2(0, 6), "h": 40.0})
+	# foes: crabs guard the wrecks, gulls in flocks, divers by the brine
+	for q in [[32, 23], [56, 27], [38, 33], [58, 39], [30, 45], [26, 20]]:
+		z.spawns.append({"kind": "crab", "pos": land(z, q[0], q[1])})
+	for q in [[22, 30], [62, 20], [50, 18]]:
+		for i in 2:
+			z.spawns.append({"kind": "gull", "pos": land(z, q[0] + i * 2, q[1] + i)})
+	for q in [[66, 22], [72, 36], [58, 42], [26, 37]]:
+		z.spawns.append({"kind": "diver", "pos": land(z, q[0], q[1])})
+	z.spawns.append({"kind": "crab", "pos": land(z, 40, 26), "elite": "warding"})
+	z.spawns.append({"kind": "gull", "pos": land(z, 68, 30), "elite": "volatile"})
+	return z
+
+# The Stranded Fleet: five beached hulls joined by gangplanks, the flagship at the end.
+static func fleet() -> Dictionary:
+	var z = empty("fleet", "HẠM ĐỘI MẮC CẠN", 112, 32)
+	z.theme = "salt"
+	z.dark = true
+	z.tier = 2
+	z.mult = 3.0
+	fill(z, 2, 12, 10, 19, 1)       # the salt shore
+	fill(z, 10, 15, 16, 16, 3)
+	fill(z, 16, 9, 28, 22, 3)       # first hull
+	fill(z, 28, 15, 33, 16, 3)
+	fill(z, 33, 7, 46, 24, 3)       # the gun deck
+	fill(z, 36, 10, 38, 12, 0)
+	fill(z, 42, 19, 44, 21, 0)
+	fill(z, 46, 15, 52, 16, 3)
+	fill(z, 52, 8, 64, 23, 3)       # the hold, where the cargo was kept
+	fill(z, 64, 15, 70, 16, 3)
+	fill(z, 70, 9, 82, 22, 3)       # the officers' deck
+	fill(z, 82, 15, 88, 16, 3)
+	fill(z, 88, 4, 108, 27, 3)      # the flagship
+	for y in range(4, 28):
+		for x in range(88, 109):
+			if Vector2((x - 98.0) / 10.5, (y - 15.5) / 11.5).length() > 1.0:
+				z.grid[y][x] = 0
+	for q in [[4.0, 12.5], [17.0, 10.0], [27.0, 21.0], [34.0, 8.0], [45.0, 23.0], [53.0, 9.0], [63.0, 22.0], [71.0, 10.0], [81.0, 21.0], [92.0, 8.0], [104.0, 8.0], [92.0, 23.0], [104.0, 23.0]]:
+		lantern(z, q[0], q[1])
+	z.portals.append({"rect": Rect2(tp(2, 12), Vector2(TS * 1.2, TS * 8)), "to": "salt", "at": tp(45.5, 46.0), "label": "VỀ BIỂN MUỐI", "need": ""})
+	z.start = tp(5.0, 16.0)
+	for q in [[20, 12], [24, 19], [22, 15]]:
+		z.spawns.append({"kind": "crab", "pos": tp(q[0], q[1])})
+	for q in [[38, 14], [41, 18], [44, 11], [36, 20]]:
+		z.spawns.append({"kind": "gull", "pos": tp(q[0], q[1])})
+	for q in [[56, 11], [60, 20], [58, 15]]:
+		z.spawns.append({"kind": "diver", "pos": tp(q[0], q[1])})
+	z.spawns.append({"kind": "porter", "pos": tp(62.0, 15.5)})
+	for q in [[73, 12], [79, 19]]:
+		z.spawns.append({"kind": "crab", "pos": tp(q[0], q[1])})
+	z.spawns.append({"kind": "diver", "pos": tp(76.0, 15.5), "elite": "warding"})
+	z.spawns.append({"kind": "crab", "pos": tp(80.0, 12.0), "elite": "volatile"})
+	z.spawns.append({"kind": "admiral", "pos": tp(99.0, 15.5), "once": "admiral_dead"})
+	z.decor.append({"tex": "wreck", "pos": tp(8.0, 12.6), "solid": true, "bw": 60.0})
+	z.decor.append({"tex": "crates", "pos": tp(54.0, 9.4), "solid": true})
+	z.decor.append({"tex": "crates", "pos": tp(62.5, 9.6), "solid": true})
+	z.decor.append({"tex": "crates", "pos": tp(55.0, 22.0), "solid": true})
+	z.decor.append({"tex": "anchor", "pos": tp(46.0, 9.0), "solid": true, "bw": 16.0})
+	z.decor.append({"tex": "saltpile", "pos": tp(72.0, 21.0), "solid": true, "bw": 20.0})
+	z.decor.append({"tex": "saltpile", "pos": tp(18.0, 21.0), "solid": true, "bw": 20.0})
+	# the cargo book is read in the hold, before the officers' deck
+	z.scenes.append({"id": "manifest", "rect": Rect2(tp(63.5, 13), Vector2(TS * 3, TS * 6)), "at": tp(58.0, 15.4)})
+	return z

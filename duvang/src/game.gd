@@ -25,7 +25,7 @@ const DODGE_SPEED = 192.0
 const DODGE_INV = 0.25
 const DODGE_RECHARGE = 1.6
 const BAG = 24
-const MUSIC = {"town": 0, "field": 1, "dungeon": 2, "forest": 4, "heart": 2}
+const MUSIC = {"town": 0, "field": 1, "dungeon": 2, "forest": 4, "heart": 2, "salt": 1, "fleet": 2}
 
 # [startup, active, recovery, damage x attack, reach, half angle, lunge speed, hitstop, shake]
 const ATK = [
@@ -296,6 +296,8 @@ func enter_zone(id: String, at: Vector2) -> void:
 	zone = World.build(id)
 	if qs.get("m11", "") == "done":
 		World.fate(zone, flags.get("village", 0))
+	if qs.get("m16", "") == "done":
+		zone.npcs = zone.npcs.filter(func(n): return n.id != "kham")
 	if not maps.has(id):
 		maps[id] = [Art.bake(zone.grid, 0, zone.theme), Art.bake(zone.grid, 1, zone.theme)]
 	blocks.clear()
@@ -1544,6 +1546,8 @@ func hit_foe(f: Dictionary, base: float, big: bool, stop: float, shk: float) -> 
 	var K = D.FOES[f.kind]
 	var dmg = base * randf_range(0.9, 1.1) * dmg_mult(f)
 	var crit = p.sure_crit or (stats.crit > 0.0 and randf() < stats.crit / 100.0)
+	if crit and has_uniq("salt") and f.state != "dead":
+		mark(f, "chill")
 	if crit:
 		dmg *= 2.0 + 0.1 * tree.get("vital", 0)
 	if warded(f) and not (tree.has("pq_purge") and p.state == "atk" and p.skill == "exec"):
@@ -1681,6 +1685,12 @@ func kill(f: Dictionary) -> void:
 		save_game()
 	elif zone.respawn:
 		dead.append({"kind": f.kind, "pos": f.home, "t": 45.0, "elite": elite})
+	if f.kind == "admiral":
+		flags["admiral_dead"] = 1
+		drop(f.pos, "item", 0, D.admiral_unique())
+		shake = 4.0
+		toast("ĐÔ ĐỐC ĐÃ ĐƯỢC BÁO TIN: HẠM ĐỘI ĐÃ CHẾT.", VONG)
+		save_game()
 	if f.kind == "mother":
 		drop(f.pos, "item", 0, D.seed_unique())
 		shake = 4.0
@@ -1878,7 +1888,7 @@ func update_foes(dt: float) -> void:
 		var d = p.pos - f.pos
 		var dist = d.length()
 		var to = d / dist if dist > 0.01 else Vector2.RIGHT
-		if f.kind == "boss" and f.state != "dead" and f.state != "idle":
+		if ai(f) == "boss" and f.state != "dead" and f.state != "idle":
 			boss_summon(f)
 		match f.state:
 			"spawn":
@@ -1923,7 +1933,7 @@ func update_foes(dt: float) -> void:
 					continue
 				f.flip = d.x < 0.0
 				var mv = Vector2.ZERO
-				if f.kind == "heron" or f.kind == "wisp" or f.kind == "netter" or f.kind == "sower":
+				if ai(f) == "heron" or ai(f) == "wisp" or ai(f) == "netter" or ai(f) == "sower":
 					if dist < 80.0:
 						mv = -to
 					elif dist > K.range:
@@ -1932,7 +1942,7 @@ func update_foes(dt: float) -> void:
 						mv = to.orthogonal() * f.side * 0.4
 					if f.cd <= 0.0 and dist < 220.0:
 						ranged_pick(f, to, K)
-				elif f.kind == "leech":
+				elif ai(f) == "leech":
 					# circles to your side, then lunges in a straight line
 					if dist > 76.0:
 						mv = to
@@ -1941,22 +1951,22 @@ func update_foes(dt: float) -> void:
 					if f.cd <= 0.0 and dist < 90.0:
 						f.atk = "dash"
 						wind_up(f, to, "tele_mid", K.wind)
-				elif f.kind == "deer":
+				elif ai(f) == "deer":
 					# keeps its distance, lowers its antlers, then runs a long straight line
 					if dist > 150.0:
 						mv = to
 					elif f.cd <= 0.0:
 						f.atk = "charge"
 						wind_up(f, to, "tele_lo", K.wind)
-				elif f.kind == "mother":
+				elif ai(f) == "mother":
 					if f.cd <= 0.0:
 						mother_pick(f, to)
-				elif f.kind == "keeper":
+				elif ai(f) == "keeper":
 					if dist > K.range * 0.75:
 						mv = to
 					if f.cd <= 0.0:
 						keeper_pick(f, to, dist, K)
-				elif f.kind == "boss":
+				elif ai(f) == "boss":
 					if dist > K.range * 0.75:
 						mv = to
 					if f.cd <= 0.0:
@@ -1966,7 +1976,7 @@ func update_foes(dt: float) -> void:
 						mv = to
 					elif f.cd <= 0.0:
 						f.tpos = f.pos + to * minf(dist, 30.0)
-						wind_up(f, to, "tele_lo" if f.kind == "porter" else "tele_mid", K.wind)
+						wind_up(f, to, "tele_lo" if ai(f) == "porter" else "tele_mid", K.wind)
 				for o in foes:
 					if o == f or o.state == "dead":
 						continue
@@ -1976,7 +1986,7 @@ func update_foes(dt: float) -> void:
 				f.moving = mv.length() > 0.1
 				move_actor(f, mv.limit_length(1.0) * K.spd * slow * dt, f.r * 0.6)
 			"wind":
-				if (f.kind == "heron" or f.kind == "wisp" or f.atk == "volley") and f.st < f.wind - 0.25:
+				if (ai(f) == "heron" or ai(f) == "wisp" or f.atk == "volley") and f.st < f.wind - 0.25:
 					f.dir = to
 					f.flip = d.x < 0.0
 				if f.st >= f.wind:
@@ -2045,11 +2055,11 @@ func boss_summon(f: Dictionary) -> void:
 	if f.sum < 2 and f.hp < f.mhp * marks[f.sum]:
 		f.sum += 1
 		Sfx.play("clap", 0.7)
-		toast("KẺ CHẾT ĐUỐI ĐÁP LỜI NGỌN ĐÈN.", VONG)
+		toast("THỦY THỦ CHÌM NGHE LỆNH ĐÔ ĐỐC." if f.kind == "admiral" else "KẺ CHẾT ĐUỐI ĐÁP LỜI NGỌN ĐÈN.", VONG)
 		for i in 2:
 			var q = f.pos + Vector2.from_angle(randf() * TAU) * 60.0
 			if free_at(q, 8.0):
-				spawn("reed", q).state = "spawn"
+				spawn("diver" if f.kind == "admiral" else "reed", q).state = "spawn"
 
 func strike(f: Dictionary, K: Dictionary) -> void:
 	var dmg = K.dmg * (1.0 + (zone.mult - 1.0) * 0.7)
@@ -2060,7 +2070,7 @@ func strike(f: Dictionary, K: Dictionary) -> void:
 	if f.get("poison", 0) > 0:
 		dmg *= 1.0 - 0.05 * tree.get("infect", 0)
 	var d = p.pos - f.pos
-	match f.kind:
+	match ai(f):
 		"reed":
 			if d.length() < 36.0 + 4.0 and (d.length() < 4.0 or absf(rad_to_deg(f.dir.angle_to(d))) <= 50.0):
 				hurt(dmg)
@@ -2095,7 +2105,7 @@ func strike(f: Dictionary, K: Dictionary) -> void:
 				hurt(dmg)
 			Sfx.play("sw1", 1.2)
 		"sower":
-			clouds.append({"pos": f.tpos, "r": 34.0, "t": 4.0, "tick": 0.0, "dmg": dmg * 0.6})
+			clouds.append({"pos": f.tpos, "r": 34.0, "t": 4.0, "tick": 0.0, "dmg": dmg * 0.6, "col": Color("e8e4dc") if f.kind == "diver" else Color("c9e36a")})
 			Sfx.play("spit", 0.6)
 		"deer":
 			f.kb = f.dir * 520.0
@@ -2200,7 +2210,7 @@ func update_shots(dt: float) -> void:
 			if p.pos.distance_to(cl.pos) < cl.r:
 				hurt(cl.dmg)
 			for i in 3:
-				parts.append({"pos": cl.pos + Vector2.from_angle(randf() * TAU) * randf() * cl.r, "vel": Vector2(0, -14), "life": 0.6, "max": 0.6, "col": Color("c9e36a"), "g": 0.0, "size": 2})
+				parts.append({"pos": cl.pos + Vector2.from_angle(randf() * TAU) * randf() * cl.r, "vel": Vector2(0, -14), "life": 0.6, "max": 0.6, "col": cl.get("col", Color("c9e36a")), "g": 0.0, "size": 2})
 	clouds = clouds.filter(func(cl): return cl.t > 0.0)
 	for b in blasts:
 		b.t -= dt
@@ -2814,7 +2824,9 @@ func say(name: String, tex: String, lines: Array, after: String, arg: String) ->
 	Sfx.play("clap", 1.2, -6.0)
 
 func service(npc: String) -> String:
-	return "heal" if npc == "ngai" else ("shop" if npc == "kham" else "")
+	if npc == "ngai":
+		return "heal_shop" if qs.get("m16", "") == "done" else "heal"
+	return "shop" if npc == "kham" else ""
 
 func start_talk(npc: String) -> void:
 	var who = D.NPCS[npc]
@@ -2884,6 +2896,11 @@ func talk_next() -> void:
 			toast("MẢNH CHUÔNG NGÂN ĐÚNG TIẾNG. MÁU ĐÃ HỒI ĐẦY.", VONG)
 			Sfx.play("orb", 0.7)
 		"shop":
+			open_inv(true)
+		"heal_shop":
+			p.hp = stats.mhp
+			toast("NGẢI LÊN DÂY MẢNH CHUÔNG. MÁU ĐÃ HỒI ĐẦY.", VONG)
+			Sfx.play("orb", 0.7)
 			open_inv(true)
 	save_game()
 
@@ -3123,7 +3140,7 @@ func warded(f: Dictionary) -> bool:
 func ranged_pick(f: Dictionary, to: Vector2, K: Dictionary) -> void:
 	f.amber = false
 	f.atk = ""
-	match f.kind:
+	match ai(f):
 		"netter", "sower":
 			f.tpos = p.pos
 			wind_up(f, to, "tele_mid", K.wind)
@@ -4988,3 +5005,8 @@ func shot_hit(f: Dictionary, b: Dictionary) -> void:
 		add_heat(-8.0 if b.last else -3.0)
 	if b.last and tree.has("kn_strike"):
 		add_devo(8.0)
+
+# ---------------------------------------------------------------- chapter three
+# a foe's way of fighting: its own kind, or the kind named by "ai" in data.gd
+func ai(f: Dictionary) -> String:
+	return D.FOES[f.kind].get("ai", f.kind)

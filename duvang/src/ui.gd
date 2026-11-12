@@ -300,7 +300,7 @@ static func inv_draw(g, view: Vector2) -> void:
 	g.draw_rect(Rect2(Vector2.ZERO, view), Color(0.04, 0.03, 0.07, 0.55))
 	var r = panel_rect(view)
 	frame(g, r)
-	Txt.text(g, r.position + Vector2(12, 8), "CỬA HÀNG THẦY KHÂM" if g.shop else "TÚI ĐỒ", Color("ffe9a3"))
+	Txt.text(g, r.position + Vector2(12, 8), ("CỬA HÀNG CỦA NGẢI" if g.qs.get("m16", "") == "done" else "CỬA HÀNG THẦY KHÂM") if g.shop else "TÚI ĐỒ", Color("ffe9a3"))
 	g.draw_texture(Art.T["coin"], Vector2(r.end.x - 60, r.position.y + 7))
 	Txt.text(g, Vector2(r.end.x - 50, r.position.y + 8), str(g.gold), GOLD)
 	var m = g.ui_mouse()

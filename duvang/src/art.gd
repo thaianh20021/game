@@ -14,6 +14,12 @@ static var REMAP = {}    # that theme's colour swaps
 
 # The Breathing Forest: deeper greens, dark loam, teal water, purple flowers.
 const THEMES = {
+	"salt": {
+		"5b7b4a": "b9b4a6", "4f6d42": "a7a294", "6b8b55": "cdc8ba", "86a565": "e6e1d4", "6e8e57": "c2bdaf", "47633c": "958f81",
+		"7a6a4f": "8f8576", "6b5c44": "7d7466", "8d7c5e": "a89c88",
+		"2f5560": "5f7f88", "29495a": "52707a", "4f8a8f": "86aeb2", "3d6f77": "72989e", "6aa3a6": "a6cccc", "26444e": "45626c",
+		"4a3f33": "6e685c", "352c26": "57524a", "5d5042": "857d6e",
+	},
 	"forest": {
 		"5b7b4a": "2f5d46", "4f6d42": "25503c", "6b8b55": "3f7a5a", "86a565": "58a07a", "6e8e57": "478a66", "47633c": "1f4634",
 		"7a6a4f": "4a4a52", "6b5c44": "3e3e47", "8d7c5e": "5c5a66",
@@ -113,6 +119,8 @@ static func build() -> void:
 
 const SPRITES = ["tree_giant", "shrooms", "trunk", "hut", "gate", "log", "wolf_i", "wolf_w", "wolf_k", "sower_i", "sower_w", "sower_k", "deer_i", "deer_w", "deer_k",
 	"mother_i", "mother_w", "mother_k", "npc_reu", "npc_man", "npc_kid",
+	"crab_i", "crab_w", "crab_k", "gull_i", "gull_w", "gull_k", "diver_i", "diver_w", "diver_k", "admiral_i", "admiral_w", "admiral_k",
+	"npc_vanh", "npc_buyer", "wreck", "saltpile", "anchor", "tent",
 	"leech_i", "leech_w", "leech_k", "netter_i", "netter_w", "netter_k", "wisp_i", "wisp_w", "wisp_k", "keeper_i", "keeper_w", "keeper_k",
 	"h_idle", "h_w1", "h_w2", "h_w3", "h_wind", "h_slash", "tree_willow", "tree_dead", "boulder", "boat", "fence", "sign", "well", "crates", "cart", "netrack", "shrine", "grave",
 	"reed_i", "reed_w", "reed_k", "heron_i", "heron_w", "heron_k", "porter_i", "porter_w", "porter_k",
@@ -511,7 +519,7 @@ const SKILL_IDS = ["bulwark", "iron", "steady", "rush", "counter", "unbroken", "
 	"tc_knell", "tc_holy", "tc_lit", "tc_purge", "tc_bless", "tc_hook", "tc_drum",
 	"ocb_parry", "ocb_iron", "ocb_surge", "ocb_blood", "ocb_cry", "ocb_long", "ocb_wide", "ocb_master", "ont_hot", "ont_spread", "ont_deepcold", "ont_frostbite", "ont_frostguard", "ont_arc", "ont_charge", "ont_triad", "ost_shadow", "ost_step", "ost_toxic", "ost_seep", "ost_dart", "ost_six", "ost_reset", "ost_ghost", "otl_host", "otl_strong", "otl_curse2", "otl_wither", "otl_bind", "otl_eight", "otl_reap", "otl_lich", "ohv_cap", "ohv_regen", "ohv_spikes", "ohv_bash", "ohv_verdict", "ohv_taunt", "ohv_cover", "ohv_bulwark", "ots_quick", "ots_deadeye", "ots_traps", "ots_jaw", "ots_boom", "ots_alpha", "ots_mark", "ots_lone", "ott_bigheal", "ott_ground", "ott_brand", "ott_bright", "ott_cleanse", "ott_grace", "ott_vow", "ott_saint", "oks_turret", "oks_mine", "oks_vent", "oks_cool", "oks_hot", "oks_hook", "oks_mute", "oks_four"]
 const ITEM_KEYS = ["w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "w8", "w9", "w10", "a0", "a1", "a2", "a3", "a4", "a5", "c0", "c1", "c2", "c3", "c4", "c5",
-	"u_wave", "u_box", "u_free", "u_wick", "u_seed"]
+	"u_wave", "u_box", "u_free", "u_wick", "u_seed", "u_salt"]
 const HERO_FRAMES = ["idle", "w1", "w2", "w3", "wind", "slash"]
 
 static func load_optional() -> void:
