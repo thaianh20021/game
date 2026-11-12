@@ -41,7 +41,7 @@ Tài liệu này đối chiếu những gì chủ dự án đã yêu cầu trong
 | Chữ tiếng Việt | Tên riêng và hội thoại tiếng Việt | Xong: font pixel có đủ dấu, toàn bộ chữ trong game đã dịch (chữ in hoa) | xong |
 | Hoạt ảnh | Chạy, đánh, niệm, trúng đòn, chết | Nhân vật: đi, chém, niệm (tư thế lấy đà 0,25 giây sau mỗi phép), kéo cung, giật lùi khi trúng đòn, ngã rồi tan khi chết; quái mỗi con 3 tư thế. Vẽ bằng biến đổi hình có sẵn, chưa có khung hình riêng | 3 |
 | Hướng nhìn | 4 hướng | Xong: ngang (lật trái phải), từ trước, từ sau; mỗi hướng 6 khung hình | xong |
-| Tay cầm | Dùng được mọi menu | Túi đồ và cửa hàng chỉ dùng chuột | 4 |
+| Tay cầm | Dùng được mọi menu | Menu, túi đồ và cửa hàng đi được bằng cần gạt hoặc WASD (A hoặc Space để chọn; RB mua bình máu, bấm cần phải bán đồ thường). Cây kỹ năng: D-pad lên mở, cần gạt chọn node, A học, D-pad phải (G) đổi thẻ. Chưa thử trên tay cầm thật | xong |
 | Nhạc | Mỗi vùng một bản sắc | 4 bản tổng hợp: trấn, đầm, hầm, boss | xong |
 | Online | Co-op 2–4 người, server có thẩm quyền | Chưa có gì | sau cùng |
 

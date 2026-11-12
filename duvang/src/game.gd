@@ -34,7 +34,7 @@ const ATK = [
 	[3 * F, F, 3 * F, 1.8, 42.0, 75.0, 110.0, 0.09, 3.0],
 	[3 * F, F, 4 * F, 2.4, 46.0, 100.0, 110.0, 0.10, 3.0],   # only with the Fourth Strike keystone
 ]
-const KEYS = ["atk", "dodge", "use", "inv", "potion", "buy", "opt1", "opt2", "s1", "s2", "s3", "s4", "s5", "s6", "ult", "tree", "reset", "filter", "menu"]
+const KEYS = ["atk", "dodge", "use", "inv", "potion", "buy", "opt1", "opt2", "s1", "s2", "s3", "s4", "s5", "s6", "ult", "tree", "reset", "filter", "menu", "tabn"]
 
 # place
 var zone = {}
@@ -84,6 +84,10 @@ var msel = 0
 var csel = 0
 var menu_back = "title"
 var nav_prev = 0
+var isel = 0           # the inventory cursor for keys and pads
+var inv_pad = false    # true while the cursor, not the mouse, picks the item shown
+var tsel = ""          # the skill tree cursor for keys and pads
+var tree_pad = false
 var mouse_prev = Vector2.ZERO
 var hold_block = false
 var fields = []        # fire walls and lightning cages the hero has put down
@@ -405,9 +409,9 @@ func held(n: String) -> bool:
 		"ult":
 			return Input.is_key_pressed(KEY_R) or Input.is_joy_button_pressed(0, JOY_BUTTON_LEFT_STICK)
 		"tree":
-			return Input.is_key_pressed(KEY_T)
+			return Input.is_key_pressed(KEY_T) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_UP)
 		"reset":
-			return Input.is_key_pressed(KEY_X)
+			return Input.is_key_pressed(KEY_X) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_STICK)
 		"use":
 			return Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_ENTER) or Input.is_joy_button_pressed(0, JOY_BUTTON_Y)
 		"inv":
@@ -416,10 +420,12 @@ func held(n: String) -> bool:
 			return Input.is_key_pressed(KEY_ESCAPE) or Input.is_joy_button_pressed(0, JOY_BUTTON_START)
 		"potion":
 			return Input.is_key_pressed(KEY_F) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER)
+		"tabn":
+			return Input.is_key_pressed(KEY_G) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_RIGHT)
 		"filter":
 			return Input.is_key_pressed(KEY_L)
 		"buy":
-			return Input.is_key_pressed(KEY_B)
+			return Input.is_key_pressed(KEY_B) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER)
 		"opt1":
 			return Input.is_key_pressed(KEY_1)
 		"opt2":

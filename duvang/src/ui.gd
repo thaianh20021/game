@@ -243,6 +243,24 @@ static func eq_cell(view: Vector2, i: int) -> Rect2:
 static func inv_update(g) -> void:
 	var view = g.get_viewport_rect().size
 	var m = g.ui_mouse()
+	# a cursor for the keys and the pad: cells 0..BAG-1 are the bag, BAG..BAG+2 the worn slots
+	var mv = g.move_dir()
+	var nav = Vector2i.ZERO
+	if absf(mv.x) > 0.5:
+		nav.x = 1 if mv.x > 0.0 else -1
+	elif absf(mv.y) > 0.5:
+		nav.y = 1 if mv.y > 0.0 else -1
+	var nk = nav.x * 10 + nav.y
+	if nk != 0 and nk != g.nav_prev:
+		g.inv_pad = true
+		g.isel = inv_step(g, g.isel, nav)
+	g.nav_prev = nk
+	if m != g.mouse_prev:
+		g.inv_pad = false
+		g.mouse_prev = m
+	if g.pressed("dodge"):
+		inv_act(g, g.isel)
+		return
 	if g.shop and g.pressed("reset"):
 		g.sell_junk()
 	if g.shop and g.pressed("buy"):
@@ -305,6 +323,15 @@ static func inv_draw(g, view: Vector2) -> void:
 		if it != null and c.has_point(m):
 			hover = it
 			g.draw_rect(c, Color(1, 1, 1, 0.18))
+	if g.inv_pad:
+		var sc = eq_cell(view, g.isel - g.BAG) if g.isel >= g.BAG else bag_cell(view, g.isel)
+		g.draw_rect(sc.grow(1), Color("ffe9a3"), false, 1.0)
+		if g.isel >= g.BAG:
+			hover = g.eq[D.SLOTS[g.isel - g.BAG]]
+			hover_eq = true
+		else:
+			hover = g.inv[g.isel] if g.isel < g.inv.size() else null
+			hover_eq = false
 	# hero numbers
 	var sy = r.position.y + 126
 	var rows = [["CẤP", g.lvl], ["TẤN CÔNG", g.stats.atk], ["GIÁP", g.stats.def], ["MÁU", g.stats.mhp]]
@@ -340,9 +367,9 @@ static func inv_draw(g, view: Vector2) -> void:
 		if hover.uniq != "":
 			Txt.text(g, Vector2(tx, ty + 24 + n * 10), D.UNIQ_TEXT[hover.uniq], D.RAR_COL[3])
 		Txt.text(g, Vector2(r.end.x - 12 - Txt.width("BÁN ĐƯỢC 000"), ty), "BÁN ĐƯỢC %d" % D.value(hover), GOLD)
-	var hint = "BẤM VÀO MÓN ĐỒ ĐỂ MẶC.  I ĐỂ ĐÓNG."
+	var hint = "BẤM VÀO MÓN ĐỒ ĐỂ MẶC (HOẶC DI CHUYỂN RỒI SPACE).  I ĐỂ ĐÓNG."
 	if g.shop:
-		hint = "BẤM ĐỂ BÁN.  X BÁN HẾT ĐỒ THƯỜNG.  B MUA BÌNH MÁU (%d VÀNG).  I ĐỂ ĐÓNG." % D.POTION_COST
+		hint = "BẤM HOẶC SPACE ĐỂ BÁN.  X BÁN HẾT ĐỒ THƯỜNG.  B MUA BÌNH MÁU (%d VÀNG).  I ĐỂ ĐÓNG." % D.POTION_COST
 	Txt.ctext(g, Vector2(view.x / 2.0, r.end.y - 12), hint, DIM)
 
 # ---------------------------------------------------------------- skill bar and skill tree
@@ -396,6 +423,8 @@ static func tree_cell(view: Vector2, id: String) -> Rect2:
 	return Rect2(r.position.x + 12 + N.b * 196 + N.pos[0] * 62, r.position.y + 48 + N.pos[1] * 42, 58, 30)
 
 static func tree_hover(g, view: Vector2) -> String:
+	if g.tree_pad and Sk.NODES.has(g.tsel) and Sk.NODES[g.tsel].get("m", 0) == g.tab:
+		return g.tsel
 	var m = g.ui_mouse()
 	for id in Sk.NODES:
 		if Sk.NODES[id].get("m", 0) == g.tab and tree_cell(view, id).has_point(m):
@@ -404,6 +433,28 @@ static func tree_hover(g, view: Vector2) -> String:
 
 static func tree_update(g) -> void:
 	var view = g.get_viewport_rect().size
+	var mv = g.move_dir()
+	var nav = Vector2.ZERO
+	if absf(mv.x) > 0.5:
+		nav.x = signf(mv.x)
+	elif absf(mv.y) > 0.5:
+		nav.y = signf(mv.y)
+	var nk = int(nav.x) * 10 + int(nav.y)
+	if nk != 0 and nk != g.nav_prev:
+		g.tree_pad = true
+		g.tsel = tree_step(g, view, nav)
+	g.nav_prev = nk
+	if g.ui_mouse() != g.mouse_prev:
+		g.tree_pad = false
+		g.mouse_prev = g.ui_mouse()
+	if g.pressed("tabn"):
+		var ts = g.tabs()
+		g.tab = ts[(ts.find(g.tab) + 1) % ts.size()]
+		g.tsel = ""
+		return
+	if g.pressed("dodge") and g.tree_pad and g.tsel != "":
+		g.learn(g.tsel)
+		return
 	var id = tree_hover(g, view)
 	if g.pressed("reset"):
 		g.reset_tree()
@@ -530,5 +581,56 @@ static func tree_draw(g, view: Vector2) -> void:
 	else:
 		Txt.text(g, Vector2(r.position.x + 12, ty), "MỖI CẤP MỘT ĐIỂM. HÀNG HAI CỦA NHÁNH CẦN 2 ĐIỂM TRONG NHÁNH, THEN CHỐT CẦN 5.", DIM)
 		Txt.text(g, Vector2(r.position.x + 12, ty + 12), "VIỀN SÁNG: KỸ NĂNG ĐỂ BẤM. VIỀN VÀNG: THEN CHỐT, ĐỔI MỘT LUẬT VÀ CÓ CÁI GIÁ.", DIM)
-	Txt.ctext(g, Vector2(view.x / 2.0, r.end.y - 12), "BẤM VÀO THẺ HOẶC NÚT.   X LẤY LẠI TOÀN BỘ ĐIỂM, MIỄN PHÍ.   T ĐỂ ĐÓNG.", DIM)
+	Txt.ctext(g, Vector2(view.x / 2.0, r.end.y - 12), "BẤM VÀO THẺ HOẶC NÚT (HOẶC DI CHUYỂN RỒI SPACE, G ĐỔI THẺ).   X LẤY LẠI TOÀN BỘ ĐIỂM.   T ĐỂ ĐÓNG.", DIM)
 	skill_bar(g, view)
+
+# where the inventory cursor goes from cell i
+static func inv_step(g, i: int, nav: Vector2i) -> int:
+	if i >= g.BAG:
+		var e = i - g.BAG
+		if nav.x > 0:
+			return e * COLS
+		return g.BAG + clampi(e + nav.y, 0, 2)
+	var col = i % COLS
+	var row = i / COLS
+	if nav.x < 0 and col == 0:
+		if g.shop:
+			return i
+		return g.BAG + mini(row, 2)
+	if nav.x != 0:
+		return row * COLS + clampi(col + nav.x, 0, COLS - 1)
+	return clampi(i + nav.y * COLS, col, g.BAG - COLS + col)
+
+static func inv_act(g, i: int) -> void:
+	if i >= g.BAG:
+		if not g.shop:
+			g.unequip(D.SLOTS[i - g.BAG])
+	elif i < g.inv.size():
+		if g.shop:
+			g.sell(i)
+		else:
+			g.equip(i)
+
+# the next node of the current tab in the direction pushed (the first node when none is chosen)
+static func tree_step(g, view: Vector2, nav: Vector2) -> String:
+	var ids = []
+	for id in Sk.NODES:
+		if Sk.NODES[id].get("m", 0) == g.tab:
+			ids.append(id)
+	if ids.is_empty():
+		return ""
+	if not ids.has(g.tsel):
+		return ids[0]
+	var c0 = tree_cell(view, g.tsel).get_center()
+	var best = g.tsel
+	var bs = INF
+	for id in ids:
+		var d = tree_cell(view, id).get_center() - c0
+		var along = d.dot(nav)
+		if id == g.tsel or along <= 4.0:
+			continue
+		var score = along + absf(d.cross(nav)) * 2.0
+		if score < bs:
+			bs = score
+			best = id
+	return best

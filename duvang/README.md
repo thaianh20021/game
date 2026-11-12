@@ -28,6 +28,9 @@ The save is `user://duvang_save.json`; delete it to start over. Tests use their 
 | Skills on keys 1 to 5 | 1 2 3 4 5 (right button is also 1, Q is also 2) | B, left shoulder |
 | Sixth skill (Prototype keystone only) | 6 | |
 | Ultimate (with two learned: R over one in the tree picks it) | R | left stick click |
+| Skill tree | T | D-pad up |
+| Next tab in the skill tree | G | D-pad right |
+| Choose in bag, shop and tree (cursor) | Space | A |
 | Skill tree (click a node to learn, X takes all points back) | T | through the pause menu |
 | Dodge (2 charges) | Space or Shift | A |
 | Talk, next line | E or Enter | Y |
