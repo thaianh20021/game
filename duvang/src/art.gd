@@ -142,7 +142,7 @@ const SPRITES = ["tree_giant", "shrooms", "trunk", "hut", "gate", "log", "wolf_i
 	"slag_i", "slag_w", "slag_k", "smith_i", "smith_w", "smith_k", "moth_i", "moth_w", "moth_k", "forgemaster_i", "forgemaster_w", "forgemaster_k",
 	"mold_i", "mold_w", "mold_k", "npc_okha", "npc_than", "mineshaft", "slagheap", "furnace", "banner",
 	"scribe_i", "scribe_w", "scribe_k", "guard_i", "guard_w", "guard_k", "censer_i", "censer_w", "censer_k", "okhab_i", "okhab_w", "okhab_k",
-	"first_i", "first_w", "first_k", "npc_kimyen", "npc_archivist", "shelf", "pillar", "bellframe", "railing",
+	"first_i", "first_w", "first_k", "npc_kimyen", "npc_archivist", "shelf", "pillar", "bellframe", "railing", "lighthouse",
 	"leech_i", "leech_w", "leech_k", "netter_i", "netter_w", "netter_k", "wisp_i", "wisp_w", "wisp_k", "keeper_i", "keeper_w", "keeper_k",
 	"h_idle", "h_w1", "h_w2", "h_w3", "h_wind", "h_slash", "tree_willow", "tree_dead", "boulder", "boat", "fence", "sign", "well", "crates", "cart", "netrack", "shrine", "grave",
 	"reed_i", "reed_w", "reed_k", "heron_i", "heron_w", "heron_k", "porter_i", "porter_w", "porter_k",

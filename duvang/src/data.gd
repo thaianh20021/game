@@ -557,6 +557,10 @@ const QUESTS = {
 # Text shown when the hero examines a thing (E). `opts` turns the last line into a choice that sets a flag.
 
 const THINGS = {
+	"lighthouse": {"name": "NGỌN HẢI ĐĂNG GIỮA ĐẤT KHÔ", "lines": []},
+	"lamp_keeper": {"name": "NGƯỜI GÁC ĐÈN", "lines": ["TRÊN ĐỈNH THÁP, MỘT ÔNG GIÀ NGỒI CẠNH NGỌN ĐÈN, TAY CẦM CUỐN LỊCH ĐÃ XÉ GẦN HẾT. 'HÔM NAY BỚT MỘT NGÀY. TÀU SẮP VỀ RỒI.'", "'HẠM ĐỘI ĐI BA TRĂM NĂM TRƯỚC. HỌ HỨA VỀ KHI TÔI ĐẾM HẾT. TÔI ĐẾM CHẬM LẠI MỘT CHÚT, ĐỂ HỌ KỊP.'", "ÔNG KHÔNG BIẾT BIỂN ĐÃ CẠN. ÔNG KHÔNG BIẾT HẠM ĐỘI NẰM CÁCH ĐÂY MỘT DẶM, TRONG MUỐI."],
+		"opts": ["NÓI THẬT", "THẮP ĐÈN THEO NHỊP"], "flag": "lamp", "xp": 3000,
+		"after": [["BẠN KỂ VỀ HẠM ĐỘI MẮC CẠN. ÔNG NGHE HẾT, GẬT ĐẦU, RỒI ĐẶT CUỐN LỊCH XUỐNG. 'VẬY TÔI ĐƯỢC NGHỈ RỒI.' NGỌN ĐÈN TẮT, LẦN ĐẦU SAU BA TRĂM NĂM."], ["BẠN CẦM ĐÈN, CHỚP THEO NHỊP ÔNG ĐẾM. ÔNG CƯỜI, XÉ THÊM MỘT TỜ LỊCH. ĐÊM NAY CON SỐ VẪN SẼ BỚT ĐI MỘT, VÀ ĐÊM MAI CŨNG VẬY."]]},
 	"debt_potter": {"name": "NGƯỜI THỢ GỐM", "lines": ["MỘT DƯ ẢNH NGỒI BÊN LÒ GỐM NGUỘI, NUNG MÃI MỘT CÁI BÌNH. CÁI BÌNH NỨT, Y ĐẬP ĐI, NẶN LẠI.", "'BÌNH NÀY BÁN ĐƯỢC LÀ TÔI TRẢ ĐỦ. MƯỜI LẠNG. CHỈ CẦN MỘT CÁI KHÔNG NỨT.'"],
 		"opts": ["XÓA NỢ", "THU NỢ"], "flag": "debt1",
 		"after": [["BẠN NÓI NỢ ĐÃ ĐƯỢC TRẢ. Y DỪNG TAY, NHÌN CÁI BÌNH NỨT, RỒI ĐẶT NÓ XUỐNG THẬT NHẸ. LẦN ĐẦU TIÊN Y KHÔNG NẶN LẠI."], ["Y ĐƯA CHO BẠN MƯỜI LẠNG ĐỒNG ĐÃ XANH RỈ, RỒI QUAY LẠI NẶN TIẾP. NỢ HẾT, NHƯNG CÁI BÌNH VẪN NỨT."]]},

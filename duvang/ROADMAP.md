@@ -267,3 +267,10 @@ Năm nhiệm vụ phụ s6 tới s10 do Bà Cả Sậy giao, mở dần theo ch�
 và dòng cuối trong sổ trên bàn ở trấn (con nợ là Bà Cả Sậy, chủ nợ là Vãn). Mỗi bước chọn xóa nợ (nhiều kinh nghiệm hơn)
 hay thu nợ (vàng); cờ `debt1` tới `debt5`. Dư Ảnh đặt bằng `World.debts`, gọi trong `World.build` cho mọi khu.
 Kiểm tra nhanh: `gen/debts.gd`.
+
+## Cập nhật 2026-11-12 (bí mật Ngọn Hải Đăng Đếm Ngược, theo brief mục 3.8)
+
+Không NPC nào giao. Ngọn hải đăng ở bờ khô phía đông nam Biển Muối chớp một con số giảm một mỗi ngày thật
+(`21000 - số ngày Unix`). Xem nó ở hai ngày khác nhau (`flags.lh_days`, lưu dạng chuỗi) thì người gác đèn hiện ra trên tháp:
+nói thật (đèn tắt) hoặc thắp đèn theo nhịp ông chờ (đèn vẫn chớp); cờ `lamp`, thưởng kinh nghiệm qua khóa `xp` của THINGS.
+Sprite tháp đèn còn đang sinh; trước khi có, chỉ có điểm xem. Kiểm tra nhanh: `gen/lh.gd`.

@@ -300,6 +300,8 @@ func enter_zone(id: String, at: Vector2) -> void:
 		zone.npcs = zone.npcs.filter(func(n): return n.id != "dien")
 	if zone.id == "maw" and flags.has("first_dead") and not flags.has("van"):
 		zone.things.append({"id": "voice", "pos": tp_maw_voice(), "h": 60.0})
+	if zone.id == "salt" and flags.get("lh_days", []).size() >= 2 and not flags.has("lamp"):
+		zone.things.append({"id": "lamp_keeper", "pos": lighthouse_pos() + Vector2(0, 10), "h": 40.0})
 	if qs.get("s5", "") == "done" and zone.id == "mines":
 		World.lantern(zone, 18.5, 24.2)
 	if qs.get("m16", "") == "done":
@@ -2896,6 +2898,9 @@ func start_talk(npc: String) -> void:
 	say(who.name, who.tex, c[mini(c.size() - 1, main_done() / 2)], service(npc), "")
 
 func look(id: String) -> void:
+	if id == "lighthouse":
+		lighthouse()
+		return
 	var T = D.THINGS[id]
 	say(T.name, "", T.lines, "seen", id)
 	if T.has("opts"):
@@ -2910,6 +2915,8 @@ func scene(sc: Dictionary) -> void:
 func choose(k: int) -> void:
 	var T = D.THINGS[talk.arg]
 	flags[T.flag] = k
+	if T.has("xp"):
+		give_xp(T.xp)
 	flags["seen_" + talk.arg] = 1
 	say(T.name, "", T.after[k], "", "")
 	refresh_quests()
@@ -5056,3 +5063,30 @@ func ai(f: Dictionary) -> String:
 # ---------------------------------------------------------------- chapter five
 func tp_maw_voice() -> Vector2:
 	return Vector2(44 * TS, 22 * TS)
+
+# ---------------------------------------------------------------- the Counting Lighthouse (a secret, no one gives it)
+# It blinks a number that drops by one every real day. Look at it on two different days and its keeper shows.
+func lighthouse_pos() -> Vector2:
+	for th in zone.things:
+		if th.id == "lighthouse":
+			return th.pos
+	return Vector2.ZERO
+
+func lighthouse() -> void:
+	var day = int(Time.get_unix_time_from_system() / 86400.0)
+	var key = str(day)   # strings survive the JSON save unchanged
+	var seen: Array = flags.get("lh_days", [])
+	if not seen.has(key):
+		seen.append(key)
+	flags["lh_days"] = seen
+	var count = maxi(0, 21000 - day)
+	var lines = ["NGỌN ĐÈN TRÊN THÁP CHỚP MỘT DÃY DÀI, NGẮN. BẠN ĐẾM ĐƯỢC MỘT CON SỐ: %d." % count]
+	if flags.has("lamp"):
+		lines = ["THÁP ĐÈN TỐI." if flags.lamp == 0 else "NGỌN ĐÈN VẪN CHỚP THEO NHỊP CỦA ÔNG GIÀ: %d." % count]
+	elif seen.size() >= 2:
+		lines.append("HÔM QUA NÓ CHỚP MỘT SỐ KHÁC. CÓ AI ĐÓ TRÊN ĐỈNH THÁP ĐANG ĐẾM.")
+		if not zone.things.any(func(th): return th.id == "lamp_keeper"):
+			zone.things.append({"id": "lamp_keeper", "pos": lighthouse_pos() + Vector2(0, 10), "h": 40.0})
+	else:
+		lines.append("KHÔNG CÓ TÀU NÀO. KHÔNG CÓ NƯỚC. NGỌN ĐÈN VẪN CHỚP.")
+	say("NGỌN HẢI ĐĂNG GIỮA ĐẤT KHÔ", "", lines, "", "")

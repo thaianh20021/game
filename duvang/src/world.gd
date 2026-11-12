@@ -516,6 +516,11 @@ static func salt() -> Dictionary:
 		z.spawns.append({"kind": "diver", "pos": land(z, q[0], q[1])})
 	z.spawns.append({"kind": "crab", "pos": land(z, 40, 26), "elite": "warding"})
 	z.spawns.append({"kind": "gull", "pos": land(z, 68, 30), "elite": "volatile"})
+	# the Counting Lighthouse, a secret on the dry south-east shore
+	var lh = land(z, 74, 42)
+	if Art.T.has("lighthouse"):
+		z.decor.append({"tex": "lighthouse", "pos": lh, "solid": true, "bw": 30.0})
+	z.things.append({"id": "lighthouse", "pos": lh + Vector2(0, 8), "h": 90.0})
 	return z
 
 # The Stranded Fleet: five beached hulls joined by gangplanks, the flagship at the end.
