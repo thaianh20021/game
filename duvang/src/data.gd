@@ -771,3 +771,8 @@ static func sockets(it: Dictionary) -> int:
 	if it.slot == "rune":
 		return 0
 	return 1 if it.rar == 3 else it.rar
+
+# Ngải at the bottom of the pit, if she chose to come (bond 3 or more)
+const NGAI_PIT = ["MÌNH ĐI THEO. ĐỪNG MẮNG. MÌNH ĐÃ NGHE ĐỦ NGƯỜI BẢO MÌNH Ở LẠI TRÔNG CỬA HÀNG.", "Ô KHA NÓI MÌNH LÀ VỌNG. CÓ LẼ ĐÚNG. NHƯNG VỌNG CŨNG CÓ QUYỀN CHỌN ĐỨNG CẠNH AI.", "BẠN ĐÁNH ĐI. MÌNH SẼ LÊN DÂY MẢNH CHO BẠN TỪNG TIẾNG MỘT."]
+# one more line in the ending: [0] Ngải stayed in town, [1] she came down the pit
+const EPILOGUE_NGAI = ["NGẢI KHÔNG XUỐNG HỐ. CÔ GỬI CHO BẠN MỘT LÁ THƯ, VIẾT BẰNG NÉT CHỮ CỦA NGƯỜI TẬP ĐÁNH VẦN MUỘN: 'LẦN SAU RỦ MÌNH.'", "NGẢI ĐỨNG CẠNH BẠN Ở VÀNH HỐ KHI TIẾNG CUỐI TẮT. CÔ KHÔNG NÓI GÌ. CÔ CHỈ GÕ ÂM THOA MỘT LẦN, VÀ LẮNG NGHE NÓ NGÂN CHO TỚI KHI HẾT."]

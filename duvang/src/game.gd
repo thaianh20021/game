@@ -306,6 +306,8 @@ func enter_zone(id: String, at: Vector2) -> void:
 		World.fate(zone, flags.get("village", 0))
 	if qs.has("m17") and zone.id == "town":
 		zone.npcs = zone.npcs.filter(func(n): return n.id != "dien")
+	if zone.id == "maw" and qs.has("m25") and qs.get("m26", "") != "done" and int(flags.get("bond", 0)) >= 3:
+		zone.npcs.append({"id": "ngai", "pos": Vector2(9 * TS, 17 * TS)})
 	if zone.id == "capital" and qs.get("m26", "") == "done":
 		zone.npcs.append({"id": "ngai", "pos": Vector2(47 * TS, 36 * TS)})
 	if zone.id == "maw" and flags.has("first_dead") and not flags.has("van"):
@@ -2830,7 +2832,9 @@ func turnin(id: String) -> void:
 	if Q.has("toast"):
 		toast(Q.toast, VONG)
 	if id == "m26":
-		say("", "", D.EPILOGUE[flags.get("van", 0)], "", "")
+		var ending = D.EPILOGUE[flags.get("van", 0)].duplicate()
+		ending.insert(ending.size() - 1, D.EPILOGUE_NGAI[1 if int(flags.get("bond", 0)) >= 3 else 0])
+		say("", "", ending, "", "")
 		talk["story"] = true
 	give_xp(R.xp)
 	for nid in D.ORDER:
@@ -2916,6 +2920,15 @@ func start_talk(npc: String) -> void:
 		if qs.get(id, "") == "active" and (Q.giver == npc or q_ender(id) == npc):
 			say(who.name, who.tex, Q.wait, service(npc), "")
 			return
+	if npc == "ngai" and zone.id == "maw":
+		say(who.name, who.tex, D.NGAI_PIT, "", "")
+		return
+	if npc == "ngai" and qs.get("m26", "") != "done":
+		# an idle talk with Ngải, once a chapter, brings her closer
+		var ch = chapter()
+		if int(flags.get("bond_ch", -1)) != ch:
+			flags["bond_ch"] = ch
+			flags["bond"] = int(flags.get("bond", 0)) + 1
 	if npc == "ngai" and qs.get("m26", "") == "done":
 		var tl = tide_level()
 		say(who.name, who.tex, [D.TIDE_TALK[tl - 1], "MÌNH ĐO MỖI SÁNG. VÃN TỪNG NÓI NGƯỜI NHẶT VỌNG GIỎI LÀ NGƯỜI BIẾT KHI NÀO KHÔNG NÊN XUỐNG HẦM. MÌNH THÌ NGHĨ NGƯỢC LẠI."], service(npc), "")
@@ -5180,3 +5193,10 @@ func set_rune(i: int) -> void:
 			return
 	toast("KHÔNG MÓN NÀO ĐANG MẶC CÒN Ô TRỐNG.", Color("ff9a8a"))
 	Sfx.play("deny")
+
+# which chapter the story is in (0 to 4), counted from the main quests done
+func chapter() -> int:
+	for q in [["m26", 5], ["m21", 4], ["m16", 3], ["m11", 2], ["m6", 1]]:
+		if qs.get(q[0], "") == "done":
+			return q[1]
+	return 0

@@ -299,3 +299,9 @@ bấm vào đá trong cửa hàng thì nó vào món đang mặc đầu tiên c�
 quyết định là món nào đáng giữ. Boss luôn rơi một viên, tinh anh 30%. Bán nhanh đồ thường không bán đá.
 Sửa lỗi: lần thêm Triều Vọng trước đã đổi nhầm điều kiện rơi bình máu thay vì điều kiện rơi đồ.
 Kiểm tra nhanh: `gen/runes.gd`.
+
+## Cập nhật 2026-11-12 (gắn bó với Ngải, theo brief mục 3.9)
+
+Mỗi chương, lần đầu nói chuyện thường với Ngải (khi cô không có nhiệm vụ để giao hay nhận) cho +1 gắn bó (`flags.bond`,
+`flags.bond_ch`, `chapter()`). Từ 3 trở lên, Ngải tự xuống Tầng Lưỡi Chuông khi bạn làm m25 và nói câu riêng (`D.NGAI_PIT`);
+lời kết có thêm một dòng tùy cô có xuống hố hay không (`D.EPILOGUE_NGAI`). Không ảnh hưởng sức mạnh. Kiểm tra nhanh: `gen/bond.gd`.
