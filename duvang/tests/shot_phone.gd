@@ -29,8 +29,18 @@ func _init() -> void:
 		g.p.pos = near.pos + Vector2(20, 6)
 	g.sim.move = Vector2.ZERO
 	await snap("play")
-	g.inv.append(D.make_item("armor", 0, 0))
-	g.inv.append(D.make_item("weapon", 0, 0))
+	for s in D.SLOTS:
+		g.inv.append(D.make_item(s, 1, 1))
+	g.bag_add(D.rune_item("steel"))
+	g.bag_add(D.rune_item("steel"))
+	g.bag_add(D.rune_item("steel"))
+	g.eq.helm = D.make_item("helm", 2, 2)
+	g.eq.ring = D.make_item("ring", 0, 1)
+	g.recompute()
+	g.open_inv(false)
+	g.isel = 3
+	g.inv_pad = true
+	await snap("bag")
 	g.open_inv(true)
 	g.isel = 0
 	g.inv_pad = true
@@ -40,4 +50,12 @@ func _init() -> void:
 	g.tsel = "spin"
 	g.tree_pad = true
 	await snap("tree")
+	# the guild ledger in town and the potter's echo in the marsh (they had no picture before)
+	for zid in ["town", "field"]:
+		g.mode = "play"
+		g.enter_zone(zid, Vector2.ZERO)
+		for th in g.zone.things:
+			if th.id.begins_with("debt_"):
+				g.p.pos = th.pos + Vector2(26, 8)
+		await snap("debt_" + zid)
 	quit()

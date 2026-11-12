@@ -13,7 +13,9 @@ const IVORY = Color("f4ebd0")
 const DIM = Color("8c8577")
 const GOLD = Color("ffd24a")
 const CELL = 26
-const COLS = 6
+const COLS = 8
+# where each worn slot sits in the paper doll: [column, row]
+const EQ_AT = {"helm": [0, 0], "charm": [1, 0], "armor": [0, 1], "weapon": [1, 1], "gloves": [0, 2], "ring": [1, 2], "boots": [0, 3]}
 
 static func frame(g, r: Rect2) -> void:
 	g.draw_rect(Rect2(r.position - Vector2(2, 2), r.size + Vector2(4, 4)), INK)
@@ -230,20 +232,22 @@ static func talk_box(g, view: Vector2) -> void:
 # ---------------------------------------------------------------- bag and shop
 
 static func panel_rect(view: Vector2) -> Rect2:
-	return Rect2(view.x / 2.0 - 190, view.y / 2.0 - 132, 380, 256)
+	return Rect2(view.x / 2.0 - 210, view.y / 2.0 - 165, 420, 330)
 
 static func bag_cell(view: Vector2, i: int) -> Rect2:
 	var r = panel_rect(view)
-	return Rect2(r.position.x + 132 + (i % COLS) * (CELL + 2), r.position.y + 26 + (i / COLS) * (CELL + 2), CELL, CELL)
+	return Rect2(r.position.x + 150 + (i % COLS) * (CELL + 2), r.position.y + 26 + (i / COLS) * (CELL + 2), CELL, CELL)
 
 static func eq_cell(view: Vector2, i: int) -> Rect2:
 	var r = panel_rect(view)
-	return Rect2(r.position.x + 12, r.position.y + 26 + i * (CELL + 6), CELL, CELL)
+	# a paper doll in two columns: helm and charm, armour and weapon, gloves and ring, boots
+	var at: Array = EQ_AT[D.SLOTS[i]]
+	return Rect2(r.position.x + 22 + at[0] * (CELL + 30), r.position.y + 26 + at[1] * (CELL + 4), CELL, CELL)
 
 static func inv_update(g) -> void:
 	var view = g.get_viewport_rect().size
 	var m = g.ui_mouse()
-	# a cursor for the keys and the pad: cells 0..BAG-1 are the bag, BAG..BAG+2 the worn slots
+	# a cursor for the keys and the pad: cells 0..BAG-1 are the bag, BAG..BAG+6 the worn slots
 	var mv = g.move_dir()
 	var nav = Vector2i.ZERO
 	if absf(mv.x) > 0.5:
@@ -293,7 +297,7 @@ static func inv_update(g) -> void:
 				g.equip(i)
 			return
 	if not g.shop:
-		for i in 3:
+		for i in D.SLOTS.size():
 			if eq_cell(view, i).has_point(m):
 				g.unequip(D.SLOTS[i])
 				return
@@ -313,6 +317,10 @@ static func draw_item(g, r: Rect2, it) -> void:
 	else:
 		var tex: Texture2D = Art.T.get("ic_" + it.slot, Art.T["ic_charm"])
 		g.draw_texture(tex, (r.position + (r.size - Vector2(tex.get_size())) / 2.0).floor(), col.lerp(Color.WHITE, 0.5))
+	# a stack of Đá Âm shows how many
+	if int(it.get("n", 1)) > 1:
+		var ns = str(int(it.n))
+		Txt.text(g, r.end - Vector2(Txt.width(ns) + 2, 9), ns, Color.WHITE)
 
 static func inv_draw(g, view: Vector2) -> void:
 	g.draw_rect(Rect2(Vector2.ZERO, view), Color(0.04, 0.03, 0.07, 0.55))
@@ -326,16 +334,15 @@ static func inv_draw(g, view: Vector2) -> void:
 	var m = g.ui_mouse()
 	var hover = null
 	var hover_eq = false
-	for i in 3:
+	for i in D.SLOTS.size():
 		var c = eq_cell(view, i)
 		var it = g.eq[D.SLOTS[i]]
 		draw_item(g, c, it)
-		Txt.text(g, c.position + Vector2(CELL + 5, 3), D.SLOT_NAME[D.SLOTS[i]], DIM)
-		if it != null:
-			Txt.text(g, c.position + Vector2(CELL + 5, 13), it.name.substr(0, 14), D.RAR_COL[it.rar])
-			if c.has_point(m):
-				hover = it
-				hover_eq = true
+		# the slot's name beside its cell (an item's own name shows on its card)
+		Txt.text(g, c.position + Vector2(CELL + 3, 9), D.SLOT_NAME[D.SLOTS[i]], DIM if it == null else D.RAR_COL[it.rar])
+		if it != null and c.has_point(m):
+			hover = it
+			hover_eq = true
 	for i in g.BAG:
 		var c = bag_cell(view, i)
 		var it = g.inv[i] if i < g.inv.size() else null
@@ -353,7 +360,7 @@ static func inv_draw(g, view: Vector2) -> void:
 			hover = g.inv[g.isel] if g.isel < g.inv.size() else null
 			hover_eq = false
 	# hero numbers
-	var sy = r.position.y + 126
+	var sy = r.position.y + 154
 	var rows = [["CẤP", g.lvl], ["TẤN CÔNG", g.stats.atk], ["GIÁP", g.stats.def], ["MÁU", g.stats.mhp]]
 	for k in ["rage", "spd", "leech"]:
 		if g.stats[k] > 0:
@@ -361,8 +368,8 @@ static func inv_draw(g, view: Vector2) -> void:
 	for i in rows.size():
 		Txt.text(g, Vector2(r.position.x + 12, sy + i * 10), "%s %d" % [rows[i][0], int(rows[i][1])], IVORY)
 	# what the pointer is on, compared with what is worn
-	var ty = r.position.y + 142
-	var tx = r.position.x + 132
+	var ty = r.position.y + 204
+	var tx = r.position.x + 150
 	if hover != null:
 		Txt.text(g, Vector2(tx, ty), hover.name + (" +%d" % hover.plus if int(hover.get("plus", 0)) > 0 else ""), D.RAR_COL[hover.rar])
 		var kind_line = "%s %s" % [D.SLOT_NAME[hover.slot], D.RAR_NAME[hover.rar]]
@@ -662,20 +669,25 @@ static func tree_draw(g, view: Vector2) -> void:
 
 # where the inventory cursor goes from cell i
 static func inv_step(g, i: int, nav: Vector2i) -> int:
-	if i >= g.BAG:
-		var e = i - g.BAG
-		if nav.x > 0:
-			return e * COLS
-		return g.BAG + clampi(e + nav.y, 0, 2)
-	var col = i % COLS
-	var row = i / COLS
-	if nav.x < 0 and col == 0:
-		if g.shop:
-			return i
-		return g.BAG + mini(row, 2)
-	if nav.x != 0:
-		return row * COLS + clampi(col + nav.x, 0, COLS - 1)
-	return clampi(i + nav.y * COLS, col, g.BAG - COLS + col)
+	# by where the cells are on screen: the nearest cell in the pushed direction (the worn ones only outside the shop)
+	var view = g.get_viewport_rect().size
+	var here = (eq_cell(view, i - g.BAG) if i >= g.BAG else bag_cell(view, i)).get_center()
+	var dir = Vector2(nav)
+	var best = i
+	var bs = INF
+	var cells = range(g.BAG)
+	if not g.shop:
+		cells += range(g.BAG, g.BAG + D.SLOTS.size())
+	for c in cells:
+		var d = (eq_cell(view, c - g.BAG) if c >= g.BAG else bag_cell(view, c)).get_center() - here
+		var along = d.dot(dir)
+		if c == i or along <= 4.0:
+			continue
+		var score = along + absf(d.cross(dir)) * 2.0
+		if score < bs:
+			bs = score
+			best = c
+	return best
 
 static func inv_act(g, i: int) -> void:
 	if i >= g.BAG:
@@ -711,12 +723,12 @@ static func tree_step(g, view: Vector2, nav: Vector2) -> String:
 			best = id
 	return best
 
-# the inventory cell under the pointer: bag 0..BAG-1, worn BAG..BAG+2, or -1
+# the inventory cell under the pointer: bag 0..BAG-1, worn BAG..BAG+6, or -1
 static func cell_at(g, view: Vector2, m: Vector2) -> int:
 	for i in g.BAG:
 		if bag_cell(view, i).has_point(m):
 			return i
-	for i in 3:
+	for i in D.SLOTS.size():
 		if eq_cell(view, i).has_point(m):
 			return g.BAG + i
 	return -1

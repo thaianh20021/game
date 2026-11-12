@@ -382,3 +382,16 @@ Chưa kiểm: cảm giác bấm thật trên máy (kích cỡ nút, vị trí c�
   Trước đó vẽ bằng khối chữ nhật; nếu thiếu file vẫn quay về cách vẽ cũ. Hồn Thể nay có hình: thân mờ như sương, hồn ma
   hiện sau lưng. Ảnh kiểm: `tests/shot_summons.gd` -> `shots/18_summons.png`.
 - `tests/late.gd`: kiểm Đá Âm cùng loại từng hỏng ngẫu nhiên vì thưởng cộng hưởng có thể là +3 tấn công; nay tính cả thưởng.
+
+## Cập nhật 2026-11-12 (7 ô trang bị, túi 48 ô, Đá Âm chồng, hình cho dư ảnh nợ)
+
+- Thêm 4 ô: MŨ, GĂNG, GIÀY, NHẪN (`D.SLOTS` nay 7 ô, `D.SLOT_WEIGHT` cho tỉ lệ rơi, vũ khí vẫn rơi nhiều nhất). Mỗi ô 6 món
+  nền chia 3 cấp, chỉ số nhỏ hơn ba ô cũ; thuộc tính phụ mở rộng sao cho mỗi ô có ít nhất 5 loại. 24 biểu tượng GPT
+  (`tools/gear_icons.sh`). Bảng túi 420x330, ô mặc xếp hình nhân hai cột (`Ui.EQ_AT`); con trỏ phím và tay cầm đi theo vị trí
+  ô trên màn hình. Nhân vật mạnh hơn một chút vì có thêm bốn món: chưa cân lại độ khó.
+- Túi 48 ô (8 x 6), trước là 24.
+- Đá Âm cùng loại gộp một ô (`it.n`, `game.bag_add`, `bag_take_one`); ghép vào đồ lấy từng viên; bản lưu cũ tự gộp khi nạp.
+- Các "vật để xem" chưa từng được vẽ; vật nào không đứng trên đồ trang trí thì vô hình. Nay có hình (`THING_TEX`,
+  `tools/echoes.sh`): bốn dư ảnh của chuỗi Sổ Nợ Người Chết (thợ gốm, người mẹ, lái đò, thợ lặn, vẽ mờ và đung đưa), người
+  gác đèn, sổ nợ của phường, thầy Khâm ở Thư Khố (dùng hình NPC), tiếng của Vãn (bóng nhân vật màu vọng).
+- `tests/loot.gd` thêm 9 phép kiểm cho các phần trên.

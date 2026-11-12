@@ -25,7 +25,7 @@ const DODGE_T = 4 * F
 const DODGE_SPEED = 192.0
 const DODGE_INV = 0.25
 const DODGE_RECHARGE = 1.6
-const BAG = 24
+const BAG = 48   # was 24; the owner found the bag too small
 const MUSIC = {"town": 0, "field": 1, "dungeon": 2, "forest": 4, "heart": 2, "salt": 1, "fleet": 2, "mines": 4, "foundry": 3, "capital": 0, "archive": 2, "maw": 3}
 
 # [startup, active, recovery, damage x attack, reach, half angle, lunge speed, hitstop, shake]
@@ -66,7 +66,7 @@ var xp = 0
 var gold = 0
 var potions = 2
 var inv = []
-var eq = {"weapon": null, "armor": null, "charm": null}
+var eq = {"weapon": null, "armor": null, "charm": null, "helm": null, "gloves": null, "boots": null, "ring": null}
 var qs = {}             # quest id -> "active", "ready" (hand it in) or "done"
 var qc = {}             # quest id -> {what: how many so far}
 var flags = {}          # choices made, and "seen_<id>" for things and scenes
@@ -198,7 +198,7 @@ func new_game() -> void:
 	gold = 0
 	potions = 2
 	inv = []
-	eq = {"weapon": D.make_item("weapon", 0, 0, 0), "armor": null, "charm": null}
+	eq = {"weapon": D.make_item("weapon", 0, 0, 0), "armor": null, "charm": null, "helm": null, "gloves": null, "boots": null, "ring": null}
 	qs = {}
 	qc = {}
 	flags = {}
@@ -307,6 +307,8 @@ func fix_item(it):
 			it.bonus[k] = int(it.bonus[k])
 	if it.has("plus"):
 		it.plus = int(it.plus)
+	if it.has("n"):
+		it.n = int(it.n)
 	if it.has("runes"):
 		it.runes = Array(it.runes)
 	for k in it.stats:
@@ -325,7 +327,10 @@ func load_game() -> bool:
 	potions = int(d.potions)
 	inv = []
 	for it in d.inv:
-		inv.append(fix_item(it))
+		# bag_add folds the separate stones of an older save into stacks
+		var fx = fix_item(it)
+		if not bag_add(fx):
+			inv.append(fx)
 	for slot in D.SLOTS:
 		eq[slot] = fix_item(d.eq.get(slot))
 	qs = d.qs
@@ -704,6 +709,26 @@ func equip(i: int) -> void:
 		inv.insert(i, old)
 	recompute()
 	Sfx.play("clap", 1.5, -4.0)
+
+# put an item in the bag; Đá Âm of one kind share a cell (it.n counts them). false: the bag is full
+func bag_add(it: Dictionary) -> bool:
+	if it.slot == "rune":
+		for o in inv:
+			if o.slot == "rune" and o.rune == it.rune:
+				o.n = int(o.get("n", 1)) + int(it.get("n", 1))
+				return true
+	if inv.size() >= BAG:
+		return false
+	inv.append(it)
+	return true
+
+# one stone off a stack (the cell goes when it was the last)
+func bag_take_one(i: int) -> void:
+	var it = inv[i]
+	if it.slot == "rune" and int(it.get("n", 1)) > 1:
+		it.n = int(it.n) - 1
+	else:
+		inv.remove_at(i)
 
 func unequip(slot: String) -> void:
 	if eq[slot] == null or inv.size() >= BAG:
@@ -2508,8 +2533,7 @@ func update_fx(dt: float) -> void:
 			o.vel = o.vel.move_toward(Vector2.ZERO, 220.0 * dt)
 		elif o.kind == "item":
 			if d.length() < 14.0 and o.item.rar >= loot_filter:
-				if inv.size() < BAG:
-					inv.append(o.item)
+				if bag_add(o.item):
 					toast("NHẶT ĐƯỢC " + o.item.name, D.RAR_COL[o.item.rar])
 					Sfx.play("orb", 0.6 if o.item.rar >= 2 else 1.0)
 					o.t = -1.0
@@ -2595,6 +2619,9 @@ func _draw() -> void:
 			items.append([dc.pos.y, 0, dc])
 	for n in zone.npcs:
 		items.append([n.pos.y, 3, n])
+	for th in zone.things:
+		if th.id == "voice" or THING_TEX.has(th.id):
+			items.append([th.pos.y, 5, th])
 	for f in foes:
 		items.append([f.pos.y, 1, f])
 	for o in drops:
@@ -2610,6 +2637,7 @@ func _draw() -> void:
 			2: draw_player()
 			3: draw_npc(it[2])
 			4: draw_drop(it[2])
+			5: draw_thing(it[2])
 	for s in shots:
 		draw_texture(Art.T["shadow"], (s.pos - Vector2(8, 3)).floor(), Color(1, 1, 1, 0.6))
 		draw_texture(Art.T["spit"], (s.pos - Vector2(4, 22)).floor())
@@ -2750,6 +2778,26 @@ func tele(pts: PackedVector2Array, origin: Vector2, k: float) -> void:
 	edge.append(pts[0])
 	var late = k > 0.75 and int(t * 20.0) % 2 == 0
 	draw_polyline(edge, Color.WHITE if late else RED, 1.0)
+
+# things to look at that are not already a piece of decor (the echoes of the Debts of the Dead, the lamp keeper,
+# the guild ledger, Khâm in the archive, Vãn's voice). Echoes are half there and sway; the rest stand still.
+const THING_TEX = {"debt_potter": "th_potter", "debt_mother": "th_mother", "debt_ferry": "th_ferry", "debt_diver": "th_diver",
+	"lamp_keeper": "th_keeper", "debt_say": "th_ledger", "kham_choice": "npc_kham"}
+
+func draw_thing(th: Dictionary) -> void:
+	if th.id == "voice":
+		var vt: Texture2D = Art.W["h_idle"]
+		draw_texture(vt, (th.pos - Vector2(vt.get_width() / 2.0, vt.get_height() - 3 + sin(t * 2.0) * 2.0)).floor(), Color(VONG.r, VONG.g, VONG.b, 0.4 + 0.15 * sin(t * 3.0)))
+		return
+	var key = THING_TEX.get(th.id, "")
+	if not Art.T.has(key):
+		return
+	var tex: Texture2D = Art.T[key]
+	var echo = th.id.begins_with("debt_") and th.id != "debt_say"
+	if not echo:
+		draw_texture_rect(Art.T["shadow"], Rect2(th.pos.x - 10, th.pos.y - 3, 20, 7), false)
+	var bob = sin(t * 1.5 + th.pos.x) * 1.0 if echo else 0.0
+	draw_texture(tex, (th.pos - Vector2(tex.get_width() / 2.0, tex.get_height() - 3 + bob)).floor(), Color(1, 1, 1, 0.78 + 0.12 * sin(t * 2.0 + th.pos.y)) if echo else Color.WHITE)
 
 func draw_npc(n: Dictionary) -> void:
 	var tex: Texture2D = Art.T[D.NPCS[n.id].tex]
@@ -2928,8 +2976,7 @@ func turnin(id: String) -> void:
 		toast("+%d VÀNG" % R.gold, Color("ffd24a"))
 	if R.item != null:
 		var it = D.make_item(R.item[0], R.item[1], R.item[2])
-		if inv.size() < BAG:
-			inv.append(it)
+		if bag_add(it):
 			toast("NHẬN ĐƯỢC " + it.name, D.RAR_COL[it.rar])
 		else:
 			drops.append({"pos": p.pos + Vector2(0, 14), "vel": Vector2.ZERO, "t": 0.0, "kind": "item", "n": 0, "item": it})
@@ -5357,7 +5404,7 @@ func set_rune(i: int) -> void:
 				it.bonus = D.RUNE_BONUS[r.rune][randi() % 3].duplicate()
 				toast("HAI %s CỘNG HƯỞNG: %s." % [r.name, D.STAT_NAME[it.bonus.keys()[0]]], Color("9fe3e0"))
 			it.runes = held
-			inv.remove_at(i)
+			bag_take_one(i)
 			recompute()
 			toast("%s GHÉP VÀO %s." % [r.name, it.name], Color("9fe3e0"))
 			Sfx.play("orb", 0.8)
@@ -5373,7 +5420,7 @@ func chapter() -> int:
 	return 0
 
 # ---------------------------------------------------------------- reforging
-# cell: 0..BAG-1 a bag cell, BAG..BAG+2 a worn slot (the same numbering as the inventory cursor)
+# cell: 0..BAG-1 a bag cell, BAG..BAG+6 a worn slot (the same numbering as the inventory cursor)
 func item_at(cell: int):
 	if cell >= BAG:
 		return eq[D.SLOTS[cell - BAG]]

@@ -52,8 +52,10 @@ const STAT_NAME = {
 	"reach": "TẦM ĐÁNH", "haste": "TỐC ĐÁNH %", "stag": "PHÁ THẾ %", "crit": "CHÍ MẠNG %", "cdr": "GIẢM HỒI CHIÊU %",
 	"regen": "MÁU MỖI GIÂY", "gold": "VÀNG RƠI %",
 }
-const SLOTS = ["weapon", "armor", "charm"]
-const SLOT_NAME = {"weapon": "VŨ KHÍ", "armor": "GIÁP", "charm": "BÙA", "rune": "ĐÁ ÂM"}
+const SLOTS = ["weapon", "armor", "charm", "helm", "gloves", "boots", "ring"]
+# how often each slot drops, in the same order: weapons stay the commonest find
+const SLOT_WEIGHT = [3.0, 2.0, 2.0, 1.5, 1.5, 1.5, 1.5]
+const SLOT_NAME = {"weapon": "VŨ KHÍ", "armor": "GIÁP", "charm": "BÙA", "helm": "MŨ", "gloves": "GĂNG", "boots": "GIÀY", "ring": "NHẪN", "rune": "ĐÁ ÂM"}
 const FILTER_NAME = ["MỌI MÓN", "TỪ PHÉP TRỞ LÊN", "TỪ HIẾM TRỞ LÊN"]
 
 # Twenty base items: [name, tier, what it always has]. The tier a zone drops is set in world.gd.
@@ -77,14 +79,35 @@ const BASES = {
 		["HỘP MẢNH CHUÔNG", 1, {"hp": 25}], ["LÔNG CÒ", 1, {"hp": 10, "spd": 5}],
 		["DẰM CHUÔNG", 2, {"hp": 40}], ["ÂM THOA", 2, {"hp": 15, "cdr": 8}],
 	],
+	# the four slots added after the owner asked for more than three (2026-11-12); smaller numbers than the first three
+	"helm": [
+		["NÓN LÁ", 0, {"def": 1, "hp": 6}], ["KHĂN ĐỘI ĐẦU", 0, {"def": 1, "rage": 10}],
+		["MŨ ĐAN SẬY", 1, {"def": 3, "hp": 10}], ["MŨ SẮT ĐÊ", 1, {"def": 4}],
+		["MŨ ĐỒNG CHUÔNG", 2, {"def": 6, "hp": 15}], ["MẶT NẠ THU PHÍ", 2, {"def": 4, "crit": 4}],
+	],
+	"gloves": [
+		["BAO TAY VẢI", 0, {"def": 1, "haste": 4}], ["BAO TAY CÂU", 0, {"atk": 1}],
+		["GĂNG DA CÁ", 1, {"def": 2, "haste": 6}], ["GĂNG CHÈO", 1, {"atk": 2, "stag": 10}],
+		["GĂNG ĐỒNG", 2, {"def": 4, "atk": 2}], ["GĂNG THỢ ĐÚC", 2, {"atk": 3, "crit": 3}],
+	],
+	"boots": [
+		["DÉP CÓI", 0, {"spd": 4}], ["XÀ CẠP", 0, {"def": 1, "spd": 2}],
+		["ỦNG LỘI", 1, {"def": 2, "spd": 5}], ["GIÀY BẾN", 1, {"def": 3, "regen": 1}],
+		["ỦNG ĐỒNG", 2, {"def": 5, "spd": 3}], ["HÀI GIÓ MẶN", 2, {"def": 2, "spd": 9}],
+	],
+	"ring": [
+		["NHẪN DÂY", 0, {"crit": 2}], ["NHẪN XƯƠNG CÁ", 0, {"hp": 8}],
+		["NHẪN ĐỒNG", 1, {"crit": 3, "atk": 1}], ["NHẪN MÕ", 1, {"cdr": 4}],
+		["NHẪN BẠC MUỐI", 2, {"crit": 5, "gold": 10}], ["NHẪN CHỈ ĐỎ", 2, {"leech": 2, "hp": 15}],
+	],
 }
 # Twelve properties: [stat, word added after the name, min, max, slots that can roll it].
 # Magic items roll one, rare items two different ones. Values grow with the item's tier.
 const AFFIX = [
-	["atk", "SẮC", 2, 4, ["weapon"]], ["leech", "KHÁT MÁU", 2, 4, ["weapon"]], ["haste", "LẸ", 6, 10, ["weapon"]],
-	["stag", "NGHIỀN", 20, 30, ["weapon"]], ["crit", "CHUẨN", 4, 8, ["weapon", "charm"]], ["rage", "CUỒNG", 20, 40, ["weapon", "armor", "charm"]],
-	["def", "BỀN", 2, 4, ["armor"]], ["hp", "TRÁNG", 10, 20, ["armor", "charm"]], ["spd", "NHANH", 4, 8, ["armor"]],
-	["regen", "HỒI SINH", 1, 2, ["armor", "charm"]], ["cdr", "KHÉO", 4, 8, ["charm"]], ["gold", "MAY", 15, 30, ["charm"]],
+	["atk", "SẮC", 2, 4, ["weapon", "gloves"]], ["leech", "KHÁT MÁU", 2, 4, ["weapon", "ring", "gloves"]], ["haste", "LẸ", 6, 10, ["weapon", "gloves"]],
+	["stag", "NGHIỀN", 20, 30, ["weapon", "gloves"]], ["crit", "CHUẨN", 4, 8, ["weapon", "charm", "gloves", "ring"]], ["rage", "CUỒNG", 20, 40, ["weapon", "armor", "charm", "helm", "boots"]],
+	["def", "BỀN", 2, 4, ["armor", "helm", "boots"]], ["hp", "TRÁNG", 10, 20, ["armor", "charm", "helm", "ring", "boots"]], ["spd", "NHANH", 4, 8, ["armor", "boots"]],
+	["regen", "HỒI SINH", 1, 2, ["armor", "charm", "boots", "helm"]], ["cdr", "KHÉO", 4, 8, ["charm", "helm", "ring"]], ["gold", "MAY", 15, 30, ["charm", "ring"]],
 ]
 
 # pick: index among the bases of that slot and tier; -1 chooses one at random
@@ -104,7 +127,18 @@ static func make_item(slot: String, tier: int, rar: int, pick: int = -1) -> Dict
 static func roll_item(tier: int) -> Dictionary:
 	var r = randf()
 	var rar = 2 if r < 0.08 else (1 if r < 0.38 else 0)
-	return make_item(SLOTS[randi() % 3], tier, rar)
+	return make_item(random_slot(), tier, rar)
+
+static func random_slot() -> String:
+	var total = 0.0
+	for w in SLOT_WEIGHT:
+		total += w
+	var r = randf() * total
+	for i in SLOTS.size():
+		r -= SLOT_WEIGHT[i]
+		if r < 0.0:
+			return SLOTS[i]
+	return SLOTS[0]
 
 # the picture for an item: uniques by their effect, the rest by their base (found from the start of the name)
 static func icon(it: Dictionary) -> String:

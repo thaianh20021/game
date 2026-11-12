@@ -2,6 +2,9 @@ extends SceneTree
 # Items: twenty bases, twelve properties, four uniques, the filter and the elite hunt.
 const D = preload("res://src/data.gd")
 const Sk = preload("res://src/skills.gd")
+const Ui = preload("res://src/ui.gd")
+const World = preload("res://src/world.gd")
+const Art = preload("res://src/art.gd")
 var g
 var fails = 0
 
@@ -75,7 +78,7 @@ func _init() -> void:
 			names[b[0]] = true
 			for k in b[2]:
 				ok = ok and D.STAT_NAME.has(k)
-	check("twenty-three base items (three of them bows), all named differently, at least two per slot and tier", n == 23 and names.size() == 23 and ok)
+	check("forty-seven base items (three of them bows; 24 for the helm, gloves, boots and ring slots), all named differently, at least two per slot and tier", n == 47 and names.size() == 47 and ok)
 	ok = true
 	var stats = {}
 	for a in D.AFFIX:
@@ -248,5 +251,50 @@ func _init() -> void:
 	g.inv.append(D.make_item("armor", 0, 0))
 	await tap("reset")
 	check("X in the shop sells the junk", g.inv.size() == 2)
+
+	# --- seven worn slots, a bag of 48, stones that stack (2026-11-12)
+	check("seven worn slots, each with a name, a drop weight and a place in the paper doll", D.SLOTS.size() == 7 and D.SLOT_WEIGHT.size() == 7 and D.SLOTS.all(func(s): return D.SLOT_NAME.has(s) and g.eq.has(s) and Ui.EQ_AT.has(s)))
+	check("a bag of 48 cells", g.BAG == 48)
+	var seen = {}
+	for i in 700:
+		seen[D.random_slot()] = true
+	check("every slot drops", seen.size() == 7)
+	var icons = true
+	for s in D.SLOTS:
+		for i in D.BASES[s].size():
+			icons = icons and ResourceLoader.exists("res://assets/it_%s%d.png" % [s[0], i])
+	check("every base item has its own icon", icons)
+	g.inv.clear()
+	g.bag_add(D.rune_item("steel"))
+	g.bag_add(D.rune_item("steel"))
+	g.bag_add(D.rune_item("blood"))
+	g.bag_add(D.rune_item("steel"))
+	check("stones of one kind share a cell", g.inv.size() == 2 and int(g.inv[0].n) == 3)
+	var hw = D.make_item("helm", 1, 1)
+	g.eq.helm = hw
+	g.eq.weapon = D.make_item("weapon", 1, 0)
+	g.eq.armor = null
+	g.eq.charm = null
+	g.recompute()
+	g.open_inv(true)
+	g.sell(0)
+	check("socketing takes one stone off the stack", g.inv.size() == 2 and int(g.inv[0].n) == 2 and hw.get("runes", []).size() == 1)
+	g.mode = "play"
+	g.save_game()
+	var raw = JSON.parse_string(FileAccess.get_file_as_string(D.SAVE_PATH))
+	raw.inv = [D.rune_item("wind"), D.rune_item("wind"), D.make_item("ring", 0, 0), D.rune_item("wind")]
+	var fw = FileAccess.open(D.SAVE_PATH, FileAccess.WRITE)
+	fw.store_string(JSON.stringify(raw))
+	fw.close()
+	g.load_game()
+	check("an older save's loose stones fold into one stack", g.inv.size() == 2 and g.inv.any(func(it): return it.slot == "rune" and int(it.get("n", 1)) == 3))
+	check("the new helm survives a save", g.eq.helm != null and g.eq.helm.name == hw.name)
+	var drawn = true
+	for zid in ["town", "field", "dungeon", "forest", "salt", "archive"]:
+		var z = World.build(zid)
+		for th in z.things:
+			var under = z.decor.any(func(d): return d.pos.distance_to(th.pos) < 20.0)
+			drawn = drawn and (under or g.THING_TEX.has(th.id) and Art.T.has(g.THING_TEX[th.id]))
+	check("every thing to look at has a picture (its own or the decor it stands on)", drawn)
 	print("RESULT: %s" % ("OK" if fails == 0 else "%d FAILED" % fails))
 	quit(1 if fails > 0 else 0)

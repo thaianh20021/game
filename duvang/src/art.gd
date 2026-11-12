@@ -135,7 +135,7 @@ static func build() -> void:
 # Hero and foes are AI-generated pictures cleaned up by tools/pix.gd into res://assets/.
 # Each is one still pose with the feet at the bottom centre; game.gd adds the motion.
 
-const SPRITES = ["tree_giant", "shrooms", "trunk", "hut", "gate", "log", "wolf_i", "wolf_w", "wolf_k", "ghost_i", "ghost_w", "ghost_k", "dev_turret", "dev_drum", "dev_bell", "dev_mine", "trap_snare", "trap_pot", "sower_i", "sower_w", "sower_k", "deer_i", "deer_w", "deer_k",
+const SPRITES = ["tree_giant", "shrooms", "trunk", "hut", "gate", "log", "wolf_i", "wolf_w", "wolf_k", "ghost_i", "ghost_w", "ghost_k", "dev_turret", "dev_drum", "dev_bell", "dev_mine", "trap_snare", "trap_pot", "th_potter", "th_mother", "th_ferry", "th_diver", "th_keeper", "th_ledger", "sower_i", "sower_w", "sower_k", "deer_i", "deer_w", "deer_k",
 	"mother_i", "mother_w", "mother_k", "npc_reu", "npc_man", "npc_kid",
 	"crab_i", "crab_w", "crab_k", "gull_i", "gull_w", "gull_k", "diver_i", "diver_w", "diver_k", "admiral_i", "admiral_w", "admiral_k",
 	"npc_vanh", "npc_buyer", "wreck", "saltpile", "anchor", "tent",
@@ -543,6 +543,7 @@ const SKILL_IDS = ["bulwark", "iron", "steady", "rush", "counter", "unbroken", "
 	"tc_knell", "tc_holy", "tc_lit", "tc_purge", "tc_bless", "tc_hook", "tc_drum",
 	"ocb_parry", "ocb_iron", "ocb_surge", "ocb_blood", "ocb_cry", "ocb_long", "ocb_wide", "ocb_master", "ont_hot", "ont_spread", "ont_deepcold", "ont_frostbite", "ont_frostguard", "ont_arc", "ont_charge", "ont_triad", "ost_shadow", "ost_step", "ost_toxic", "ost_seep", "ost_dart", "ost_six", "ost_reset", "ost_ghost", "otl_host", "otl_strong", "otl_curse2", "otl_wither", "otl_bind", "otl_eight", "otl_reap", "otl_lich", "ohv_cap", "ohv_regen", "ohv_spikes", "ohv_bash", "ohv_verdict", "ohv_taunt", "ohv_cover", "ohv_bulwark", "ots_quick", "ots_deadeye", "ots_traps", "ots_jaw", "ots_boom", "ots_alpha", "ots_mark", "ots_lone", "ott_bigheal", "ott_ground", "ott_brand", "ott_bright", "ott_cleanse", "ott_grace", "ott_vow", "ott_saint", "oks_turret", "oks_mine", "oks_vent", "oks_cool", "oks_hot", "oks_hook", "oks_mute", "oks_four"]
 const ITEM_KEYS = ["w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "w8", "w9", "w10", "a0", "a1", "a2", "a3", "a4", "a5", "c0", "c1", "c2", "c3", "c4", "c5",
+	"h0", "h1", "h2", "h3", "h4", "h5", "g0", "g1", "g2", "g3", "g4", "g5", "b0", "b1", "b2", "b3", "b4", "b5", "r0", "r1", "r2", "r3", "r4", "r5",
 	"u_wave", "u_box", "u_free", "u_wick", "u_seed", "u_salt", "u_forge", "u_eight",
 	"r_steel", "r_thorn", "r_blood", "r_wind", "r_stone", "r_ember", "r_bell", "r_gold"]
 const HERO_FRAMES = ["idle", "w1", "w2", "w3", "wind", "slash"]

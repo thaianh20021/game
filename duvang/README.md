@@ -58,7 +58,7 @@ The bag and shop need the mouse; they have no gamepad navigation yet.
 - Things in the world can be examined (E): the clapper, a grave, sandals on the shore. One of them,
   the net-mender's echo, ends in a choice that changes a quest's ending and reward.
 - A scene replays inside the dungeon the first time you reach the toll yard.
-- Items: weapon, armor, charm; common, magic (one extra property), rare (two). Twenty bases that fight differently
+- Items: seven worn slots (weapon, armor, charm, helm, gloves, boots, ring) and a bag of 48; common, magic (one extra property), rare (two). Đá Âm of one kind stack in one cell. Forty-seven bases; the weapons fight differently
   (dirks strike faster, spears reach further, mauls are slow and break stances), twelve properties limited by slot,
   four uniques: Ferryman's Oar (boss), Keeper's Toll Box (Toll Keeper), Ashwalker's Wrap (volatile elites),
   Lamplighter's Wick (warding elites). An elite's unique starts at 12% and gains 6% per elite that drops none.
