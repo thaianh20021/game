@@ -234,6 +234,15 @@ static func create(g, view: Vector2) -> void:
 		var lines = Ui.wrap_text(C.line, 22)
 		for j in lines.size():
 			Txt.text(g, r.position + Vector2(6, 32 + j * 10), lines[j], IVORY if ok else Color("5a4e66"))
+	# the chosen mastery's look, twice the size, under the start button
+	var cm = CLASSES[g.csel].m
+	var pic = "hd_idle"
+	if Art.T.has("k%d_hd_idle" % cm):
+		pic = "k%d_hd_idle" % cm
+	if Art.T.has(pic):
+		var tex: Texture2D = Art.T[pic]
+		var sz = tex.get_size() * 2.0
+		g.draw_texture_rect(tex, Rect2(Vector2(view.x / 2.0 - sz.x / 2.0, 264.0).floor(), sz), false)
 	var sr = start_rect(view)
 	g.draw_rect(sr, GOLD)
 	g.draw_rect(Rect2(sr.position + Vector2(1, 1), sr.size - Vector2(2, 2)), Color("7a4b2a") if sr.has_point(g.ui_mouse()) else Color("3a3046"))

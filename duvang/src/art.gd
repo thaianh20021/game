@@ -546,6 +546,8 @@ const ITEM_KEYS = ["w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "w8", "w9", "
 	"u_wave", "u_box", "u_free", "u_wick", "u_seed", "u_salt", "u_forge", "u_eight",
 	"r_steel", "r_thorn", "r_blood", "r_wind", "r_stone", "r_ember", "r_bell", "r_gold"]
 const HERO_FRAMES = ["idle", "w1", "w2", "w3", "wind", "slash"]
+# the look of each mastery (main_m) other than the Warrior, whose pictures are the plain h_, hd_ and hu_ ones
+const LOOKS = [1, 3, 6, 10, 15, 21, 28]
 
 static func load_optional() -> void:
 	var names = []
@@ -556,6 +558,9 @@ static func load_optional() -> void:
 	for fr in HERO_FRAMES:
 		names.append("hd_" + fr)
 		names.append("hu_" + fr)
+		for k in LOOKS:
+			for v in ["h_", "hd_", "hu_"]:
+				names.append("k%d_%s%s" % [k, v, fr])
 	for n in names:
 		var path = "res://assets/%s.png" % n
 		if ResourceLoader.exists(path):

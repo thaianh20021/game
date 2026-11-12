@@ -326,3 +326,25 @@ lần cài đầu điện thoại từ chối vì chưa ai bấm cho phép.
 `tests/masteries.gd`: nhịp riêng, mọi kỹ năng chủ động, các then chốt chính và tuyệt kỹ của Thuật Sĩ Linh Hồn, Hộ Vệ, Thợ Săn,
 Tư Tế, Kỹ Sư Cổ Vật, và luật Độc Tấu. Tìm ra một lỗi thật: Khiên mới dựng mà chưa từng bị đánh thì hao ngay lập tức thay vì đợi
 4 giây (đồng hồ chỉ đặt lại khi trúng đòn); giờ nhận Khiên cũng đặt lại đồng hồ. Chưa kiểm từng node của 28 cây giao thoa.
+
+## Cập nhật 2026-11-12 (ngoại hình riêng cho từng nghề)
+
+Mỗi mastery chính có bộ hình riêng: 3 hướng nhìn (ngang, trước, sau) x 6 tư thế, sinh bằng Gemini (`gen/b14.sh`), tên
+`k<m>_h_*`, `k<m>_hd_*`, `k<m>_hu_*` (`Art.LOOKS`). Chiến Binh giữ hình hiệp sĩ cũ; nghề nào chưa có hình cũng dùng hình đó.
+`draw_player` chọn hình theo `main_m`; màn tạo nhân vật hiện hình của nghề đang chọn, to gấp đôi, dưới nút BẮT ĐẦU.
+`tools/pix.gd` giờ đọc bảng nhiều hàng theo thứ tự hàng rồi từ trái sang phải (Gemini hay xếp 6 tư thế thành 4 + 2).
+
+## Cập nhật 2026-11-12 (vũ khí, trang bị, hoạt ảnh tung skill, tham khảo hệ thống của Titan Quest)
+
+Lấy ý tưởng cơ chế (không chép tên, đồ hay nội dung):
+- **Kiểu đòn theo loại vũ khí** (`D.WSTYLE`, `D.wstyle`): Lưỡi (cân bằng), Dao (nhanh, tầm ngắn, nhát cuối gây Độc), Giáo (đâm
+  hẹp, tầm xa, nhát cuối dài thêm và hẹp lại để xuyên hàng), Vồ (chậm, quét rộng, nhát cuối làm choáng quái thường), Cung.
+  Áp trong `cur_atk`; khung xem vũ khí ghi kiểu. Dao Cắt Lau khởi đầu là kiểu Lưỡi.
+- **Cộng hưởng Đá Âm** (như thưởng hoàn thành của relic): hai viên cùng loại trong một món mở một thưởng ngẫu nhiên trong ba
+  của loại đó (`D.RUNE_BONUS`, `it.bonus`).
+- **Đồ Mang Dấu** (như đồ riêng của từng loại quái): 12 loại quái, mỗi loại một món (`D.SIGS`, `D.sig_item`), rơi 3% (tinh anh 12%).
+- **Bộ đồ**: Bộ Người Gác Mõ và Bộ Thợ Lặn Phường, 3 món mỗi bộ, thưởng ở 2 và 3 món (`D.SETS`, `set_counts`);
+  rơi từ boss (25%) và tinh anh (8%) từ chương 2.
+- **Động tác tung skill** (`CAST_ANIM`, `cast_kind`, `cast_fx`): niệm phép, gầm, cầu/triệu hồi, đặt bẫy/thiết bị, phóng/ném;
+  mỗi nhóm một động tác và một hiệu ứng ánh sáng.
+Kiểm tra nhanh: `gen/gear.gd`.

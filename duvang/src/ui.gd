@@ -355,7 +355,13 @@ static func inv_draw(g, view: Vector2) -> void:
 	var tx = r.position.x + 132
 	if hover != null:
 		Txt.text(g, Vector2(tx, ty), hover.name + (" +%d" % hover.plus if int(hover.get("plus", 0)) > 0 else ""), D.RAR_COL[hover.rar])
-		Txt.text(g, Vector2(tx, ty + 10), "%s %s" % [D.SLOT_NAME[hover.slot], D.RAR_NAME[hover.rar]], DIM)
+		var kind_line = "%s %s" % [D.SLOT_NAME[hover.slot], D.RAR_NAME[hover.rar]]
+		if hover.slot == "weapon":
+			var WS = D.WSTYLE[D.wstyle(hover)]
+			kind_line += "   KIỂU %s: %s" % [WS.name, WS.text]
+		Txt.text(g, Vector2(tx, ty + 10), kind_line, DIM)
+		if hover.has("sig"):
+			Txt.text(g, Vector2(r.end.x - 12 - Txt.width("MANG DẤU " + D.FOES[hover.sig].name), ty + 10), "MANG DẤU " + D.FOES[hover.sig].name, Color("ffb347"))
 		var worn = g.eq.get(hover.slot)
 		var keys = hover.stats.keys()
 		if worn != null and not hover_eq:
@@ -380,6 +386,10 @@ static func inv_draw(g, view: Vector2) -> void:
 			var names = held.map(func(rid): return D.RUNES[rid].name.substr(6))
 			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "ĐÁ ÂM %d/%d %s" % [held.size(), socks, " ".join(PackedStringArray(names))], Color("9fe3e0"))
 			n += 1
+			if hover.has("bonus"):
+				var bk = hover.bonus.keys()[0]
+				Txt.text(g, Vector2(tx, ty + 22 + n * 10), "CỘNG HƯỞNG: %s %d" % [D.STAT_NAME[bk], hover.bonus[bk]], Color("9fe3e0"))
+				n += 1
 		if g.shop and hover.slot != "rune" and int(hover.get("plus", 0)) < D.PLUS_MAX:
 			var rc = D.reforge_cost(hover)
 			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "U RÈN +%d: %d XỈ, %d VÀNG.  K RÃ: +%d XỈ" % [int(hover.get("plus", 0)) + 1, rc[0], rc[1], D.salvage_of(hover)], Color("c98a4a"))
@@ -387,6 +397,17 @@ static func inv_draw(g, view: Vector2) -> void:
 		if hover.slot == "rune":
 			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "Ở CỬA HÀNG: BẤM ĐỂ GHÉP VÀO MÓN ĐANG MẶC.", Color("9fe3e0"))
 			n += 1
+		if hover.has("set"):
+			var S = D.SETS[hover.set]
+			var worn_n = g.set_counts().get(hover.set, 0)
+			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "%s (%d/3 ĐANG MẶC)" % [S.name, worn_n], Color("8fe08a"))
+			n += 1
+			for step in [["2 MÓN", S.two, 2], ["3 MÓN", S.three, 3]]:
+				var parts = []
+				for k in step[1]:
+					parts.append("%s %d" % [D.STAT_NAME[k], step[1][k]])
+				Txt.text(g, Vector2(tx, ty + 22 + n * 10), "%s: %s" % [step[0], ", ".join(PackedStringArray(parts))], Color("8fe08a") if worn_n >= step[2] else Color("5a6e5a"))
+				n += 1
 		if hover.uniq != "":
 			Txt.text(g, Vector2(tx, ty + 24 + n * 10), D.UNIQ_TEXT[hover.uniq], D.RAR_COL[3])
 		Txt.text(g, Vector2(r.end.x - 12 - Txt.width("BÁN ĐƯỢC 000"), ty), "BÁN ĐƯỢC %d" % D.value(hover), GOLD)

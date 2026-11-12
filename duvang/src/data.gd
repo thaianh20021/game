@@ -796,3 +796,75 @@ static func salvage_of(it: Dictionary) -> int:
 static func reforge_cost(it: Dictionary) -> Array:
 	var n = int(it.get("plus", 0)) + 1
 	return [3 * n * (it.tier + 1), 25 * n * (it.rar + 1)]
+
+# ---------------------------------------------------------------- weapon styles
+# The base of a weapon decides how the chain of strikes swings, on top of its numbers.
+# speed scales the wind-up and recovery, reach and arc add to the swing, dmg scales it, last is what the last strike does.
+const WSTYLE = {
+	"blade": {"name": "LƯỠI", "speed": 1.0, "reach": 0.0, "arc": 0.0, "dmg": 1.0, "last": "", "text": "CHUỖI CHÉM CÂN BẰNG"},
+	"dagger": {"name": "DAO", "speed": 0.85, "reach": -6.0, "arc": -10.0, "dmg": 0.85, "last": "poison", "text": "NHANH, TẦM NGẮN, NHÁT CUỐI GÂY ĐỘC"},
+	"spear": {"name": "GIÁO", "speed": 1.1, "reach": 12.0, "arc": -30.0, "dmg": 1.0, "last": "pierce", "text": "ĐÂM HẸP, TẦM XA, NHÁT CUỐI XUYÊN HÀNG"},
+	"maul": {"name": "VỒ", "speed": 1.15, "reach": 2.0, "arc": 25.0, "dmg": 1.15, "last": "stun", "text": "CHẬM, QUÉT RỘNG, NHÁT CUỐI LÀM CHOÁNG"},
+	"bow": {"name": "CUNG", "speed": 1.0, "reach": 0.0, "arc": 0.0, "dmg": 1.0, "last": "", "text": "BA MŨI TÊN, MŨI CUỐI XUYÊN"},
+}
+const WSTYLE_OF = {"DAO GĂM ĐẦM": "dagger", "GIÁO BẾN": "spear", "SÀO THU PHÍ": "spear",
+	"VỒ ĐÊ": "maul", "BÚA CHUÔNG": "maul", "BÚA BẠCH LÔ": "maul"}
+
+static func wstyle(it) -> String:
+	if it == null or it.slot != "weapon":
+		return "blade"
+	if is_bow(it):
+		return "bow"
+	for base in WSTYLE_OF:
+		if it.name.begins_with(base):
+			return WSTYLE_OF[base]
+	return "blade"
+
+# two stones of the same kind in one item resonate: one of these three, drawn at random, is added to the item
+const RUNE_BONUS = {
+	"steel": [{"stag": 30}, {"crit": 4}, {"atk": 3}],
+	"thorn": [{"crit": 5}, {"leech": 2}, {"haste": 6}],
+	"blood": [{"leech": 3}, {"regen": 2}, {"hp": 25}],
+	"wind": [{"spd": 6}, {"haste": 8}, {"cdr": 4}],
+	"stone": [{"def": 4}, {"hp": 30}, {"regen": 1}],
+	"ember": [{"rage": 25}, {"atk": 3}, {"haste": 6}],
+	"bell": [{"cdr": 6}, {"rage": 20}, {"crit": 3}],
+	"gold": [{"gold": 30}, {"crit": 3}, {"spd": 5}],
+}
+
+# ---------------------------------------------------------------- marked items: one per foe kind, with its way of fighting
+# Each starts with a base name, so it takes that base's picture and weapon style. 3% from a plain foe of that kind, 12% from an elite.
+const SIGS = {
+	"reed": ["BÙA MÕ LAU ẢNH", "charm", {"hp": 20, "haste": 6}],
+	"heron": ["GIÁO BẾN MỎ CÒ", "weapon", {"atk": 8, "reach": 12, "crit": 4}],
+	"porter": ["VỒ ĐÊ PHU PHÀ", "weapon", {"atk": 11, "stag": 60, "haste": -10}],
+	"leech": ["DAO GĂM ĐẦM CỦA ĐỈA", "weapon", {"atk": 6, "haste": 14, "leech": 3}],
+	"wolf": ["ÁO CHOÀNG PHÀ LÔNG SÓI", "armor", {"def": 6, "spd": 8}],
+	"deer": ["GIÁP LƯỚI SỪNG HƯƠU", "armor", {"def": 8, "hp": 30}],
+	"crab": ["GIÁP TRẠM VỎ CUA", "armor", {"def": 12, "spd": -3, "regen": 1}],
+	"diver": ["ÂM THOA THỢ LẶN", "charm", {"hp": 25, "cdr": 8}],
+	"slag": ["BÚA CHUÔNG XỈ", "weapon", {"atk": 15, "stag": 70, "haste": -14}],
+	"moth": ["LÔNG CÒ CÁNH BƯỚM", "charm", {"hp": 15, "spd": 6, "crit": 3}],
+	"scribe": ["SÀO THU PHÍ BÚT LẠI", "weapon", {"atk": 12, "reach": 14, "cdr": 5}],
+	"guard": ["GIÁP TRẠM CẤM VỆ", "armor", {"def": 14, "hp": 35, "spd": -4}],
+}
+
+static func sig_item(kind: String) -> Dictionary:
+	var S = SIGS[kind]
+	return {"name": S[0], "slot": S[1], "rar": 2, "tier": 2, "stats": S[2].duplicate(), "uniq": "", "sig": kind}
+
+# ---------------------------------------------------------------- sets: three pieces, a bonus at two and another at three
+const SETS = {
+	"watch": {"name": "BỘ NGƯỜI GÁC MÕ", "pieces": [["ĐAO ĐỒNG GÁC MÕ", "weapon", {"atk": 12, "def": 2}], ["ÁO ĐÊ GÁC MÕ", "armor", {"def": 8, "hp": 15}], ["BÙA MÕ GÁC ĐÊM", "charm", {"hp": 30, "regen": 1}]],
+		"two": {"def": 4, "hp": 25}, "three": {"cdr": 10, "atk": 4}},
+	"guild": {"name": "BỘ THỢ LẶN PHƯỜNG", "pieces": [["MÓC PHÀ PHƯỜNG", "weapon", {"atk": 9, "haste": 8}], ["KHỐ LỘI NƯỚC PHƯỜNG", "armor", {"def": 5, "spd": 6}], ["HỘP MẢNH CHUÔNG PHƯỜNG", "charm", {"hp": 25, "gold": 20}]],
+		"two": {"spd": 5, "leech": 2}, "three": {"haste": 10, "crit": 5}},
+}
+
+static func set_piece(sid: String, i: int) -> Dictionary:
+	var P = SETS[sid].pieces[i]
+	return {"name": P[0], "slot": P[1], "rar": 2, "tier": 2, "stats": P[2].duplicate(), "uniq": "", "set": sid}
+
+static func random_set_piece() -> Dictionary:
+	var ids = SETS.keys()
+	return set_piece(ids[randi() % ids.size()], randi() % 3)

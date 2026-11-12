@@ -196,7 +196,7 @@ func fresh_hero() -> void:
 		"shield": 0.0, "shield_hit": 0.0, "bronze": 0.0, "debt": false, "bash_more": false, "bash_t": -9.0, "break_t": 0.0, "fake_t": 0.0, "die_t": 0.0,
 		"focus_t": 0.0, "focused": false, "focus_until": 0.0, "aim_need": 0.6, "chop_t": 0.0, "idle_t": 0.0, "signal_t": 0.0, "track_t": 0.0,
 		"still_t": 0.0, "post": false, "hunt_all": 0.0, "reso_t": -9.0,
-		"cast_t": 0.0,
+		"cast_t": 0.0, "cast_kind": "throw",
 		"devo": 0.0, "bless_t": 0.0, "vow_t": 0.0, "vigil_t": 0.0, "zeal_t": 0.0, "hots": [], "rise_t": 0.0, "linked": false, "nqlit_t": 0.0,
 		"parry_ext": false, "iron_n": 0, "iron_t": 0.0, "lastrun": 0, "longx": false, "reap2": false, "deep_t": 0.0,
 		"heat": 0.0, "over": 0.0, "over_max": 4.0, "boost_t": 0.0, "hook_t": -9.0, "hookslam_t": 0.0, "tkmine_t": 0.0, "plcool_t": 0.0, "scrap_t": 0.0, "clpet_t": 0.0,
@@ -225,6 +225,24 @@ func recompute() -> void:
 					stats.mhp += D.RUNES[rid].stats[k]
 				else:
 					stats[k] += D.RUNES[rid].stats[k]
+		for k in it.get("bonus", {}):
+			if k == "hp":
+				stats.mhp += it.bonus[k]
+			else:
+				stats[k] += it.bonus[k]
+	var sc = set_counts()
+	for sid in sc:
+		var bonus = {}
+		if sc[sid] >= 2:
+			bonus.merge(D.SETS[sid].two)
+		if sc[sid] >= 3:
+			for k in D.SETS[sid].three:
+				bonus[k] = bonus.get(k, 0) + D.SETS[sid].three[k]
+		for k in bonus:
+			if k == "hp":
+				stats.mhp += bonus[k]
+			else:
+				stats[k] += bonus[k]
 	if tree.has("ost_ghost"):
 		stats.mhp *= 0.9
 	if tree.has("unseen"):
@@ -263,6 +281,9 @@ func fix_item(it):
 		return null
 	it.rar = int(it.rar)
 	it.tier = int(it.tier)
+	if it.has("bonus"):
+		for k in it.bonus:
+			it.bonus[k] = int(it.bonus[k])
 	if it.has("plus"):
 		it.plus = int(it.plus)
 	if it.has("runes"):
@@ -710,6 +731,17 @@ func cur_atk() -> Array:
 		a[5] += 20.0
 	if p.skill == "" and D.is_bow(eq.weapon):
 		a[6] = 0.0   # an archer does not step into the shot
+	if p.skill == "":
+		# the weapon's style: daggers quick and short, spears long and narrow, mauls slow and wide
+		var W = D.WSTYLE[D.wstyle(eq.weapon)]
+		a[0] *= W.speed
+		a[2] *= W.speed
+		a[3] *= W.dmg
+		a[4] += W.reach
+		a[5] = maxf(20.0, a[5] + W.arc)
+		if W.last == "pierce" and p.idx == chain_len() - 1:
+			a[4] += 16.0
+			a[5] = 22.0
 	if p.skill == "" and tree.has("fourth"):
 		a[0] += F
 	var haste = stats.haste + (25.0 if p.boost_t > 0.0 else 0.0) + (20.0 if (tree.has("tk_armor") and hot()) else 0.0)
@@ -1064,7 +1096,7 @@ func cast(id: String) -> bool:
 			begin_swing(id)
 	p.smult = 1.0
 	if p.state == "idle":
-		p.cast_t = 0.25
+		cast_fx(id)
 	if id == "shadow" and tree.has("gh_step") and t >= p.ghstep_t:
 		p.ghstep_t = t + 6.0
 		add_ghost(p.pos, 5.0, true)
@@ -1540,6 +1572,13 @@ func swing_hits(a: Array) -> void:
 						mark(f, p.elem)
 				if last and has_uniq("forge"):
 					mark(f, "burn")
+				if last:
+					match D.WSTYLE[D.wstyle(eq.weapon)].last:
+						"poison":
+							poison(f, 1)
+						"stun":
+							if not D.FOES[f.kind].get("big", false):
+								stagger(f, 0.6)
 				elif p.skill == "toll" and tree.has("afterglow"):
 					for mk in ["burn", "chill", "shock"]:
 						mark(f, mk)
@@ -1715,6 +1754,10 @@ func kill(f: Dictionary) -> void:
 		drop(f.pos, "gold", g / coins + (g % coins if i == 0 else 0), null)
 	if K.get("big", false) or (elite != "" and randf() < 0.3):
 		drop(f.pos, "item", 0, D.random_rune())
+	if zone.tier >= 1 and randf() < (0.25 if K.get("big", false) else (0.08 if elite != "" else 0.0)):
+		drop(f.pos, "item", 0, D.random_set_piece())
+	if D.SIGS.has(f.kind) and randf() < (0.12 if elite != "" else 0.03):
+		drop(f.pos, "item", 0, D.sig_item(f.kind))
 	if randf() < 0.08 or f.kind == "boss":
 		drop(f.pos, "potion", 1, null)
 	if randf() < K.loot + 0.06 * zone.get("tide", 0) or elite != "":
@@ -3076,10 +3119,30 @@ func draw_player() -> void:
 				arc = [base, base + TAU * 0.999, arc[2], a[4]]
 	if p.state == "atk" and p.skill == "" and D.is_bow(eq.weapon):
 		arc = null   # an arrow, not a blade
-	if p.state == "aim" or (p.state == "idle" and p.cast_t > 0.0):
-		# drawing the bow, or a spell leaving the hand
+	if p.state == "aim":
+		# drawing the bow
 		name = "h_wind"
 		off = -p.aim * 1.5 + Vector2(0, -1)
+	elif p.state == "idle" and p.cast_t > 0.0:
+		# the casting gesture (cast_fx): k runs from 0 to 1 over the gesture
+		var k = 1.0 - p.cast_t / 0.35
+		match p.cast_kind:
+			"channel":
+				name = "h_wind"
+				off = Vector2(0, -2.0 * sin(k * PI))
+			"roar":
+				name = "h_slash"
+				squash = -int(3.0 * sin(k * PI))
+			"pray":
+				name = "h_idle"
+				off = Vector2(0, -4.0 * sin(k * PI))
+			"kneel":
+				name = "h_wind"
+				squash = int(4.0 * sin(k * PI))
+			_:
+				name = "h_slash" if k > 0.3 else "h_wind"
+				off = p.aim * (4.0 * sin(k * PI))
+				rot = 0.12 * sin(k * PI) * (1.0 if p.aim.x >= 0.0 else -1.0)
 	if p.flash > 0.0 and p.state != "dead":
 		# struck: the body jerks back from the blow
 		rot = 0.18 * (1.0 if flip else -1.0)
@@ -3090,6 +3153,10 @@ func draw_player() -> void:
 		if Art.T.has(alt):
 			name = alt
 			flip = false
+	# each mastery has its own look (Art.LOOKS); the Warrior and any look not made yet use the plain pictures
+	var look = "k%d_%s" % [main_m, name]
+	if Art.T.has(look):
+		name = look
 	var tex: Texture2D = Art.T[name]
 	var w = tex.get_width()
 	var h = tex.get_height()
@@ -5216,6 +5283,9 @@ func set_rune(i: int) -> void:
 		var held: Array = it.get("runes", [])
 		if held.size() < D.sockets(it):
 			held.append(r.rune)
+			if held.count(r.rune) == 2 and not it.has("bonus"):
+				it.bonus = D.RUNE_BONUS[r.rune][randi() % 3].duplicate()
+				toast("HAI %s CỘNG HƯỞNG: %s." % [r.name, D.STAT_NAME[it.bonus.keys()[0]]], Color("9fe3e0"))
 			it.runes = held
 			inv.remove_at(i)
 			recompute()
@@ -5271,3 +5341,54 @@ func reforge(cell: int) -> void:
 	recompute()
 	toast("%s RÈN LÊN +%d." % [it.name, it.plus], Color("ffe9a3"))
 	Sfx.play("slam", 1.6)
+
+# how many pieces of each set are worn
+func set_counts() -> Dictionary:
+	var n = {}
+	for slot in D.SLOTS:
+		var it = eq[slot]
+		if it != null and it.has("set"):
+			n[it.set] = n.get(it.set, 0) + 1
+	return n
+
+# ---------------------------------------------------------------- how each skill is cast
+# Swings, dashes and the aimed shot have their own motion. Every other skill falls in one of five casting gestures.
+const CAST_ANIM = {
+	"roar": ["cry", "taunt", "bighunt", "boost"],
+	"pray": ["summon", "sacrifice", "soulform", "night", "knell", "holy", "bless", "vow", "vigil", "raise", "bronze", "bellwork"],
+	"kneel": ["snare", "mine", "turret", "bellmine", "wall", "cover"],
+	"throw": ["darts", "seal", "hook", "sic", "hunt", "weaken", "chain", "mute", "purge", "vent", "rain", "venom", "smoke", "verdict"],
+}
+
+func cast_kind(id: String) -> String:
+	if Sk.NODES[id].has("el"):
+		return "channel"
+	for k in CAST_ANIM:
+		if CAST_ANIM[k].has(id):
+			return k
+	return "throw"
+
+# starts the gesture and its burst of light
+func cast_fx(id: String) -> void:
+	var k = cast_kind(id)
+	p.cast_kind = k
+	p.cast_t = 0.35
+	var col = Color("ffe9a3")
+	match k:
+		"channel":
+			col = Sk.MARK_COL[Sk.NODES[id].el]
+			rings.append({"pos": p.pos, "r": 20.0, "life": 0.3, "max": 0.3, "col": col})
+			for i in 8:
+				parts.append({"pos": p.pos + Vector2(randf_range(-8, 8), -randf_range(4, 24)), "vel": Vector2(0, -randf_range(30, 60)), "life": 0.4, "max": 0.4, "col": col, "g": 0.0, "size": 2})
+		"roar":
+			rings.append({"pos": p.pos, "r": 46.0, "life": 0.3, "max": 0.3, "col": col})
+			shake = maxf(shake, 1.5)
+		"pray":
+			col = VONG if Sk.NODES[id].get("m", 0) in [6, 25, 32] else Color("fff0b0")
+			rings.append({"pos": p.pos, "r": 26.0, "life": 0.45, "max": 0.45, "col": col})
+		"kneel":
+			col = Color("c98a4a")
+			for i in 6:
+				parts.append({"pos": p.pos + Vector2(randf_range(-10, 10), -2), "vel": Vector2(randf_range(-30, 30), -randf_range(10, 30)), "life": 0.3, "max": 0.3, "col": Color("8d7c5e"), "g": 160.0, "size": 2})
+		"throw":
+			parts.append({"pos": p.pos + p.aim * 10.0 + Vector2(0, -16), "vel": p.aim * 80.0, "life": 0.2, "max": 0.2, "col": IVORY, "g": 0.0, "size": 2})
