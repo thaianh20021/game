@@ -304,7 +304,7 @@ func enter_zone(id: String, at: Vector2) -> void:
 		zone.things.append({"id": "lamp_keeper", "pos": lighthouse_pos() + Vector2(0, 10), "h": 40.0})
 	if qs.get("s5", "") == "done" and zone.id == "mines":
 		World.lantern(zone, 18.5, 24.2)
-	if qs.get("m16", "") == "done":
+	if qs.get("m16", "") == "done" and zone.id == "town":
 		zone.npcs = zone.npcs.filter(func(n): return n.id != "kham")
 	if not maps.has(id):
 		maps[id] = [Art.bake(zone.grid, 0, zone.theme), Art.bake(zone.grid, 1, zone.theme)]
