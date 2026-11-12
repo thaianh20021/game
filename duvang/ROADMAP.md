@@ -290,3 +290,12 @@ dùng tuyệt kỹ hồi 8% máu và 8 Nộ). Kiểm tra nhanh: `gen/mutes.gd`.
 Sau m26, năm dungeon (Bến Phà Cũ, Lòng Cây, Hạm Đội, Lò Tái Thanh, Điện Chép Sử) có mức Triều Vọng 1 tới 5 đổi theo ngày thật
 (chu kỳ 8 ngày, `tide_level`): quái mạnh thêm 15% mỗi mức, quái thường có `8% x mức` cơ hội thành tinh anh, đồ rơi nhiều hơn.
 Ngải đứng ở vành Miệng Chuông báo mức triều mỗi ngày (`D.TIDE_TALK`). Kiểm tra nhanh: `gen/tide.gd`.
+
+## Cập nhật 2026-11-12 (Đá Âm: rune có đánh đổi)
+
+Tám Đá Âm (`D.RUNES`), mỗi viên cộng một chỉ số và trừ một chỉ số khác (ví dụ Đá Âm Máu: +3% hút máu, -12 máu).
+Ô ghép theo độ hiếm (`D.sockets`: phép 1, hiếm 2, độc nhất 1). Đá chỉ ghép được ở cửa hàng (Thầy Khâm, sau chương 3 là Ngải):
+bấm vào đá trong cửa hàng thì nó vào món đang mặc đầu tiên còn ô trống (vũ khí, giáp, bùa), và không gỡ ra được, nên
+quyết định là món nào đáng giữ. Boss luôn rơi một viên, tinh anh 30%. Bán nhanh đồ thường không bán đá.
+Sửa lỗi: lần thêm Triều Vọng trước đã đổi nhầm điều kiện rơi bình máu thay vì điều kiện rơi đồ.
+Kiểm tra nhanh: `gen/runes.gd`.

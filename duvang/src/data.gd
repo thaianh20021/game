@@ -53,7 +53,7 @@ const STAT_NAME = {
 	"regen": "MÁU MỖI GIÂY", "gold": "VÀNG RƠI %",
 }
 const SLOTS = ["weapon", "armor", "charm"]
-const SLOT_NAME = {"weapon": "VŨ KHÍ", "armor": "GIÁP", "charm": "BÙA"}
+const SLOT_NAME = {"weapon": "VŨ KHÍ", "armor": "GIÁP", "charm": "BÙA", "rune": "ĐÁ ÂM"}
 const FILTER_NAME = ["MỌI MÓN", "TỪ PHÉP TRỞ LÊN", "TỪ HIẾM TRỞ LÊN"]
 
 # Twenty base items: [name, tier, what it always has]. The tier a zone drops is set in world.gd.
@@ -108,13 +108,15 @@ static func roll_item(tier: int) -> Dictionary:
 
 # the picture for an item: uniques by their effect, the rest by their base (found from the start of the name)
 static func icon(it: Dictionary) -> String:
+	if it.slot == "rune":
+		return "it_r_" + it.rune
 	if it.uniq != "":
 		return "it_u_" + it.uniq
 	var list = BASES[it.slot]
 	for i in list.size():
 		if it.name.begins_with(list[i][0]):
 			return "it_%s%d" % [it.slot[0], i]
-	return "ic_" + it.slot
+	return "ic_" + (it.slot if it.slot != "rune" else "charm")
 
 static func value(it: Dictionary) -> int:
 	return 4 * (it.tier + 1) * (it.rar + 1) + (30 if it.rar == 3 else 0)
@@ -743,3 +745,29 @@ const TIDE_TALK = [
 	"TRIỀU VỌNG MỨC BỐN. ÂM THOA CỦA MÌNH RUNG KHÔNG NGỪNG. NẾU XUỐNG, ĐỪNG XUỐNG MỘT MÌNH. MÀ BẠN THÌ LÚC NÀO CŨNG MỘT MÌNH.",
 	"TRIỀU VỌNG MỨC NĂM. ĐỈNH TRIỀU. HẦM NÀO CŨNG ĐẦY. KẺ NÀO VỀ ĐƯỢC HÔM NAY SẼ GIÀU. KẺ KHÔNG VỀ THÌ MÌNH SẼ GHI TÊN.",
 ]
+
+# ---------------------------------------------------------------- tone stones (runes)
+# Each stone gives one thing and takes another, and once set it stays: the choice is which item deserves it.
+# Magic items have one socket, rare items two, uniques one. Only a shop (Kham, later Ngải) can set a stone.
+const RUNES = {
+	"steel": {"name": "ĐÁ ÂM THÉP", "stats": {"atk": 4, "haste": -6}},
+	"thorn": {"name": "ĐÁ ÂM GAI", "stats": {"crit": 6, "def": -2}},
+	"blood": {"name": "ĐÁ ÂM MÁU", "stats": {"leech": 3, "hp": -12}},
+	"wind": {"name": "ĐÁ ÂM GIÓ", "stats": {"spd": 8, "def": -2}},
+	"stone": {"name": "ĐÁ ÂM ĐÁ", "stats": {"def": 5, "spd": -5}},
+	"ember": {"name": "ĐÁ ÂM LỬA", "stats": {"rage": 30, "hp": -10}},
+	"bell": {"name": "ĐÁ ÂM CHUÔNG", "stats": {"cdr": 8, "atk": -2}},
+	"gold": {"name": "ĐÁ ÂM VÀNG", "stats": {"gold": 40, "crit": -3}},
+}
+
+static func rune_item(id: String) -> Dictionary:
+	return {"name": RUNES[id].name, "slot": "rune", "rar": 2, "tier": 0, "stats": RUNES[id].stats.duplicate(), "uniq": "", "rune": id}
+
+static func random_rune() -> Dictionary:
+	var ids = RUNES.keys()
+	return rune_item(ids[randi() % ids.size()])
+
+static func sockets(it: Dictionary) -> int:
+	if it.slot == "rune":
+		return 0
+	return 1 if it.rar == 3 else it.rar

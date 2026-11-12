@@ -205,6 +205,12 @@ func recompute() -> void:
 				stats.mhp += it.stats[k]
 			else:
 				stats[k] += it.stats[k]
+		for rid in it.get("runes", []):
+			for k in D.RUNES[rid].stats:
+				if k == "hp":
+					stats.mhp += D.RUNES[rid].stats[k]
+				else:
+					stats[k] += D.RUNES[rid].stats[k]
 	if tree.has("ost_ghost"):
 		stats.mhp *= 0.9
 	if tree.has("unseen"):
@@ -243,6 +249,8 @@ func fix_item(it):
 		return null
 	it.rar = int(it.rar)
 	it.tier = int(it.tier)
+	if it.has("runes"):
+		it.runes = Array(it.runes)
 	for k in it.stats:
 		it.stats[k] = int(it.stats[k])
 	return it
@@ -601,6 +609,10 @@ func open_inv(as_shop: bool) -> void:
 
 func equip(i: int) -> void:
 	var it = inv[i]
+	if it.slot == "rune":
+		toast("ĐÁ ÂM CHỈ GHÉP ĐƯỢC Ở CỬA HÀNG.", Color("ff9a8a"))
+		Sfx.play("deny")
+		return
 	var old = eq[it.slot]
 	eq[it.slot] = it
 	inv.remove_at(i)
@@ -617,6 +629,9 @@ func unequip(slot: String) -> void:
 	recompute()
 
 func sell(i: int) -> void:
+	if inv[i].slot == "rune":
+		set_rune(i)
+		return
 	gold += D.value(inv[i])
 	inv.remove_at(i)
 	Sfx.play("orb", 1.3)
@@ -1667,9 +1682,11 @@ func kill(f: Dictionary) -> void:
 	var coins = clampi(g / 4, 1, 8)
 	for i in coins:
 		drop(f.pos, "gold", g / coins + (g % coins if i == 0 else 0), null)
-	if randf() < K.loot + 0.06 * zone.get("tide", 0) or elite != "":
+	if K.get("big", false) or (elite != "" and randf() < 0.3):
+		drop(f.pos, "item", 0, D.random_rune())
+	if randf() < 0.08 or f.kind == "boss":
 		drop(f.pos, "potion", 1, null)
-	if randf() < K.loot or elite != "":
+	if randf() < K.loot + 0.06 * zone.get("tide", 0) or elite != "":
 		drop(f.pos, "item", 0, D.roll_item(mini(2, zone.tier + (1 if (K.poise > 0.0 or elite != "") else 0))))
 	if f.kind == "boss":
 		drop(f.pos, "item", 0, D.ferry_oar())
@@ -3258,7 +3275,7 @@ func amber(f: Dictionary, k: float) -> void:
 func sell_junk() -> int:
 	var n = 0
 	for i in range(inv.size() - 1, -1, -1):
-		if inv[i].rar < maxi(loot_filter, 1):
+		if inv[i].rar < maxi(loot_filter, 1) and inv[i].slot != "rune":
 			gold += D.value(inv[i])
 			inv.remove_at(i)
 			n += 1
@@ -5143,3 +5160,23 @@ func tide_zone() -> void:
 	zone.tide = tide_level()
 	zone.mult *= 1.0 + 0.15 * zone.tide
 	toast("TRIỀU VỌNG MỨC %d: QUÁI MẠNH HƠN, ĐỒ RƠI NHIỀU HƠN." % zone.tide, VONG)
+
+# ---------------------------------------------------------------- tone stones
+# set the stone at bag cell i into the first worn item with a free socket: weapon, then armour, then charm
+func set_rune(i: int) -> void:
+	var r = inv[i]
+	for slot in D.SLOTS:
+		var it = eq[slot]
+		if it == null:
+			continue
+		var held: Array = it.get("runes", [])
+		if held.size() < D.sockets(it):
+			held.append(r.rune)
+			it.runes = held
+			inv.remove_at(i)
+			recompute()
+			toast("%s GHÉP VÀO %s." % [r.name, it.name], Color("9fe3e0"))
+			Sfx.play("orb", 0.8)
+			return
+	toast("KHÔNG MÓN NÀO ĐANG MẶC CÒN Ô TRỐNG.", Color("ff9a8a"))
+	Sfx.play("deny")

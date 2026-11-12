@@ -293,7 +293,7 @@ static func draw_item(g, r: Rect2, it) -> void:
 		var pic: Texture2D = Art.T[key]
 		g.draw_texture(pic, (r.position + (r.size - Vector2(pic.get_size())) / 2.0).floor())
 	else:
-		var tex: Texture2D = Art.T["ic_" + it.slot]
+		var tex: Texture2D = Art.T.get("ic_" + it.slot, Art.T["ic_charm"])
 		g.draw_texture(tex, (r.position + (r.size - Vector2(tex.get_size())) / 2.0).floor(), col.lerp(Color.WHITE, 0.5))
 
 static func inv_draw(g, view: Vector2) -> void:
@@ -346,7 +346,7 @@ static func inv_draw(g, view: Vector2) -> void:
 	if hover != null:
 		Txt.text(g, Vector2(tx, ty), hover.name, D.RAR_COL[hover.rar])
 		Txt.text(g, Vector2(tx, ty + 10), "%s %s" % [D.SLOT_NAME[hover.slot], D.RAR_NAME[hover.rar]], DIM)
-		var worn = g.eq[hover.slot]
+		var worn = g.eq.get(hover.slot)
 		var keys = hover.stats.keys()
 		if worn != null and not hover_eq:
 			for k in worn.stats:
@@ -363,6 +363,15 @@ static func inv_draw(g, view: Vector2) -> void:
 					line += "  (%s%d)" % ["+" if diff > 0 else "", diff]
 					col = Color("8fe08a") if diff > 0 else Color("ff9a8a")
 			Txt.text(g, Vector2(tx, ty + 22 + n * 10), line, col)
+			n += 1
+		var socks = D.sockets(hover)
+		if socks > 0:
+			var held = hover.get("runes", [])
+			var names = held.map(func(rid): return D.RUNES[rid].name.substr(6))
+			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "ĐÁ ÂM %d/%d %s" % [held.size(), socks, " ".join(PackedStringArray(names))], Color("9fe3e0"))
+			n += 1
+		if hover.slot == "rune":
+			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "Ở CỬA HÀNG: BẤM ĐỂ GHÉP VÀO MÓN ĐANG MẶC.", Color("9fe3e0"))
 			n += 1
 		if hover.uniq != "":
 			Txt.text(g, Vector2(tx, ty + 24 + n * 10), D.UNIQ_TEXT[hover.uniq], D.RAR_COL[3])

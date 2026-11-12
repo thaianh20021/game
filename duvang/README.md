@@ -75,6 +75,7 @@ The bag and shop need the mouse; they have no gamepad navigation yet.
   Five main quests (m7 to m11) and one side quest; m11 is a choice with no right answer, to seal the village or keep it.
   Fifth unique: Hạt Ngàn Tên, +8% damage per mark on the foe.
 - **Solo trees (Độc Tấu)**: a hero who leaves the second mastery empty gets an 8-node solo tree for the main mastery and 3 extra ranks in each of its active skills (6% faster cooldown each).
+- **Tone stones (runes)**: eight stones that each give one stat and take another; magic items have one socket, rare items two. Set at a shop, never removed.
 - **Bows**: three bow bases; with a bow the chain of strikes becomes three arrows, the third goes through.
 - **Warrior mastery**: one point per level, free reset. Guard (Bulwark, Shield Rush), Fury (Spin, War Cry),
   Arms (Lunge, Ground Slam), nine passives, three keystones that change a rule at a price, and the
