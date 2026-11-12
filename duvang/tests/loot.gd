@@ -75,7 +75,7 @@ func _init() -> void:
 			names[b[0]] = true
 			for k in b[2]:
 				ok = ok and D.STAT_NAME.has(k)
-	check("twenty base items, all named differently, at least two per slot and tier", n == 20 and names.size() == 20 and ok)
+	check("twenty-three base items (three of them bows), all named differently, at least two per slot and tier", n == 23 and names.size() == 23 and ok)
 	ok = true
 	var stats = {}
 	for a in D.AFFIX:
@@ -96,11 +96,11 @@ func _init() -> void:
 		ok = ok and extra == 2
 	check("a rare item has exactly two properties, both allowed on its slot", ok)
 	check("the starting weapon is always the reed cutter", D.make_item("weapon", 0, 0, 0).name == "DAO CẮT LAU")
-	var u = [D.ferry_oar(), D.toll_box(), D.elite_unique("volatile"), D.elite_unique("warding"), D.seed_unique()]
+	var u = [D.ferry_oar(), D.toll_box(), D.elite_unique("volatile"), D.elite_unique("warding"), D.seed_unique(), D.admiral_unique(), D.forge_unique(), D.eight_unique()]
 	ok = true
 	for it in u:
 		ok = ok and it.rar == 3 and D.UNIQ_TEXT.has(it.uniq) and D.UNIQ_TEXT[it.uniq].length() <= 40
-	check("five uniques, each with its own effect", ok and D.UNIQ_TEXT.size() == 5)
+	check("eight uniques, each with its own effect", ok and D.UNIQ_TEXT.size() == 8)
 
 	# --- what the stats do
 	await setup()

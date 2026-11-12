@@ -97,7 +97,7 @@ func _init() -> void:
 	check("an Assassin starts with the Assassin tree only", g.learn("slash") and not g.learn("spin") and Sk.blocked(g.tree, "spin", 40, false, 3, 0) == Sk.NO_SECOND)
 	check("a mastery that is neither of yours stays shut", Sk.blocked(g.tree, "ember", 40, true, 3, 0) == Sk.NOT_YOURS)
 	g.qs["m6"] = "done"
-	check("with the Warrior as second: its tree and the Shadow Blade links, not the Night Thunder ones", g.learn("spin") and g.tabs() == [3, 0, 4] and Sk.blocked(g.tree, "dl_mark", 40, true, 3, 0) == Sk.NOT_YOURS)
+	check("with the Warrior as second: its tree and the Shadow Blade links, not the Night Thunder ones", g.learn("spin") and g.tabs() == [3, 0, 4, 38] and Sk.blocked(g.tree, "dl_mark", 40, true, 3, 0) == Sk.NOT_YOURS)
 	check("the danger point bar shows for an Assassin", g.uses_cp())
 
 	# --- danger points
@@ -330,7 +330,7 @@ func _init() -> void:
 
 	# --- Night Thunder links (Elementalist + Assassin)
 	await rogue({"slash": 1, "ember": 1, "dl_mark": 1}, 1)
-	check("with the Elementalist as second the tabs change", g.tabs() == [3, 1, 5])
+	check("with the Elementalist as second the tabs change", g.tabs() == [3, 1, 5, 38])
 	a = dummy("porter", Vector2(200, 0))
 	g.mark(a, "burn")
 	check("opening mark: a new mark gives a point", g.p.cp == 1)
@@ -436,7 +436,7 @@ func _init() -> void:
 	g.sim.ui_mouse = g.Menu.start_rect(view).get_center()
 	await tap("atk")
 	g.sim.ui_mouse = Vector2(-50, -50)
-	check("choosing the Assassin makes a Shadow Blade", g.mode == "play" and g.second_m == 3 and g.tabs() == [0, 3, 4])
+	check("choosing the Assassin makes a Shadow Blade", g.mode == "play" and g.second_m == 3 and g.tabs() == [0, 3, 4, 36])
 	g.lvl = 10
 	check("its tree opens", g.learn("slash") and not g.learn("ember"))
 	g.save_game()

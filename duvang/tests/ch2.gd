@@ -113,7 +113,7 @@ func _init() -> void:
 			ok = ok and g.Art.T.has(dc.tex)
 		check("zone %s is stable, its foes stand on ground, its exits and pictures exist" % id, ok)
 	var fz = g.World.build("forest")
-	check("the forest holds the village, three trunks and the seal stone", fz.npcs.size() == 2 and fz.things.size() == 4)
+	check("the forest holds the village, three trunks, the seal stone, a debtor and a mute clapper", fz.npcs.size() == 2 and fz.things.size() == 6)
 	check("the marsh has a way into the forest", g.World.build("field").portals.any(func(po): return po.to == "forest" and po.need == "m7"))
 	check("forest tiles are painted in their own colours", g.Art.I.has("forestgrass0") or true)
 

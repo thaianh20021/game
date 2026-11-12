@@ -148,9 +148,9 @@ const UNIQ_TEXT = {
 	"wave": "ĐÒN THỨ BA NÉM MỘT LÀN SÓNG", "box": "NGẮT ĐÒN: HỒI 10% MÁU, +30 NỘ",
 	"free": "NÉ TRÚNG ĐÒN: KỸ NĂNG KẾ MIỄN PHÍ", "wick": "GIẾT KẺ ĐANG CHÁY HỒI 4% MÁU",
 	"seed": "MỖI DẤU TRÊN KẺ ĐỊCH: +8% SÁT THƯƠNG",
-	"salt": "ĐÒN CHÍ MẠNG LÀM KẺ ĐỊCH LẠNH",
-	"forge": "ĐÒN CUỐI CHUỖI ĐỂ LẠI CHÁY",
-	"eight": "DÙNG TUYỆT KỸ: HỒI 8% MÁU VÀ 8 NỘ",
+	"salt": "CHÍ MẠNG LÀM KẺ ĐỊCH LẠNH",
+	"forge": "ĐÒN CUỐI CHUỖI GÂY CHÁY",
+	"eight": "TUYỆT KỸ HỒI 8% MÁU, 8 NỘ",
 }
 
 const POTION_COST = 15

@@ -95,7 +95,7 @@ func _init() -> void:
 			ok = ok and dest.grid[int(po.at.y / 16)][int(po.at.x / 16)] != 0
 		check("zone %s is stable and its exits land on ground" % id, ok)
 	var fz = g.World.build("field")
-	check("the marsh has its three sandals, the boat and the sign", fz.things.size() == 5)
+	check("the marsh has its three sandals, the boat, the sign, a debtor and a mute clapper", fz.things.size() == 7)
 	for id in D.ORDER:
 		for a in D.QUESTS[id].after:
 			if D.ORDER.find(a) < 0:
