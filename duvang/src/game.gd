@@ -34,7 +34,7 @@ const ATK = [
 	[3 * F, F, 3 * F, 1.8, 42.0, 75.0, 110.0, 0.09, 3.0],
 	[3 * F, F, 4 * F, 2.4, 46.0, 100.0, 110.0, 0.10, 3.0],   # only with the Fourth Strike keystone
 ]
-const KEYS = ["atk", "dodge", "use", "inv", "potion", "buy", "opt1", "opt2", "s1", "s2", "s3", "s4", "s5", "s6", "ult", "tree", "reset", "filter", "menu", "tabn"]
+const KEYS = ["atk", "dodge", "use", "inv", "potion", "buy", "opt1", "opt2", "s1", "s2", "s3", "s4", "s5", "s6", "ult", "tree", "reset", "filter", "menu", "tabn", "salv", "upg"]
 
 # place
 var zone = {}
@@ -104,6 +104,7 @@ var holy_hit = false   # true while holy damage is landing
 var ghost_hit = false  # true while an echo's blow is landing
 var devices = []       # the Artificer's turrets, mines and bell machine
 var proto = ""         # the sixth skill slot (key 6) that the Prototype keystone opens
+var scrap = 0          # bronze slag from taken-apart items, spent to reforge
 var pulses = []
 var opt = {"sfx": 100.0, "music": 100.0, "shake": 100.0, "flash": true, "nums": true, "full": false}
 var talk = {}
@@ -157,6 +158,7 @@ func new_game() -> void:
 	second_m = -1
 	ult = ""
 	proto = ""
+	scrap = 0
 	tab = 0
 	lvl = 1
 	xp = 0
@@ -202,9 +204,9 @@ func recompute() -> void:
 			continue
 		for k in it.stats:
 			if k == "hp":
-				stats.mhp += it.stats[k]
+				stats.mhp += D.stat_of(it, k)
 			else:
-				stats[k] += it.stats[k]
+				stats[k] += D.stat_of(it, k)
 		for rid in it.get("runes", []):
 			for k in D.RUNES[rid].stats:
 				if k == "hp":
@@ -242,13 +244,15 @@ func save_game() -> void:
 	var f = FileAccess.open(D.SAVE_PATH, FileAccess.WRITE)
 	if f == null:
 		return
-	f.store_string(JSON.stringify({"v": 2, "lvl": lvl, "xp": xp, "gold": gold, "potions": potions, "inv": inv, "eq": eq, "qs": qs, "qc": qc, "flags": flags, "tree": tree, "bar": bar, "filter": loot_filter, "main": main_m, "ult": ult, "second": second_m, "proto": proto}))
+	f.store_string(JSON.stringify({"v": 2, "lvl": lvl, "xp": xp, "gold": gold, "potions": potions, "inv": inv, "eq": eq, "qs": qs, "qc": qc, "flags": flags, "tree": tree, "bar": bar, "filter": loot_filter, "main": main_m, "ult": ult, "second": second_m, "proto": proto, "scrap": scrap}))
 
 func fix_item(it):
 	if it == null:
 		return null
 	it.rar = int(it.rar)
 	it.tier = int(it.tier)
+	if it.has("plus"):
+		it.plus = int(it.plus)
 	if it.has("runes"):
 		it.runes = Array(it.runes)
 	for k in it.stats:
@@ -289,6 +293,7 @@ func load_game() -> bool:
 	second_m = int(d.get("second", -1))
 	ult = d.get("ult", "")
 	proto = d.get("proto", "")
+	scrap = int(d.get("scrap", 0))
 	if not tree.has(proto):
 		proto = ""
 	tab = main_m
@@ -445,6 +450,10 @@ func held(n: String) -> bool:
 			return Input.is_key_pressed(KEY_ESCAPE) or Input.is_joy_button_pressed(0, JOY_BUTTON_START)
 		"potion":
 			return Input.is_key_pressed(KEY_F) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER)
+		"salv":
+			return Input.is_key_pressed(KEY_K) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_DOWN)
+		"upg":
+			return Input.is_key_pressed(KEY_U) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_LEFT)
 		"tabn":
 			return Input.is_key_pressed(KEY_G) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_RIGHT)
 		"filter":
@@ -5200,3 +5209,43 @@ func chapter() -> int:
 		if qs.get(q[0], "") == "done":
 			return q[1]
 	return 0
+
+# ---------------------------------------------------------------- reforging
+# cell: 0..BAG-1 a bag cell, BAG..BAG+2 a worn slot (the same numbering as the inventory cursor)
+func item_at(cell: int):
+	if cell >= BAG:
+		return eq[D.SLOTS[cell - BAG]]
+	return inv[cell] if cell >= 0 and cell < inv.size() else null
+
+func salvage(cell: int) -> void:
+	var it = item_at(cell)
+	if it == null or cell >= BAG or it.slot == "rune" or it.uniq != "":
+		toast("CHỈ RÃ ĐƯỢC ĐỒ THƯỜNG, PHÉP HAY HIẾM TRONG TÚI.", Color("ff9a8a"))
+		Sfx.play("deny")
+		return
+	var n = D.salvage_of(it)
+	scrap += n
+	inv.remove_at(cell)
+	toast("RÃ %s: +%d XỈ ĐỒNG." % [it.name, n], Color("c98a4a"))
+	Sfx.play("break", 1.4)
+
+func reforge(cell: int) -> void:
+	var it = item_at(cell)
+	if it == null or it.slot == "rune":
+		Sfx.play("deny")
+		return
+	if int(it.get("plus", 0)) >= D.PLUS_MAX:
+		toast("MÓN NÀY ĐÃ RÈN TỚI +%d." % D.PLUS_MAX, Color("ff9a8a"))
+		Sfx.play("deny")
+		return
+	var cost = D.reforge_cost(it)
+	if scrap < cost[0] or gold < cost[1]:
+		toast("CẦN %d XỈ ĐỒNG VÀ %d VÀNG." % [cost[0], cost[1]], Color("ff9a8a"))
+		Sfx.play("deny")
+		return
+	scrap -= cost[0]
+	gold -= cost[1]
+	it.plus = int(it.get("plus", 0)) + 1
+	recompute()
+	toast("%s RÈN LÊN +%d." % [it.name, it.plus], Color("ffe9a3"))
+	Sfx.play("slam", 1.6)

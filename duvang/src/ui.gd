@@ -263,6 +263,14 @@ static func inv_update(g) -> void:
 		return
 	if g.shop and g.pressed("reset"):
 		g.sell_junk()
+	if g.shop and (g.pressed("salv") or g.pressed("upg")):
+		var cell = g.isel if g.inv_pad else cell_at(g, view, m)
+		if cell >= 0:
+			if g.pressed("salv"):
+				g.salvage(cell)
+			else:
+				g.reforge(cell)
+		return
 	if g.shop and g.pressed("buy"):
 		g.buy_potion()
 	if not g.pressed("atk"):
@@ -303,6 +311,8 @@ static func inv_draw(g, view: Vector2) -> void:
 	Txt.text(g, r.position + Vector2(12, 8), ("CỬA HÀNG CỦA NGẢI" if g.qs.get("m16", "") == "done" else "CỬA HÀNG THẦY KHÂM") if g.shop else "TÚI ĐỒ", Color("ffe9a3"))
 	g.draw_texture(Art.T["coin"], Vector2(r.end.x - 60, r.position.y + 7))
 	Txt.text(g, Vector2(r.end.x - 50, r.position.y + 8), str(g.gold), GOLD)
+	if g.shop:
+		Txt.text(g, Vector2(r.end.x - 130, r.position.y + 8), "XỈ ĐỒNG %d" % g.scrap, Color("c98a4a"))
 	var m = g.ui_mouse()
 	var hover = null
 	var hover_eq = false
@@ -344,7 +354,7 @@ static func inv_draw(g, view: Vector2) -> void:
 	var ty = r.position.y + 142
 	var tx = r.position.x + 132
 	if hover != null:
-		Txt.text(g, Vector2(tx, ty), hover.name, D.RAR_COL[hover.rar])
+		Txt.text(g, Vector2(tx, ty), hover.name + (" +%d" % hover.plus if int(hover.get("plus", 0)) > 0 else ""), D.RAR_COL[hover.rar])
 		Txt.text(g, Vector2(tx, ty + 10), "%s %s" % [D.SLOT_NAME[hover.slot], D.RAR_NAME[hover.rar]], DIM)
 		var worn = g.eq.get(hover.slot)
 		var keys = hover.stats.keys()
@@ -354,11 +364,11 @@ static func inv_draw(g, view: Vector2) -> void:
 					keys.append(k)
 		var n = 0
 		for k in keys:
-			var v = hover.stats.get(k, 0)
+			var v = D.stat_of(hover, k) if hover.stats.has(k) else 0
 			var line = "%s %d" % [D.STAT_NAME[k], v]
 			var col = IVORY
 			if not hover_eq:
-				var diff = v - (worn.stats.get(k, 0) if worn != null else 0)
+				var diff = v - (D.stat_of(worn, k) if (worn != null and worn.stats.has(k)) else 0)
 				if diff != 0:
 					line += "  (%s%d)" % ["+" if diff > 0 else "", diff]
 					col = Color("8fe08a") if diff > 0 else Color("ff9a8a")
@@ -369,6 +379,10 @@ static func inv_draw(g, view: Vector2) -> void:
 			var held = hover.get("runes", [])
 			var names = held.map(func(rid): return D.RUNES[rid].name.substr(6))
 			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "ĐÁ ÂM %d/%d %s" % [held.size(), socks, " ".join(PackedStringArray(names))], Color("9fe3e0"))
+			n += 1
+		if g.shop and hover.slot != "rune" and int(hover.get("plus", 0)) < D.PLUS_MAX:
+			var rc = D.reforge_cost(hover)
+			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "U RÈN +%d: %d XỈ, %d VÀNG.  K RÃ: +%d XỈ" % [int(hover.get("plus", 0)) + 1, rc[0], rc[1], D.salvage_of(hover)], Color("c98a4a"))
 			n += 1
 		if hover.slot == "rune":
 			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "Ở CỬA HÀNG: BẤM ĐỂ GHÉP VÀO MÓN ĐANG MẶC.", Color("9fe3e0"))
@@ -643,3 +657,13 @@ static func tree_step(g, view: Vector2, nav: Vector2) -> String:
 			bs = score
 			best = id
 	return best
+
+# the inventory cell under the pointer: bag 0..BAG-1, worn BAG..BAG+2, or -1
+static func cell_at(g, view: Vector2, m: Vector2) -> int:
+	for i in g.BAG:
+		if bag_cell(view, i).has_point(m):
+			return i
+	for i in 3:
+		if eq_cell(view, i).has_point(m):
+			return g.BAG + i
+	return -1

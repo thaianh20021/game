@@ -305,3 +305,11 @@ Kiểm tra nhanh: `gen/runes.gd`.
 Mỗi chương, lần đầu nói chuyện thường với Ngải (khi cô không có nhiệm vụ để giao hay nhận) cho +1 gắn bó (`flags.bond`,
 `flags.bond_ch`, `chapter()`). Từ 3 trở lên, Ngải tự xuống Tầng Lưỡi Chuông khi bạn làm m25 và nói câu riêng (`D.NGAI_PIT`);
 lời kết có thêm một dòng tùy cô có xuống hố hay không (`D.EPILOGUE_NGAI`). Không ảnh hưởng sức mạnh. Kiểm tra nhanh: `gen/bond.gd`.
+
+## Cập nhật 2026-11-12 (rã đồ và rèn lại, không bao giờ làm vỡ đồ)
+
+Trong cửa hàng: phím K (D-pad xuống) rã món đang trỏ trong túi thành Xỉ Đồng (`D.salvage_of`, theo độ hiếm và tầng; không rã
+đồ độc nhất và Đá Âm); phím U (D-pad trái) rèn món đang trỏ (trong túi hay đang mặc) lên +1, tối đa +5, tốn Xỉ Đồng và vàng
+(`D.reforge_cost`). Mỗi cấp cộng 10% mỗi chỉ số gốc dương, ít nhất 1 (`D.stat_of`). Rèn không bao giờ thất bại.
+Khung đồ hiện cấp rèn, giá rèn và lượng xỉ nhận được khi rã; góc cửa hàng hiện số Xỉ Đồng. Biến `scrap` được lưu.
+Kiểm tra nhanh: `gen/forge.gd`.

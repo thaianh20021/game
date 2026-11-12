@@ -776,3 +776,23 @@ static func sockets(it: Dictionary) -> int:
 const NGAI_PIT = ["MÌNH ĐI THEO. ĐỪNG MẮNG. MÌNH ĐÃ NGHE ĐỦ NGƯỜI BẢO MÌNH Ở LẠI TRÔNG CỬA HÀNG.", "Ô KHA NÓI MÌNH LÀ VỌNG. CÓ LẼ ĐÚNG. NHƯNG VỌNG CŨNG CÓ QUYỀN CHỌN ĐỨNG CẠNH AI.", "BẠN ĐÁNH ĐI. MÌNH SẼ LÊN DÂY MẢNH CHO BẠN TỪNG TIẾNG MỘT."]
 # one more line in the ending: [0] Ngải stayed in town, [1] she came down the pit
 const EPILOGUE_NGAI = ["NGẢI KHÔNG XUỐNG HỐ. CÔ GỬI CHO BẠN MỘT LÁ THƯ, VIẾT BẰNG NÉT CHỮ CỦA NGƯỜI TẬP ĐÁNH VẦN MUỘN: 'LẦN SAU RỦ MÌNH.'", "NGẢI ĐỨNG CẠNH BẠN Ở VÀNH HỐ KHI TIẾNG CUỐI TẮT. CÔ KHÔNG NÓI GÌ. CÔ CHỈ GÕ ÂM THOA MỘT LẦN, VÀ LẮNG NGHE NÓ NGÂN CHO TỚI KHI HẾT."]
+
+# ---------------------------------------------------------------- reforging (never breaks an item)
+const PLUS_MAX = 5
+
+# a stat of an item with its reforge level: each level adds a tenth of each positive base stat (at least 1)
+static func stat_of(it: Dictionary, k: String) -> int:
+	var v = int(it.stats[k])
+	var plus = int(it.get("plus", 0))
+	if plus > 0 and v > 0:
+		v += maxi(1, int(round(v * 0.1 * plus)))
+	return v
+
+# what taking an item apart gives, in bronze slag
+static func salvage_of(it: Dictionary) -> int:
+	return (it.rar + 1) * (it.tier + 1) + 2 * int(it.get("plus", 0))
+
+# what the next reforge level costs: [slag, gold]
+static func reforge_cost(it: Dictionary) -> Array:
+	var n = int(it.get("plus", 0)) + 1
+	return [3 * n * (it.tier + 1), 25 * n * (it.rar + 1)]
