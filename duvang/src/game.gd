@@ -2616,9 +2616,18 @@ func _draw() -> void:
 	draw_hunter()
 	draw_artificer()
 	for gh in ghosts:
-		var gt: Texture2D = Art.T["wolf_i"] if (tree.has("hl_wolf") and Art.T.has("wolf_i")) else Art.W["h_idle"]
 		var gc = Sk.MARK_COL[gh.el] if gh.el != "" else VONG
-		draw_texture_rect(gt, Rect2(floor(gh.pos.x - gt.get_width() / 2.0), floor(gh.pos.y - gt.get_height() + 3 + sin(t * 5.0 + gh.pos.x) * 1.5), -gt.get_width() if gh.flip else gt.get_width(), gt.get_height()), false, Color(gc.r, gc.g, gc.b, 0.4 if gh.t > 2.0 else 0.2))
+		var gt: Texture2D = Art.W["h_idle"]
+		var gcol = Color(gc.r, gc.g, gc.b, 0.4 if gh.t > 2.0 else 0.2)
+		if tree.has("hl_wolf") and Art.T.has("wolf_i"):
+			gt = Art.T["wolf_i"]
+		elif Art.T.has("ghost_i"):
+			# the warlock's own phantom: drifts between two frames, lunges for a moment after each strike,
+			# keeps its colours (faintly tinted by its element) and thins out in its last two seconds
+			gt = Art.T["ghost_k" if gh.cd > 0.75 else ("ghost_w" if int(t * 3.0 + gh.pos.x * 0.1) % 2 == 0 else "ghost_i")]
+			var tint = Color.WHITE.lerp(gc, 0.35) if gh.el != "" else Color.WHITE
+			gcol = Color(tint.r, tint.g, tint.b, 0.85 if gh.t > 2.0 else 0.4)
+		draw_texture_rect(gt, Rect2(floor(gh.pos.x - gt.get_width() / 2.0), floor(gh.pos.y - gt.get_height() + 3 + sin(t * 5.0 + gh.pos.x) * 1.5), -gt.get_width() if gh.flip else gt.get_width(), gt.get_height()), false, gcol)
 	var linked = foes.filter(func(o): return chain_ids.has(o.id) and o.state != "dead")
 	for i in range(1, linked.size()):
 		draw_line(linked[i - 1].pos + Vector2(0, -12), linked[i].pos + Vector2(0, -12), Sk.MARK_COL.curse, 1.0)
@@ -3217,8 +3226,15 @@ func draw_player() -> void:
 		draw_texture_rect(use, Rect2(-w / 2.0, -h * 0.6, fw, h), false)
 		draw_set_transform(-cam_tl)
 		return
+	# Hồn Thể: the warlock's phantom rises behind the body and the body itself turns half to mist
+	var form = p.soulform > 0.0
+	if form and Art.T.has("ghost_i"):
+		var gt2: Texture2D = Art.T["ghost_w" if int(t * 3.0) % 2 == 0 else "ghost_i"]
+		var gw2 = gt2.get_width() * 1.3
+		var gh2 = gt2.get_height() * 1.3
+		draw_texture_rect(gt2, Rect2(floor(p.pos.x - gw2 / 2.0), floor(p.pos.y - gh2 - 6 + sin(t * 4.0) * 2.0), -gw2 if flip else gw2, gh2), false, Color(1, 1, 1, 0.45 if p.soulform > 1.5 or int(t * 8.0) % 2 == 0 else 0.2))
 	draw_set_transform((p.pos + off - cam_tl).floor(), rot)
-	draw_texture_rect(use, Rect2(-w / 2.0, -h + 3 + squash, fw, h - squash), false)
+	draw_texture_rect(use, Rect2(-w / 2.0, -h + 3 + squash, fw, h - squash), false, Color(0.75, 1.0, 0.98, 0.7) if form else Color.WHITE)
 	draw_set_transform(-cam_tl)
 	if p.guard > 0.0:
 		draw_arc(p.pos + Vector2(0, -16), 17.0, p.aim.angle() - 1.1, p.aim.angle() + 1.1, 10, Color("cfe3f4"), 2.0)
@@ -4468,6 +4484,11 @@ func draw_hunter() -> void:
 	for tr in traps:
 		var dim = 0.5 if tr.arm > 0.0 else 1.0
 		var tp: Vector2 = tr.pos.floor()
+		var ttex = {"snare": "trap_snare", "mine": "trap_pot"}.get(tr.kind, "")
+		if Art.T.has(ttex):
+			var tx: Texture2D = Art.T[ttex]
+			draw_texture(tx, (tp - Vector2(tx.get_width() / 2.0, tx.get_height() - 2)).floor(), Color(1, 1, 1, dim))
+			continue
 		match tr.kind:
 			"snare":
 				draw_rect(Rect2(tp + Vector2(-5, -2), Vector2(10, 3)), Color(0.42, 0.33, 0.22, dim))
@@ -5164,6 +5185,18 @@ func draw_artificer() -> void:
 		var dp: Vector2 = d.pos.floor()
 		var blink = d.t > 2.0 or int(t * 8.0) % 2 == 0
 		if not blink:
+			continue
+		var dtex = {"turret": "dev_turret", "drum": "dev_drum", "bell": "dev_bell", "mine": "dev_mine"}.get(d.kind, "")
+		if Art.T.has(dtex):
+			# drawn sprite, feet on the device's spot; a mine is still dim until it is armed
+			var tx: Texture2D = Art.T[dtex]
+			if d.kind != "mine":
+				draw_texture_rect(Art.T["shadow"], Rect2(dp.x - 8, dp.y - 3, 16, 6), false)
+			draw_texture(tx, (dp - Vector2(tx.get_width() / 2.0, tx.get_height() - 2)).floor(), Color(1, 1, 1, 0.6) if d.kind == "mine" and d.arm > 0.0 else Color.WHITE)
+			if d.kind == "drum":
+				draw_arc(dp + Vector2(0, -12), 9.0 + 2.0 * sin(t * 4.0), 0.0, TAU, 16, Color(1.0, 0.94, 0.69, 0.5), 1.0)
+			if hot() and d.kind != "mine":
+				draw_rect(Rect2(dp + Vector2(-1, -tx.get_height() + 4), Vector2(2, 2)), Color("ff8a3a"))
 			continue
 		match d.kind:
 			"turret", "drum":

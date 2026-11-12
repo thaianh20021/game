@@ -371,3 +371,14 @@ khung nhỏ giữa màn hình. Đã sửa:
 - `game.fit_view` chọn hệ số nguyên lớn nhất còn chừa 640x360 rồi cho khung nhìn lớn theo màn hình (933x420 ở x3).
   Camera căn giữa vùng nhỏ hơn khung nhìn.
 Chưa kiểm: cảm giác bấm thật trên máy (kích cỡ nút, vị trí cột nút với máy 16:9 hẹp hơn, nơi cột nút có thể chạm khung cây kỹ năng).
+
+## Cập nhật 2026-11-12 (nút to hơn, hình cho vật triệu hồi)
+
+- Nút chạm to khoảng 1,4-1,5 lần (nút đánh bán kính 36, kỹ năng 21, né 24); năm kỹ năng xếp trên vòng cung bán kính 90
+  quanh nút đánh, không nút nào chồng nhau ở 933x420, 800x360, 640x360. Cần trái bán kính 44. Cột nút ngữ cảnh 106x30,
+  tự chia hai cột khi màn hình thấp.
+- Hình GPT (`tools/summons.sh`): dư ảnh của Thuật Sĩ Linh Hồn (`ghost_i/w/k`, trước đó là bóng trắng của hình hiệp sĩ),
+  tháp nỏ, trống trận, chuông, mìn của Kỹ Sư (`dev_*`), bẫy dây và bình bom của Thợ Săn (`trap_snare`, `trap_pot`).
+  Trước đó vẽ bằng khối chữ nhật; nếu thiếu file vẫn quay về cách vẽ cũ. Hồn Thể nay có hình: thân mờ như sương, hồn ma
+  hiện sau lưng. Ảnh kiểm: `tests/shot_summons.gd` -> `shots/18_summons.png`.
+- `tests/late.gd`: kiểm Đá Âm cùng loại từng hỏng ngẫu nhiên vì thưởng cộng hưởng có thể là +3 tấn công; nay tính cả thưởng.

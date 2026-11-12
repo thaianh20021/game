@@ -135,7 +135,7 @@ static func build() -> void:
 # Hero and foes are AI-generated pictures cleaned up by tools/pix.gd into res://assets/.
 # Each is one still pose with the feet at the bottom centre; game.gd adds the motion.
 
-const SPRITES = ["tree_giant", "shrooms", "trunk", "hut", "gate", "log", "wolf_i", "wolf_w", "wolf_k", "sower_i", "sower_w", "sower_k", "deer_i", "deer_w", "deer_k",
+const SPRITES = ["tree_giant", "shrooms", "trunk", "hut", "gate", "log", "wolf_i", "wolf_w", "wolf_k", "ghost_i", "ghost_w", "ghost_k", "dev_turret", "dev_drum", "dev_bell", "dev_mine", "trap_snare", "trap_pot", "sower_i", "sower_w", "sower_k", "deer_i", "deer_w", "deer_k",
 	"mother_i", "mother_w", "mother_k", "npc_reu", "npc_man", "npc_kid",
 	"crab_i", "crab_w", "crab_k", "gull_i", "gull_w", "gull_k", "diver_i", "diver_w", "diver_k", "admiral_i", "admiral_w", "admiral_k",
 	"npc_vanh", "npc_buyer", "wreck", "saltpile", "anchor", "tent",

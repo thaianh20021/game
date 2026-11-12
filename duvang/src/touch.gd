@@ -8,7 +8,7 @@ const Art = preload("res://src/art.gd")
 const Txt = preload("res://src/font.gd")
 const Sk = preload("res://src/skills.gd")
 
-const STICK_R = 30.0
+const STICK_R = 44.0
 const INK = Color("1a1420")
 const FACE = Color(0.95, 0.92, 0.82, 0.18)
 const RIM = Color(0.95, 0.92, 0.82, 0.55)
@@ -17,22 +17,23 @@ const RIM = Color(0.95, 0.92, 0.82, 0.55)
 static func buttons(view: Vector2) -> Array:
 	var w = view.x
 	var h = view.y
+	# the five skills sit on an arc (radius 90) round the attack button; the owner found the first sizes too small on a phone
 	return [
-		["atk", Vector2(w - 50, h - 52), 25.0, ""],
-		["dodge", Vector2(w - 104, h - 26), 17.0, "NÉ"],
-		["s1", Vector2(w - 108, h - 72), 15.0, ""],
-		["s2", Vector2(w - 92, h - 112), 15.0, ""],
-		["s3", Vector2(w - 54, h - 132), 15.0, ""],
-		["s4", Vector2(w - 16, h - 112), 15.0, ""],
-		["s5", Vector2(w - 146, h - 54), 15.0, ""],
-		["ult", Vector2(w - 142, h - 98), 15.0, "R"],
-		["potion", Vector2(w - 176, h - 22), 13.0, ""],
-		["use", Vector2(w - 130, h - 140), 16.0, "E"],
-		["swap", Vector2(w - 176, h - 62), 13.0, "ĐỔI"],
-		["s6", Vector2(w - 16, h - 152), 13.0, "6"],
-		["menu", Vector2(w - 16, 40), 12.0, "II"],
-		["inv", Vector2(w - 16, 70), 12.0, "TÚI"],
-		["tree", Vector2(w - 16, 100), 12.0, "KN"],
+		["atk", Vector2(w - 62, h - 62), 36.0, ""],
+		["s1", Vector2(w - 151, h - 46), 21.0, ""],
+		["s2", Vector2(w - 147, h - 93), 21.0, ""],
+		["s3", Vector2(w - 120, h - 131), 21.0, ""],
+		["s4", Vector2(w - 78, h - 151), 21.0, ""],
+		["s5", Vector2(w - 31, h - 147), 21.0, ""],
+		["ult", Vector2(w - 200, h - 110), 21.0, "R"],
+		["dodge", Vector2(w - 204, h - 30), 24.0, "NÉ"],
+		["potion", Vector2(w - 252, h - 26), 18.0, ""],
+		["swap", Vector2(w - 250, h - 74), 18.0, "ĐỔI"],
+		["use", Vector2(w - 180, h - 160), 22.0, "E"],
+		["s6", Vector2(w - 30, h - 200), 18.0, "6"],
+		["menu", Vector2(w - 22, 40), 17.0, "II"],
+		["inv", Vector2(w - 22, 78), 17.0, "TÚI"],
+		["tree", Vector2(w - 22, 116), 17.0, "KN"],
 	]
 
 # called from game._input for every touch event
@@ -95,7 +96,9 @@ static func ctx(g) -> Array:
 	return []
 
 static func ctx_rect(view: Vector2, i: int) -> Rect2:
-	return Rect2(view.x - 84, 24 + i * 26, 80, 22)
+	# as many rows as fit the screen, then a second column to the left
+	var rows = maxi(1, int((view.y - 26.0) / 34.0))
+	return Rect2(view.x - 110 - (i / rows) * 112, 22 + (i % rows) * 34, 106, 30)
 
 # a finger is resting on a button (so the emulated mouse click under it is not a click on the screen)
 static func on_button(g) -> bool:
@@ -140,7 +143,7 @@ static func draw(g, view: Vector2) -> void:
 	if not g.touch_stick.is_empty():
 		var c: Vector2 = g.touch_stick.centre
 		g.draw_arc(c, STICK_R, 0.0, TAU, 32, RIM, 1.0)
-		g.draw_circle(c + move(g) * STICK_R, 10.0, FACE)
+		g.draw_circle(c + move(g) * STICK_R, 15.0, FACE)
 	for b in buttons(view):
 		var k: String = b[0]
 		if k == "s6" and not g.tree.has("prototype"):

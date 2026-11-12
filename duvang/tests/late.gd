@@ -159,7 +159,7 @@ func _init() -> void:
 	g.sell(0)
 	g.sell(0)
 	g.sell(0)
-	check("a rare weapon takes two stones and no more", g.eq.weapon.runes.size() == 2 and g.inv.size() == 1 and int(g.stats.atk - a0) == 8)
+	check("a rare weapon takes two stones and no more (the steel pair's random bonus may add 3 attack)", g.eq.weapon.runes.size() == 2 and g.inv.size() == 1 and int(g.stats.atk - a0) == 8 + int(g.eq.weapon.get("bonus", {}).get("atk", 0)))
 	g.gold = 5000
 	g.scrap = 200
 	var a1 = g.stats.atk
