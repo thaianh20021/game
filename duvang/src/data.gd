@@ -245,7 +245,7 @@ const CHAT = {
 # branch: a flag set by a choice; done and reward are then lists picked by its value.
 # ORDER is the order quests are offered in; main quests come before side ones.
 
-const ORDER = ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "m10", "m11", "m12", "m13", "m14", "m15", "m16", "m17", "m18", "m19", "m20", "m21", "m22", "m23", "m24", "m25", "m26", "s1", "s2", "s3", "s4", "s5"]
+const ORDER = ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "m10", "m11", "m12", "m13", "m14", "m15", "m16", "m17", "m18", "m19", "m20", "m21", "m22", "m23", "m24", "m25", "m26", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"]
 
 const QUESTS = {
 	"m1": {
@@ -501,6 +501,48 @@ const QUESTS = {
 		"reward": [{"gold": 0, "xp": 6000, "potions": 3, "item": ["charm", 2, 2]}, {"gold": 0, "xp": 6000, "potions": 3, "item": ["charm", 2, 2]}],
 		"toast": "HẾT CHƯƠNG NĂM",
 	},
+	# ---------------- side chain: the Debts of the Dead (Bà Cả Sậy). Each debtor is an echo still trying to pay.
+	# A choice at each: forgive the debt (flag 0) or collect it (flag 1). The last debtor is Bà Cả Sậy, and the creditor is Vãn.
+	"s6": {
+		"name": "SỔ NỢ: NGƯỜI THỢ GỐM", "main": false, "giver": "say", "after": ["m2"], "need": {"see": ["debt_potter"]}, "branch": "debt1",
+		"goal": "ĐÒI NỢ NGƯỜI THỢ GỐM Ở ĐẦM LAU",
+		"offer": ["PHƯỜNG CÓ MỘT CUỐN SỔ NỢ. CON NỢ TRONG ĐÓ CHẾT GẦN HẾT RỒI. CHẾT KHÔNG CÓ NGHĨA LÀ HẾT NỢ.", "NGƯỜI THỢ GỐM Ở BỜ TÂY ĐẦM LAU NỢ PHƯỜNG MƯỜI LẠNG. DƯ ẢNH CỦA Y VẪN NUNG BÌNH NGOÀI ĐÓ. ĐI ĐÒI. HOẶC ĐỪNG ĐÒI. TA MUỐN BIẾT NGƯƠI LÀ NGƯỜI THẾ NÀO."],
+		"wait": ["NGƯỜI THỢ GỐM, BỜ TÂY ĐẦM LAU. Y KHÔNG BIẾT MÌNH ĐÃ CHẾT. ĐỪNG NÓI VỚI Y NẾU KHÔNG CẦN."],
+		"done": [["XÓA À. ĐƯỢC. TA GẠCH TÊN Y. SỔ NHẸ ĐI MỘT DÒNG, KÉT CỦA PHƯỜNG CŨNG NHẸ ĐI MƯỜI LẠNG."], ["THU À. ĐƯỢC. MƯỜI LẠNG, ĐÚNG SỐ. NGƯƠI CẦM LẤY MỘT PHẦN. ĐÒI NỢ NGƯỜI CHẾT CŨNG LÀ MỘT NGHỀ."]],
+		"reward": [{"gold": 0, "xp": 120, "potions": 1, "item": null}, {"gold": 60, "xp": 80, "potions": 0, "item": null}],
+	},
+	"s7": {
+		"name": "SỔ NỢ: NGƯỜI MẸ ĐẾM TIỀN", "main": false, "giver": "say", "after": ["s6", "m5"], "need": {"see": ["debt_mother"]}, "branch": "debt2",
+		"goal": "ĐÒI NỢ NGƯỜI MẸ Ở CHỢ CHÌM, BẾN PHÀ CŨ",
+		"offer": ["DÒNG THỨ HAI. MỘT NGƯỜI MẸ Ở CHỢ CHÌM TRONG BẾN PHÀ. BÀ VAY ĐỂ MUA THUỐC CHO CON.", "BÀ VẪN NGỒI ĐẾM TIỀN TRONG CÁI TÚI ĐÓ. ĐẾM ĐI ĐẾM LẠI. LẦN NÀO CŨNG THIẾU MỘT ĐỒNG."],
+		"wait": ["CHỢ CHÌM, GIỮA BẾN PHÀ CŨ. BÀ NGỒI CẠNH ĐỐNG THÙNG."],
+		"done": [["NGƯƠI ĐỂ BÀ ẤY GIỮ CÁI TÚI. TA KHÔNG NÓI NGƯƠI SAI."], ["NGƯƠI LẤY CÁI TÚI. BÀ ẤY CÓ CẢM ƠN NGƯƠI KHÔNG? DƯ ẢNH HAY CẢM ƠN KẺ LẤY ĐI THỨ HỌ KHÔNG BỎ XUỐNG ĐƯỢC."]],
+		"reward": [{"gold": 0, "xp": 300, "potions": 1, "item": null}, {"gold": 120, "xp": 200, "potions": 0, "item": null}],
+	},
+	"s8": {
+		"name": "SỔ NỢ: NGƯỜI LÁI ĐÒ", "main": false, "giver": "say", "after": ["s7", "m7"], "need": {"see": ["debt_ferry"]}, "branch": "debt3",
+		"goal": "ĐÒI NỢ NGƯỜI LÁI ĐÒ Ở RỪNG THỞ",
+		"offer": ["DÒNG THỨ BA. MỘT NGƯỜI LÁI ĐÒ CHẠY LÊN RỪNG THỞ TRỐN NỢ, RỒI CHẾT Ở ĐÓ. RỪNG GIỮ Y LẠI.", "Y NỢ PHƯỜNG MỘT CON ĐÒ. Y VẪN ĐANG ĐẼO MỘT CON ĐÒ MỚI BÊN VŨNG NƯỚC PHÍA NAM ĐƯỜNG RỪNG."],
+		"wait": ["VŨNG NƯỚC PHÍA NAM ĐƯỜNG RỪNG. Y ĐẼO GỖ, KHÔNG NGẨNG LÊN."],
+		"done": [["NGƯƠI ĐỂ Y ĐẼO TIẾP. CON ĐÒ ĐÓ SẼ KHÔNG BAO GIỜ XONG. CÓ LẼ Y CŨNG KHÔNG MUỐN NÓ XONG."], ["NGƯƠI MANG VỀ CÁI MÁI CHÈO Y ĐẼO DỞ. TA SẼ TREO NÓ LÊN TƯỜNG. NỢ LÀ NỢ."]],
+		"reward": [{"gold": 0, "xp": 700, "potions": 2, "item": null}, {"gold": 220, "xp": 500, "potions": 0, "item": ["weapon", 2, 1]}],
+	},
+	"s9": {
+		"name": "SỔ NỢ: NGƯỜI THỢ LẶN", "main": false, "giver": "say", "after": ["s8", "m13"], "need": {"see": ["debt_diver"]}, "branch": "debt4",
+		"goal": "ĐÒI NỢ NGƯỜI THỢ LẶN Ở BIỂN MUỐI NGÂN",
+		"offer": ["DÒNG THỨ TƯ. MỘT THỢ LẶN CỦA PHƯỜNG VAY TIỀN MUA MŨ ĐỒNG, RỒI XUỐNG HẦM TÀU VÀ KHÔNG LÊN NỮA.", "Y VẪN NGỒI TRÊN BỜ MỘT VŨNG MẶN, ĐÁNH BÓNG CÁI MŨ ĐÓ. Y ĐỊNH BÁN NÓ ĐỂ TRẢ NỢ."],
+		"wait": ["MỘT VŨNG MẶN PHÍA TÂY NAM BIỂN MUỐI. Y NGỒI ĐÁNH BÓNG MŨ."],
+		"done": [["XÓA NỮA À. NGƯƠI XÓA NHIỀU HƠN TA TƯỞNG. TA BẮT ĐẦU NGHĨ LÀ NGƯƠI ĐANG XÓA HỘ TA."], ["CÁI MŨ ĐỒNG. LÒ ĐÚC SẼ TRẢ GIÁ TỐT. TA GHÉT LÀ TA BIẾT GIÁ CỦA NÓ."]],
+		"reward": [{"gold": 0, "xp": 1500, "potions": 2, "item": null}, {"gold": 400, "xp": 1000, "potions": 0, "item": null}],
+	},
+	"s10": {
+		"name": "SỔ NỢ CUỐI CÙNG", "main": false, "giver": "say", "after": ["s9", "m15"], "need": {"see": ["debt_say"]}, "branch": "debt5",
+		"goal": "ĐỌC DÒNG CUỐI CỦA SỔ NỢ, Ở BÀN CỦA BÀ CẢ SẬY",
+		"offer": ["CÒN MỘT DÒNG. TA KHÔNG ĐỌC NÓ CHO NGƯƠI NGHE ĐƯỢC.", "CUỐN SỔ Ở TRÊN BÀN TA, TRONG NHÀ PHƯỜNG. TỰ ĐỌC ĐI. RỒI LÀM ĐIỀU NGƯƠI ĐÃ LÀM VỚI BỐN DÒNG KIA."],
+		"wait": ["CUỐN SỔ Ở TRÊN BÀN, TRƯỚC CỬA NHÀ PHƯỜNG."],
+		"done": [["NGƯƠI XÓA. VÃN CŨNG SẼ XÓA. VÃN VẪN LUÔN XÓA CHO TA, TA CHỈ KHÔNG BAO GIỜ CHỊU GẠCH DÒNG ĐÓ.", "CẦM LẤY CÁI NÀY. NÓ LÀ CỦA VÃN. TA GIỮ NÓ BA NĂM VÌ TA KHÔNG DÁM TRẢ."], ["NGƯƠI THU. ĐÚNG. TA NỢ VÃN, VÀ NGƯƠI LÀ NGƯỜI DUY NHẤT CÒN ĐÒI ĐƯỢC.", "ĐÂY LÀ TẤT CẢ NHỮNG GÌ TA CÓ. VÀ CÁI NÀY NỮA. NÓ LÀ CỦA VÃN. GIỜ NỢ HẾT RỒI. TA NHẸ NGƯỜI MỘT CÁCH ĐÁNG XẤU HỔ."]],
+		"reward": [{"gold": 0, "xp": 3000, "potions": 3, "item": ["charm", 2, 2]}, {"gold": 900, "xp": 2000, "potions": 0, "item": ["charm", 2, 2]}],
+	},
 	"s3": {
 		"name": "TÊN BỊ ĐỤC", "main": false, "giver": "man", "after": ["m7"], "need": {"see": ["trunk_a", "trunk_b", "trunk_c"]},
 		"goal": "TÌM NHỮNG THÂN CÂY BỊ ĐỤC MẤT TÊN",
@@ -515,6 +557,21 @@ const QUESTS = {
 # Text shown when the hero examines a thing (E). `opts` turns the last line into a choice that sets a flag.
 
 const THINGS = {
+	"debt_potter": {"name": "NGƯỜI THỢ GỐM", "lines": ["MỘT DƯ ẢNH NGỒI BÊN LÒ GỐM NGUỘI, NUNG MÃI MỘT CÁI BÌNH. CÁI BÌNH NỨT, Y ĐẬP ĐI, NẶN LẠI.", "'BÌNH NÀY BÁN ĐƯỢC LÀ TÔI TRẢ ĐỦ. MƯỜI LẠNG. CHỈ CẦN MỘT CÁI KHÔNG NỨT.'"],
+		"opts": ["XÓA NỢ", "THU NỢ"], "flag": "debt1",
+		"after": [["BẠN NÓI NỢ ĐÃ ĐƯỢC TRẢ. Y DỪNG TAY, NHÌN CÁI BÌNH NỨT, RỒI ĐẶT NÓ XUỐNG THẬT NHẸ. LẦN ĐẦU TIÊN Y KHÔNG NẶN LẠI."], ["Y ĐƯA CHO BẠN MƯỜI LẠNG ĐỒNG ĐÃ XANH RỈ, RỒI QUAY LẠI NẶN TIẾP. NỢ HẾT, NHƯNG CÁI BÌNH VẪN NỨT."]]},
+	"debt_mother": {"name": "NGƯỜI MẸ ĐẾM TIỀN", "lines": ["MỘT NGƯỜI ĐÀN BÀ NGỒI XỔ CÁI TÚI VẢI RA ĐẾM. 'MỘT, HAI, BA... THIẾU MỘT ĐỒNG.' BÀ GOM LẠI, ĐẾM LẠI.", "'CON TÔI UỐNG THUỐC XONG RỒI. TÔI CHỈ CẦN TRẢ ĐỦ LÀ VỀ.'"],
+		"opts": ["XÓA NỢ", "THU NỢ"], "flag": "debt2",
+		"after": [["BẠN ĐẶT MỘT ĐỒNG CỦA MÌNH VÀO TÚI. BÀ ĐẾM LẠI, ĐỦ, VÀ MỈM CƯỜI. RỒI BÀ TAN NHƯ HƠI NƯỚC TRÊN BẾN."], ["BẠN CẦM LẤY CÁI TÚI. BÀ NHÌN HAI BÀN TAY TRỐNG CỦA MÌNH, RỒI BẮT ĐẦU ĐẾM NGÓN TAY."]]},
+	"debt_ferry": {"name": "NGƯỜI LÁI ĐÒ", "lines": ["MỘT DƯ ẢNH ĐẼO GỖ BÊN VŨNG NƯỚC. CON ĐÒ ĐÃ CÓ SỐNG THUYỀN, CHƯA CÓ MẠN. VỎ BÀO BAY RỒI TAN TRƯỚC KHI CHẠM ĐẤT.", "'MỘT CON ĐÒ ĐỔI MỘT CON ĐÒ. XONG CON NÀY LÀ TÔI VỀ BẾN.'"],
+		"opts": ["XÓA NỢ", "THU NỢ"], "flag": "debt3",
+		"after": [["BẠN BẢO Y CỨ ĐẼO TIẾP. Y GẬT ĐẦU, KHÔNG NGẨNG LÊN, VÀ HUÝT SÁO MỘT ĐIỆU ĐÒ ĐƯA."], ["BẠN CẦM LẤY MÁI CHÈO Y ĐẼO DỞ. Y NHÌN BẠN RẤT LÂU, RỒI LẤY MỘT KHÚC GỖ KHÁC, BẮT ĐẦU LẠI TỪ ĐẦU."]]},
+	"debt_diver": {"name": "NGƯỜI THỢ LẶN", "lines": ["MỘT DƯ ẢNH NGỒI BÊN VŨNG MẶN, LẤY TAY ÁO ĐÁNH BÓNG CÁI MŨ ĐỒNG. MŨ ĐÃ BÓNG LOÁNG TỪ LÂU.", "'BÁN CÁI NÀY LÀ ĐỦ TRẢ. NHƯNG BÁN RỒI THÌ LẤY GÌ MÀ LẶN. MÀ KHÔNG LẶN THÌ LẤY GÌ MÀ TRẢ.'"],
+		"opts": ["XÓA NỢ", "THU NỢ"], "flag": "debt4",
+		"after": [["BẠN NÓI PHƯỜNG ĐÃ GẠCH TÊN Y. Y ĐỘI MŨ LÊN, ĐỨNG DẬY, VÀ ĐI THẲNG XUỐNG VŨNG MẶN. MẶT NƯỚC KHÔNG GỢN."], ["Y ĐƯA BẠN CÁI MŨ. KHÔNG CÓ MŨ, Y CHỈ CÒN LÀ MỘT CÁI BÓNG NGỒI BÊN VŨNG, NHÌN XUỐNG NƯỚC."]]},
+	"debt_say": {"name": "SỔ NỢ CỦA PHƯỜNG", "lines": ["DÒNG CUỐI, NÉT CHỮ CỦA CHÍNH BÀ CẢ SẬY: 'CON NỢ: CẢ SẬY. CHỦ NỢ: VÃN. KHOẢN NỢ: MỘT ĐÊM Ở BẾN PHÀ, KHI VÃN ĐI THAY TA.'", "BÊN DƯỚI LÀ MỘT CHIẾC NHẪN ĐỒNG BUỘC CHỈ ĐỎ, VÀ MỘT KHOẢNG TRỐNG ĐỂ GHI 'ĐÃ TRẢ'."],
+		"opts": ["XÓA NỢ", "THU NỢ"], "flag": "debt5",
+		"after": [["BẠN GẠCH DÒNG ĐÓ. MỰC CÒN ƯỚT. ĐÂU ĐÓ SAU LƯNG, BÀ CẢ SẬY KHỊT MŨI THẬT TO."], ["BẠN VIẾT 'ĐÃ TRẢ' VÀO KHOẢNG TRỐNG. BÀ CẢ SẬY SẼ PHẢI TRẢ BẰNG THỨ GÌ ĐÓ. CẢ HAI NGƯỜI ĐỀU BIẾT ĐÓ LÀ ĐIỀU BÀ MUỐN."]]},
 	"voice": {"name": "TIẾNG CỦA VÃN", "quest": "m26",
 		"lines": ["TRONG IM LẶNG CỦA HỐ, MẢNH CHUÔNG TRONG NGỰC BẠN NGÂN MỘT MÌNH. TIẾNG VÃN RÕ HƠN BAO GIỜ HẾT.", "'ĐỪNG ĐỂ HỌ BIẾT EM NGHE ĐƯỢC HAI TIẾNG. ĐỪNG ĐI TÌM.' RỒI MỘT CÂU MỚI, RẤT NHỎ: 'EM ĐÃ ĐI TÌM. VẬY THÌ CHỌN ĐI.'", "MỖI TRẬN BẠN ĐÁNH BẰNG MẢNH NÀY, VÃN MÒN ĐI MỘT CHÚT. BẠN CÓ THỂ THẢ VÃN ĐI. HOẶC GIỮ LẠI."],
 		"opts": ["THẢ TIẾNG VÃN", "GIỮ TIẾNG VÃN"], "flag": "van",

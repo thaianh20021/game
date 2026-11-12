@@ -248,3 +248,22 @@ Tố Diên rời trấn lên núi khi nhận m17. Kết chương: lò sập mộ
 
 Sửa lỗi chương 3: cảnh báo đòn của quái mới không hiện (phần vẽ cảnh báo rẽ nhánh theo loại quái thay vì `ai`).
 Kiểm tra nhanh: `gen/ch4.gd`.
+
+## Cập nhật 2026-11-12 (chương 5: Tiếng đầu tiên, theo Hồi 5 của brief)
+
+Ba khu mới: **Kinh Thành Kim Thượng** (`capital`, lên từ đèo phía bắc Dãy Mỏ Câm, mở khi nhận m22; Miệng Chuông là cái hố giữa
+kinh, năm trại phe phái quanh vành hố), **Điện Chép Sử** (`archive`, dungeon; Bà Giữ Sử ở phòng đọc, Thầy Khâm ở phòng cuối)
+và **Tầng Lưỡi Chuông** (`maw`, đấu trường cuối). Bảng màu `gold`. Quái mới: Thư Lại Chép (vẩy mực như Cò Tro), Cấm Vệ Kim
+(như Phu Phà), Lư Hương Sống (khói làm chậm như Kẻ Thả Lưới). Boss: **Ô Kha, Người Đúc Chuông** (bộ đòn Người Gác Phà, gọi Thư Lại),
+khi ông ngã thì **Tiếng Đầu Tiên** trồi lên (bộ đòn Mẹ Rễ; spawn có khóa mới `req`: chỉ xuất hiện khi cờ đó đã có).
+Nhiệm vụ m22 tới m26. Hai lựa chọn: cách đối xử với Thầy Khâm (`kham_choice`, cờ `kham`, chỉ đổi lời) và lựa chọn cuối thả hay
+giữ tiếng Vãn (`voice`, cờ `van`; m26 tự mở sau m25). Trả m26 cho Ngải thì hiện lời kết toàn màn (`D.EPILOGUE`) theo lựa chọn.
+Kiểm tra nhanh: `gen/ch5.gd`. Chưa làm: lời của Ngải ở vành hố tùy mức gắn bó, endgame Triều Vọng.
+
+## Cập nhật 2026-11-12 (chuỗi phụ Sổ Nợ Của Người Chết, theo brief mục 3.8)
+
+Năm nhiệm vụ phụ s6 tới s10 do Bà Cả Sậy giao, mở dần theo chương (sau m2, m5, m7, m13, m15). Mỗi con nợ là một Dư Ảnh vẫn
+đang cố trả: thợ gốm ở Đầm Lau, người mẹ đếm tiền ở chợ chìm Bến Phà, người lái đò ở Rừng Thở, thợ lặn ở Biển Muối,
+và dòng cuối trong sổ trên bàn ở trấn (con nợ là Bà Cả Sậy, chủ nợ là Vãn). Mỗi bước chọn xóa nợ (nhiều kinh nghiệm hơn)
+hay thu nợ (vàng); cờ `debt1` tới `debt5`. Dư Ảnh đặt bằng `World.debts`, gọi trong `World.build` cho mọi khu.
+Kiểm tra nhanh: `gen/debts.gd`.

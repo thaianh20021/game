@@ -45,20 +45,32 @@ static func dress(z: Dictionary, seed: int) -> void:
 				z.decor.append({"tex": "stone%d" % ((k >> 8) % 2), "pos": pos, "solid": false})
 
 static func build(id: String) -> Dictionary:
+	var z: Dictionary
 	match id:
-		"field": return field()
-		"dungeon": return dungeon()
-		"forest": return forest()
-		"heart": return heart()
-		"salt": return salt()
-		"fleet": return fleet()
-		"mines": return mines()
-		"foundry": return foundry()
-		"capital": return capital()
-		"archive": return archive()
-		"maw": return maw()
-	return town()
+		"field": z = field()
+		"dungeon": z = dungeon()
+		"forest": z = forest()
+		"heart": z = heart()
+		"salt": z = salt()
+		"fleet": z = fleet()
+		"mines": z = mines()
+		"foundry": z = foundry()
+		"capital": z = capital()
+		"archive": z = archive()
+		"maw": z = maw()
+		_: z = town()
+	debts(z)
+	return z
 
+# the echoes of the Debts of the Dead side chain, one in each of five places
+static func debts(z: Dictionary) -> void:
+	var at = {"field": [12, 30], "forest": [30, 33], "salt": [24, 31]}
+	var fixed = {"dungeon": Vector2(39.5, 18.5), "town": Vector2(25.5, 10.0)}
+	var ids = {"field": "debt_potter", "dungeon": "debt_mother", "forest": "debt_ferry", "salt": "debt_diver", "town": "debt_say"}
+	if not ids.has(z.id):
+		return
+	var pos = tp(fixed[z.id].x, fixed[z.id].y) if fixed.has(z.id) else land(z, at[z.id][0], at[z.id][1])
+	z.things.append({"id": ids[z.id], "pos": pos, "h": 40.0})
 # ---------------------------------------------------------------- Woodclapper Town
 
 static func town() -> Dictionary:
