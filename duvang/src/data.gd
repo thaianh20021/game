@@ -734,3 +734,12 @@ const MUTES = [
 # The eighth clapper gives this: the charm of eight tones. Every ultimate heals and fills a little.
 static func eight_unique() -> Dictionary:
 	return {"name": "MÕ TÁM TIẾNG", "slot": "charm", "rar": 3, "tier": 2, "stats": {"hp": 50, "cdr": 8}, "uniq": "eight"}
+
+# what Ngải says of the Echo Tide, by its level (1 to 5)
+const TIDE_TALK = [
+	"TRIỀU VỌNG HÔM NAY MỨC MỘT. HẦM YÊN NHƯ GIẾNG CẠN. ĐI NHẶT THÌ ÍT ĐỒ, NHƯNG VỀ ĐƯỢC.",
+	"TRIỀU VỌNG MỨC HAI. DƯ ẢNH THỨC DẬY TỪNG ĐÁM. BẠN SẼ THẤY VÀI KẺ MANG DẤU.",
+	"TRIỀU VỌNG MỨC BA. HẦM ĐANG THỞ MẠNH. ĐỒ TỐT HƠN, VÀ CHÚNG ĐÁNH ĐAU HƠN.",
+	"TRIỀU VỌNG MỨC BỐN. ÂM THOA CỦA MÌNH RUNG KHÔNG NGỪNG. NẾU XUỐNG, ĐỪNG XUỐNG MỘT MÌNH. MÀ BẠN THÌ LÚC NÀO CŨNG MỘT MÌNH.",
+	"TRIỀU VỌNG MỨC NĂM. ĐỈNH TRIỀU. HẦM NÀO CŨNG ĐẦY. KẺ NÀO VỀ ĐƯỢC HÔM NAY SẼ GIÀU. KẺ KHÔNG VỀ THÌ MÌNH SẼ GHI TÊN.",
+]

@@ -284,3 +284,9 @@ dùng tuyệt kỹ hồi 8% máu và 8 Nộ). Kiểm tra nhanh: `gen/mutes.gd`.
 
 Ảnh: `tools/gen.sh` giờ thử lần lượt nhiều key (`DV_KEYS`) rồi nhiều model, mặc định Gemini 3.1 image trước (chủ dự án chọn);
 `tools/pix.gd` đọc cả PNG lẫn JPEG.
+
+## Cập nhật 2026-11-12 (endgame Triều Vọng, theo brief mục 3.11)
+
+Sau m26, năm dungeon (Bến Phà Cũ, Lòng Cây, Hạm Đội, Lò Tái Thanh, Điện Chép Sử) có mức Triều Vọng 1 tới 5 đổi theo ngày thật
+(chu kỳ 8 ngày, `tide_level`): quái mạnh thêm 15% mỗi mức, quái thường có `8% x mức` cơ hội thành tinh anh, đồ rơi nhiều hơn.
+Ngải đứng ở vành Miệng Chuông báo mức triều mỗi ngày (`D.TIDE_TALK`). Kiểm tra nhanh: `gen/tide.gd`.

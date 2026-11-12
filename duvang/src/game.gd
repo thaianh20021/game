@@ -298,6 +298,8 @@ func enter_zone(id: String, at: Vector2) -> void:
 		World.fate(zone, flags.get("village", 0))
 	if qs.has("m17") and zone.id == "town":
 		zone.npcs = zone.npcs.filter(func(n): return n.id != "dien")
+	if zone.id == "capital" and qs.get("m26", "") == "done":
+		zone.npcs.append({"id": "ngai", "pos": Vector2(47 * TS, 36 * TS)})
 	if zone.id == "maw" and flags.has("first_dead") and not flags.has("van"):
 		zone.things.append({"id": "voice", "pos": tp_maw_voice(), "h": 60.0})
 	if zone.id == "salt" and flags.get("lh_days", []).size() >= 2 and not flags.has("lamp"):
@@ -341,6 +343,7 @@ func enter_zone(id: String, at: Vector2) -> void:
 	drops.clear()
 	parts.clear()
 	nums.clear()
+	tide_zone()
 	if not sim.get("no_spawns", false):
 		for s in zone.spawns:
 			if (s.has("once") and flags.has(s.once)) or (s.has("req") and not flags.has(s.req)):
@@ -348,6 +351,8 @@ func enter_zone(id: String, at: Vector2) -> void:
 			var nf = spawn(s.kind, s.pos)
 			if s.has("elite"):
 				make_elite(nf, s.elite)
+			elif zone.get("tide", 0) > 0 and not D.FOES[s.kind].get("big", false) and randf() < 0.08 * zone.tide:
+				make_elite(nf, ["volatile", "warding"][randi() % 2])
 	p.pos = at if at != Vector2.ZERO else zone.start
 	p.vel = Vector2.ZERO
 	p.state = "idle"
@@ -1662,7 +1667,7 @@ func kill(f: Dictionary) -> void:
 	var coins = clampi(g / 4, 1, 8)
 	for i in coins:
 		drop(f.pos, "gold", g / coins + (g % coins if i == 0 else 0), null)
-	if randf() < 0.08 or f.kind == "boss":
+	if randf() < K.loot + 0.06 * zone.get("tide", 0) or elite != "":
 		drop(f.pos, "potion", 1, null)
 	if randf() < K.loot or elite != "":
 		drop(f.pos, "item", 0, D.roll_item(mini(2, zone.tier + (1 if (K.poise > 0.0 or elite != "") else 0))))
@@ -2894,6 +2899,10 @@ func start_talk(npc: String) -> void:
 		if qs.get(id, "") == "active" and (Q.giver == npc or q_ender(id) == npc):
 			say(who.name, who.tex, Q.wait, service(npc), "")
 			return
+	if npc == "ngai" and qs.get("m26", "") == "done":
+		var tl = tide_level()
+		say(who.name, who.tex, [D.TIDE_TALK[tl - 1], "MÌNH ĐO MỖI SÁNG. VÃN TỪNG NÓI NGƯỜI NHẶT VỌNG GIỎI LÀ NGƯỜI BIẾT KHI NÀO KHÔNG NÊN XUỐNG HẦM. MÌNH THÌ NGHĨ NGƯỢC LẠI."], service(npc), "")
+		return
 	if qs.get("m11", "") == "done" and D.AFTER_CHAT.has(npc):
 		say(who.name, who.tex, D.AFTER_CHAT[npc][flags.get("village", 0)], service(npc), "")
 		return
@@ -5118,3 +5127,19 @@ func mute_clapper(k: int) -> void:
 	else:
 		lines = ["MỘT CHIẾC MÕ GỖ CŨ, KHẮC TAY. GÕ VÀO KHÔNG KÊU. CÓ LẼ NÓ ĐANG CHỜ MỘT CHIẾC KHÁC NÓI TRƯỚC."]
 	say("MÕ CÂM", "", lines, "", "")
+
+# ---------------------------------------------------------------- the Echo Tide (endgame)
+# Once the bell is silent, echoes rise and fall with the days: tide 1 to 5. The dungeons already cleared feel it:
+# foes are stronger, elites more common, loot more frequent.
+const TIDE_ZONES = ["dungeon", "heart", "fleet", "foundry", "archive"]
+
+func tide_level() -> int:
+	var day = int(Time.get_unix_time_from_system() / 86400.0)
+	return [1, 2, 3, 4, 5, 4, 3, 2][day % 8]
+
+func tide_zone() -> void:
+	if qs.get("m26", "") != "done" or not TIDE_ZONES.has(zone.id):
+		return
+	zone.tide = tide_level()
+	zone.mult *= 1.0 + 0.15 * zone.tide
+	toast("TRIỀU VỌNG MỨC %d: QUÁI MẠNH HƠN, ĐỒ RƠI NHIỀU HƠN." % zone.tide, VONG)
