@@ -13,7 +13,7 @@ Godot 4.7, GDScript, GL Compatibility, 640x360 internal, integer scaling.
 - Play: `<godot> --path duvang`
 - After adding or changing a PNG in `assets/`: `<godot> --headless --path duvang --import`
 - Regression (about 1 minute, plays the whole chapter, 58 checks): `<godot> --headless --fixed-fps 60 --path duvang --script res://tests/smoke.gd`
-- Skill tree (48 checks): same command with `res://tests/skills.gd`; second mastery and links (43 checks): `res://tests/second.gd`; foes, elites and the gate: `res://tests/foes.gd`; items, filter and the elite hunt: `res://tests/loot.gd`; chapter two: `res://tests/ch2.gd`; menus and the Elementalist: `res://tests/menu.gd`; the Assassin and its links: `res://tests/rogue.gd`; chapters three to five, side chains, tide, stones, reforging (30 checks): `res://tests/late.gd`; the five later masteries and the solo trees (74 checks): `res://tests/masteries.gd`; font: `tests/font.gd`; music: `tests/music.gd`
+- Skill tree (48 checks): same command with `res://tests/skills.gd`; second mastery and links (43 checks): `res://tests/second.gd`; foes, elites and the gate: `res://tests/foes.gd`; items, filter and the elite hunt: `res://tests/loot.gd`; chapter two: `res://tests/ch2.gd`; menus and the Elementalist: `res://tests/menu.gd`; the Assassin and its links: `res://tests/rogue.gd`; chapters three to five, side chains, tide, stones, reforging (30 checks): `res://tests/late.gd`; the five later masteries and the solo trees (74 checks): `res://tests/masteries.gd`; all 28 link trees, every node read and every pair in a fight (30 checks): `res://tests/links.gd`; font: `tests/font.gd`; music: `tests/music.gd`
 - Screenshots (no `--headless`): `--script res://tests/shot.gd` and `tests/shot_tree.gd`, PNGs go to `duvang/shots/`
 
 The save is `user://duvang_save.json`; delete it to start over. Tests use their own file (`D.SAVE_PATH`).
@@ -154,7 +154,7 @@ A missing icon falls back to the two-letter label or the slot picture. `gen/conv
 `tests/sheet.gd` writes all icons to `shots/icons.png`.
 Scenery props go in `world.gd` as decor; give a prop `"bw"` (block width) when only its base should stop the hero.
 
-Class design lives in `docs/`: `CLASSES.md` (rules and the eight masteries), `HYBRIDS.md` and `HYBRIDS_2.md` (the 28 pairs and their link trees). Only Warrior, part of Elementalist and their link tree are built.
+Class design lives in `docs/`: `CLASSES.md` (rules and the eight masteries), `HYBRIDS.md` and `HYBRIDS_2.md` (the 28 pairs and their link trees).
 Quests, dialogue, examinable things and scenes are data in `src/data.gd` (`QUESTS`, `ORDER`, `CHAT`,
 `THINGS`, `SCENES`); the rules that run them are at the end of `src/game.gd`. Where the project is
 heading, and what the brief still asks for, is in `ROADMAP.md`.

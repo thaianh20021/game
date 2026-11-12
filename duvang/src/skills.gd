@@ -233,7 +233,7 @@ const NODES = {
 	"th_reso": {"n": "HỒN CỘNG HƯỞNG", "m": 8, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "HG",
 		"desc": "HÓA HỒN + CỘNG HƯỞNG. TRONG LÚC HÓA HỒN, MỌI PHÉP ĐỀU CỘNG HƯỞNG."},
 	"th_fire": {"n": "HỒN LỬA", "m": 8, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "HU",
-		"desc": "KHI GIỮ TỪ 3 HỒN, MỖI PHÉP NGUYÊN TỐ TỰ TIÊU 1 HỒN VÀ KHÔNG HỒI CHIÊU. CÁI GIÁ: KHÔNG GỌI ĐƯỢC DƯ ẢNH. CẦN 6 ĐIỂM Ở MỖI DÒNG NGHỀ."},
+		"desc": "KHI GIỮ TỪ 3 HỒN, MỖI PHÉP NGUYÊN TỐ TỰ TIÊU 1 HỒN VÀ KHÔNG HỒI CHIÊU. CÁI GIÁ: KHÔNG GỌI ĐƯỢC DƯ ẢNH, NÊN HIẾN TẾ CHỈ CÒN DÙNG ĐƯỢC KHI CÓ DƯ ẢNH TỪ NGUỒN KHÁC. CẦN 6 ĐIỂM Ở MỖI DÒNG NGHỀ."},
 
 	# ================= link tree: Sát Thủ + Thuật Sĩ = Gặt Hồn (m 9)
 	"gh_step": {"n": "BÓNG Ở LẠI", "m": 9, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "BO",

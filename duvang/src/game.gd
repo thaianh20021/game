@@ -3528,6 +3528,9 @@ func is_behind(f: Dictionary) -> bool:
 		return true
 	if tree.has("dl_frozen") and f.get("chill", 0.0) > 0.0:
 		return true
+	# Phán Quan: a foe lit by the priest's judgement has nowhere to turn
+	if tree.has("pq_lit") and f.get("lit", 0.0) > 0.0:
+		return true
 	return (p.pos.x - f.pos.x) * (-1.0 if f.flip else 1.0) < 0.0
 
 func poison_dps() -> float:
