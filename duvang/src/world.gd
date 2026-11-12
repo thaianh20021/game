@@ -407,3 +407,29 @@ static func heart() -> Dictionary:
 	z.scenes.append({"id": "bell", "rect": Rect2(tp(58.5, 15.5), Vector2(TS * 5, TS * 5)), "at": tp(61.0, 15.6)})
 	dress(z, 302)
 	return z
+
+# ---------------------------------------------------------------- after the verdict (m11)
+# The choice at the village gate shows on the map once chapter two is over. village: 0 sealed, 1 kept.
+static func fate(z: Dictionary, village: int) -> void:
+	if z.id == "forest":
+		var yard = Rect2(tp(14, 9), tp(17, 11))
+		z.things = z.things.filter(func(th): return th.id != "verdict")
+		z.things.append({"id": "stone_set" if village == 0 else "stone_down", "pos": tp(21.5, 20.4), "h": 60.0})
+		if village == 0:
+			z.decor = z.decor.filter(func(dc): return dc.tex != "npc_kid" and not (dc.tex == "lantern" and yard.has_point(dc.pos)))
+			z.lanterns = z.lanterns.filter(func(lp): return not yard.has_point(lp - Vector2(4, -20)))
+			z.npcs = z.npcs.filter(func(n): return n.id != "man")
+			z.things.append({"id": "yard_empty", "pos": tp(20.0, 15.5), "h": 30.0})
+		else:
+			z.decor.append({"tex": "npc_kid", "pos": tp(26.5, 15.2), "solid": false})
+			z.decor.append({"tex": "npc_kid", "pos": tp(17.5, 17.0), "solid": false})
+			lantern(z, 20.0, 18.0)
+			z.things.append({"id": "yard_play", "pos": tp(20.0, 15.5), "h": 30.0})
+	elif z.id == "town":
+		if village == 0:
+			z.decor.append({"tex": "fence", "pos": tp(26.0, 15.4), "solid": false})
+			z.things.append({"id": "silence_notice", "pos": tp(26.0, 15.8), "h": 30.0})
+		else:
+			z.decor.append({"tex": "cart", "pos": tp(39.5, 21.0), "solid": true})
+			z.decor.append({"tex": "crates", "pos": tp(41.5, 19.6), "solid": true})
+			z.things.append({"id": "refugee_cart", "pos": tp(39.5, 22.2), "h": 30.0})

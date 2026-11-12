@@ -322,6 +322,12 @@ const QUESTS = {
 # Text shown when the hero examines a thing (E). `opts` turns the last line into a choice that sets a flag.
 
 const THINGS = {
+	"stone_set": {"name": "ĐÁ NIÊM", "lines": ["PHIẾN ĐÁ NIÊM NẰM YÊN GIỮA CỔNG. ĐÁ ẤM, NHƯ VỪA CÓ AI NGỒI LÊN."]},
+	"stone_down": {"name": "ĐÁ NIÊM", "lines": ["PHIẾN ĐÁ NIÊM NẰM ÚP MẶT XUỐNG ĐẤT, CHỖ BẠN ĐỂ NÓ. RÊU ĐÃ BẮT ĐẦU MỌC LÊN LƯNG ĐÁ."]},
+	"yard_empty": {"name": "SÂN LÀNG", "lines": ["SÂN LÀNG TRỐNG. MỘT QUẢ CẦU MÂY CÒN NẰM GIỮA SÂN, KHÔNG AI ĐÁ.", "TRÊN NỀN ĐẤT CÒN VẠCH Ô CHƠI NHẢY LÒ CÒ. MƯA CHƯA KỊP XÓA."]},
+	"yard_play": {"name": "SÂN LÀNG", "lines": ["LŨ TRẺ CHƠI NHẢY LÒ CÒ. ĐỨA NÀO CŨNG NHẢY TỚI Ô THỨ BẢY RỒI DỪNG, RỒI BẮT ĐẦU LẠI.", "CHÚNG ĐÃ CHƠI VÁN NÀY BỐN MƯƠI NĂM. CHÚNG VẪN CƯỜI Ở ĐÚNG CHỖ ĐÓ."]},
+	"silence_notice": {"name": "CÁO THỊ CỦA HỘI GIỮ LẶNG", "lines": ["'LÀNG THÌ THẦM ĐÃ ĐƯỢC NIÊM. HẠ LƯU AN TOÀN. HỘI CẢM TẠ NGƯỜI NHẶT VỌNG ĐÃ GIÚP.'", "AI ĐÓ ĐÃ LẤY THAN VIẾT THÊM BÊN DƯỚI: 'HAI TRĂM.'"]},
+	"refugee_cart": {"name": "XE CỦA NGƯỜI HẠ LƯU", "lines": ["MỘT CHIẾC XE CHẤT ĐẦY NỒI NIÊU, CHĂN MÀN VÀ MỘT CÁI LỒNG GÀ RỖNG.", "TRÊN THÀNH XE CÓ KHẮC TÊN BA LÀNG. MỘT CÁI TÊN ĐÃ BỊ GẠCH, RỒI VIẾT LẠI."]},
 	"clapper": {"name": "MÕ TRẤN", "lines": ["MỘT CON CÁ GỖ, GÕ CHO MỖI CANH GIỜ VÀ MỖI LẦN BÁO ĐỘNG. Ở ĐÂY NGƯỜI TA KHÔNG ƯA CHUÔNG.", "AI TRONG TRẤN CŨNG ĐẾN LƯỢT GÕ. AI CŨNG GÕ, TRỪ THẦY KHÂM."]},
 	"grave": {"name": "BIA MỘ", "lines": ["'VÃN. BA NĂM.' HOA CÒN TƯƠI. BÊN DƯỚI KHÔNG CÓ THI THỂ NÀO."]},
 	"shrine": {"name": "MIẾU VEN ĐƯỜNG", "lines": ["MỘT NGỌN NẾN CHO NHỮNG NGƯỜI ĐẦM LẦY GIỮ LẠI. AI ĐÓ ĐÃ KHẮC MỘT HÀNG TÊN LÊN GỖ, RỒI CẠO ĐI MỘT CÁI."]},
@@ -375,3 +381,19 @@ const RECAP = {
 # a bow shoots instead of swinging. Every bow base name starts with CUNG.
 static func is_bow(it) -> bool:
 	return it != null and it.slot == "weapon" and it.uniq == "" and it.name.begins_with("CUNG")
+
+# ---------------------------------------------------------------- after the verdict (m11)
+# What the people say once chapter two is over, by flags.village: [0] the village was sealed, [1] it was kept.
+const AFTER_CHAT = {
+	"say": [["HỘI GIỮ LẶNG GỬI TIỀN TỚI TRẤN, KÈM MỘT LÁ THƯ KHEN. TA ĐỐT LÁ THƯ, GIỮ TIỀN. NGƯƠI NÊN BIẾT TA LÀ NGƯỜI NHƯ THẾ."],
+		["BA LÀNG HẠ LƯU ĐANG DỜI LÊN ĐÂY. TRẤN CHẬT RỒI, CHẬT NỮA CŨNG ĐƯỢC. NGƯƠI ĐÃ CHỌN THÌ NGƯƠI PHỤ TA DỰNG LỀU."]],
+	"ngai": [["MẢNH CHUÔNG CỦA BẠN NGÂN THẤP HƠN TỪ HÔM ĐÓ. NHƯ THỂ NÓ BỚT ĐI HAI TRĂM GIỌNG.", "MÌNH KHÔNG TRÁCH BẠN. MÌNH CHỈ KHÔNG LÊN DÂY ĐƯỢC CHỖ ĐÓ NỮA."],
+		["MẢNH CHUÔNG CỦA BẠN ỒN HƠN TỪ HÔM ĐÓ. NHƯ CÓ LŨ TRẺ CHẠY QUA CHẠY LẠI TRONG NÓ.", "MÌNH THÍCH TIẾNG ĐÓ. ĐỪNG NÓI VỚI GIÁM LẶNG LÀ MÌNH THÍCH."]],
+	"kham": [["TA ĐÃ GHI HAI TRĂM CÁI TÊN VÀO SỔ, TRƯỚC KHI CHÚNG TAN. KHÔNG AI BẢO TA LÀM. TA SƯU TẦM TÊN, NHỚ CHỨ."],
+		["LÀNG ĐÓ CÒN, NÊN TÊN CHÚNG KHÔNG CẦN TA GIỮ. TA THẤY NHẸ NGƯỜI MỘT CÁCH LẠ LÙNG."]],
+	"dien": [["SỔ CỦA HỘI GHI NGƯƠI LÀ NGƯỜI BIẾT TÍNH. TA KHÔNG CHẮC ĐÓ LÀ LỜI KHEN.", "LẦN SAU HỘI GỌI, NGƯƠI SẼ ĐƯỢC GỌI TRƯỚC."],
+		["SỔ CỦA HỘI GHI TÊN NGƯƠI Ở TRANG KHÁC. TRANG CỦA NHỮNG KẺ PHẢI ĐỂ MẮT TỚI.", "TA KHÔNG BẮT NGƯƠI. CHƯA. HẠ LƯU SẼ TÍNH SỔ BẰNG NƯỚC LŨ, KHÔNG PHẢI BẰNG TA."]],
+	"reu": [["TA VẪN NGỒI ĐÂY MỖI CHIỀU. SÂN TRỐNG THÌ NGHE RÕ TIẾNG LÁ HƠN. TA GHÉT CÁI RÕ ĐÓ."],
+		["LŨ TRẺ VẪN HỎI BÀ NHÀ TA ĐÂU. TA BẢO BÀ ĐI CHỢ. BỐN MƯƠI NĂM RỒI, BÀ ĐI CHỢ LÂU THẬT."]],
+	"man": [["..."], ["CHÁU LẠI TỚI À. NGỒI ĐI. ... À, TÔI QUÊN, GHẾ KHÔNG CÒN NỮA. CHÁU CÓ THẤY ÔNG NHÀ TÔI CƯỜI KHÔNG? DẠO NÀY ÔNG CƯỜI."]],
+}

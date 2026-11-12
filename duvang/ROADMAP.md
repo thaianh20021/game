@@ -39,7 +39,7 @@ Tài liệu này đối chiếu những gì chủ dự án đã yêu cầu trong
 | Trang bị | 20 base, 12 affix, 4 unique | Đủ: 20 base, 12 affix theo loại đồ, 4 unique | xong |
 | Loot filter | Cơ bản | Có: 3 mức, bán nhanh đồ dưới mức lọc | xong |
 | Chữ tiếng Việt | Tên riêng và hội thoại tiếng Việt | Xong: font pixel có đủ dấu, toàn bộ chữ trong game đã dịch (chữ in hoa) | xong |
-| Hoạt ảnh | Chạy, đánh, niệm, trúng đòn, chết | Nhân vật có đi và chém; quái mỗi con 3 tư thế | 3 |
+| Hoạt ảnh | Chạy, đánh, niệm, trúng đòn, chết | Nhân vật: đi, chém, niệm (tư thế lấy đà 0,25 giây sau mỗi phép), kéo cung, giật lùi khi trúng đòn, ngã rồi tan khi chết; quái mỗi con 3 tư thế. Vẽ bằng biến đổi hình có sẵn, chưa có khung hình riêng | 3 |
 | Hướng nhìn | 4 hướng | Xong: ngang (lật trái phải), từ trước, từ sau; mỗi hướng 6 khung hình | xong |
 | Tay cầm | Dùng được mọi menu | Túi đồ và cửa hàng chỉ dùng chuột | 4 |
 | Nhạc | Mỗi vùng một bản sắc | 4 bản tổng hợp: trấn, đầm, hầm, boss | xong |
@@ -214,3 +214,11 @@ học thêm 3 bậc, mỗi bậc hồi chiêu nhanh hơn 6% (`skill_cd`). Tài l
 
 Việc cho người viết test: `tests/skills.gd` giờ đòi 440 node, 48 chủ động, 60 then chốt, 8 tuyệt kỹ; `tests/menu.gd` mảng 44 phần tử.
 Viết `tests/solo.gd`: hai chiều của luật khóa, bậc tinh thông làm `skill_cd` giảm, và mỗi node một kiểm tra.
+
+## Cập nhật 2026-11-12 (hậu quả của lựa chọn chương hai)
+
+Sau Phán Quyết (m11 xong), lựa chọn ở cổng Làng Thì Thầm hiện ra trên bản đồ (`World.fate`, gọi trong `enter_zone`):
+niêm làng thì sân làng tắt đèn, lũ trẻ và bà Mận biến mất, đá niêm nằm yên giữa cổng, và Trấn Mõ Gỗ dán cáo thị của Hội Giữ Lặng;
+giữ làng thì sân làng đông thêm trẻ con, đá niêm nằm úp, và người ba làng hạ lưu kéo xe dời lên trấn. Bà Cả Sậy, Ngải,
+thầy Khâm, Giám Lặng, lão Rêu và bà Mận có thoại riêng cho mỗi nhánh (`D.AFTER_CHAT`). Đá niêm cũ bị thay, nên không chọn lại được.
+Đã thử cả hai nhánh (`gen/fate.gd`, không phải test chính thức). Thay đổi hiện ra ở lần vào khu kế tiếp, không phải ngay lúc chọn.

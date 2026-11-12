@@ -178,6 +178,7 @@ func fresh_hero() -> void:
 		"shield": 0.0, "shield_hit": 0.0, "bronze": 0.0, "debt": false, "bash_more": false, "bash_t": -9.0, "break_t": 0.0, "fake_t": 0.0, "die_t": 0.0,
 		"focus_t": 0.0, "focused": false, "focus_until": 0.0, "aim_need": 0.6, "chop_t": 0.0, "idle_t": 0.0, "signal_t": 0.0, "track_t": 0.0,
 		"still_t": 0.0, "post": false, "hunt_all": 0.0, "reso_t": -9.0,
+		"cast_t": 0.0,
 		"devo": 0.0, "bless_t": 0.0, "vow_t": 0.0, "vigil_t": 0.0, "zeal_t": 0.0, "hots": [], "rise_t": 0.0, "linked": false, "nqlit_t": 0.0,
 		"parry_ext": false, "iron_n": 0, "iron_t": 0.0, "lastrun": 0, "longx": false, "reap2": false, "deep_t": 0.0,
 		"heat": 0.0, "over": 0.0, "over_max": 4.0, "boost_t": 0.0, "hook_t": -9.0, "hookslam_t": 0.0, "tkmine_t": 0.0, "plcool_t": 0.0, "scrap_t": 0.0, "clpet_t": 0.0,
@@ -289,6 +290,8 @@ func load_game() -> bool:
 
 func enter_zone(id: String, at: Vector2) -> void:
 	zone = World.build(id)
+	if qs.get("m11", "") == "done":
+		World.fate(zone, flags.get("village", 0))
 	if not maps.has(id):
 		maps[id] = [Art.bake(zone.grid, 0, zone.theme), Art.bake(zone.grid, 1, zone.theme)]
 	blocks.clear()
@@ -990,6 +993,8 @@ func cast(id: String) -> bool:
 		_:
 			begin_swing(id)
 	p.smult = 1.0
+	if p.state == "idle":
+		p.cast_t = 0.25
 	if id == "shadow" and tree.has("gh_step") and t >= p.ghstep_t:
 		p.ghstep_t = t + 6.0
 		add_ghost(p.pos, 5.0, true)
@@ -1089,6 +1094,7 @@ func dmg_mult(f: Dictionary) -> float:
 func update_player(dt: float) -> void:
 	p.inv = maxf(0.0, p.inv - dt)
 	p.flash = maxf(0.0, p.flash - dt)
+	p.cast_t = maxf(0.0, p.cast_t - dt)
 	p.pot_cd = maxf(0.0, p.pot_cd - dt)
 	p.guard = maxf(0.0, p.guard - dt)
 	p.slow = maxf(0.0, p.slow - dt)
@@ -2825,6 +2831,9 @@ func start_talk(npc: String) -> void:
 		if qs.get(id, "") == "active" and (Q.giver == npc or q_ender(id) == npc):
 			say(who.name, who.tex, Q.wait, service(npc), "")
 			return
+	if qs.get("m11", "") == "done" and D.AFTER_CHAT.has(npc):
+		say(who.name, who.tex, D.AFTER_CHAT[npc][flags.get("village", 0)], service(npc), "")
+		return
 	var c = D.CHAT[npc]
 	say(who.name, who.tex, c[mini(c.size() - 1, main_done() / 2)], service(npc), "")
 
@@ -2920,6 +2929,16 @@ func draw_player() -> void:
 			flip = int(p.st / (F * 0.75)) % 2 == 0
 			if p.st >= a[0] and arc != null:
 				arc = [base, base + TAU * 0.999, arc[2], a[4]]
+	if p.state == "atk" and p.skill == "" and D.is_bow(eq.weapon):
+		arc = null   # an arrow, not a blade
+	if p.state == "aim" or (p.state == "idle" and p.cast_t > 0.0):
+		# drawing the bow, or a spell leaving the hand
+		name = "h_wind"
+		off = -p.aim * 1.5 + Vector2(0, -1)
+	if p.flash > 0.0 and p.state != "dead":
+		# struck: the body jerks back from the blow
+		rot = 0.18 * (1.0 if flip else -1.0)
+		off += Vector2(2.0 if flip else -2.0, 0)
 	# three facings: side pictures are mirrored, front and back ones are not
 	if absf(facing.x) < absf(facing.y) * 0.9:
 		var alt = ("hd" if facing.y > 0.0 else "hu") + name.substr(1)
@@ -2931,8 +2950,15 @@ func draw_player() -> void:
 	var h = tex.get_height()
 	draw_texture_rect(Art.T["shadow"], Rect2(p.pos.x - 11, p.pos.y - 3, 22, 7), false)
 	if p.state == "dead":
-		var fade = clampf(1.0 - p.st / 1.0, 0.0, 1.0)
-		draw_texture(Art.W[name], Vector2(p.pos.x - w / 2.0, p.pos.y - h + 3 - p.st * 10.0).floor(), Color(VONG.r, VONG.g, VONG.b, fade))
+		# the hero topples over, then the echo of the body fades upward
+		var fall = clampf(p.st / 0.35, 0.0, 1.0)
+		var side = -1.0 if flip else 1.0
+		draw_set_transform((p.pos - cam_tl).floor(), side * fall * PI * 0.5)
+		draw_texture_rect(tex, Rect2(-w / 2.0, -h + 3, -w if flip else w, h), false, Color(1, 1, 1, clampf(1.6 - p.st, 0.0, 1.0)))
+		draw_set_transform(-cam_tl)
+		if p.st > 0.6:
+			var fade = clampf(1.0 - (p.st - 0.6) / 1.2, 0.0, 1.0)
+			draw_texture(Art.W[name], Vector2(p.pos.x - w / 2.0, p.pos.y - h + 3 - (p.st - 0.6) * 14.0).floor(), Color(VONG.r, VONG.g, VONG.b, fade * 0.7))
 		return
 	if p.state != "dodge" and p.inv > 0.0 and int(t * 20.0) % 2 == 0:
 		return
