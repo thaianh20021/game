@@ -893,6 +893,9 @@ const SETS = {
 		"two": {"def": 4, "hp": 25}, "three": {"cdr": 10, "atk": 4}},
 	"guild": {"name": "BỘ THỢ LẶN PHƯỜNG", "pieces": [["MÓC PHÀ PHƯỜNG", "weapon", {"atk": 9, "haste": 8}], ["KHỐ LỘI NƯỚC PHƯỜNG", "armor", {"def": 5, "spd": 6}], ["HỘP MẢNH CHUÔNG PHƯỜNG", "charm", {"hp": 25, "gold": 20}]],
 		"two": {"spd": 5, "leech": 2}, "three": {"haste": 10, "crit": 5}},
+	# made of the four newer slots, so it can be worn together with either of the sets above
+	"ferry": {"name": "BỘ NGƯỜI LÁI ĐÒ ĐÊM", "pieces": [["MŨ SẮT ĐÊ LÁI ĐÒ", "helm", {"def": 5, "hp": 12}], ["GĂNG CHÈO LÁI ĐÒ", "gloves", {"atk": 3, "stag": 15}], ["ỦNG LỘI LÁI ĐÒ", "boots", {"def": 3, "spd": 6}], ["NHẪN MÕ LÁI ĐÒ", "ring", {"cdr": 5, "crit": 3}]],
+		"two": {"spd": 6, "regen": 1}, "three": {"crit": 6, "rage": 20}},
 }
 
 static func set_piece(sid: String, i: int) -> Dictionary:
@@ -901,4 +904,5 @@ static func set_piece(sid: String, i: int) -> Dictionary:
 
 static func random_set_piece() -> Dictionary:
 	var ids = SETS.keys()
-	return set_piece(ids[randi() % ids.size()], randi() % 3)
+	var sid = ids[randi() % ids.size()]
+	return set_piece(sid, randi() % SETS[sid].pieces.size())

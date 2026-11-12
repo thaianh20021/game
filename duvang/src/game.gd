@@ -47,6 +47,7 @@ var shots = []
 var waves = []
 var bolts = []
 var rings = []
+var sparks = []   # hit sparks: {pos, t, big}
 var zaps = []
 var bursting = false
 var blasts = []
@@ -411,6 +412,7 @@ func enter_zone(id: String, at: Vector2) -> void:
 	waves.clear()
 	bolts.clear()
 	rings.clear()
+	sparks.clear()
 	zaps.clear()
 	ghosts.clear()
 	traps.clear()
@@ -1714,6 +1716,8 @@ func hit_foe(f: Dictionary, base: float, big: bool, stop: float, shk: float) -> 
 	if warded(f) and not (tree.has("pq_purge") and p.state == "atk" and p.skill == "exec"):
 		dmg *= 0.5
 	f.hp -= dmg
+	# a spark where the blow lands, between the hero and the foe's middle
+	sparks.append({"pos": f.pos + Vector2(0, -12) + (p.pos - f.pos).limit_length(6.0) + Vector2(randf_range(-3, 3), randf_range(-3, 3)), "t": 0.14, "big": crit or big})
 	if p.debt:
 		p.debt = false
 	if chain_ids.has(f.id) and not sharing:
@@ -2525,6 +2529,9 @@ func update_fx(dt: float) -> void:
 		n.life -= dt
 		n.pos.y -= 22.0 * dt
 	nums = nums.filter(func(n): return n.life > 0.0)
+	for sp in sparks:
+		sp.t -= dt
+	sparks = sparks.filter(func(sp): return sp.t > 0.0)
 	for o in drops:
 		o.t += dt
 		var d = p.pos - o.pos
@@ -2660,6 +2667,14 @@ func _draw() -> void:
 	for i in range(1, linked.size()):
 		draw_line(linked[i - 1].pos + Vector2(0, -12), linked[i].pos + Vector2(0, -12), Sk.MARK_COL.curse, 1.0)
 	for b in bolts:
+		# drawn projectiles, turned along their flight; the plain shapes below are the fallback
+		var bk = "fx_arrow" if (b.get("arrow", false) or b.get("shot", false)) else ("fx_cog" if b.get("dev", false) else ("fx_dart" if b.get("dart", false) else ("fx_ice" if b.get("ice", false) else "fx_fire")))
+		if Art.T.has(bk):
+			var bcol = Color.WHITE
+			if bk == "fx_cog" and b.get("el", "") != "":
+				bcol = Color.WHITE.lerp(Sk.MARK_COL[b.el], 0.6)
+			fx_sprite(bk, b.pos + Vector2(0, -16), b.vel.angle(), 1.0, bcol)
+			continue
 		if b.get("arrow", false) or b.get("shot", false):
 			var ad: Vector2 = b.vel.normalized()
 			draw_line(b.pos + Vector2(0, -16) - ad * 9.0, b.pos + Vector2(0, -16), Color("8a6a42"), 2.0)
@@ -2672,7 +2687,14 @@ func _draw() -> void:
 		draw_rect(Rect2((b.pos + Vector2(-3, -19)).floor(), Vector2(6, 6)), Sk.MARK_COL.poison if b.get("dart", false) else (Sk.MARK_COL.chill if b.get("ice", false) else Sk.MARK_COL.burn))
 		draw_rect(Rect2((b.pos + Vector2(-1, -17)).floor(), Vector2(2, 2)), Color("ffe9a3"))
 	for fd in fields:
-		if fd.kind == "fire":
+		if fd.kind == "fire" and Art.T.has("fx_flame_a"):
+			# a row of drawn flames, each flickering between two frames out of step with its neighbours
+			var fn = maxi(2, int(fd.a.distance_to(fd.b) / 11.0))
+			for i in fn + 1:
+				var fp: Vector2 = fd.a.lerp(fd.b, float(i) / fn)
+				var ft2: Texture2D = Art.T["fx_flame_a" if int(t * 8.0 + i * 1.7) % 2 == 0 else "fx_flame_b"]
+				draw_texture(ft2, (fp - Vector2(ft2.get_width() / 2.0, ft2.get_height() - 3)).floor(), Color(1, 1, 1, 0.95 if fd.get("t", 9.0) > 0.6 else 0.5))
+		elif fd.kind == "fire":
 			for i in 12:
 				var fp: Vector2 = fd.a.lerp(fd.b, i / 11.0)
 				var fh = 6 + int(absf(sin(t * 9.0 + i * 1.7)) * 8.0)
@@ -2694,6 +2716,10 @@ func _draw() -> void:
 			draw_arc(fd.pos + Vector2(0, -4), fd.r, 0.0, TAU, 40, Color(cc.r, cc.g, cc.b, 0.8 if fd.t > 1.0 else 0.4), 1.0)
 			draw_arc(fd.pos + Vector2(0, -4), fd.r - 3.0, t * 2.0, t * 2.0 + 1.2, 10, Color(cc.r, cc.g, cc.b, 0.6), 1.0)
 			draw_arc(fd.pos + Vector2(0, -4), fd.r - 3.0, t * 2.0 + PI, t * 2.0 + PI + 1.2, 10, Color(cc.r, cc.g, cc.b, 0.6), 1.0)
+	for sp in sparks:
+		if Art.T.has("fx_spark"):
+			var sk = 1.0 - sp.t / 0.14
+			fx_sprite("fx_spark", sp.pos, sp.pos.x * 0.7, (1.3 if sp.big else 0.8) * (0.7 + 0.5 * sk), Color(1, 1, 1, 1.0 - sk * 0.6))
 	for pu in pulses:
 		draw_arc(pu.pos + Vector2(0, -4), pu.get("r", 60.0), 0.0, TAU, 32, Sk.MARK_COL[pu.kind], 1.0)
 	for r in rings:
@@ -2748,6 +2774,13 @@ func _draw() -> void:
 	elif mode == "fade":
 		draw_rect(Rect2(Vector2.ZERO, view), Color(0.04, 0.03, 0.07, 1.0 - absf(fade_t - 0.25) / 0.25))
 	Touch.draw_ctx(self, view)
+
+# an effect sprite centred on a world point, turned and scaled (called while the camera transform is set)
+func fx_sprite(name: String, at: Vector2, angle: float, scale: float, col: Color) -> void:
+	var tex: Texture2D = Art.T[name]
+	draw_set_transform((at - cam_tl).floor(), angle, Vector2(scale, scale))
+	draw_texture(tex, -tex.get_size() / 2.0, col)
+	draw_set_transform(-cam_tl)
 
 func cone_pts(o: Vector2, dir: Vector2, r: float, half: float) -> PackedVector2Array:
 	var pts = PackedVector2Array([o])

@@ -417,7 +417,7 @@ static func inv_draw(g, view: Vector2) -> void:
 		if hover.has("set"):
 			var S = D.SETS[hover.set]
 			var worn_n = g.set_counts().get(hover.set, 0)
-			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "%s (%d/3 ĐANG MẶC)" % [S.name, worn_n], Color("8fe08a"))
+			Txt.text(g, Vector2(tx, ty + 22 + n * 10), "%s (%d/%d ĐANG MẶC)" % [S.name, worn_n, S.pieces.size()], Color("8fe08a"))
 			n += 1
 			for step in [["2 MÓN", S.two, 2], ["3 MÓN", S.three, 3]]:
 				var parts = []

@@ -296,5 +296,34 @@ func _init() -> void:
 			var under = z.decor.any(func(d): return d.pos.distance_to(th.pos) < 20.0)
 			drawn = drawn and (under or g.THING_TEX.has(th.id) and Art.T.has(g.THING_TEX[th.id]))
 	check("every thing to look at has a picture (its own or the decor it stands on)", drawn)
+
+	# --- the set made of the four newer slots
+	for s in D.SLOTS:
+		g.eq[s] = null
+	g.recompute()
+	var spd0 = g.stats.spd
+	var crit0 = g.stats.crit
+	g.eq.helm = D.set_piece("ferry", 0)
+	g.eq.boots = D.set_piece("ferry", 2)
+	g.recompute()
+	check("two pieces of the Night Ferryman set give its first bonus", int(g.stats.spd - spd0) == 6 + 6 and g.set_counts().get("ferry", 0) == 2)
+	g.eq.ring = D.set_piece("ferry", 3)
+	g.recompute()
+	check("three pieces give the second bonus too", int(g.stats.crit - crit0) == 3 + 6)
+	var set_icons = true
+	for sid in D.SETS:
+		for i in D.SETS[sid].pieces.size():
+			set_icons = set_icons and D.icon(D.set_piece(sid, i)).begins_with("it_")
+	check("every set piece shows the icon of its base", set_icons)
+	# --- a spark where a blow lands
+	g.mode = "play"
+	g.enter_zone("field", Vector2.ZERO)
+	g.fresh_hero()
+	g.sparks.clear()
+	var sf = g.spawn("reed", g.p.pos + Vector2(30, 0))
+	g.hit_foe(sf, 5.0, false, 0.0, 0.0)
+	check("a hit leaves a spark that is gone a moment later", g.sparks.size() == 1)
+	await frames(20)
+	check("the spark fades", g.sparks.is_empty())
 	print("RESULT: %s" % ("OK" if fails == 0 else "%d FAILED" % fails))
 	quit(1 if fails > 0 else 0)

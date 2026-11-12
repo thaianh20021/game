@@ -395,3 +395,12 @@ Chưa kiểm: cảm giác bấm thật trên máy (kích cỡ nút, vị trí c�
   `tools/echoes.sh`): bốn dư ảnh của chuỗi Sổ Nợ Người Chết (thợ gốm, người mẹ, lái đò, thợ lặn, vẽ mờ và đung đưa), người
   gác đèn, sổ nợ của phường, thầy Khâm ở Thư Khố (dùng hình NPC), tiếng của Vãn (bóng nhân vật màu vọng).
 - `tests/loot.gd` thêm 9 phép kiểm cho các phần trên.
+
+## Cập nhật 2026-11-12 (hiệu ứng đòn đánh, bộ đồ thứ ba)
+
+- Hình hiệu ứng GPT (`tools/fx.sh`): cầu lửa, mảnh băng, phi tiêu độc, mũi tên, đạn bánh răng (xoay theo hướng bay,
+  `game.fx_sprite`), hai khung lửa cho tường lửa (chập chờn lệch nhịp), tia lửa va chạm. Trước đó đạn là ô vuông màu.
+- Mỗi đòn trúng để lại một tia lửa 0,14 giây (`game.sparks`); chí mạng hay đòn nặng thì tia to hơn.
+- Bộ thứ ba BỘ NGƯỜI LÁI ĐÒ ĐÊM gồm mũ, găng, ủng, nhẫn (2 món: +6% tốc chạy, +1 máu/giây; 3 món: +6% chí mạng,
+  +20% nộ nhận), mặc chung được với hai bộ cũ. Thẻ đồ ghi số món theo từng bộ.
+- `tests/loot.gd` thêm 5 phép kiểm (bộ mới, biểu tượng món trong bộ, tia lửa). Ảnh: `tests/shot_fx.gd` -> `shots/19_fx.png`.
