@@ -28,6 +28,7 @@ static func buttons(view: Vector2) -> Array:
 		["ult", Vector2(w - 142, h - 98), 15.0, "R"],
 		["potion", Vector2(w - 176, h - 22), 13.0, ""],
 		["use", Vector2(w - 130, h - 140), 14.0, "E"],
+		["swap", Vector2(w - 176, h - 62), 13.0, "ĐỔI"],
 		["s6", Vector2(w - 16, h - 152), 13.0, "6"],
 		["menu", Vector2(w - 16, 40), 12.0, "II"],
 		["inv", Vector2(w - 16, 70), 12.0, "TÚI"],

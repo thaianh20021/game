@@ -348,3 +348,11 @@ Lấy ý tưởng cơ chế (không chép tên, đồ hay nội dung):
 - **Động tác tung skill** (`CAST_ANIM`, `cast_kind`, `cast_fx`): niệm phép, gầm, cầu/triệu hồi, đặt bẫy/thiết bị, phóng/ném;
   mỗi nhóm một động tác và một hiệu ứng ánh sáng.
 Kiểm tra nhanh: `gen/gear.gd`.
+
+## Cập nhật 2026-11-12 (hai bộ vũ khí, tham khảo Soul Knight Prequel)
+
+Từ Soul Knight Prequel lấy ý tưởng hai bộ vũ khí, mỗi bộ một thanh kỹ năng riêng. Phím C (D-pad xuống, nút ĐỔI trên màn cảm ứng)
+đổi giữa vũ khí đang cầm cùng 5 kỹ năng của nó và bộ phụ (`alt_weapon`, `alt_bar`, `swap_weapons`, có lưu). Trong túi đồ, C
+cũng đổi bộ: mặc vũ khí A, nhấn C để cất A sang bộ phụ, rồi mặc vũ khí B. Vũ khí bộ phụ hiện bên trái thanh kỹ năng.
+Các hệ khác của game đó Dư Vang đã có tương đương (lớp ghép hai nghề, rèn và rã đồ, thưởng theo nhóm trang bị).
+Kiểm tra nhanh: `gen/swap.gd`.

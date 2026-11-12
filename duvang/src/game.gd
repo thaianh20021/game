@@ -35,7 +35,7 @@ const ATK = [
 	[3 * F, F, 3 * F, 1.8, 42.0, 75.0, 110.0, 0.09, 3.0],
 	[3 * F, F, 4 * F, 2.4, 46.0, 100.0, 110.0, 0.10, 3.0],   # only with the Fourth Strike keystone
 ]
-const KEYS = ["atk", "dodge", "use", "inv", "potion", "buy", "opt1", "opt2", "s1", "s2", "s3", "s4", "s5", "s6", "ult", "tree", "reset", "filter", "menu", "tabn", "salv", "upg"]
+const KEYS = ["atk", "dodge", "use", "inv", "potion", "buy", "opt1", "opt2", "s1", "s2", "s3", "s4", "s5", "s6", "ult", "tree", "reset", "filter", "menu", "tabn", "salv", "upg", "swap"]
 
 # place
 var zone = {}
@@ -106,6 +106,8 @@ var ghost_hit = false  # true while an echo's blow is landing
 var devices = []       # the Artificer's turrets, mines and bell machine
 var proto = ""         # the sixth skill slot (key 6) that the Prototype keystone opens
 var scrap = 0          # bronze slag from taken-apart items, spent to reforge
+var alt_weapon = null   # the second weapon set: its weapon and its own five skills
+var alt_bar = ["", "", "", "", ""]
 var pulses = []
 var opt = {"sfx": 100.0, "music": 100.0, "shake": 100.0, "flash": true, "nums": true, "full": false}
 var talk = {}
@@ -171,6 +173,8 @@ func new_game() -> void:
 	ult = ""
 	proto = ""
 	scrap = 0
+	alt_weapon = null
+	alt_bar = ["", "", "", "", ""]
 	tab = 0
 	lvl = 1
 	xp = 0
@@ -274,7 +278,7 @@ func save_game() -> void:
 	var f = FileAccess.open(D.SAVE_PATH, FileAccess.WRITE)
 	if f == null:
 		return
-	f.store_string(JSON.stringify({"v": 2, "lvl": lvl, "xp": xp, "gold": gold, "potions": potions, "inv": inv, "eq": eq, "qs": qs, "qc": qc, "flags": flags, "tree": tree, "bar": bar, "filter": loot_filter, "main": main_m, "ult": ult, "second": second_m, "proto": proto, "scrap": scrap}))
+	f.store_string(JSON.stringify({"v": 2, "lvl": lvl, "xp": xp, "gold": gold, "potions": potions, "inv": inv, "eq": eq, "qs": qs, "qc": qc, "flags": flags, "tree": tree, "bar": bar, "filter": loot_filter, "main": main_m, "ult": ult, "second": second_m, "proto": proto, "scrap": scrap, "alt_weapon": alt_weapon, "alt_bar": alt_bar}))
 
 func fix_item(it):
 	if it == null:
@@ -327,6 +331,12 @@ func load_game() -> bool:
 	ult = d.get("ult", "")
 	proto = d.get("proto", "")
 	scrap = int(d.get("scrap", 0))
+	alt_weapon = fix_item(d.get("alt_weapon", null))
+	alt_bar = ["", "", "", "", ""]
+	var ab = d.get("alt_bar", [])
+	for i in mini(ab.size(), 5):
+		if tree.has(ab[i]):
+			alt_bar[i] = ab[i]
 	if not tree.has(proto):
 		proto = ""
 	tab = main_m
@@ -489,6 +499,8 @@ func held(n: String) -> bool:
 			return Input.is_key_pressed(KEY_K) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_DOWN)
 		"upg":
 			return Input.is_key_pressed(KEY_U) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_LEFT)
+		"swap":
+			return Input.is_key_pressed(KEY_C) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_DOWN)
 		"tabn":
 			return Input.is_key_pressed(KEY_G) or Input.is_joy_button_pressed(0, JOY_BUTTON_DPAD_RIGHT)
 		"filter":
@@ -558,6 +570,8 @@ func _process(delta: float) -> void:
 	toasts = toasts.filter(func(q): return q.t > 0.0)
 	match mode:
 		"play":
+			if pressed("swap"):
+				swap_weapons()
 			# presses are buffered so one made during hit-stop or recovery is not lost
 			if pressed("dodge"):
 				buf = "dodge"
@@ -780,6 +794,7 @@ func reset_tree() -> void:
 	proto = ""
 	tree = {}
 	bar = ["", "", "", "", ""]
+	alt_bar = ["", "", "", "", ""]
 	recompute()
 	Sfx.play("clap", 0.8)
 
@@ -5392,3 +5407,20 @@ func cast_fx(id: String) -> void:
 				parts.append({"pos": p.pos + Vector2(randf_range(-10, 10), -2), "vel": Vector2(randf_range(-30, 30), -randf_range(10, 30)), "life": 0.3, "max": 0.3, "col": Color("8d7c5e"), "g": 160.0, "size": 2})
 		"throw":
 			parts.append({"pos": p.pos + p.aim * 10.0 + Vector2(0, -16), "vel": p.aim * 80.0, "life": 0.2, "max": 0.2, "col": IVORY, "g": 0.0, "size": 2})
+
+# ---------------------------------------------------------------- two weapon sets
+# The hero carries two weapons, each with its own five skills; C (D-pad down, or the touch button) swaps them.
+func swap_weapons() -> void:
+	if p.state == "atk" or p.state == "dash" or p.state == "aim" or t < p.get("swap_t", 0.0):
+		return
+	p.swap_t = t + 0.5
+	var w = eq.weapon
+	eq.weapon = alt_weapon
+	alt_weapon = w
+	var b = bar
+	bar = alt_bar
+	alt_bar = b
+	p.combo = 0
+	recompute()
+	nums.append({"pos": p.pos + Vector2(0, -52), "txt": eq.weapon.name if eq.weapon != null else "TAY KHÔNG", "life": 0.8, "col": IVORY})
+	Sfx.play("parry", 1.7)

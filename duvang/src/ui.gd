@@ -263,6 +263,9 @@ static func inv_update(g) -> void:
 		return
 	if g.shop and g.pressed("reset"):
 		g.sell_junk()
+	if not g.shop and g.pressed("swap"):
+		g.swap_weapons()
+		return
 	if g.shop and (g.pressed("salv") or g.pressed("upg")):
 		var cell = g.isel if g.inv_pad else cell_at(g, view, m)
 		if cell >= 0:
@@ -424,6 +427,12 @@ static func slot_rect(view: Vector2, i: int) -> Rect2:
 	return Rect2(x0 + i * 25 + (8 if i == 5 else (16 if i == 6 else 0)), view.y - 27, 22, 22)
 
 static func skill_bar(g, view: Vector2) -> void:
+	if g.alt_weapon != null:
+		# the other weapon set, swapped in with C
+		var ar = slot_rect(view, 0)
+		ar.position.x -= 34
+		draw_item(g, ar, g.alt_weapon)
+		Txt.text(g, ar.position + Vector2(1, -9), "C", DIM)
 	if g.tree.is_empty():
 		if g.points_left() > 0 and g.mode == "play" and int(g.t * 2.0) % 2 == 0:
 			Txt.ctext(g, Vector2(view.x / 2.0, view.y - 20), "T: CÂY KỸ NĂNG  (%d ĐIỂM)" % g.points_left(), Color("ffe9a3"))
