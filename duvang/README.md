@@ -71,6 +71,8 @@ The bag and shop need the mouse; they have no gamepad navigation yet.
   tree-mother, who never moves: root lines, spore pods, an amber call for wolves; five lines and three pods below half life.
   Five main quests (m7 to m11) and one side quest; m11 is a choice with no right answer, to seal the village or keep it.
   Fifth unique: Hạt Ngàn Tên, +8% damage per mark on the foe.
+- **Solo trees (Độc Tấu)**: a hero who leaves the second mastery empty gets an 8-node solo tree for the main mastery and 3 extra ranks in each of its active skills (6% faster cooldown each).
+- **Bows**: three bow bases; with a bow the chain of strikes becomes three arrows, the third goes through.
 - **Warrior mastery**: one point per level, free reset. Guard (Bulwark, Shield Rush), Fury (Spin, War Cry),
   Arms (Lunge, Ground Slam), nine passives, three keystones that change a rule at a price, and the
   ultimate The Toll after eight points. Five skills fit on the bar.
@@ -114,7 +116,7 @@ The bag and shop need the mouse; they have no gamepad navigation yet.
 - `src/data.gd`: foes, elite marks, item bases, properties and uniques, quests, dialogue, prices.
 - `src/world.gd`: the five places (town, marsh, Old Ferry, forest, Remembering Tree). Layout depends only on the zone id.
   A zone can name a `theme`; `Art.THEMES` then swaps the tile colours when its map is painted.
-- `src/skills.gd`: eight masteries (Warrior, Elementalist, Assassin, Soul Warlock, Guardian, Hunter, Priest, Artificer; 19 nodes each), twenty-eight link trees (8 each, `LINKS` names the pair of each) and the rules for buying a rank.
+- `src/skills.gd`: eight masteries (Warrior, Elementalist, Assassin, Soul Warlock, Guardian, Hunter, Priest, Artificer; 19 nodes each), twenty-eight link trees (8 each, `LINKS` names the pair of each), eight solo trees (8 each, `SOLO`) and the rules for buying a rank.
 - `src/ui.gd`: HUD, skill bar, skill tree screen, talk box, bag and shop.
 - `src/menu.gd`: title, character creation (pick the first mastery), pause, settings, journal, full-screen story text.
   Menus only appear with the real save file (`D.MENUS`), so tests boot straight into play. Settings live next to the save, in `<save>_opt.json`.

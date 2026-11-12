@@ -179,6 +179,7 @@ func fresh_hero() -> void:
 		"focus_t": 0.0, "focused": false, "focus_until": 0.0, "aim_need": 0.6, "chop_t": 0.0, "idle_t": 0.0, "signal_t": 0.0, "track_t": 0.0,
 		"still_t": 0.0, "post": false, "hunt_all": 0.0, "reso_t": -9.0,
 		"devo": 0.0, "bless_t": 0.0, "vow_t": 0.0, "vigil_t": 0.0, "zeal_t": 0.0, "hots": [], "rise_t": 0.0, "linked": false, "nqlit_t": 0.0,
+		"parry_ext": false, "iron_n": 0, "iron_t": 0.0, "lastrun": 0, "longx": false, "reap2": false, "deep_t": 0.0,
 		"heat": 0.0, "over": 0.0, "over_max": 4.0, "boost_t": 0.0, "hook_t": -9.0, "hookslam_t": 0.0, "tkmine_t": 0.0, "plcool_t": 0.0, "scrap_t": 0.0, "clpet_t": 0.0,
 	}
 
@@ -199,6 +200,8 @@ func recompute() -> void:
 				stats.mhp += it.stats[k]
 			else:
 				stats[k] += it.stats[k]
+	if tree.has("ost_ghost"):
+		stats.mhp *= 0.9
 	if tree.has("unseen"):
 		stats.mhp *= 0.8
 	if p.has("hp"):
@@ -603,7 +606,7 @@ func buy_potion() -> void:
 		Sfx.play("deny")
 
 func drink() -> void:
-	if potions <= 0 or p.pot_cd > 0.0 or p.hp >= stats.mhp or p.state == "dead":
+	if tree.has("otl_lich") or potions <= 0 or p.pot_cd > 0.0 or p.hp >= stats.mhp or p.state == "dead":
 		Sfx.play("deny")
 		return
 	potions -= 1
@@ -632,6 +635,11 @@ func cur_atk() -> Array:
 	if p.skill == "" and tree.has("lb_twin"):
 		a[0] *= 0.8
 		a[2] *= 0.8
+	if p.skill == "" and tree.has("ocb_wide"):
+		a[4] += 6.0
+		a[5] += 20.0
+	if p.skill == "" and D.is_bow(eq.weapon):
+		a[6] = 0.0   # an archer does not step into the shot
 	if p.skill == "" and tree.has("fourth"):
 		a[0] += F
 	var haste = stats.haste + (25.0 if p.boost_t > 0.0 else 0.0) + (20.0 if (tree.has("tk_armor") and hot()) else 0.0)
@@ -744,8 +752,10 @@ func cast(id: String) -> bool:
 	p.smult = 1.0
 	if el != "":
 		if p.elem != "" and p.elem != el and p.elem_t > 0.0:
-			p.smult = 1.4 if (tree.has("lc_reso") and p.boost_t > 0.0) else 1.2
+			p.smult = 1.4 if ((tree.has("lc_reso") and p.boost_t > 0.0) or tree.has("ont_triad")) else 1.2
 			nums.append({"pos": p.pos + Vector2(0, -52), "txt": "CỘNG HƯỞNG", "life": 0.7, "col": Sk.MARK_COL[el]})
+		elif tree.has("ont_triad") and p.elem == el and p.elem_t > 0.0:
+			p.smult = 0.8
 		if el == "shock" and cost > 0.0 and not tree.has("price") and randf() < 0.05 * tree.get("surge", 0):
 			p.rage = minf(100.0, p.rage + cost)
 	if el != "" and tree.has("th_reso") and p.soulform > 0.0:
@@ -793,6 +803,8 @@ func cast(id: String) -> bool:
 			spell("burn")
 			Sfx.play("spit", 1.4)
 		"ring":
+			if tree.has("ont_frostguard"):
+				add_shield(15.0)
 			rings.append({"pos": p.pos, "r": eye_r(62.0), "life": 0.35, "max": 0.35, "col": Sk.MARK_COL.chill})
 			for f in foes:
 				if f.state != "dead" and f.state != "spawn" and f.pos.distance_to(p.pos) < eye_r(62.0) + f.r:
@@ -801,6 +813,9 @@ func cast(id: String) -> bool:
 			spell("chill")
 			Sfx.play("spit", 0.5)
 		"spark":
+			var first_f = foe_near(p.pos, 130.0, [])
+			if tree.has("ont_arc") and first_f != null:
+				hit_foe(first_f, stats.atk * p.smult, false, 0.02, 1.0)
 			spark_chain(p.pos, (6 if tree.has("overload") else 3) + (1 if (tree.has("tn_jump") and pet_up() != null) else 0), [])
 			if tree.has("th_chain"):
 				for o in foes:
@@ -833,6 +848,7 @@ func cast(id: String) -> bool:
 			Sfx.play("tele_hi", 0.6)
 		"bulwark":
 			p.guard = 1.2
+			p.parry_ext = false
 			Sfx.play("parry", 0.6)
 		"cry":
 			p.cry = 6.0
@@ -868,7 +884,7 @@ func cast(id: String) -> bool:
 		"chain":
 			chain_ids = []
 			var cat = p.pos + (aim_pos() - p.pos).limit_length(140.0)
-			for i in 3:
+			for i in (5 if tree.has("otl_bind") else 3):
 				var cf = foe_near(cat, 150.0 if i == 0 else 110.0, chain_ids)
 				if cf == null:
 					break
@@ -919,6 +935,8 @@ func cast(id: String) -> bool:
 						mark(o, "shock")
 		"smoke":
 			p.smoke = 6.0 if (tree.has("dv_smoke") and in_cover()) else 3.0
+			if tree.has("ost_shadow"):
+				p.smoke += 1.5
 			burst(p.pos + Vector2(0, -14), Color("b9b2a3"), 16, 70.0)
 			Sfx.play("spit", 0.4)
 		"venom":
@@ -944,6 +962,8 @@ func cast(id: String) -> bool:
 			begin_swing(id)
 			if p.fin >= 6:
 				p.sure_crit = true
+			if tree.has("ost_ghost"):
+				p.smoke = maxf(p.smoke, 1.5)
 			if tree.has("unseen"):
 				p.smoke = maxf(p.smoke, 1.5)
 		"cuts":
@@ -975,6 +995,8 @@ func cast(id: String) -> bool:
 		add_ghost(p.pos, 5.0, true)
 	if id == "lunge":
 		p.follow_t = t + 3.0
+	if id == "cry" and tree.has("ocb_cry"):
+		p.cry += 3.0
 	if id == "cry" and tree.has("kn_link") and p.bless_t > 0.0 and not p.linked:
 		p.linked = true
 		p.cry += 3.0
@@ -992,9 +1014,9 @@ func dmg_mult(f: Dictionary) -> float:
 	if p.debt:
 		m *= 1.0 + 0.08 * tree.get("debt", 0)
 	if t < p.focus_until:
-		m *= 1.4
+		m *= 1.6 if tree.has("ots_deadeye") else 1.4
 	if f.get("hunt", 0.0) > 0.0:
-		m *= 1.15
+		m *= 1.25 if tree.has("ots_mark") else 1.15
 		if tree.has("tp_big") and (f.get("elite", "") != "" or D.FOES[f.kind].get("big", false)):
 			m *= 1.25
 	if f.get("root", 0.0) > 0.0:
@@ -1004,16 +1026,16 @@ func dmg_mult(f: Dictionary) -> float:
 	if ranged and p.post:
 		m *= 1.3
 	if f.get("lit", 0.0) > 0.0:
-		m *= 1.05 + 0.03 * tree.get("lumen", 0)
+		m *= 1.05 + 0.03 * tree.get("lumen", 0) + (0.05 if tree.has("ott_bright") else 0.0)
 		if tree.has("ch_lit") and f.get("curse", 0.0) > 0.0:
 			m *= 1.1
 	if holy_hit:
 		m *= 1.0 + 0.05 * tree.get("sacred", 0)
 	if p.bless_t > 0.0:
 		if pet_hit or ghost_hit:
-			m *= 1.0 + 0.15 * (1.5 if tree.has("devote") else 1.0) * (2.0 if (ghost_hit and tree.has("ch_bless")) else 1.0)
+			m *= 1.0 + (0.25 if tree.has("ott_grace") else 0.15) * (1.5 if tree.has("devote") else 1.0) * (2.0 if (ghost_hit and tree.has("ch_bless")) else 1.0)
 		elif not tree.has("devote"):
-			m *= 1.15
+			m *= 1.25 if tree.has("ott_grace") else 1.15
 	if tree.has("kn_oath") and p.hp < stats.mhp * 0.5:
 		m *= 1.15
 	if f.state == "wind":
@@ -1022,6 +1044,18 @@ func dmg_mult(f: Dictionary) -> float:
 		m *= 1.0 + 0.04 * tree.get("core", 0)
 	if t < p.rise_t:
 		m *= 1.3
+	if f.get("chill", 0.0) > 0.0 and tree.has("ont_frostbite"):
+		m *= 1.1
+	if f.get("shock", 0.0) > 0.0 and tree.has("ont_charge"):
+		m *= 1.1
+	if tree.has("ost_seep"):
+		m *= 1.0 + 0.03 * f.get("poison", 0)
+	if tree.has("otl_lich"):
+		m *= 1.0 + 0.03 * p.souls
+	if tree.has("ots_lone"):
+		m *= 1.25
+	if tree.has("ott_saint"):
+		m *= 0.9
 	if tree.has("sv_martyr"):
 		m *= 0.8
 	if f.get("curse", 0.0) > 0.0:
@@ -1111,7 +1145,7 @@ func update_player(dt: float) -> void:
 		p.hp = minf(stats.mhp, p.hp + stats.regen * dt)
 	p.rage_t -= dt
 	if p.rage_t <= 0.0:
-		p.rage = maxf(0.0, p.rage - 4.0 * dt)
+		p.rage = maxf(0.0, p.rage - 4.0 * dt * (2.0 if tree.has("ocb_master") else 1.0))
 	var mv = move_dir()
 	var aim = aim_pos() - p.pos
 	if aim.length() > 1.0:
@@ -1119,7 +1153,7 @@ func update_player(dt: float) -> void:
 	p.moving = false
 	match p.state:
 		"idle":
-			p.vel = mv * SPEED * (1.0 + stats.spd / 100.0) * (0.5 if p.guard > 0.0 else 1.0) * (0.45 if (p.slow > 0.0 and not (tree.get("stand", 0) >= 2 and p.shield > 0.0)) else 1.0) * (1.3 if p.smoke > 0.0 else 1.0) * (0.85 if tree.has("fortress") else 1.0) * (1.15 if blessed() else 1.0)
+			p.vel = mv * SPEED * (1.0 + stats.spd / 100.0) * (0.5 if p.guard > 0.0 else 1.0) * (0.45 if (p.slow > 0.0 and not (tree.get("stand", 0) >= 2 and p.shield > 0.0)) else 1.0) * (1.3 if p.smoke > 0.0 else 1.0) * (0.85 if tree.has("fortress") else 1.0) * (1.15 if blessed() else 1.0) * (0.9 if tree.has("ohv_bulwark") else 1.0)
 			p.moving = mv.length() > 0.1
 			p.combo_t -= dt
 			if p.combo_t <= 0.0:
@@ -1141,11 +1175,14 @@ func update_player(dt: float) -> void:
 						Sfx.play("slam", 1.0 if p.skill == "slam" else 0.6)
 						shake = maxf(shake, 3.0)
 						slam_fx(p.pos, a[4] * 0.8)
+					elif D.is_bow(eq.weapon):
+						fire_basic()
 					else:
 						Sfx.play("sw3" if p.idx >= 2 else "sw1", 1.0 + p.idx * 0.08)
 						if p.idx == 2 and eq.weapon != null and eq.weapon.uniq == "wave":
 							waves.append({"pos": p.pos + p.dir * 20.0, "vel": p.dir * 230.0, "life": 0.55, "hit": []})
-				swing_hits(a)
+				if not (p.skill == "" and D.is_bow(eq.weapon)):
+					swing_hits(a)
 			else:
 				p.vel = Vector2.ZERO
 				var rt = p.st - a[0] - a[1]
@@ -1248,12 +1285,22 @@ func begin_swing(skill: String) -> void:
 	p.riposte = 0.0
 	if skill == "":
 		use_focus()
+		if tree.has("ocb_surge") and p.rage >= 100.0:
+			p.rage -= 30.0
+			p.mult *= 2.0
+	p.reap2 = false
+	p.longx = false
 	if skill == "bash" and tree.has("tt_beat"):
 		pass   # the shield bash keeps the chain going
 	elif skill != "":
 		p.combo = 0
 	else:
 		p.idx = p.combo
+		if p.idx == chain_len() - 1 and tree.has("ocb_long"):
+			p.lastrun += 1
+			p.longx = p.lastrun >= 3
+			if p.longx:
+				p.lastrun = 0
 		p.combo = (p.combo + 1) % chain_len()
 
 func start_dodge(mv: Vector2) -> void:
@@ -1288,6 +1335,10 @@ func swing_hits(a: Array) -> void:
 		mult *= 1.0 + 0.12 * tree.get("heavy", 0)
 	elif p.skill == "" and tree.has("tt_true") and p.shield > 0.0:
 		mult *= 1.0 + 0.12 * tree.get("heavy", 0)
+	if p.longx and last:
+		mult *= 2.0
+	if tree.has("ocb_master"):
+		mult *= 1.15
 	if p.skill == "bash":
 		if p.bash_more:
 			mult *= 2.4 / 1.4
@@ -1369,6 +1420,8 @@ func swing_hits(a: Array) -> void:
 			if last and f.state == "dead" and tree.has("kt_reap"):
 				add_soul(1)
 			if fin and f.state == "dead":
+				if tree.has("ost_reset"):
+					add_cp(2)
 				if tree.has("gh_take"):
 					add_soul(p.fin / 2)
 				if p.skill == "exec" and tree.has("gh_raise") and t >= p.raise_t:
@@ -1417,7 +1470,7 @@ func swing_hits(a: Array) -> void:
 			if p.skill == "toll" and f.state != "dead":
 				stagger(f, 3.0 if (tree.has("tk_toll") and in_mute(p.pos)) else 1.5)
 			if p.skill == "":
-				p.rage = minf(100.0, p.rage + (14.0 if p.idx >= 2 else 8.0) * (1.0 + stats.rage / 100.0))
+				p.rage = minf(100.0, p.rage + (14.0 if p.idx >= 2 else 8.0) * (1.0 + stats.rage / 100.0) * (2.0 if (tree.has("ocb_blood") and p.hp < stats.mhp * 0.5) else 1.0))
 				if tree.has("tk_chop"):
 					add_heat(-8.0 if last else -3.0)
 	if p.skill == "spin" and tree.has("lb_ring"):
@@ -1431,6 +1484,9 @@ func swing_hits(a: Array) -> void:
 					poison(f, most - f.get("poison", 0))
 	if p.skill == "spin" and tree.has("kn_spin") and in_holy() and not p.hit.is_empty():
 		heal(stats.mhp * minf(0.1, 0.02 * p.hit.size()))
+	if p.skill == "scythe" and tree.has("otl_reap") and not p.reap2 and p.hit.size() >= 3:
+		p.reap2 = true
+		add_soul(1)
 	if p.skill == "slam" and tree.has("tp_quake"):
 		for tr in traps.duplicate():
 			if tr.pos.distance_to(p.pos) < a[4] + 10.0:
@@ -1594,6 +1650,10 @@ func kill(f: Dictionary) -> void:
 			flags["pity"] = flags.get("pity", 0) + 1
 	if f.get("burn", 0.0) > 0.0 and tree.has("ash"):
 		p.rage = minf(100.0, p.rage + 3.0 * tree.ash)
+	if tree.has("ont_spread") and f.get("burn", 0.0) > 0.0:
+		var nb = foe_near(f.pos, 90.0, [f.id])
+		if nb != null:
+			mark(nb, "burn")
 	if has_uniq("wick") and f.get("burn", 0.0) > 0.0:
 		p.hp = minf(stats.mhp, p.hp + stats.mhp * 0.04)
 	if elite == "volatile" and f.get("purge", 0.0) <= 0.0:
@@ -1669,6 +1729,12 @@ func hurt(raw: float) -> void:
 			sacrifice(ghost_near(p.pos))
 		if tree.has("lb_open"):
 			add_cp(2)
+		if tree.has("ocb_parry") and not p.parry_ext:
+			p.parry_ext = true
+			p.guard += 0.6
+		if tree.has("ocb_iron"):
+			p.iron_n = mini(5, p.iron_n + 1)
+			p.iron_t = 8.0
 		if tree.has("tk_mine") and hitter != null and t >= p.tkmine_t:
 			p.tkmine_t = t + 5.0
 			place_device("mine", hitter.pos, true)
@@ -1679,6 +1745,8 @@ func hurt(raw: float) -> void:
 			add_shield(25.0)
 		burst(p.pos + p.aim * 10.0 + Vector2(0, -18), Color("cfd6dc"), 6, 80.0)
 	else:
+		if tree.has("ohv_bulwark") and p.shield >= shield_cap() - 0.5 and dmg < stats.mhp * 0.1:
+			dmg = 0.0
 		var had = p.shield > 0.0
 		dmg = shield_take(dmg)
 		if dmg > stats.mhp * 0.2 and tree.has("mv_die") and not ghosts.is_empty() and t >= p.die_t:
@@ -1695,6 +1763,7 @@ func hurt(raw: float) -> void:
 			Sfx.play("parry", 1.3)
 		else:
 			p.hp -= dmg
+			p.lastrun = 0
 			p.flash = 0.12
 			p.inv = 0.5
 			shake = maxf(shake, 3.0)
@@ -1764,6 +1833,8 @@ func update_foes(dt: float) -> void:
 			f.drag = maxf(0.0, f.drag - dt)
 			slow *= 0.7
 		if f.get("curse", 0.0) > 0.0:
+			if tree.has("otl_wither") and f.state != "dead" and f.state != "spawn":
+				f.hp -= stats.atk * 0.2 * dt
 			if not tree.has("oneword"):
 				f.curse = maxf(0.0, f.curse - dt)
 			if tree.has("th_eternal") and f.get("burn", 0.0) > 0.0:
@@ -1971,7 +2042,7 @@ func boss_summon(f: Dictionary) -> void:
 func strike(f: Dictionary, K: Dictionary) -> void:
 	var dmg = K.dmg * (1.0 + (zone.mult - 1.0) * 0.7)
 	if f.get("curse", 0.0) > 0.0:
-		dmg *= 1.0 - 0.25 * (2.0 if tree.has("oneword") else 1.0)
+		dmg *= 1.0 - 0.25 * (2.0 if tree.has("oneword") else 1.0) - (0.1 if tree.has("otl_curse2") else 0.0)
 	if f.get("chill", 0.0) > 0.0:
 		dmg *= 1.0 - 0.05 * tree.get("bitter", 0)
 	if f.get("poison", 0) > 0:
@@ -2131,8 +2202,15 @@ func update_shots(dt: float) -> void:
 		b.pos += b.vel * dt
 		b.life -= dt
 		if int(b.life / 0.04) != int((b.life + dt) / 0.04):
-			parts.append({"pos": b.pos + Vector2(0, -16), "vel": Vector2.ZERO, "life": 0.2, "max": 0.2, "col": IVORY if (b.get("arrow", false) or b.get("dev", false)) else Sk.MARK_COL.burn, "g": 0.0, "size": 2})
+			parts.append({"pos": b.pos + Vector2(0, -16), "vel": Vector2.ZERO, "life": 0.2, "max": 0.2, "col": IVORY if (b.get("arrow", false) or b.get("dev", false) or b.get("shot", false)) else Sk.MARK_COL.burn, "g": 0.0, "size": 2})
 		for f in foes:
+			if b.get("shot", false):
+				if b.life > 0.0 and not b.hit.has(f.id) and f.state != "dead" and f.state != "spawn" and f.pos.distance_to(b.pos) < f.r + 7.0:
+					b.hit.append(f.id)
+					if not b.pierce:
+						b.life = 0.0
+					shot_hit(f, b)
+				continue
 			if b.get("dev", false):
 				if b.life > 0.0 and f.state != "dead" and f.state != "spawn" and f.pos.distance_to(b.pos) < f.r + 7.0:
 					b.life = 0.0
@@ -2158,7 +2236,7 @@ func update_shots(dt: float) -> void:
 				b.life = 0.0
 				hit_foe(f, stats.atk * b.get("mult", 1.2), false, 0.03, 1.0)
 				if b.get("dart", false):
-					poison(f, 1)
+					poison(f, 2 if tree.has("ost_dart") else 1)
 				else:
 					mark(f, "burn")
 				burst(f.pos + Vector2(0, -16), Sk.MARK_COL.burn, 8, 90.0)
@@ -2352,7 +2430,7 @@ func _draw() -> void:
 	for i in range(1, linked.size()):
 		draw_line(linked[i - 1].pos + Vector2(0, -12), linked[i].pos + Vector2(0, -12), Sk.MARK_COL.curse, 1.0)
 	for b in bolts:
-		if b.get("arrow", false):
+		if b.get("arrow", false) or b.get("shot", false):
 			var ad: Vector2 = b.vel.normalized()
 			draw_line(b.pos + Vector2(0, -16) - ad * 9.0, b.pos + Vector2(0, -16), Color("8a6a42"), 2.0)
 			draw_line(b.pos + Vector2(0, -16) - ad * 3.0, b.pos + Vector2(0, -16) + ad * 2.0, IVORY, 2.0)
@@ -2909,6 +2987,12 @@ func skill_cd(id: String) -> float:
 		cd *= 0.5
 	if N.get("m", 0) == 1 and tree.has("tempest"):
 		cd *= 1.3
+	if id == "shadow" and tree.has("ost_step"):
+		cd *= 0.7
+	if id == "hook" and tree.has("oks_hook"):
+		cd *= 0.6
+	if N.kind == "a" and tree.get(id, 0) > N.max:
+		cd *= 1.0 - 0.06 * (tree[id] - N.max)
 	if id == "wall" and tree.has("pl_bunker"):
 		cd += 8.0
 	if N.kind == "u" and tree.has("prototype"):
@@ -2922,9 +3006,12 @@ func mark(f: Dictionary, kind: String) -> void:
 	var had = f.get(kind, 0.0) > 0.0
 	match kind:
 		"burn":
-			f.burn = 4.0 * (0.5 if tree.has("pyre") else 1.0)
+			f.burn = 4.0 * (0.5 if tree.has("pyre") else 1.0) + (2.0 if tree.has("ont_hot") else 0.0)
 			f.burn_dps = stats.atk * 0.3 * (1.0 + 0.2 * tree.get("kindle", 0))
 		"chill":
+			if had and tree.has("ont_deepcold") and not D.FOES[f.kind].get("big", false) and t >= f.get("deep_t", 0.0):
+				f.deep_t = t + 3.0
+				stagger(f, 1.0)
 			f.chill = (4.0 + tree.get("deep", 0)) * (2.0 if (p.smoke > 0.0 and tree.has("dl_fog")) else 1.0)
 		"shock":
 			f.shock = 5.0
@@ -3161,7 +3248,7 @@ func sec() -> int:
 	return 1 if main_m == 0 else 0
 
 func tabs() -> Array:
-	return [main_m, sec(), Sk.link_of(main_m, sec())]
+	return [main_m, sec(), Sk.link_of(main_m, sec()), Sk.solo_of(main_m)]
 
 func wake_text() -> String:
 	if second_m < 0 and menus_on():
@@ -3172,7 +3259,7 @@ func uses_cp() -> bool:
 	return main_m == 3 or (sec() == 3 and has_second())
 
 func cp_cap() -> int:
-	var cap = 6 if tree.has("six") else 5
+	var cap = (6 if tree.has("six") else 5) + (1 if tree.has("ost_six") else 0)
 	if tree.has("ta_night") and not foes.any(func(o): return o.get("hunt", 0.0) > 0.0 and o.state != "dead"):
 		cap = mini(cap, 3)
 	return cap
@@ -3198,7 +3285,7 @@ func poison(f: Dictionary, n: int) -> void:
 		lit(f, 6.0)
 	if f.state == "dead":
 		return
-	f.poison = mini((3 if tree.has("burst") else 5) + (2 if (tree.has("gh_plague") and f.get("curse", 0.0) > 0.0) else 0), f.get("poison", 0) + n)
+	f.poison = mini((3 if tree.has("burst") else 5) + (2 if tree.has("ost_toxic") else 0) + (2 if (tree.has("gh_plague") and f.get("curse", 0.0) > 0.0) else 0), f.get("poison", 0) + n)
 	f.poison_t = 4.0 + tree.get("linger", 0)
 
 func shadow_target():
@@ -3219,7 +3306,7 @@ func uses_souls() -> bool:
 	return main_m == 6 or (sec() == 6 and has_second())
 
 func soul_cap() -> int:
-	return 5 + tree.get("jar", 0) - (1 if tree.has("gh_cheat") else 0)
+	return (8 if tree.has("otl_eight") else 5) + tree.get("jar", 0) - (1 if tree.has("gh_cheat") else 0)
 
 func add_soul(n: int) -> void:
 	if uses_souls():
@@ -3233,13 +3320,13 @@ func summon_cost() -> int:
 func ghost_cap() -> int:
 	if tree.has("kl_puppet"):
 		return maxi(0, 3 - devices.filter(func(d): return not d.free).size())
-	return (4 if tree.get("horde", 0) >= 3 else 3) * (2 if tree.has("legion") else 1)
+	return ((4 if tree.get("horde", 0) >= 3 else 3) + (1 if tree.has("otl_host") else 0)) * (2 if tree.has("legion") else 1)
 
 # true when a soul skill cannot be used right now
 func soul_block(id: String) -> bool:
 	match id:
 		"summon":
-			return tree.has("th_fire") or (p.souls < summon_cost() and not (tree.has("kl_heat") and p.heat < 70.0 and p.over <= 0.0)) or ghosts.filter(func(gh): return not gh.free).size() >= ghost_cap()
+			return tree.has("th_fire") or (p.souls < summon_cost() and not (tree.has("kl_heat") and p.heat < hot_line() and p.over <= 0.0)) or ghosts.filter(func(gh): return not gh.free).size() >= ghost_cap()
 		"sacrifice":
 			return tree.has("ch_send") or (ghosts.is_empty() and not (tree.has("hl_tithe") and pet_up() != null))
 		"soulform":
@@ -3332,7 +3419,7 @@ func update_ghosts(dt: float) -> void:
 		elif gh.cd <= 0.0:
 			gh.cd = 1.0 / ((1.0 + 0.08 * tree.get("horde", 0)) * (1.3 if (p.cry > 0.0 and tree.has("kt_rally")) else 1.0))
 			ghost_hit = true
-			hit_foe(tgt, stats.atk * 0.35 * (1.0 + 0.1 * tree.get("sharp", 0)) * (0.5 if tree.has("legion") else 1.0), false, 0.0, 0.0)
+			hit_foe(tgt, stats.atk * 0.35 * (1.0 + 0.1 * tree.get("sharp", 0)) * (0.5 if tree.has("legion") else 1.0) * (1.25 if tree.has("otl_strong") else 1.0), false, 0.0, 0.0)
 			ghost_hit = false
 			if tree.has("nq_tint") and p.bless_t > 0.0 and p.elem != "" and tgt.state != "dead" and t >= tgt.get("tint3_t", 0.0):
 				tgt.tint3_t = t + 3.0
@@ -3357,7 +3444,7 @@ func uses_shield() -> bool:
 	return main_m == 10 or (sec() == 10 and has_second())
 
 func shield_cap() -> float:
-	var c = 100.0 + 10.0 * tree.get("thick", 0)
+	var c = 100.0 + 10.0 * tree.get("thick", 0) + (30.0 if tree.has("ohv_cap") else 0.0)
 	if tree.has("fortress"):
 		c *= 2.0
 	if tree.has("payback"):
@@ -3402,7 +3489,7 @@ func shield_take(dmg: float) -> float:
 		p.debt = true
 	var h = hitter
 	if h != null and h.state != "dead" and h.state != "spawn":
-		var back = stats.atk * 0.1 * tree.get("thorns", 0) + (a * 0.3 if tree.has("payback") else 0.0)
+		var back = stats.atk * 0.1 * tree.get("thorns", 0) * (2.0 if tree.has("ohv_spikes") else 1.0) + (a * 0.3 if tree.has("payback") else 0.0)
 		if back > 0.0:
 			h.hp -= back
 			h.flash = F
@@ -3443,6 +3530,8 @@ func update_shield(dt: float) -> void:
 				if f.state != "dead" and f.state != "spawn" and f.pos.distance_to(p.pos) < 80.0 + f.r:
 					hit_foe(f, stats.atk * 3.0, true, 0.08, 4.0)
 	p.shield = minf(p.shield, shield_cap())
+	if tree.has("ohv_regen") and p.shield < 15.0 and p.state != "dead":
+		p.shield += 3.0 * dt
 	if p.shield > 0.0 and p.bronze <= 0.0 and not tree.has("fortress") and not p.post and t - p.shield_hit > 4.0:
 		p.shield = maxf(0.0, p.shield - 5.0 * dt * (1.0 - 0.2 * tree.get("endure", 0)))
 
@@ -3456,10 +3545,11 @@ func allies_near(reach: float) -> int:
 	return ghosts.filter(func(gh): return gh.pos.distance_to(p.pos) < reach).size()
 
 func watch_def() -> float:
+	var iron = 2.0 * p.iron_n if p.iron_t > 0.0 else 0.0
 	var w = tree.get("watch", 0)
 	if w == 0:
-		return 0.0
-	return (4.0 if allies_near(80.0) > 0 else 2.0) * w
+		return iron
+	return iron + (4.0 if allies_near(80.0) > 0 else 2.0) * w
 
 # what share of a blow still lands after cover, the stand-in and the price of the true heart
 func guard_taken() -> float:
@@ -3557,19 +3647,20 @@ func guard_cast(id: String) -> void:
 			slam_fx(c, 20.0)
 			Sfx.play("slam", 1.1)
 		"bash":
-			p.bash_more = p.shield >= 50.0
+			p.bash_more = p.shield >= (25.0 if tree.has("ohv_bash") else 50.0)
 			if p.bash_more:
 				p.shield -= 25.0
 			p.bash_t = t
 			begin_swing("bash")
 		"verdict":
+			var vr = 98.0 if tree.has("ohv_verdict") else 70.0
 			var s = p.shield
 			p.shield = 0.0
-			rings.append({"pos": p.pos, "r": 70.0, "life": 0.4, "max": 0.4, "col": Color("e0d6a0")})
+			rings.append({"pos": p.pos, "r": vr, "life": 0.4, "max": 0.4, "col": Color("e0d6a0")})
 			slam_fx(p.pos, 56.0)
 			Sfx.play("slam", 0.8)
 			for f in foes:
-				if f.state == "dead" or f.state == "spawn" or f.pos.distance_to(p.pos) > 70.0 + f.r:
+				if f.state == "dead" or f.state == "spawn" or f.pos.distance_to(p.pos) > vr + f.r:
 					continue
 				var fm = 0.03 * s
 				if tree.has("mv_judge") and f.get("curse", 0.0) > 0.0:
@@ -3600,7 +3691,7 @@ func guard_cast(id: String) -> void:
 			if not linked.is_empty():
 				chain_ids = linked
 				chain_t = 6.0
-			var gain = 20.0 * mini(n, 3)
+			var gain = 20.0 * mini(n, 5 if tree.has("ohv_taunt") else 3)
 			if tree.has("standin") and allies_near(100.0) == 0:
 				gain *= 2.0
 			add_shield(gain)
@@ -3608,7 +3699,7 @@ func guard_cast(id: String) -> void:
 			nums.append({"pos": p.pos + Vector2(0, -52), "txt": "KHIÊU KHÍCH", "life": 0.8, "col": Sk.MARK_COL.taunt})
 			Sfx.play("clap", 0.9)
 		"cover":
-			fields.append({"kind": "cover", "pos": p.pos, "r": 60.0, "t": 5.0, "tick": 0.0})
+			fields.append({"kind": "cover", "pos": p.pos, "r": 78.0 if tree.has("ohv_cover") else 60.0, "t": 7.0 if tree.has("ohv_cover") else 5.0, "tick": 0.0})
 			join_rings(fields.back())
 			Sfx.play("orb", 0.8)
 		"bronze":
@@ -3630,18 +3721,23 @@ func guard_cast(id: String) -> void:
 func uses_focus() -> bool:
 	return main_m == 15 or (sec() == 15 and has_second())
 
+func focus_need() -> float:
+	return 1.2 if tree.has("ots_quick") else 2.0
+
 func pet_count() -> int:
 	if not uses_focus():
+		return 0
+	if tree.has("ots_lone"):
 		return 0
 	return 2 if tree.has("pack") else 1
 
 func pet_mhp() -> float:
 	if tree.has("tl_beast"):
-		return stats.mhp * 0.6 * (1.0 + 0.15 * tree.get("sturdy", 0)) * (0.6 if tree.has("pack") else 1.0)
-	return stats.mhp * 0.4 * (1.0 + 0.15 * tree.get("sturdy", 0)) * (0.6 if tree.has("pack") else 1.0)
+		return stats.mhp * 0.6 * (1.0 + 0.15 * tree.get("sturdy", 0)) * (0.6 if tree.has("pack") else 1.0) * (1.3 if tree.has("ots_alpha") else 1.0)
+	return stats.mhp * 0.4 * (1.0 + 0.15 * tree.get("sturdy", 0)) * (0.6 if tree.has("pack") else 1.0) * (1.3 if tree.has("ots_alpha") else 1.0)
 
 func pet_dmg() -> float:
-	return stats.atk * 0.3 * (1.0 + 0.1 * tree.get("fangs", 0)) * (0.6 if tree.has("pack") else 1.0)
+	return stats.atk * 0.3 * (1.0 + 0.1 * tree.get("fangs", 0)) * (0.6 if tree.has("pack") else 1.0) * (1.3 if tree.has("ots_alpha") else 1.0)
 
 # the first hound that is standing, or null
 func pet_up():
@@ -3703,7 +3799,7 @@ func update_hunter(dt: float) -> void:
 			p.focus_t += dt * rate
 		else:
 			p.focus_t = 0.0
-		if p.focus_t >= 2.0 and not p.focused:
+		if p.focus_t >= focus_need() and not p.focused:
 			p.focused = true
 			Sfx.play("orb", 1.6)
 		if tree.has("tp_rhythm"):
@@ -3977,6 +4073,10 @@ func place_trap(kind: String) -> void:
 	if mine.size() >= trap_cap():
 		traps.erase(mine[0])
 	traps.append({"kind": kind, "pos": pos, "arm": 0.4, "t": 8.0 if tree.has("linkup") else 9999.0, "smoke": p.smoke > 0.0 and tree.has("ta_smoke"), "rearm": 1 if (tree.has("tl_trap") and in_holy()) else 0})
+	if kind == "snare" and tree.has("ots_traps"):
+		var t2 = traps.back().duplicate()
+		t2.pos = pos + p.aim.orthogonal() * 16.0
+		traps.append(t2)
 	Sfx.play("parry", 1.6)
 
 func update_traps(dt: float) -> void:
@@ -4019,7 +4119,7 @@ func spring_trap(tr: Dictionary, k: float) -> void:
 				trap_hit(tg, 1.2 * k)
 				if tg.state != "dead":
 					var cold = tg.get("chill", 0.0) > 0.0
-					root(tg, 2.0 * (2.0 if t < tg.get("tossed_t", 0.0) else 1.0))
+					root(tg, (3.0 if tree.has("ots_jaw") else 2.0) * (2.0 if t < tg.get("tossed_t", 0.0) else 1.0))
 					if tree.has("tn_ice"):
 						if cold and not D.FOES[tg.kind].get("big", false):
 							stagger(tg, 1.5)
@@ -4027,11 +4127,12 @@ func spring_trap(tr: Dictionary, k: float) -> void:
 							mark(tg, "chill")
 			Sfx.play("parry", 1.1)
 		"mine":
-			rings.append({"pos": tr.pos, "r": 40.0, "life": 0.3, "max": 0.3, "col": Sk.MARK_COL.burn})
+			var mr = 56.0 if tree.has("ots_boom") else 40.0
+			rings.append({"pos": tr.pos, "r": mr, "life": 0.3, "max": 0.3, "col": Sk.MARK_COL.burn})
 			slam_fx(tr.pos, 32.0)
 			Sfx.play("slam", 1.3)
 			for o in foes:
-				if o.state != "dead" and o.state != "spawn" and o.pos.distance_to(tr.pos) < 40.0 + o.r:
+				if o.state != "dead" and o.state != "spawn" and o.pos.distance_to(tr.pos) < mr + o.r:
 					caught = true
 					trap_hit(o, 2.0 * k)
 			if tree.has("tn_pool"):
@@ -4217,7 +4318,7 @@ func priest_cast(id: String) -> void:
 			var reach = knell_reach()
 			rings.append({"pos": p.pos, "r": reach, "life": 0.45, "max": 0.45, "col": Sk.MARK_COL.lit})
 			Sfx.play("clap", 1.5)
-			heal(stats.mhp * 0.25)
+			heal(stats.mhp * (0.35 if tree.has("ott_bigheal") else 0.25))
 			heal_pets(0.25, reach)
 			if tree.has("tc_knell"):
 				for d in devices:
@@ -4247,14 +4348,14 @@ func priest_cast(id: String) -> void:
 					if f.state == "idle" or f.state == "home":
 						f.state = "chase"
 		"holy":
-			var fd = {"kind": "holy", "pos": p.pos, "r": 60.0, "t": 6.0, "tick": 0.0}
+			var fd = {"kind": "holy", "pos": p.pos, "r": 84.0 if tree.has("ott_ground") else 60.0, "t": 8.0 if tree.has("ott_ground") else 6.0, "tick": 0.0}
 			fields.append(fd)
 			join_rings(fd)
 			Sfx.play("orb", 0.6)
 		"seal":
 			var f = foe_near(aim_point(200.0), 70.0, [])
 			zaps.append({"a": p.pos + Vector2(0, -16), "b": f.pos + Vector2(0, -14), "life": 0.25})
-			var m = 1.3
+			var m = 1.3 * (1.2 if tree.has("ott_brand") else 1.0)
 			if tree.has("nq_seal"):
 				for mk in ["burn", "chill", "shock"]:
 					if f.get(mk, 0.0) > 0.0:
@@ -4264,7 +4365,7 @@ func priest_cast(id: String) -> void:
 			hit_foe(f, stats.atk * m, false, 0.04, 1.5)
 			holy_hit = false
 			if f.state != "dead":
-				lit(f, 6.0)
+				lit(f, 10.0 if tree.has("ott_brand") else 6.0)
 				var heavy = D.FOES[f.kind].poise > 0.0
 				if casting and f.state == "wind" and tree.get("rebuke", 0) >= (2 if heavy else 1):
 					stagger(f, 0.8)
@@ -4278,11 +4379,12 @@ func priest_cast(id: String) -> void:
 				p.cds.erase("seal")
 			Sfx.play("parry", 1.8)
 		"purge":
-			rings.append({"pos": p.pos, "r": 70.0, "life": 0.4, "max": 0.4, "col": Sk.MARK_COL.lit})
+			var pr = 91.0 if tree.has("ott_cleanse") else 70.0
+			rings.append({"pos": p.pos, "r": pr, "life": 0.4, "max": 0.4, "col": Sk.MARK_COL.lit})
 			Sfx.play("tele_hi", 1.2)
 			holy_hit = true
 			for f in foes:
-				if f.state == "dead" or f.state == "spawn" or f.pos.distance_to(p.pos) > 70.0 + f.r:
+				if f.state == "dead" or f.state == "spawn" or f.pos.distance_to(p.pos) > pr + f.r:
 					continue
 				var elite = f.get("elite", "") != ""
 				hit_foe(f, stats.atk * 1.0, true, 0.05, 2.0)
@@ -4305,7 +4407,7 @@ func priest_cast(id: String) -> void:
 			nums.append({"pos": p.pos + Vector2(0, -52), "txt": "CHÚC LÀNH", "life": 0.9, "col": Sk.MARK_COL.lit})
 			Sfx.play("orb", 1.2)
 		"vow":
-			p.vow_t = 3.0
+			p.vow_t = 5.0 if tree.has("ott_vow") else 3.0
 			if tree.has("sv_vow"):
 				add_shield(40.0)
 			nums.append({"pos": p.pos + Vector2(0, -52), "txt": "LỜI NGUYỆN", "life": 0.9, "col": Sk.MARK_COL.lit})
@@ -4336,6 +4438,8 @@ func update_priest(dt: float) -> void:
 			p.devo = 0.0
 	if p.state == "dead":
 		return
+	if tree.has("ott_saint") and p.devo >= 80.0:
+		p.hp = minf(stats.mhp, p.hp + stats.mhp * 0.02 * dt)
 	if in_holy():
 		var k = 1.0
 		if tree.has("nq_fire"):
@@ -4395,7 +4499,7 @@ func add_heat(n: float) -> void:
 		return
 	p.heat = clampf(p.heat + n, 0.0, heat_cap())
 	if p.heat >= 100.0 and not tree.has("overdrive"):
-		p.over = 4.0 - 0.5 * tree.get("valve", 0) + (2.0 if tree.has("tk_armor") else 0.0)
+		p.over = maxf(1.0, 4.0 - 0.5 * tree.get("valve", 0) - (1.0 if tree.has("oks_cool") else 0.0) + (2.0 if tree.has("tk_armor") else 0.0))
 		p.over_max = p.over
 		burst(p.pos + Vector2(0, -20), Color("ff8a3a"), 16, 110.0)
 		nums.append({"pos": p.pos + Vector2(0, -56), "txt": "QUÁ NHIỆT", "life": 1.2, "col": Color("ff8a3a")})
@@ -4404,13 +4508,16 @@ func add_heat(n: float) -> void:
 			add_devo(30.0)
 
 func hot() -> bool:
-	return p.heat > 70.0
+	return p.heat > hot_line()
+
+func hot_line() -> float:
+	return 60.0 if tree.has("oks_hot") else 70.0
 
 func dev_mult() -> float:
 	return (1.0 + 0.1 * tree.get("skilled", 0)) * (1.2 if hot() else 1.0) * (1.15 if (tree.has("tc_bless") and p.bless_t > 0.0) else 1.0)
 
 func dev_cap() -> int:
-	return 2 if tree.has("workshop") else 3
+	return (4 if tree.has("oks_four") else 3) - (1 if tree.has("workshop") else 0)
 
 func in_mute(at: Vector2) -> bool:
 	for fd in fields:
@@ -4449,6 +4556,8 @@ func place_device(kind: String, at: Vector2, free: bool) -> Dictionary:
 			d.follow = true
 			burst(gh.pos + Vector2(0, -16), VONG, 10, 70.0)
 	devices.append(d)
+	if tree.has("oks_four") and not free:
+		add_heat(10.0)
 	burst(at + Vector2(0, -6), Color("c98a4a"), 6, 60.0)
 	return d
 
@@ -4483,7 +4592,7 @@ func mine_blast(d: Dictionary, k: float) -> void:
 			if f.state == "dead" or f.state == "spawn" or f.pos.distance_to(d.pos) > 40.0 + f.r:
 				continue
 			caught = true
-			var m = 1.8 * dev_mult() * k
+			var m = 1.8 * dev_mult() * k * (1.4 if tree.has("oks_mine") else 1.0)
 			if f.get("taunt", 0.0) > 0.0:
 				if tree.has("pl_lure"):
 					m *= 1.5
@@ -4598,6 +4707,8 @@ func update_devices(dt: float) -> void:
 						d.cd = 0.5 / (1.3 if d.haste_t > 0.0 else 1.0)
 						var m = 0.3 * dev_mult()
 						bolts.append({"pos": d.pos, "vel": (tg.pos - d.pos).normalized() * 320.0, "life": 0.7, "dev": true, "mult": m, "el": d.el, "crit": d.first and tree.has("tb_sabo")})
+						if tree.has("oks_turret"):
+							bolts.append({"pos": d.pos, "vel": (tg.pos - d.pos).normalized().rotated(0.12) * 320.0, "life": 0.7, "dev": true, "mult": m, "el": d.el, "crit": false})
 						d.first = false
 						Sfx.play("hit", 2.0)
 			"drum":
@@ -4665,7 +4776,7 @@ func artificer_cast(id: String) -> void:
 		"hook":
 			hook_cast()
 		"mute":
-			var fd = {"kind": "mute", "pos": aim_point(120.0), "r": 60.0, "t": 4.0, "tick": 0.0}
+			var fd = {"kind": "mute", "pos": aim_point(120.0), "r": 84.0 if tree.has("oks_mute") else 60.0, "t": 4.0, "tick": 0.0}
 			fields.append(fd)
 			if tree.has("tc_purge"):
 				for f in foes:
@@ -4693,7 +4804,7 @@ func vent() -> void:
 		if f.state == "dead" or f.state == "spawn":
 			continue
 		var d = f.pos - p.pos
-		if d.length() > 70.0 + f.r or (d.length() > 6.0 and absf(p.aim.angle_to(d)) > 0.9):
+		if d.length() > (98.0 if tree.has("oks_vent") else 70.0) + f.r or (d.length() > 6.0 and absf(p.aim.angle_to(d)) > 0.9):
 			continue
 		if tree.has("tk_vent") and D.FOES[f.kind].poise > 0.0:
 			f.poise -= stats.atk * m
@@ -4708,7 +4819,7 @@ func vent() -> void:
 			f.kb = d.normalized() * 240.0
 	if tree.has("pl_shield"):
 		add_shield(h * 0.5)
-	if tree.has("tb_vent") and h > 70.0:
+	if tree.has("tb_vent") and h > hot_line():
 		add_cp(2)
 
 func hook_cast() -> void:
@@ -4799,3 +4910,49 @@ func draw_artificer() -> void:
 				draw_rect(Rect2(dp + Vector2(-6, -8), Vector2(12, 8)), Color("5a4a3a"))
 				draw_circle(dp + Vector2(0, -16), 7.0, Color("c9a04a"))
 				draw_rect(Rect2(dp + Vector2(-1, -10), Vector2(2, 3)), Color("3a2a1a"))
+
+# ---------------------------------------------------------------- bows
+# With a bow the chain of strikes is a chain of arrows: the same timing, the third arrow goes through.
+# Melee-only nodes (the chain's last-hit effects on a swing arc, spit parrying) do not apply to arrows.
+
+func fire_basic() -> void:
+	var last = p.idx == chain_len() - 1
+	var m = ATK[p.idx][3] * 0.8 * p.mult
+	if last:
+		m *= 1.0 + 0.12 * tree.get("heavy", 0)
+	var reach = stats.reach + 3.0 * tree.get("reach", 0)
+	bolts.append({"pos": p.pos + p.aim * 10.0, "vel": p.aim * 340.0, "life": 0.55 + reach / 340.0, "shot": true, "pierce": last,
+		"hit": [], "mult": m, "zap": p.zap, "crit": p.sure_crit, "cp": false, "last": last})
+	p.sure_crit = false
+	Sfx.play("spit", 1.8 + p.idx * 0.1)
+
+func shot_hit(f: Dictionary, b: Dictionary) -> void:
+	var behind = is_behind(f)
+	var soft = f.state == "stun" or f.get("chill", 0.0) > 0.0
+	var m = b.mult
+	if behind:
+		m *= 1.0 + 0.08 * tree.get("backstab", 0)
+	var keep = p.sure_crit
+	p.sure_crit = b.crit
+	hit_foe(f, stats.atk * m, b.last, 0.03, 1.5 if b.last else 1.0)
+	p.sure_crit = keep
+	p.rage = minf(100.0, p.rage + (14.0 if b.last else 8.0) * (1.0 + stats.rage / 100.0))
+	p.rage_t = 5.0
+	if not b.cp and (behind or soft or p.surecp):
+		b.cp = true
+		p.surecp = false
+		add_cp(1)
+	if f.state == "dead":
+		if b.last and tree.has("kt_reap"):
+			add_soul(1)
+		return
+	if p.venom > 0.0:
+		poison(f, 1)
+	if b.zap:
+		mark(f, "shock")
+	if tree.has("tempest") and p.elem_t > 0.0:
+		mark(f, p.elem)
+	if tree.has("tk_chop"):
+		add_heat(-8.0 if b.last else -3.0)
+	if b.last and tree.has("kn_strike"):
+		add_devo(8.0)

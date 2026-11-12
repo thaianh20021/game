@@ -47,6 +47,8 @@ const BASES = {
 		["DAO CẮT LAU", 0, {"atk": 4}], ["DAO GĂM ĐẦM", 0, {"atk": 3, "haste": 12}],
 		["MÓC PHÀ", 1, {"atk": 7}], ["GIÁO BẾN", 1, {"atk": 6, "reach": 8}], ["VỒ ĐÊ", 1, {"atk": 9, "haste": -12, "stag": 40}],
 		["ĐAO ĐỒNG", 2, {"atk": 11}], ["SÀO THU PHÍ", 2, {"atk": 10, "reach": 10}], ["BÚA CHUÔNG", 2, {"atk": 14, "haste": -14, "stag": 50}],
+		# bows: the chain of strikes becomes three arrows, the third goes through (see is_bow)
+		["CUNG TRE", 0, {"atk": 3}], ["CUNG SỪNG", 1, {"atk": 6, "crit": 3}], ["CUNG ĐỒNG", 2, {"atk": 10, "crit": 4}],
 	],
 	"armor": [
 		["ÁO LAU", 0, {"def": 3}], ["KHỐ LỘI NƯỚC", 0, {"def": 2, "spd": 4}],
@@ -369,3 +371,7 @@ const RECAP = {
 	"m10": "CÁI CÂY NHỚ RẰNG MỖI TIẾNG CHUÔNG XÓA ĐI MỘT CÁI TÊN. CHUÔNG MẸ KHÔNG ĐƯA AI VỀ YÊN NGHỈ. MẸ RỄ ĐÃ LẶNG.",
 	"m11": ["BẠN ĐÃ NIÊM LÀNG THÌ THẦM. HẠ LƯU NGỦ YÊN. LÃO RÊU KHÔNG THA THỨ.", "BẠN ĐÃ GIỮ LÀNG THÌ THẦM. HẠ LƯU PHẢI DỜI ĐI. TÊN BẠN NẰM TRONG SỔ CỦA HỘI GIỮ LẶNG."],
 }
+
+# a bow shoots instead of swinging. Every bow base name starts with CUNG.
+static func is_bow(it) -> bool:
+	return it != null and it.slot == "weapon" and it.uniq == "" and it.name.begins_with("CUNG")

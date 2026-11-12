@@ -81,11 +81,11 @@ static func hud(g, view: Vector2) -> void:
 		var hk2 = clampf(p.heat / 100.0, 0.0, 1.5)
 		g.draw_rect(Rect2(x - 1, hy - 1, 62, 6), INK)
 		g.draw_rect(Rect2(x, hy, 60, 4), PANEL)
-		var hc = Color("d94a3a") if p.over > 0.0 else (Color("ff8a3a") if p.heat > 70.0 else Color("c98a4a"))
+		var hc = Color("d94a3a") if p.over > 0.0 else (Color("ff8a3a") if g.hot() else Color("c98a4a"))
 		g.draw_rect(Rect2(x, hy, 60 * minf(hk2, 1.0), 4), hc)
 		if hk2 > 1.0:
 			g.draw_rect(Rect2(x, hy, 60 * (hk2 - 1.0) * 2.0, 1), Color("ffe9a3"))
-		g.draw_rect(Rect2(x + 42, hy - 1, 1, 6), IVORY)
+		g.draw_rect(Rect2(x + 60.0 * g.hot_line() / 100.0, hy - 1, 1, 6), IVORY)
 		Txt.text(g, Vector2(x + 64, hy - 2), "QUÁ NHIỆT" if p.over > 0.0 else str(int(p.heat)), hc)
 	if g.uses_devo():
 		# devotion: a pale gold bar to the right of the life bar, bright while zeal or a blessing is on
@@ -102,7 +102,7 @@ static func hud(g, view: Vector2) -> void:
 		var fp = Vector2(x + 127, y - 10)
 		g.draw_rect(Rect2(fp - Vector2(1, 1), Vector2(20, 7)), INK)
 		g.draw_rect(Rect2(fp, Vector2(18, 5)), PANEL)
-		var fk = 1.0 if p.focused else clampf(p.focus_t / 2.0, 0.0, 1.0)
+		var fk = 1.0 if p.focused else clampf(p.focus_t / g.focus_need(), 0.0, 1.0)
 		g.draw_rect(Rect2(fp, Vector2(18 * fk, 5)), Color("ffd84a") if p.focused else Color("8a7a4a"))
 		# the hounds: a small life bar each, empty while one is down
 		for i in g.pets.size():
@@ -386,7 +386,7 @@ static func tree_panel(view: Vector2) -> Rect2:
 
 static func tab_rect(view: Vector2, i: int) -> Rect2:
 	var r = tree_panel(view)
-	return Rect2(r.position.x + 12 + i * 132, r.position.y + 6, 126, 15)
+	return Rect2(r.position.x + 12 + i * 116, r.position.y + 6, 112, 15)
 
 static func tree_cell(view: Vector2, id: String) -> Rect2:
 	var r = tree_panel(view)
@@ -408,7 +408,7 @@ static func tree_update(g) -> void:
 	if g.pressed("reset"):
 		g.reset_tree()
 	elif g.pressed("atk"):
-		for i in 3:
+		for i in 4:
 			if tab_rect(view, i).has_point(g.ui_mouse()):
 				g.tab = g.tabs()[i]
 				return
@@ -431,13 +431,13 @@ static func tree_draw(g, view: Vector2) -> void:
 	var tabs = g.tabs()
 	if not tabs.has(g.tab):
 		g.tab = g.main_m
-	for i in 3:
+	for i in 4:
 		var tr = tab_rect(view, i)
 		var on = tabs[i] == g.tab
 		g.draw_rect(tr, Color("ffe9a3") if on else Color("5a4e66"))
 		g.draw_rect(Rect2(tr.position + Vector2(1, 1), tr.size - Vector2(2, 2)), Color("3a3046") if on else Color("221b29"))
 		var label = Sk.MASTERY[tabs[i]] if (tabs[i] == g.main_m or second) else "???"
-		Txt.ctext(g, tr.position + Vector2(63, 4), "%s  %d" % [label, Sk.mastery_points(g.tree, tabs[i])], Color("ffe9a3") if on else DIM)
+		Txt.ctext(g, tr.position + Vector2(tr.size.x / 2.0, 4), "%s  %d" % [label, Sk.mastery_points(g.tree, tabs[i])], Color("ffe9a3") if on else DIM)
 	var left = "CÒN %d ĐIỂM" % g.points_left()
 	Txt.text(g, Vector2(r.end.x - 12 - Txt.width(left), r.position.y + 10), left, Color("ffe9a3") if g.points_left() > 0 else DIM)
 	for b in 3:
@@ -463,7 +463,8 @@ static func tree_draw(g, view: Vector2) -> void:
 			g.draw_texture(Art.T["sk_" + id], c.position + Vector2(5, 5), Color.WHITE if open else Color(0.4, 0.4, 0.46))
 		else:
 			Txt.text(g, c.position + Vector2(5, 8), N.abbr, col if open else Color("5a4e66"), 2)
-		Txt.text(g, Vector2(c.end.x - 5 - Txt.width("%d/%d" % [rank, N.max]), c.end.y - 11), "%d/%d" % [rank, N.max], IVORY if rank > 0 else DIM)
+		var mr = Sk.max_rank(g.tree, id, g.has_second(), g.main_m, g.sec())
+		Txt.text(g, Vector2(c.end.x - 5 - Txt.width("%d/%d" % [rank, mr]), c.end.y - 11), "%d/%d" % [rank, mr], IVORY if rank > 0 else DIM)
 		if id == hover:
 			g.draw_rect(c, Color(1, 1, 1, 0.14))
 	var ty = r.position.y + 214
@@ -473,6 +474,8 @@ static func tree_draw(g, view: Vector2) -> void:
 		var kind = {"a": "KỸ NĂNG CHỦ ĐỘNG", "p": "NỘI TẠI", "k": "THEN CHỐT", "u": "TUYỆT KỸ"}[N.kind]
 		if Sk.LINKS.has(N.get("m", 0)) and N.kind == "p":
 			kind = "GIAO THOA"
+		if Sk.SOLO.has(N.get("m", 0)) and N.kind == "p":
+			kind = "ĐỘC TẤU"
 		Txt.text(g, Vector2(r.position.x + 12, ty), N.n, Color("ffe9a3"))
 		var meta = kind
 		if N.has("cd") and N.cd > 0.0:
@@ -497,6 +500,9 @@ static func tree_draw(g, view: Vector2) -> void:
 			Txt.text(g, Vector2(r.position.x + 150, ny), "ĐANG DÙNG" if g.cur_ult() == hover else "BẤM R ĐỂ DÙNG TUYỆT KỸ NÀY", DIM)
 	elif g.tab != g.main_m and not second:
 		Txt.text(g, Vector2(r.position.x + 12, ty), "MẢNH CHUÔNG CỦA BẠN MỚI CÓ MỘT GIỌNG. HOÀN THÀNH CHƯƠNG MỘT ĐỂ ĐÁNH THỨC GIỌNG THỨ HAI.", DIM)
+	elif Sk.SOLO.has(g.tab):
+		Txt.text(g, Vector2(r.position.x + 12, ty), "ĐỘC TẤU: CHỈ DÀNH CHO NGƯỜI KHÔNG ĐẶT ĐIỂM NÀO VÀO DÒNG NGHỀ THỨ HAI. CẦN 3 ĐIỂM, THEN CHỐT CẦN 6.", DIM)
+		Txt.text(g, Vector2(r.position.x + 12, ty + 12), "ĐI THUẦN, MỖI KỸ NĂNG CHỦ ĐỘNG CÒN HỌC THÊM ĐƯỢC 3 BẬC TINH THÔNG: MỖI BẬC HỒI CHIÊU NHANH HƠN 6%.", DIM)
 	elif Sk.LINKS.has(g.tab):
 		Txt.text(g, Vector2(r.position.x + 12, ty), "NÚT GIAO THOA KHIẾN KỸ NĂNG CỦA DÒNG NGHỀ NÀY ĐỔI CÁCH DÒNG KIA HOẠT ĐỘNG. CẦN 3 ĐIỂM Ở MỖI DÒNG NGHỀ.", DIM)
 		Txt.text(g, Vector2(r.position.x + 12, ty + 12), "CHÁY: SÁT THƯƠNG THEO GIÂY.   LẠNH: CHẬM MỘT NỬA.   GIẬT: NHẬN THÊM SÁT THƯƠNG.", DIM)

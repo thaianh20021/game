@@ -508,8 +508,9 @@ const SKILL_IDS = ["bulwark", "iron", "steady", "rush", "counter", "unbroken", "
 	"tb_hook", "tb_smoke", "tb_quiet", "tb_venom", "tb_slash", "tb_fin", "tb_vent", "tb_sabo", "kl_heat", "kl_post", "kl_sac",
 	"kl_chain", "kl_curse", "kl_reap", "kl_scrap", "kl_puppet", "pl_cool", "pl_wall", "pl_shield", "pl_lure", "pl_bash", "pl_ring",
 	"pl_share", "pl_bunker", "cl_aim", "cl_quiet", "cl_trap", "cl_mine", "cl_hook", "cl_mark", "cl_pet", "cl_field", "tc_cool",
-	"tc_knell", "tc_holy", "tc_lit", "tc_purge", "tc_bless", "tc_hook", "tc_drum"]
-const ITEM_KEYS = ["w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "a0", "a1", "a2", "a3", "a4", "a5", "c0", "c1", "c2", "c3", "c4", "c5",
+	"tc_knell", "tc_holy", "tc_lit", "tc_purge", "tc_bless", "tc_hook", "tc_drum",
+	"ocb_parry", "ocb_iron", "ocb_surge", "ocb_blood", "ocb_cry", "ocb_long", "ocb_wide", "ocb_master", "ont_hot", "ont_spread", "ont_deepcold", "ont_frostbite", "ont_frostguard", "ont_arc", "ont_charge", "ont_triad", "ost_shadow", "ost_step", "ost_toxic", "ost_seep", "ost_dart", "ost_six", "ost_reset", "ost_ghost", "otl_host", "otl_strong", "otl_curse2", "otl_wither", "otl_bind", "otl_eight", "otl_reap", "otl_lich", "ohv_cap", "ohv_regen", "ohv_spikes", "ohv_bash", "ohv_verdict", "ohv_taunt", "ohv_cover", "ohv_bulwark", "ots_quick", "ots_deadeye", "ots_traps", "ots_jaw", "ots_boom", "ots_alpha", "ots_mark", "ots_lone", "ott_bigheal", "ott_ground", "ott_brand", "ott_bright", "ott_cleanse", "ott_grace", "ott_vow", "ott_saint", "oks_turret", "oks_mine", "oks_vent", "oks_cool", "oks_hot", "oks_hook", "oks_mute", "oks_four"]
+const ITEM_KEYS = ["w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "w8", "w9", "w10", "a0", "a1", "a2", "a3", "a4", "a5", "c0", "c1", "c2", "c3", "c4", "c5",
 	"u_wave", "u_box", "u_free", "u_wick", "u_seed"]
 const HERO_FRAMES = ["idle", "w1", "w2", "w3", "wind", "slash"]
 

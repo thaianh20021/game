@@ -194,3 +194,23 @@ Cả tám mastery và 28 cây giao thoa đã có trong game (376 node). Việc c
 
 Đã cập nhật số đếm trong `tests/skills.gd` (376 node, 48 chủ động, 52 then chốt, 8 tuyệt kỹ) và `tests/menu.gd` (36 phần tử;
 thẻ thứ ba giờ là Hộ Vệ và cả tám thẻ chọn được). Hai file này chưa được chạy lại sau khi sửa.
+
+## Cập nhật 2026-11-12 (cung, theo `docs/CLASSES.md` mục 1.5)
+
+Ba loại cung mới trong bảng vũ khí (Cung Tre, Cung Sừng, Cung Đồng; tầng 0 tới 2, icon `it_w8` tới `it_w10`), rơi như mọi
+vũ khí khác. Cầm cung thì chuỗi đòn thường thành chuỗi 3 mũi tên cùng nhịp, mũi thứ ba xuyên (`fire_basic`, `shot_hit`,
+`D.is_bow`: mọi tên cung bắt đầu bằng CUNG). Mũi tên vẫn tích Nộ, Điểm Hiểm, Độc của Tẩm Độc, dấu của Kiếm Bão; không đỡ
+được đạn như nhát chém. Kỹ năng vẫn dùng hoạt ảnh của chúng (cầm cung vẫn Xoáy được). Đã thử: 3 mũi trúng con trước, mũi
+thứ ba trúng cả con sau (`gen/bow.gd`, không phải test chính thức).
+
+## Cập nhật 2026-11-12 (Độc Tấu, theo `docs/CLASSES.md` mục 1.4, chưa có test)
+
+Tám cây Độc Tấu (m 36 tới 43, `Sk.SOLO` nối mỗi cây với mastery của nó), mỗi cây 8 node, tổng 64 node: tab thứ tư trong màn kỹ năng.
+Luật trong `Sk.blocked`: cây Độc Tấu chỉ mở khi Mảnh Chuông đã thức và mastery thứ hai không có điểm nào; cần 3 điểm ở mastery
+chính (then chốt 6). Một khi đã có điểm Độc Tấu hay bậc tinh thông, mastery thứ hai và cây giao thoa bị khóa (`SOLO_TAKEN`)
+cho tới khi hoàn điểm. Bậc tinh thông (`Sk.max_rank`, `MASTER_RANKS = 3`): đi thuần thì mỗi kỹ năng chủ động của mastery chính
+học thêm 3 bậc, mỗi bậc hồi chiêu nhanh hơn 6% (`skill_cd`). Tài liệu ghi "+6% hiệu lực"; hồi chiêu được chọn vì áp được cho mọi kỹ năng.
+Đã kiểm tra khởi động cả tám cây (`gen/solo.gd`) và lại cả 31 tổ hợp hai mastery (`gen/boot.gd`).
+
+Việc cho người viết test: `tests/skills.gd` giờ đòi 440 node, 48 chủ động, 60 then chốt, 8 tuyệt kỹ; `tests/menu.gd` mảng 44 phần tử.
+Viết `tests/solo.gd`: hai chiều của luật khóa, bậc tinh thông làm `skill_cd` giảm, và mỗi node một kiểm tra.

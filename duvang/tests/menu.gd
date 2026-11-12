@@ -182,7 +182,7 @@ func _init() -> void:
 	counts.fill(0)
 	for id in Sk.NODES:
 		counts[Sk.NODES[id].get("m", 0)] += 1
-	check("19 nodes per mastery, 8 per link tree", counts == [19, 19, 8, 19, 8, 8, 19, 8, 8, 8, 19, 8, 8, 8, 8, 19, 8, 8, 8, 8, 8, 19, 8, 8, 8, 8, 8, 8, 19, 8, 8, 8, 8, 8, 8, 8])
+	check("19 nodes per mastery, 8 per link tree", counts == [19, 19, 8, 19, 8, 8, 19, 8, 8, 8, 19, 8, 8, 8, 8, 19, 8, 8, 8, 8, 8, 19, 8, 8, 8, 8, 8, 8, 19, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8])
 
 	await mage({"ember": 1, "kindle": 1, "firewall": 1})
 	var a = dummy("porter", Vector2(46, 20))

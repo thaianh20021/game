@@ -779,13 +779,156 @@ const NODES = {
 		"desc": "MÓC KÉO + ĐỒNG MINH. MÓC KÉO NHẮM VÀO THÚ THÌ KÉO NÓ VỀ CHỖ BẠN VÀ HỒI CHO NÓ 10% MÁU."},
 	"tc_drum": {"n": "MÕ MÁY", "m": 35, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "MM",
 		"desc": "TRỤ NỎ THÀNH TRỤ MÕ: KHÔNG BẮN, MÀ HỒI CHO BẠN 2% MÁU MỖI GIÂY KHI Ở TRONG 70 VÀ TÍCH THÀNH KÍNH. CÁI GIÁ: KHÔNG CÒN TRỤ NỎ. CẦN 6 ĐIỂM Ở MỖI DÒNG NGHỀ."},
+
+	# ================= Độc Tấu (solo trees, m 36-43): for a hero who puts no point in the second mastery.
+	# Same opening rule as a link tree (3 points, keystone 6), counted in the main mastery alone.
+	"ocb_parry": {"n": "ĐỠ LIÊN HOÀN", "m": 36, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "DL",
+		"desc": "THỦ THẾ ĐỠ ĐƯỢC MỘT ĐÒN THÌ KÉO DÀI THÊM 0,6 GIÂY, MỖI LẦN DÙNG MỘT LẦN."},
+	"ocb_iron": {"n": "THÂN THÉP", "m": 36, "b": 0, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "TT",
+		"desc": "MỖI ĐÒN ĐỠ ĐƯỢC CHO +2 GIÁP TRONG 8 GIÂY, CỘNG DỒN TỚI +10."},
+	"ocb_surge": {"n": "NỘ TRÀO", "m": 36, "b": 1, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "NT",
+		"desc": "KHI NỘ ĐẦY, NHÁT CHÉM KẾ TIẾP GÂY GẤP ĐÔI VÀ TIÊU 30 NỘ."},
+	"ocb_blood": {"n": "MÁU CHIẾN", "m": 36, "b": 1, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "MC",
+		"desc": "DƯỚI NỬA MÁU, NỘ NHẬN ĐƯỢC TỪ NHÁT CHÉM GẤP ĐÔI."},
+	"ocb_cry": {"n": "TIẾNG THÉT DÀI", "m": 36, "b": 1, "pos": [2, 0], "kind": "p", "max": 1, "abbr": "TD",
+		"desc": "HÉT TRẬN KÉO DÀI THÊM 3 GIÂY."},
+	"ocb_long": {"n": "CHUỖI DÀI", "m": 36, "b": 2, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "CD",
+		"desc": "ĐÒN CUỐI CHUỖI LẦN THỨ BA LIÊN TIẾP MÀ KHÔNG BỊ ĐÁNH TRÚNG GÂY GẤP ĐÔI."},
+	"ocb_wide": {"n": "LƯỠI RỘNG", "m": 36, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "LR",
+		"desc": "NHÁT CHÉM THƯỜNG RỘNG THÊM 20 ĐỘ VÀ XA THÊM 6."},
+	"ocb_master": {"n": "KIẾM SƯ", "m": 36, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "KS",
+		"desc": "MỌI NHÁT CHÉM GÂY THÊM 15%. CÁI GIÁ: NGOÀI GIAO CHIẾN, NỘ TỰ GIẢM NHANH GẤP ĐÔI. CẦN 6 ĐIỂM Ở CHIẾN BINH."},
+
+	"ont_hot": {"n": "LỬA ÂM Ỉ", "m": 37, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "LA",
+		"desc": "CHÁY KÉO DÀI THÊM 2 GIÂY."},
+	"ont_spread": {"n": "BÉN LỬA", "m": 37, "b": 0, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "BL",
+		"desc": "KẺ CHẾT KHI ĐANG CHÁY TRUYỀN CHÁY SANG KẺ GẦN NHẤT."},
+	"ont_deepcold": {"n": "BĂNG SÂU", "m": 37, "b": 1, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "BS",
+		"desc": "KẺ BỊ LẠNH LẦN NỮA KHI CÒN ĐANG LẠNH BỊ ĐÓNG BĂNG 1 GIÂY (TRỪ BOSS). 3 GIÂY MỘT LẦN MỖI KẺ."},
+	"ont_frostbite": {"n": "CẮN GIÁ", "m": 37, "b": 1, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "CG",
+		"desc": "KẺ ĐANG LẠNH NHẬN THÊM 10% SÁT THƯƠNG."},
+	"ont_frostguard": {"n": "GIÁP SƯƠNG", "m": 37, "b": 1, "pos": [2, 0], "kind": "p", "max": 1, "abbr": "GS",
+		"desc": "VÒNG SƯƠNG CHO 15 KHIÊN."},
+	"ont_arc": {"n": "SÉT ĐÁNH HAI", "m": 37, "b": 2, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "SH",
+		"desc": "SÉT CHUYỀN ĐÁNH KẺ ĐẦU TIÊN THÊM MỘT LẦN NỮA, 100% TẤN CÔNG."},
+	"ont_charge": {"n": "TÍCH ĐIỆN", "m": 37, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "TD",
+		"desc": "KẺ BỊ GIẬT NHẬN THÊM 10% SÁT THƯƠNG NỮA."},
+	"ont_triad": {"n": "TAM HỢP", "m": 37, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "TH",
+		"desc": "CỘNG HƯỞNG CHO THÊM 40% THAY VÌ 20%. CÁI GIÁ: PHÉP CÙNG HỆ VỚI PHÉP VỪA DÙNG GÂY ÍT HƠN 20%. CẦN 6 ĐIỂM Ở NGUYÊN TỐ SƯ."},
+
+	"ost_shadow": {"n": "BÓNG DÀI", "m": 38, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "BD",
+		"desc": "MÀN KHÓI KÉO DÀI THÊM 1,5 GIÂY."},
+	"ost_step": {"n": "BƯỚC KÉP", "m": 38, "b": 0, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "BK",
+		"desc": "BƯỚC BÓNG HỒI CHIÊU NHANH HƠN 30%."},
+	"ost_toxic": {"n": "ĐỘC ĐẬM", "m": 38, "b": 1, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "DD",
+		"desc": "ĐỘC CỘNG DỒN THÊM ĐƯỢC 2 LẦN."},
+	"ost_seep": {"n": "THẤM ĐỘC", "m": 38, "b": 1, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "TD",
+		"desc": "MỖI CỘNG DỒN ĐỘC TRÊN MỤC TIÊU, ĐÒN CỦA BẠN LÊN NÓ GÂY THÊM 3%."},
+	"ost_dart": {"n": "PHI TIÊU TẨM", "m": 38, "b": 1, "pos": [2, 0], "kind": "p", "max": 1, "abbr": "PT",
+		"desc": "PHI TIÊU ĐỘC GÂY 2 CỘNG DỒN THAY VÌ 1."},
+	"ost_six": {"n": "SÁU NHÁT", "m": 38, "b": 2, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "SN",
+		"desc": "ĐIỂM HIỂM TỐI ĐA THÊM 1."},
+	"ost_reset": {"n": "KẾT LIỄU NỐI", "m": 38, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "KN",
+		"desc": "ĐÒN KẾT LIỄU GIẾT ĐƯỢC MỤC TIÊU TRẢ LẠI 2 ĐIỂM HIỂM."},
+	"ost_ghost": {"n": "VÔ ẢNH", "m": 38, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "VA",
+		"desc": "SAU MỖI ĐÒN KẾT LIỄU, BẠN TAN VÀO KHÓI 1,5 GIÂY. CÁI GIÁ: MÁU TỐI ĐA GIẢM 10%. CẦN 6 ĐIỂM Ở SÁT THỦ."},
+
+	"otl_host": {"n": "ĐẠO QUÂN", "m": 39, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "DQ",
+		"desc": "GỌI ĐƯỢC THÊM 1 DƯ ẢNH."},
+	"otl_strong": {"n": "BÓNG ĐẬM", "m": 39, "b": 0, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "BD",
+		"desc": "DƯ ẢNH GÂY THÊM 25% SÁT THƯƠNG."},
+	"otl_curse2": {"n": "NGUYỀN ĐẬM", "m": 39, "b": 1, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "ND",
+		"desc": "KẺ BỊ NGUYỀN GÂY ÍT HƠN THÊM 10% SÁT THƯƠNG."},
+	"otl_wither": {"n": "HÉO MÒN", "m": 39, "b": 1, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "HM",
+		"desc": "KẺ BỊ NGUYỀN MẤT 20% TẤN CÔNG CỦA BẠN MỖI GIÂY."},
+	"otl_bind": {"n": "XIỀNG DÀI", "m": 39, "b": 1, "pos": [2, 0], "kind": "p", "max": 1, "abbr": "XD",
+		"desc": "XIỀNG HỒN NỐI THÊM 2 KẺ."},
+	"otl_eight": {"n": "TÁM HỒN", "m": 39, "b": 2, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "TH",
+		"desc": "GIỮ ĐƯỢC TỚI 8 HỒN."},
+	"otl_reap": {"n": "GẶT ĐÔI", "m": 39, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "GD",
+		"desc": "LƯỠI HÁI TRÚNG TỪ 3 KẺ TRỞ LÊN CHO THÊM 1 HỒN."},
+	"otl_lich": {"n": "VUA HỒN", "m": 39, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "VH",
+		"desc": "MỖI HỒN ĐANG GIỮ CHO THÊM 3% SÁT THƯƠNG. CÁI GIÁ: KHÔNG UỐNG ĐƯỢC BÌNH MÁU. CẦN 6 ĐIỂM Ở THUẬT SĨ LINH HỒN."},
+
+	"ohv_cap": {"n": "THÀNH CAO", "m": 40, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "TC",
+		"desc": "KHIÊN TỐI ĐA THÊM 30."},
+	"ohv_regen": {"n": "TỰ VÁ", "m": 40, "b": 0, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "TV",
+		"desc": "KHI KHIÊN DƯỚI 15, MỖI GIÂY BẠN NHẬN LẠI 3 KHIÊN."},
+	"ohv_spikes": {"n": "GAI DÀY", "m": 40, "b": 1, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "GD",
+		"desc": "GAI KHIÊN PHẢN LẠI GẤP ĐÔI."},
+	"ohv_bash": {"n": "ĐẬP NẶNG", "m": 40, "b": 1, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "DN",
+		"desc": "ĐẬP KHIÊN CHỈ CẦN 25 KHIÊN ĐỂ GÂY THÊM 100%."},
+	"ohv_verdict": {"n": "PHÁN QUYẾT LỚN", "m": 40, "b": 1, "pos": [2, 0], "kind": "p", "max": 1, "abbr": "PL",
+		"desc": "PHÁN QUYẾT RỘNG THÊM 40%."},
+	"ohv_taunt": {"n": "GỌI ĐÀN", "m": 40, "b": 2, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "GD",
+		"desc": "KHIÊU KHÍCH CHO KHIÊN TỪ TỐI ĐA 5 KẺ THAY VÌ 3."},
+	"ohv_cover": {"n": "VÒNG RỘNG", "m": 40, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "VR",
+		"desc": "VÒNG CHE RỘNG THÊM 30% VÀ TỒN TẠI THÊM 2 GIÂY."},
+	"ohv_bulwark": {"n": "TƯỜNG THÀNH", "m": 40, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "TT",
+		"desc": "KHI KHIÊN ĐẦY, ĐÒN NHỎ HƠN 10% MÁU CỦA BẠN KHÔNG LÀM MẤT GÌ. CÁI GIÁ: TỐC CHẠY GIẢM 10%. CẦN 6 ĐIỂM Ở HỘ VỆ."},
+
+	"ots_quick": {"n": "TẬP TRUNG NHANH", "m": 41, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "TN",
+		"desc": "TẬP TRUNG CHỈ CẦN 1,2 GIÂY THAY VÌ 2."},
+	"ots_deadeye": {"n": "NHẮM TRÚNG", "m": 41, "b": 0, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "NT",
+		"desc": "ĐÒN TIÊU TẬP TRUNG MẠNH HƠN 60% THAY VÌ 40%."},
+	"ots_traps": {"n": "BẪY KÉP", "m": 41, "b": 1, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "BK",
+		"desc": "BẪY KẸP ĐẶT HAI BẪY MỘT LÚC."},
+	"ots_jaw": {"n": "HÀM SẮT", "m": 41, "b": 1, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "HS",
+		"desc": "TRÓI TỪ BẪY KẸP DÀI THÊM 1 GIÂY."},
+	"ots_boom": {"n": "NỔ TO", "m": 41, "b": 1, "pos": [2, 0], "kind": "p", "max": 1, "abbr": "NT",
+		"desc": "BẪY NỔ RỘNG THÊM 40%."},
+	"ots_alpha": {"n": "ĐẦU ĐÀN", "m": 41, "b": 2, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "DD",
+		"desc": "THÚ THÊM 30% MÁU VÀ SÁT THƯƠNG."},
+	"ots_mark": {"n": "DẤU SÂU", "m": 41, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "DS",
+		"desc": "KẺ MANG DẤU SĂN NHẬN THÊM 10% NỮA."},
+	"ots_lone": {"n": "SÓI ĐƠN", "m": 41, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "SD",
+		"desc": "BẠN GÂY THÊM 25% SÁT THƯƠNG. CÁI GIÁ: KHÔNG CÒN THÚ ĐI CÙNG. CẦN 6 ĐIỂM Ở THỢ SĂN."},
+
+	"ott_bigheal": {"n": "MÕ LỚN", "m": 42, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "ML",
+		"desc": "TIẾNG MÕ HỒI 35% MÁU THAY VÌ 25%."},
+	"ott_ground": {"n": "ĐẤT RỘNG", "m": 42, "b": 0, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "DR",
+		"desc": "ĐẤT THIÊNG RỘNG THÊM 40% VÀ TỒN TẠI THÊM 2 GIÂY."},
+	"ott_brand": {"n": "ẤN SÂU", "m": 42, "b": 1, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "AS",
+		"desc": "ẤN TRỪNG GÂY THÊM 20% VÀ ĐỂ SOI 10 GIÂY."},
+	"ott_bright": {"n": "SOI RỰC", "m": 42, "b": 1, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "SR",
+		"desc": "KẺ BỊ SOI NHẬN THÊM 5% SÁT THƯƠNG NỮA."},
+	"ott_cleanse": {"n": "QUÉT SẠCH", "m": 42, "b": 1, "pos": [2, 0], "kind": "p", "max": 1, "abbr": "QS",
+		"desc": "TRỪ TÀ RỘNG THÊM 30%."},
+	"ott_grace": {"n": "PHƯỚC DÀY", "m": 42, "b": 2, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "PD",
+		"desc": "CHÚC LÀNH CHO THÊM 25% SÁT THƯƠNG THAY VÌ 15%."},
+	"ott_vow": {"n": "NGUYỆN DÀI", "m": 42, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "ND",
+		"desc": "LỜI NGUYỆN KÉO DÀI 5 GIÂY THAY VÌ 3."},
+	"ott_saint": {"n": "THÁNH NHÂN", "m": 42, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "TN",
+		"desc": "KHI THÀNH KÍNH TỪ 80 TRỞ LÊN, MỖI GIÂY BẠN HỒI 2% MÁU. CÁI GIÁ: BẠN GÂY ÍT HƠN 10% SÁT THƯƠNG. CẦN 6 ĐIỂM Ở TƯ TẾ."},
+
+	"oks_turret": {"n": "TRỤ ĐÔI", "m": 43, "b": 0, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "TD",
+		"desc": "TRỤ NỎ BẮN HAI MŨI MỖI LẦN."},
+	"oks_mine": {"n": "MÌN NẶNG", "m": 43, "b": 0, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "MN",
+		"desc": "MÌN CHUÔNG GÂY THÊM 40%."},
+	"oks_vent": {"n": "XẢ SẠCH", "m": 43, "b": 1, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "XS",
+		"desc": "XẢ HƠI XA THÊM 40%."},
+	"oks_cool": {"n": "TẢN NHANH", "m": 43, "b": 1, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "TN",
+		"desc": "QUÁ NHIỆT NGẮN HƠN 1 GIÂY."},
+	"oks_hot": {"n": "VÙNG NÓNG", "m": 43, "b": 1, "pos": [2, 0], "kind": "p", "max": 1, "abbr": "VN",
+		"desc": "MỌI HIỆU ỨNG \"TRÊN 70 NHIỆT\" BẮT ĐẦU TỪ 60 NHIỆT."},
+	"oks_hook": {"n": "MÓC NHANH", "m": 43, "b": 2, "pos": [0, 0], "kind": "p", "max": 1, "abbr": "MN",
+		"desc": "MÓC KÉO HỒI CHIÊU NHANH HƠN 40%."},
+	"oks_mute": {"n": "CHUÔNG LỚN", "m": 43, "b": 2, "pos": [1, 0], "kind": "p", "max": 1, "abbr": "CL",
+		"desc": "CHUÔNG CÂM RỘNG THÊM 40%."},
+	"oks_four": {"n": "BỐN MÁY", "m": 43, "b": -1, "pos": [0, 0], "kind": "k", "max": 1, "abbr": "BM",
+		"desc": "ĐẶT ĐƯỢC TỚI 4 THIẾT BỊ. CÁI GIÁ: MỖI THIẾT BỊ CỘNG THÊM 10 NHIỆT KHI ĐẶT. CẦN 6 ĐIỂM Ở KỸ SƯ CỔ VẬT."},
 }
 
 # Indexed by a node's "m". Masteries: 0, 1, 3, 6, 10. The others are the link trees of the pairs in LINKS.
 const MASTERY = ["CHIẾN BINH", "NGUYÊN TỐ SƯ", "KIẾM BÃO", "SÁT THỦ", "LƯỠI BÓNG", "DẠ LÔI", "THUẬT SĨ LINH HỒN", "KIẾM TANG", "TRO HỒN", "GẶT HỒN",
 	"HỘ VỆ", "TRẤN THỦ", "LŨY SẤM", "DẠ VỆ", "MỘ VỆ", "THỢ SĂN", "TIÊN PHONG", "THIÊN TIỄN", "TRUY ẢNH", "HỒN LẠP", "BIÊN VỆ",
 	"TƯ TẾ", "KIẾM NGUYỆN", "NHẬT QUANG", "PHÁN QUAN", "CHIÊU HỒN", "THÁNH VỆ", "TUẦN LÂM",
-	"KỸ SƯ CỔ VẬT", "THIẾT THỦ", "LÔI CÔNG", "THỢ BÓNG", "KHÔI LỖI SƯ", "PHÁO LŨY", "CƠ LẠP", "THỢ CHUÔNG"]
+	"KỸ SƯ CỔ VẬT", "THIẾT THỦ", "LÔI CÔNG", "THỢ BÓNG", "KHÔI LỖI SƯ", "PHÁO LŨY", "CƠ LẠP", "THỢ CHUÔNG",
+	"ĐỘC TẤU KIẾM", "ĐỘC TẤU PHÉP", "ĐỘC TẤU BÓNG", "ĐỘC TẤU HỒN", "ĐỘC TẤU KHIÊN", "ĐỘC TẤU SĂN", "ĐỘC TẤU MÕ", "ĐỘC TẤU MÁY"]
+# the solo tree (Độc Tấu) of each mastery, by the solo tree's index
+const SOLO = {36: 0, 37: 1, 38: 3, 39: 6, 40: 10, 41: 15, 42: 21, 43: 28}
+# extra ranks a pure-mastery hero can put in each active skill of the main mastery (each: 6% faster cooldown)
+const MASTER_RANKS = 3
 const LINKS = {2: [0, 1], 4: [0, 3], 5: [1, 3], 7: [0, 6], 8: [1, 6], 9: [3, 6], 11: [0, 10], 12: [1, 10], 13: [3, 10], 14: [6, 10], 16: [0, 15], 17: [1, 15], 18: [3, 15], 19: [6, 15], 20: [10, 15],
 	22: [0, 21], 23: [1, 21], 24: [3, 21], 25: [6, 21], 26: [10, 21], 27: [15, 21],
 	29: [0, 28], 30: [1, 28], 31: [3, 28], 32: [6, 28], 33: [10, 28], 34: [15, 28], 35: [21, 28]}
@@ -802,7 +945,9 @@ const BRANCHES = [["THỦ", "NỘ", "BINH KHÍ"], ["LỬA", "BĂNG", "SÉT"], ["
 	["VỚI TRIỆU HỒI", "VỚI NGUYỀN", "VỚI GẶT"], ["VỚI THÀNH LŨY", "VỚI TRỪNG PHẠT", "VỚI HỘ TỐNG"], ["VỚI THIỆN XẠ", "VỚI BẪY", "VỚI THÚ"],
 	["CƠ QUAN", "HƠI NƯỚC", "CỔ VẬT"], ["VỚI THỦ", "VỚI NỘ", "VỚI BINH KHÍ"], ["VỚI LỬA", "VỚI BĂNG", "VỚI SÉT"], ["VỚI BÓNG", "VỚI ĐỘC", "VỚI KẾT LIỄU"],
 	["VỚI TRIỆU HỒI", "VỚI NGUYỀN", "VỚI GẶT"], ["VỚI THÀNH LŨY", "VỚI TRỪNG PHẠT", "VỚI HỘ TỐNG"], ["VỚI THIỆN XẠ", "VỚI BẪY", "VỚI THÚ"],
-	["VỚI CHỮA LÀNH", "VỚI THANH TẨY", "VỚI BAN PHƯỚC"]]
+	["VỚI CHỮA LÀNH", "VỚI THANH TẨY", "VỚI BAN PHƯỚC"],
+	["THỦ", "NỘ", "BINH KHÍ"], ["LỬA", "BĂNG", "SÉT"], ["BÓNG", "ĐỘC", "KẾT LIỄU"], ["TRIỆU HỒI", "NGUYỀN", "GẶT"],
+	["THÀNH LŨY", "TRỪNG PHẠT", "HỘ TỐNG"], ["THIỆN XẠ", "BẪY", "THÚ"], ["CHỮA LÀNH", "THANH TẨY", "BAN PHƯỚC"], ["CƠ QUAN", "HƠI NƯỚC", "CỔ VẬT"]]
 const COLS = [
 	[Color("8fb0d6"), Color("c4566a"), Color("d9a05b")],
 	[Color("e98a2e"), Color("7fd4e8"), Color("9db4ff")],
@@ -840,6 +985,14 @@ const COLS = [
 	[Color("a9d6a0"), Color("a9d6a0"), Color("a9d6a0")],
 	[Color("a9d6a0"), Color("a9d6a0"), Color("a9d6a0")],
 	[Color("a9d6a0"), Color("a9d6a0"), Color("a9d6a0")],
+	[Color("8fb0d6"), Color("c4566a"), Color("d9a05b")],
+	[Color("e98a2e"), Color("7fd4e8"), Color("9db4ff")],
+	[Color("9a7fc9"), Color("8fd66a"), Color("d94a5a")],
+	[Color("9fe3e0"), Color("b07fd6"), Color("6fc9a0")],
+	[Color("c9b98a"), Color("d97a4a"), Color("e0b04a")],
+	[Color("d9c27a"), Color("a8a29a"), Color("6fc9a0")],
+	[Color("8fe08a"), Color("fff0b0"), Color("f0c8e0")],
+	[Color("c98a4a"), Color("d0d0d8"), Color("8ac0b0")],
 ]
 const LINK_NEED = 3
 const LINK_KEY_NEED = 6
@@ -850,6 +1003,8 @@ const FULL = "ĐÃ HỌC ĐỦ"
 const NO_POINTS = "HẾT ĐIỂM"
 const NO_SECOND = "MẢNH CHUÔNG MỚI CÓ MỘT GIỌNG"
 const NOT_YOURS = "KHÔNG THUỘC DÒNG NGHỀ CỦA BẠN"
+const SOLO_LOCKED = "ĐÃ ĐẶT ĐIỂM VÀO DÒNG NGHỀ THỨ HAI"
+const SOLO_TAKEN = "ĐANG ĐI ĐỘC TẤU (X ĐỂ HOÀN ĐIỂM)"
 
 # swing-type skills use the same row layout as game.ATK:
 # [startup, active, recovery, damage x attack, reach, half angle, lunge speed, hitstop, shake]
@@ -905,21 +1060,35 @@ static func blocked(tree: Dictionary, id: String, lvl: int, second: bool, main: 
 	var m = N.get("m", 0)
 	if sec < 0:
 		sec = 1 if main == 0 else 0
-	if tree.get(id, 0) >= N.max:
+	if tree.get(id, 0) >= max_rank(tree, id, second, main, sec):
 		return FULL
 	if LINKS.has(m):
 		if m != link_of(main, sec):
 			return NOT_YOURS
 		if not second:
 			return NO_SECOND
+		if went_solo(tree, main):
+			return SOLO_TAKEN
 		var need = LINK_KEY_NEED if N.kind == "k" else LINK_NEED
 		if mastery_points(tree, LINKS[m][0]) < need or mastery_points(tree, LINKS[m][1]) < need:
 			return "CẦN %d ĐIỂM Ở MỖI DÒNG NGHỀ" % need
+	elif SOLO.has(m):
+		if SOLO[m] != main:
+			return NOT_YOURS
+		if not second:
+			return NO_SECOND
+		if mastery_points(tree, sec) > 0:
+			return SOLO_LOCKED
+		var need2 = LINK_KEY_NEED if N.kind == "k" else LINK_NEED
+		if mastery_points(tree, main) < need2:
+			return "CẦN %d ĐIỂM Ở %s" % [need2, MASTERY[main]]
 	else:
 		if m != main and m != sec:
 			return NOT_YOURS
 		if m == sec and not second:
 			return NO_SECOND
+		if m == sec and went_solo(tree, main):
+			return SOLO_TAKEN
 		if N.kind == "u":
 			if mastery_points(tree, m) < ULT_NEED:
 				return "CẦN %d ĐIỂM Ở %s" % [ULT_NEED, MASTERY[m]]
@@ -928,3 +1097,25 @@ static func blocked(tree: Dictionary, id: String, lvl: int, second: bool, main: 
 	if lvl - spent(tree) <= 0:
 		return NO_POINTS
 	return ""
+
+# the solo tree of a mastery, or -1
+static func solo_of(main: int) -> int:
+	for k in SOLO:
+		if SOLO[k] == main:
+			return k
+	return -1
+
+# a point in the solo tree, or a mastery rank above the first in an active skill, means the hero went solo
+static func went_solo(tree: Dictionary, main: int) -> bool:
+	for id in tree:
+		var N = NODES[id]
+		if N.get("m", 0) == solo_of(main) or (N.get("m", 0) == main and N.kind == "a" and tree[id] > N.max):
+			return true
+	return false
+
+# an active skill of the main mastery takes 3 more ranks while the second mastery stays empty
+static func max_rank(tree: Dictionary, id: String, second: bool, main: int, sec: int) -> int:
+	var N = NODES[id]
+	if N.kind == "a" and N.get("m", 0) == main and second and mastery_points(tree, sec) == 0:
+		return N.max + MASTER_RANKS
+	return N.max

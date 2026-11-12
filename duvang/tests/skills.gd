@@ -75,8 +75,8 @@ func _init() -> void:
 		seen[key] = true
 		if N.kind == "a":
 			actives += 1
-	check("376 nodes, no two in the same place", ok and Sk.NODES.size() == 376)
-	check("48 active skills, 52 keystones, 8 ultimates", actives == 48 and Sk.NODES.values().filter(func(n): return n.kind == "k").size() == 52 and Sk.NODES.values().filter(func(n): return n.kind == "u").size() == 8)
+	check("440 nodes, no two in the same place", ok and Sk.NODES.size() == 440)
+	check("48 active skills, 60 keystones, 8 ultimates", actives == 48 and Sk.NODES.values().filter(func(n): return n.kind == "k").size() == 60 and Sk.NODES.values().filter(func(n): return n.kind == "u").size() == 8)
 
 	# --- points and gates
 	g.new_game()
