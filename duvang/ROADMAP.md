@@ -313,3 +313,10 @@ Trong cửa hàng: phím K (D-pad xuống) rã món đang trỏ trong túi thàn
 (`D.reforge_cost`). Mỗi cấp cộng 10% mỗi chỉ số gốc dương, ít nhất 1 (`D.stat_of`). Rèn không bao giờ thất bại.
 Khung đồ hiện cấp rèn, giá rèn và lượng xỉ nhận được khi rã; góc cửa hàng hiện số Xỉ Đồng. Biến `scrap` được lưu.
 Kiểm tra nhanh: `gen/forge.gd`.
+
+## Cập nhật 2026-11-12 (bản Android)
+
+Điều khiển cảm ứng (`src/touch.gd`), cấu hình xuất Android (`export_presets.cfg`, arm64, nằm ngang), icon ứng dụng
+(`tools/icon.gd`), nút Back mở menu. Đã build được `build/du-vang.apk` (30 MB, bản debug). Đã thử cảm ứng bằng sự kiện giả lập
+(`gen/touch.gd`: cần gạt đi được, nút đánh tự nhắm và trúng quái phía sau, nút kỹ năng, nút túi). Chưa chạy trên điện thoại thật:
+lần cài đầu điện thoại từ chối vì chưa ai bấm cho phép.

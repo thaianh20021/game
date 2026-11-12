@@ -180,3 +180,16 @@ heading, and what the brief still asks for, is in `ROADMAP.md`.
 The other six masteries, skill variants, an ultimate for the second mastery, a fourth hand-drawn facing (left is the right side mirrored),
 gamepad control of the bag, lower-case letters in the font, any networking. Balance has
 only been played by the test bot.
+
+## Android
+
+`export_presets.cfg` has an Android preset (arm64, landscape, immersive). With the Android SDK set in Godot's Editor Settings
+(on this machine `C:/Users/ADMIN/Documents/Codex/2026-11-05/la/work/android-sdk`, JDK 17 at `C:/Java/jdk-17.0.19+10`):
+`godot --headless --path duvang --export-debug Android build/du-vang.apk`, then install with that SDK's
+`platform-tools/adb install -r build/du-vang.apk` (accept the install prompt on the phone).
+The launcher icons (`icon.png`, `icon_fg.png`, `icon_bg.png`) are cut from a generated picture by `tools/icon.gd`.
+
+Touch controls (`src/touch.gd`) appear once a finger touches the screen: a floating stick on the left half, and on the right
+the attack button, dodge, five skills with their icons, the ultimate, a potion, E (talk, look), and the bag, skill tree and
+pause at the right edge. Attacks and skills aim at the nearest foe. Menus, the bag, the shop and the skill tree work by tapping.
+The phone's Back button opens and closes the pause menu. Not yet tried on a phone.

@@ -11,6 +11,7 @@ const World = preload("res://src/world.gd")
 const Ui = preload("res://src/ui.gd")
 const Menu = preload("res://src/menu.gd")
 const Sk = preload("res://src/skills.gd")
+const Touch = preload("res://src/touch.gd")
 
 const TS = 16
 const F = 1.0 / 12.0
@@ -125,8 +126,18 @@ var buf = ""
 var buf_t = 0.0
 var pad = false
 var pad_aim = Vector2.RIGHT
+var touch_on = false     # a finger has touched the screen: show and read the touch controls
+var touch_fingers = {}   # finger index -> the button it holds, or "stick"
+var touch_stick = {}     # {"centre", "at"} while a finger drives the stick
+var back_t = 0           # frames left of a phone Back press, read as "menu"
+
+func _notification(what: int) -> void:
+	# the phone's Back button opens or closes the menu instead of leaving the game
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		back_t = 3
 
 func _ready() -> void:
+	get_tree().set_quit_on_go_back(false)
 	Txt.build()
 	Art.build()
 	Sfx.init(self)
@@ -146,7 +157,8 @@ func _ready() -> void:
 		talk["story"] = true
 
 func _input(ev: InputEvent) -> void:
-	if ev is InputEventMouseMotion or ev is InputEventMouseButton:
+	Touch.event(self, ev)
+	if (ev is InputEventMouseMotion or ev is InputEventMouseButton) and not touch_on:
 		pad = false
 	elif ev is InputEventJoypadButton or (ev is InputEventJoypadMotion and absf(ev.axis_value) > 0.4):
 		pad = true
@@ -419,9 +431,11 @@ func spawn(kind: String, pos: Vector2) -> Dictionary:
 func held(n: String) -> bool:
 	if sim.has(n):
 		return sim[n]
+	if Touch.held(self, n) or (n == "menu" and back_t > 0):
+		return true
 	match n:
 		"atk":
-			return Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_key_pressed(KEY_J) or Input.is_joy_button_pressed(0, JOY_BUTTON_X)
+			return (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not (touch_on and mode == "play")) or Input.is_key_pressed(KEY_J) or Input.is_joy_button_pressed(0, JOY_BUTTON_X)
 		"dodge":
 			return Input.is_key_pressed(KEY_SPACE) or Input.is_key_pressed(KEY_SHIFT) or Input.is_joy_button_pressed(0, JOY_BUTTON_A)
 		"s1":
@@ -484,6 +498,9 @@ func move_dir() -> Vector2:
 	var j = Vector2(Input.get_joy_axis(0, JOY_AXIS_LEFT_X), Input.get_joy_axis(0, JOY_AXIS_LEFT_Y))
 	if j.length() > 0.25:
 		v = j
+	var tm = Touch.move(self)
+	if tm.length() > 0.15:
+		v = tm
 	return v.limit_length(1.0)
 
 func ui_mouse() -> Vector2:
@@ -494,6 +511,8 @@ func ui_mouse() -> Vector2:
 func aim_pos() -> Vector2:
 	if sim.has("mouse"):
 		return sim.mouse
+	if touch_on:
+		return Touch.aim(self)
 	if pad:
 		var j = Vector2(Input.get_joy_axis(0, JOY_AXIS_RIGHT_X), Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y))
 		if j.length() > 0.3:
@@ -508,6 +527,7 @@ func aim_pos() -> Vector2:
 func _process(delta: float) -> void:
 	delta = minf(delta, 1.0 / 30.0)
 	t += delta
+	back_t = maxi(0, back_t - 1)
 	banner_t -= delta
 	warn_t -= delta
 	if not held("atk"):
@@ -2600,6 +2620,7 @@ func _draw() -> void:
 		draw_rect(Rect2(m.pos.floor(), Vector2(1, 1)), Color(VONG.r, VONG.g, VONG.b, ma) if zone.dark else Color(0.96, 0.92, 0.82, ma))
 	if mode != "title" and mode != "create":
 		Ui.hud(self, view)
+		Touch.draw(self, view)
 	if mode == "talk":
 		if talk.get("story", false):
 			Menu.story(self, view)

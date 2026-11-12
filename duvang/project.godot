@@ -6,6 +6,7 @@ config_version=5
 config/name="Du Vang"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.png"
 
 [display]
 
@@ -16,6 +17,7 @@ window/size/window_height_override=720
 window/stretch/mode="viewport"
 window/stretch/aspect="keep"
 window/stretch/scale_mode="integer"
+window/handheld/orientation=4
 
 [rendering]
 
@@ -23,3 +25,4 @@ textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 2d/snap/snap_2d_transforms_to_pixel=true
 environment/defaults/default_clear_color=Color(0.11, 0.2, 0.23, 1)
+textures/vram_compression/import_etc2_astc=true

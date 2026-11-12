@@ -2,3 +2,4 @@
 *.uid
 shots/
 gen/
+build/
