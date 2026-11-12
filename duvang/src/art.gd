@@ -14,6 +14,24 @@ static var REMAP = {}    # that theme's colour swaps
 
 # The Breathing Forest: deeper greens, dark loam, teal water, purple flowers.
 const THEMES = {
+	"gold": {
+		"5b7b4a": "8a7a52", "4f6d42": "776844", "6b8b55": "9c8b60", "86a565": "b8a676", "6e8e57": "8f8058", "47633c": "665a3c",
+		"7a6a4f": "7a6a5a", "6b5c44": "6a5a4c", "8d7c5e": "958271",
+		"2f5560": "1c1a24", "29495a": "16151d", "4f8a8f": "2c2836", "3d6f77": "24212c", "6aa3a6": "3a3546", "26444e": "121118",
+		"4a3f33": "4e4436", "352c26": "3a3229", "5d5042": "5e5243",
+	},
+	"snow": {
+		"5b7b4a": "c9d0d8", "4f6d42": "b4bcc6", "6b8b55": "dde3ea", "86a565": "f2f5f8", "6e8e57": "d2d9e1", "47633c": "9aa3ae",
+		"7a6a4f": "6e6a66", "6b5c44": "5e5a57", "8d7c5e": "86817b",
+		"2f5560": "3a4652", "29495a": "323d48", "4f8a8f": "5d6c7a", "3d6f77": "4c5a67", "6aa3a6": "7d8c9a", "26444e": "2a333d",
+		"4a3f33": "7c858f", "352c26": "5e6670", "5d5042": "959ea8",
+	},
+	"forge": {
+		"5b7b4a": "4a3a34", "4f6d42": "3e302b", "6b8b55": "5a463d", "86a565": "6e5546", "6e8e57": "524038", "47633c": "34282a",
+		"7a6a4f": "5e4a3a", "6b5c44": "4e3d31", "8d7c5e": "73594a",
+		"2f5560": "6a2a1c", "29495a": "5a2318", "4f8a8f": "c2541f", "3d6f77": "9a3e1c", "6aa3a6": "e8862e", "26444e": "4a1c14",
+		"4a3f33": "2a2220", "352c26": "1e1817", "5d5042": "3a2e2a",
+	},
 	"salt": {
 		"5b7b4a": "b9b4a6", "4f6d42": "a7a294", "6b8b55": "cdc8ba", "86a565": "e6e1d4", "6e8e57": "c2bdaf", "47633c": "958f81",
 		"7a6a4f": "8f8576", "6b5c44": "7d7466", "8d7c5e": "a89c88",
@@ -121,6 +139,10 @@ const SPRITES = ["tree_giant", "shrooms", "trunk", "hut", "gate", "log", "wolf_i
 	"mother_i", "mother_w", "mother_k", "npc_reu", "npc_man", "npc_kid",
 	"crab_i", "crab_w", "crab_k", "gull_i", "gull_w", "gull_k", "diver_i", "diver_w", "diver_k", "admiral_i", "admiral_w", "admiral_k",
 	"npc_vanh", "npc_buyer", "wreck", "saltpile", "anchor", "tent",
+	"slag_i", "slag_w", "slag_k", "smith_i", "smith_w", "smith_k", "moth_i", "moth_w", "moth_k", "forgemaster_i", "forgemaster_w", "forgemaster_k",
+	"mold_i", "mold_w", "mold_k", "npc_okha", "npc_than", "mineshaft", "slagheap", "furnace", "banner",
+	"scribe_i", "scribe_w", "scribe_k", "guard_i", "guard_w", "guard_k", "censer_i", "censer_w", "censer_k", "okhab_i", "okhab_w", "okhab_k",
+	"first_i", "first_w", "first_k", "npc_kimyen", "npc_archivist", "shelf", "pillar", "bellframe", "railing",
 	"leech_i", "leech_w", "leech_k", "netter_i", "netter_w", "netter_k", "wisp_i", "wisp_w", "wisp_k", "keeper_i", "keeper_w", "keeper_k",
 	"h_idle", "h_w1", "h_w2", "h_w3", "h_wind", "h_slash", "tree_willow", "tree_dead", "boulder", "boat", "fence", "sign", "well", "crates", "cart", "netrack", "shrine", "grave",
 	"reed_i", "reed_w", "reed_k", "heron_i", "heron_w", "heron_k", "porter_i", "porter_w", "porter_k",
@@ -179,6 +201,8 @@ static func build_icons() -> void:
 
 static func load_sprites() -> void:
 	for n in SPRITES:
+		if not ResourceLoader.exists("res://assets/%s.png" % n):
+			continue   # a sprite still being made: the zones that need it are not reachable yet
 		var im: Image = (load("res://assets/%s.png" % n) as Texture2D).get_image()
 		im.convert(Image.FORMAT_RGBA8)
 		if n.begins_with("reed"):
@@ -519,7 +543,7 @@ const SKILL_IDS = ["bulwark", "iron", "steady", "rush", "counter", "unbroken", "
 	"tc_knell", "tc_holy", "tc_lit", "tc_purge", "tc_bless", "tc_hook", "tc_drum",
 	"ocb_parry", "ocb_iron", "ocb_surge", "ocb_blood", "ocb_cry", "ocb_long", "ocb_wide", "ocb_master", "ont_hot", "ont_spread", "ont_deepcold", "ont_frostbite", "ont_frostguard", "ont_arc", "ont_charge", "ont_triad", "ost_shadow", "ost_step", "ost_toxic", "ost_seep", "ost_dart", "ost_six", "ost_reset", "ost_ghost", "otl_host", "otl_strong", "otl_curse2", "otl_wither", "otl_bind", "otl_eight", "otl_reap", "otl_lich", "ohv_cap", "ohv_regen", "ohv_spikes", "ohv_bash", "ohv_verdict", "ohv_taunt", "ohv_cover", "ohv_bulwark", "ots_quick", "ots_deadeye", "ots_traps", "ots_jaw", "ots_boom", "ots_alpha", "ots_mark", "ots_lone", "ott_bigheal", "ott_ground", "ott_brand", "ott_bright", "ott_cleanse", "ott_grace", "ott_vow", "ott_saint", "oks_turret", "oks_mine", "oks_vent", "oks_cool", "oks_hot", "oks_hook", "oks_mute", "oks_four"]
 const ITEM_KEYS = ["w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "w8", "w9", "w10", "a0", "a1", "a2", "a3", "a4", "a5", "c0", "c1", "c2", "c3", "c4", "c5",
-	"u_wave", "u_box", "u_free", "u_wick", "u_seed", "u_salt"]
+	"u_wave", "u_box", "u_free", "u_wick", "u_seed", "u_salt", "u_forge"]
 const HERO_FRAMES = ["idle", "w1", "w2", "w3", "wind", "slash"]
 
 static func load_optional() -> void:

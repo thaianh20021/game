@@ -233,3 +233,18 @@ dùng bộ đòn của Người Gác Phà, gọi Thợ Lặn Chìm ở 66% và 3
 Nhiệm vụ m12 tới m16 và s4, NPC chị Vành (Phường) và Lạc (người mua của Lò Đúc), cảnh đọc sổ hàng trong hầm hai (`manifest`).
 Kết chương: Thầy Khâm bỏ đi cùng hòm tiếng để bán cho Ô Kha (không còn ở trấn); Ngải vừa lên dây mảnh vừa bán đồ.
 Kiểm tra nhanh: `gen/ch3.gd`.
+
+## Cập nhật 2026-11-12 (chương 4: Phép tính của Người Đúc Chuông, theo Hồi 4 của brief)
+
+Hai khu mới: **Dãy Mỏ Câm** (`mines`, núi tuyết phía đông Biển Muối, đi theo đường ván mới; làng thợ của bác Than, ba cửa hầm,
+các đống xỉ, hai trại Hội Giữ Lặng và Dòng Vọng Thân trước cổng lò; mở khi nhận m17) và **Lò Tái Thanh** (`foundry`, dungeon:
+nhà cổng nơi Ô Kha tiếp khách, xưởng đúc, giá làm nguội, hành lang ống bễ, hố đúc; mở khi nhận m20). Bảng màu `snow` và `forge`.
+Ba quái mới mượn cách đánh qua `"ai"`: Người Xỉ (lao thẳng như Hươu Rỗng), Thợ Rèn Vọng (như Sói Ký Ức), Bướm Đồng (như Ma Đèn Lồng:
+hồi máu cho quái khác, nên hạ trước). Hai boss chung một hố: **Tổng Thợ Cả Bạch Lô** (bộ đòn Người Thu Phí, gọi Thợ Rèn Vọng,
+rơi Búa Bạch Lô: đòn cuối chuỗi để lại Cháy) và **Khuôn Sống** (bộ đòn Mẹ Rễ, đứng yên, rễ đồng và vũng đồng nóng chảy).
+Boss gọi quân và màu vũng giờ lấy từ dữ liệu (`summon`, `call_text`, `heal_text`, `cloud` trong `D.FOES`).
+Nhiệm vụ m17 tới m21 và s5 (than ấm cho lò sưởi của làng; xong thì lò sưởi sáng lại). Cảnh `standoff` và `ledger`.
+Tố Diên rời trấn lên núi khi nhận m17. Kết chương: lò sập một nửa, Tố Diên bị tước chức, tiếng Vãn thêm ba chữ "ĐỪNG ĐI TÌM".
+
+Sửa lỗi chương 3: cảnh báo đòn của quái mới không hiện (phần vẽ cảnh báo rẽ nhánh theo loại quái thay vì `ai`).
+Kiểm tra nhanh: `gen/ch4.gd`.

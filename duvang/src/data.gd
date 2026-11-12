@@ -26,7 +26,19 @@ const FOES = {
 	"crab": {"name": "CUA MUỐI", "hp": 110.0, "spd": 34.0, "r": 12.0, "poise": 35.0, "range": 44.0, "wind": 0.8, "rec": 1.0, "dmg": 22.0, "cd": 1.0, "xp": 70, "gold": [8, 16], "aggro": 130.0, "loot": 0.5, "ai": "porter"},
 	"gull": {"name": "HẢI ÂU TRO", "hp": 32.0, "spd": 96.0, "r": 7.0, "poise": 0.0, "range": 80.0, "wind": 0.4, "rec": 0.7, "dmg": 14.0, "cd": 1.3, "xp": 34, "gold": [3, 8], "aggro": 160.0, "loot": 0.16, "ai": "leech"},
 	"diver": {"name": "THỢ LẶN CHÌM", "hp": 60.0, "spd": 40.0, "r": 8.0, "poise": 0.0, "range": 140.0, "wind": 0.9, "rec": 0.8, "dmg": 15.0, "cd": 3.2, "xp": 48, "gold": [5, 12], "aggro": 170.0, "loot": 0.24, "ai": "sower"},
-	"admiral": {"name": "ĐÔ ĐỐC SẢNH MUỐI", "hp": 1500.0, "spd": 40.0, "r": 18.0, "poise": 110.0, "range": 70.0, "wind": 0.8, "rec": 0.9, "dmg": 26.0, "cd": 0.7, "xp": 1400, "gold": [300, 420], "aggro": 270.0, "loot": 1.0, "big": true, "ai": "boss"},
+	"admiral": {"name": "ĐÔ ĐỐC SẢNH MUỐI", "hp": 1500.0, "spd": 40.0, "r": 18.0, "poise": 110.0, "range": 70.0, "wind": 0.8, "rec": 0.9, "dmg": 26.0, "cd": 0.7, "xp": 1400, "gold": [300, 420], "aggro": 270.0, "loot": 1.0, "big": true, "ai": "boss", "summon": "diver", "call_text": "THỦY THỦ CHÌM NGHE LỆNH ĐÔ ĐỐC."},
+	# chapter four
+	"slag": {"name": "NGƯỜI XỈ", "hp": 160.0, "spd": 40.0, "r": 13.0, "poise": 45.0, "range": 150.0, "wind": 1.0, "rec": 1.5, "dmg": 30.0, "cd": 1.8, "xp": 160, "gold": [14, 26], "aggro": 180.0, "loot": 0.8, "ai": "deer"},
+	"smith": {"name": "THỢ RÈN VỌNG", "hp": 60.0, "spd": 80.0, "r": 8.0, "poise": 0.0, "range": 32.0, "wind": 0.4, "rec": 0.5, "dmg": 18.0, "cd": 0.9, "xp": 60, "gold": [5, 12], "aggro": 150.0, "loot": 0.2, "ai": "wolf"},
+	"moth": {"name": "BƯỚM ĐỒNG", "hp": 40.0, "spd": 52.0, "r": 7.0, "poise": 0.0, "range": 140.0, "wind": 0.8, "rec": 0.6, "dmg": 12.0, "cd": 2.6, "xp": 50, "gold": [4, 10], "aggro": 170.0, "loot": 0.22, "ai": "wisp"},
+	"forgemaster": {"name": "TỔNG THỢ CẢ BẠCH LÔ", "hp": 1300.0, "spd": 38.0, "r": 17.0, "poise": 100.0, "range": 60.0, "wind": 0.8, "rec": 0.9, "dmg": 30.0, "cd": 0.8, "xp": 2000, "gold": [400, 520], "aggro": 260.0, "loot": 1.0, "big": true, "ai": "keeper", "summon": "smith", "heal_text": "LÒ RÈN ĐỎ LẠI"},
+	"mold": {"name": "KHUÔN SỐNG", "hp": 1400.0, "spd": 0.0, "r": 26.0, "poise": 140.0, "range": 80.0, "wind": 1.0, "rec": 1.0, "dmg": 30.0, "cd": 1.0, "xp": 2000, "gold": [300, 400], "aggro": 240.0, "loot": 1.0, "big": true, "fixed": true, "ai": "mother", "summon": "smith", "call_text": "KHUÔN SỐNG GỌI NHỮNG TIẾNG ĐÃ NUỐT.", "cloud": Color("e8862e")},
+	# chapter five
+	"scribe": {"name": "THƯ LẠI CHÉP", "hp": 70.0, "spd": 52.0, "r": 7.0, "poise": 0.0, "range": 160.0, "wind": 0.7, "rec": 0.5, "dmg": 20.0, "cd": 2.0, "xp": 90, "gold": [8, 16], "aggro": 180.0, "loot": 0.22, "ai": "heron"},
+	"guard": {"name": "CẤM VỆ KIM", "hp": 200.0, "spd": 32.0, "r": 14.0, "poise": 55.0, "range": 48.0, "wind": 0.9, "rec": 1.1, "dmg": 40.0, "cd": 0.9, "xp": 220, "gold": [18, 30], "aggro": 140.0, "loot": 0.9, "ai": "porter"},
+	"censer": {"name": "LƯ HƯƠNG SỐNG", "hp": 80.0, "spd": 44.0, "r": 8.0, "poise": 0.0, "range": 130.0, "wind": 0.9, "rec": 0.7, "dmg": 16.0, "cd": 3.0, "xp": 90, "gold": [8, 16], "aggro": 170.0, "loot": 0.24, "ai": "netter"},
+	"okhab": {"name": "Ô KHA, NGƯỜI ĐÚC CHUÔNG", "hp": 1800.0, "spd": 46.0, "r": 16.0, "poise": 120.0, "range": 70.0, "wind": 0.8, "rec": 0.9, "dmg": 34.0, "cd": 0.7, "xp": 4000, "gold": [600, 800], "aggro": 280.0, "loot": 1.0, "big": true, "ai": "boss", "summon": "scribe", "call_text": "THƯ LẠI CHÉP LẠI LỆNH CỦA Ô KHA."},
+	"first": {"name": "TIẾNG ĐẦU TIÊN", "hp": 2200.0, "spd": 0.0, "r": 30.0, "poise": 160.0, "range": 90.0, "wind": 1.0, "rec": 1.0, "dmg": 36.0, "cd": 0.9, "xp": 6000, "gold": [800, 1000], "aggro": 300.0, "loot": 1.0, "big": true, "fixed": true, "ai": "mother", "summon": "scribe", "call_text": "TIẾNG ĐẦU TIÊN GỌI NHỮNG NGƯỜI NÓ ĐÃ XAY.", "cloud": Color("f0d060")},
 }
 
 # Elite marks change how a foe must be fought, not just its numbers.
@@ -135,6 +147,7 @@ const UNIQ_TEXT = {
 	"free": "NÉ TRÚNG ĐÒN: KỸ NĂNG KẾ MIỄN PHÍ", "wick": "GIẾT KẺ ĐANG CHÁY HỒI 4% MÁU",
 	"seed": "MỖI DẤU TRÊN KẺ ĐỊCH: +8% SÁT THƯƠNG",
 	"salt": "ĐÒN CHÍ MẠNG LÀM KẺ ĐỊCH LẠNH",
+	"forge": "ĐÒN CUỐI CHUỖI ĐỂ LẠI CHÁY",
 }
 
 const POTION_COST = 15
@@ -155,6 +168,10 @@ const NPCS = {
 	"man": {"name": "BÀ MẬN", "tex": "npc_man"},
 	"vanh": {"name": "CHỊ VÀNH", "tex": "npc_vanh"},
 	"buyer": {"name": "LẠC, NGƯỜI MUA CỦA LÒ ĐÚC", "tex": "npc_buyer"},
+	"than": {"name": "BÁC THAN", "tex": "npc_than"},
+	"okha": {"name": "Ô KHA, NGƯỜI ĐÚC CHUÔNG", "tex": "npc_okha"},
+	"kimyen": {"name": "KIM YẾN", "tex": "npc_kimyen"},
+	"archivist": {"name": "BÀ GIỮ SỬ", "tex": "npc_archivist"},
 }
 
 const INTRO = [
@@ -166,6 +183,22 @@ const INTRO = [
 
 # What each person says when they have no quest business with you. Indexed by main quests finished.
 const CHAT = {
+	"kimyen": [
+		["TRIỀU TÀN KIM KHÔNG TÀN. NÓ CHỈ CHỜ. TA LÀ CÁI NÓ CHỜ."],
+		["TA ĐẾM NẾP NHĂN MỖI SÁNG. HÔM NAY THÊM BA. NGƯƠI BIẾT KHÔNG, NÓ CŨNG KHÔNG ĐÁNG SỢ NHƯ TA TƯỞNG."],
+	],
+	"archivist": [
+		["ĐỪNG CHẠM VÀO GIÁ SÁCH. CHÚNG NHỚ AI ĐÃ CHẠM."],
+		["TA ĐÃ CHÉP CHUYỆN CỦA NGƯƠI. KẾT THÚC THẾ NÀO THÌ TA CHƯA BIẾT. TA ĐỂ TRỐNG MỘT TRANG."],
+	],
+	"than": [
+		["NGƯỜI TA GỌI ĐÂY LÀ DÃY MỎ CÂM VÌ TRONG HẦM KHÔNG AI ĐƯỢC NÓI TO. ĐÁ NGHE. ĐÁ NHỚ."],
+		["LÒ SẬP RỒI MÀ TRONG HẦM VẪN CÒN TIẾNG BÚA. KHÔNG PHẢI NGƯỜI CỦA TA. TA KHÔNG XUỐNG XEM."],
+	],
+	"okha": [
+		["NGỒI ĐI. TRÀ CÒN NÓNG. TA KHÔNG ĐẦU ĐỘC KHÁCH. TA CẦN KHÁCH SỐNG."],
+		["TA VẪN ĐÚC TIẾP. LÒ SẬP MỘT NỬA THÌ ĐÚC BẰNG NỬA CÒN LẠI. NGƯƠI SẼ GẶP LẠI TA Ở MIỆNG CHUÔNG."],
+	],
 	"vanh": [
 		["NGƯỜI TA BẢO PHƯỜNG ĐÀO MỒ. CHÚNG TÔI ĐÀO ĐỒNG. MỒ THÌ NGƯỜI TA ĐÃ ĐÀO HỘ CHÚNG TÔI TỪ BA TRĂM NĂM TRƯỚC."],
 		["HẠM ĐỘI VẪN NẰM ĐÓ. TÔI VẪN ĐÀO. CÓ NHỮNG NGÀY TÔI TỰ HỎI MÌNH ĐANG LẤY ĐỒNG HAY ĐANG LẤY NGƯỜI."],
@@ -212,7 +245,7 @@ const CHAT = {
 # branch: a flag set by a choice; done and reward are then lists picked by its value.
 # ORDER is the order quests are offered in; main quests come before side ones.
 
-const ORDER = ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "m10", "m11", "m12", "m13", "m14", "m15", "m16", "s1", "s2", "s3", "s4"]
+const ORDER = ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "m10", "m11", "m12", "m13", "m14", "m15", "m16", "m17", "m18", "m19", "m20", "m21", "m22", "m23", "m24", "m25", "m26", "s1", "s2", "s3", "s4", "s5"]
 
 const QUESTS = {
 	"m1": {
@@ -374,6 +407,100 @@ const QUESTS = {
 		"done": ["BA CÁI TÊN. MỘT CÁI LÀ CỦA CHỒNG TÔI. TÔI BIẾT MÀ. TÔI CHỈ MUỐN NGHE AI ĐÓ ĐỌC NÓ LÊN.", "CẦM LẤY. ANH ẤY KHÔNG CẦN NỮA."],
 		"gold": 100, "xp": 800, "potions": 1, "item": ["armor", 2, 2],
 	},
+	# ---------------- chapter four: the Mute Mines
+	"m17": {
+		"name": "DÃY MỎ CÂM", "main": true, "giver": "ngai", "ender": "than", "after": ["m16"], "need": {"talk": "than"},
+		"goal": "TỚI LÀNG THỢ Ở DÃY MỎ CÂM, GẶP BÁC THAN",
+		"offer": ["LẠC GỬI THƯ VỀ. THẦY KHÂM ĐÃ GIAO CÁI HÒM CHO Ô KHA Ở LÒ TÁI THANH, TRÊN DÃY MỎ CÂM. TIẾNG VÃN ĐANG Ở ĐÓ.", "MÌNH KHÔNG ĐI ĐƯỢC. MÌNH PHẢI TRÔNG CỬA HÀNG. NHƯNG MÌNH SẼ LÊN DÂY MẢNH CHO BẠN TRƯỚC KHI ĐI. ĐỨNG YÊN.", "ĐI QUA BIỂN MUỐI, THEO CON ĐƯỜNG VÁN VỀ PHÍA ĐÔNG. Ở LÀNG THỢ, HỎI BÁC THAN."],
+		"wait": ["DÃY MỎ CÂM Ở CUỐI CON ĐƯỜNG VÁN, PHÍA ĐÔNG BIỂN MUỐI. BÁC THAN LÀ TRƯỞNG THỢ."],
+		"done": ["NGƯỜI CỦA NGẢI À. CON BÉ ĐÓ TỪNG Ở ĐÂY HỒI CÒN NHỎ XÍU. THẦY KHÂM MANG NÓ XUỐNG NÚI. TA KHÔNG BAO GIỜ HỎI TỪ ĐÂU RA.", "NGƯƠI MUỐN VÀO LÒ. CẢ DÃY NÚI NÀY SỐNG NHỜ CÁI LÒ ĐÓ. KHÔNG CÓ LÒ THÌ MÙA ĐÔNG NÀY CẢ LÀNG CHẾT RÉT.", "NÊN ĐỪNG MONG AI Ở ĐÂY GIÚP NGƯƠI. NHƯNG NẾU NGƯƠI GIÚP LÀNG TRƯỚC, TA SẼ NÓI CHO NGƯƠI CỬA NÀO KHÔNG KHÓA."],
+		"gold": 80, "xp": 2000, "potions": 1, "item": null,
+	},
+	"m18": {
+		"name": "BÁT CƠM CỦA LÒ", "main": true, "giver": "than", "after": ["m17"], "need": {"kill": {"slag": 5}},
+		"goal": "HẠ NGƯỜI XỈ QUANH CÁC ĐỐNG XỈ",
+		"offer": ["TỪ KHI HAI PHE KÉO QUÂN TỚI TRƯỚC CỔNG LÒ, KHÔNG AI ĐƯỢC CHỞ XỈ RA NỮA. XỈ CHẤT ĐỐNG, VÀ VỌNG TRONG XỈ ĐỨNG DẬY.", "NĂM CON NGƯỜI XỈ ĐANG LẢNG VẢNG GẦN LÀNG. CHÚNG CÚI XUỐNG RỒI LAO THẲNG. ĐỪNG ĐỨNG TRÊN ĐƯỜNG CHÚNG LAO."],
+		"wait": ["NĂM NGƯỜI XỈ, Ở CÁC ĐỐNG XỈ PHÍA NAM. CHÚNG LAO THEO ĐƯỜNG THẲNG. BƯỚC SANG BÊN."],
+		"done": ["NĂM ĐỐNG XỈ NẰM YÊN. LŨ TRẺ LẠI DÁM RA NHẶT THAN VỤN.", "TA HỨA RỒI. CỬA PHỤ PHÍA ĐÔNG LÒ KHÔNG KHÓA. NHƯNG TRƯỚC CỔNG CÓ HAI ĐẠO QUÂN, VÀ CẢ HAI ĐỀU MUỐN NGƯƠI ĐỨNG VỀ PHÍA MÌNH."],
+		"gold": 160, "xp": 2600, "potions": 2, "item": ["armor", 2, 2],
+	},
+	"m19": {
+		"name": "HAI PHE TRƯỚC CỔNG", "main": true, "giver": "dien", "after": ["m18"], "need": {"see": ["standoff"], "kill": {"smith": 6}},
+		"goal": "GẶP TỐ DIÊN TRƯỚC CỔNG LÒ, DẸP THỢ RÈN VỌNG Ở CÁC CỬA HẦM",
+		"offer": ["NGƯƠI TỚI ĐÚNG LÚC. HỘI GIỮ LẶNG MUỐN NIÊM CẢ CÁI LÒ. DÒNG VỌNG THÂN MUỐN 'GIẢI THOÁT' MỌI TIẾNG TRONG ĐÓ. HAI BÊN CÁCH NHAU MỘT CON ĐƯỜNG XE.", "NẾU MỘT MŨI TÊN BAY, THỢ MỎ SẼ ĐỨNG GIỮA. RA XEM ĐI. RỒI DẸP LŨ THỢ RÈN VỌNG Ở CÁC CỬA HẦM PHÍA BẮC. CHÚNG ĐANG CHỌC CẢ HAI BÊN NỔI ĐIÊN."],
+		"wait": ["ĐỨNG GIỮA HAI TRẠI MỘT LÚC. RỒI SÁU THỢ RÈN VỌNG Ở CÁC CỬA HẦM PHÍA BẮC."],
+		"done": ["KHÔNG AI BẮN. LẦN NÀY.", "VÀ CÓ CHUYỆN LẠ: Ô KHA GỬI NGƯỜI RA MỜI NGƯƠI VÀO LÒ. KHÔNG PHẢI MỜI ĐÁNH. MỜI LÀM KHÁCH. TA KHÔNG BIẾT LÃO MUỐN GÌ. TA KHÔNG THÍCH KHÔNG BIẾT."],
+		"gold": 200, "xp": 3000, "potions": 2, "item": ["charm", 2, 2],
+	},
+	"m20": {
+		"name": "NGƯỜI ĐÚC CHUÔNG", "main": true, "giver": "dien", "ender": "okha", "after": ["m19"], "need": {"see": ["ledger"]},
+		"goal": "VÀO LÒ TÁI THANH LÀM KHÁCH CỦA Ô KHA",
+		"offer": ["ĐI ĐI. NẾU LÃO ĐỊNH GIẾT NGƯƠI, LÃO ĐÃ KHÔNG CẦN MỜI.", "VÀ NGHE CHO KỸ. LÃO LÀ NGƯỜI DUY NHẤT CÒN SỐNG BIẾT CHUÔNG MẸ ĐƯỢC ĐÚC RA ĐỂ LÀM GÌ."],
+		"wait": ["CỔNG LÒ Ở CUỐI CON ĐƯỜNG XE, PHÍA ĐÔNG, SAU HAI TRẠI."],
+		"done": ["TA ĐÃ NÓI HẾT. TA KHÔNG CẦN NGƯƠI ĐỒNG Ý. TA CHỈ CẦN NGƯƠI HIỂU RẰNG TA KHÔNG NÓI DỐI.", "TIẾNG CỦA VÃN Ở DƯỚI HỐ ĐÚC. BẠCH LÔ ĐANG GIỮ NÓ ĐỂ THỬ KHUÔN. TA SẼ KHÔNG CẢN NGƯƠI. BẠCH LÔ THÌ CÓ."],
+		"gold": 0, "xp": 3200, "potions": 3, "item": null,
+	},
+	"m21": {
+		"name": "LÒ TÁI THANH", "main": true, "giver": "okha", "ender": "dien", "after": ["m20"], "need": {"kill": {"forgemaster": 1, "mold": 1}},
+		"goal": "LẤY LẠI TIẾNG VÃN TỪ HỐ ĐÚC",
+		"offer": ["ĐI XUỐNG HỐ ĐÚC. BẠCH LÔ ĐÃ ĐÚC CHUÔNG CHO TA BỐN MƯƠI NĂM. ÔNG ẤY SẼ KHÔNG ĐỂ AI LẤY ĐI THỨ ĐANG NUÔI KHUÔN.", "VÀ KHI NGƯƠI ĐỨNG TRƯỚC KHUÔN SỐNG, HÃY NHỚ: NÓ KHÔNG ÁC. NÓ CHỈ ĐÓI."],
+		"wait": ["HỐ ĐÚC Ở CUỐI LÒ, SAU HÀNH LANG ỐNG BỄ."],
+		"done": ["NGƯƠI CÒN SỐNG. TỐT. NGƯƠI NGHE THẤY TIẾNG NỔ CHỨ? NỬA CÁI LÒ ĐÃ SẬP. LÀNG THỢ MẤT LÒ SƯỞI GIỮA MÙA TUYẾT. ĐÓ LÀ VIỆC NGƯƠI LÀM. TA CHỈ NÓI ĐỂ NGƯƠI KHÔNG GIẢ VỜ LÀ KHÔNG.", "CÒN TA... KHI LÒ NỔ, TA DÙNG MẢNH CHUÔNG CỦA HỘI ĐỂ GIỮ ĐÁ KHÔNG ĐÈ QUÂN TA. HỘI GỌI ĐÓ LÀ DÙNG VỌNG. SÁNG MAI TA KHÔNG CÒN LÀ GIÁM LẶNG NỮA.", "ĐỪNG NHÌN TA NHƯ THẾ. TA CỨU ĐƯỢC BA MƯƠI NGƯỜI. LÀM LẠI TA VẪN LÀM THẾ."],
+		"gold": 500, "xp": 5000, "potions": 3, "item": null,
+		"toast": "HẾT CHƯƠNG BỐN",
+	},
+	"s5": {
+		"name": "LÒ SƯỞI CHO LÀNG", "main": false, "giver": "than", "after": ["m21"], "need": {"loot": ["THAN ẤM", 5, "slag"]},
+		"goal": "GOM THAN ẤM TỪ NGƯỜI XỈ CHO LÒ SƯỞI CỦA LÀNG",
+		"offer": ["LÒ SẬP RỒI. TA KHÔNG TRÁCH NGƯƠI. TA CŨNG KHÔNG CẢM ƠN NGƯƠI.", "LŨ NGƯỜI XỈ CÒN GIỮ LỬA TRONG BỤNG. MANG CHO TA NĂM CỤC THAN ẤM, LÒ SƯỞI CỦA LÀNG SẼ CHÁY QUA MÙA ĐÔNG."],
+		"wait": ["NĂM CỤC THAN ẤM, TỪ NGƯỜI XỈ."],
+		"done": ["LÒ SƯỞI CHÁY LẠI RỒI. LŨ TRẺ NGỦ ĐƯỢC.", "NGƯƠI LÀM SẬP MỘT CÁI LÒ VÀ THẮP LẠI MỘT CÁI LÒ. TA KHÔNG BIẾT CỘNG TRỪ THẾ NÀO. CẦM LẤY CÁI NÀY."],
+		"gold": 150, "xp": 2400, "potions": 2, "item": ["weapon", 2, 2],
+	},
+	# ---------------- chapter five: the First Toll
+	"m22": {
+		"name": "KINH THÀNH KIM THƯỢNG", "main": true, "giver": "dien", "ender": "kimyen", "after": ["m21"], "need": {"talk": "kimyen"},
+		"goal": "LÊN KINH THÀNH KIM THƯỢNG, GẶP KIM YẾN",
+		"offer": ["TA KHÔNG CÒN LÀ GIÁM LẶNG. NHƯNG TA VẪN CÒN TAI. Ô KHA ĐÃ LÊN KINH, MANG THEO CÁI CHUÔNG ĐÚC DỞ.", "MIỆNG CHUÔNG LÀ CÁI HỐ GIỮA KINH THÀNH KIM THƯỢNG, CHỖ CHUÔNG MẸ RƠI XUỐNG. LÃO SẼ TREO CHUÔNG MỚI Ở ĐÓ. ĐI QUA ĐÈO PHÍA BẮC DÃY MỎ.", "Ở KINH CÓ MỘT NGƯỜI NGƯƠI PHẢI GẶP: KIM YẾN, NGƯỜI CUỐI CÙNG CỦA TRIỀU TÀN KIM. CÔ TA TRẢ TIỀN CHO Ô KHA. VÀ KHINH ÔNG TA."],
+		"wait": ["ĐÈO PHÍA BẮC DÃY MỎ CÂM. KIM YẾN Ở TRƯỚC BẬC THỀM CUNG ĐIỆN."],
+		"done": ["NGƯỜI NHẶT VỌNG. NGƯƠI TỚI ĐỂ NGĂN Ô KHA À. TA CŨNG VẬY. TA ĐÃ MỞ CỔNG KINH CHO LÃO, VÀ TA HỐI HẬN TỪ ĐÊM ĐẦU.", "NHÌN TAY TA ĐI. BA TRĂM MƯỜI NĂM TA KHÔNG GIÀ MỘT NGÀY. TỪ KHI HẠM ĐỘI KHÔNG VỀ, MỖI THÁNG TA GIÀ MỘT NĂM.", "TA CẦN CHUÔNG ĐÓ XAY LẠI. NGƯƠI CẦN NÓ IM. CHÚNG TA ĐI CÙNG NHAU MỘT ĐOẠN, CHO TỚI KHI KHÔNG ĐI CÙNG ĐƯỢC NỮA."],
+		"gold": 200, "xp": 6000, "potions": 2, "item": null,
+	},
+	"m23": {
+		"name": "NHỮNG KẺ CHÉP LẠI", "main": true, "giver": "kimyen", "after": ["m22"], "need": {"kill": {"scribe": 6}},
+		"goal": "HẠ THƯ LẠI CHÉP TRÊN PHỐ KINH",
+		"offer": ["DƯ ẢNH CỦA BỌN THƯ LẠI ĐANG ĐI KHẮP PHỐ, CHÉP ĐI CHÉP LẠI NHỮNG TỜ CHIẾU KHÔNG AI ĐỌC. MỰC CỦA CHÚNG BỎNG NHƯ VÔI.", "HẠ SÁU ĐỨA. TA CẦN ĐƯỜNG VÀO ĐIỆN CHÉP SỬ. Ở ĐÓ CÓ BẢN CHÉP CỦA MỌI CUỐN SỔ TỪNG BỊ ĐỐT TRONG NƯỚC NÀY."],
+		"wait": ["SÁU THƯ LẠI. CHÚNG VẨY MỰC THEO ĐƯỜNG THẲNG. BƯỚC SANG BÊN."],
+		"done": ["PHỐ IM RỒI. TA THÍCH PHỐ IM.", "ĐIỆN CHÉP SỬ Ở PHÍA TÂY BẮC. BÀ GIỮ SỬ VẪN CÒN TRONG ĐÓ. BÀ ẤY GIỮ CẢ NHỮNG THỨ TA RA LỆNH ĐỐT."],
+		"gold": 250, "xp": 7000, "potions": 2, "item": ["armor", 2, 2],
+	},
+	"m24": {
+		"name": "BẢN CHÉP CUỐN SỔ CHÁY", "main": true, "giver": "kimyen", "ender": "kham", "after": ["m23"], "need": {"see": ["list"]},
+		"goal": "TÌM BẢN CHÉP CUỐN SỔ VÃN ĐÃ ĐỐT, TRONG ĐIỆN CHÉP SỬ",
+		"offer": ["VÀO ĐIỆN, TÌM BẢN CHÉP CUỐN SỔ VÃN ĐÃ ĐỐT. TA BIẾT VÃN. VÃN TỪNG LÀM VIỆC CHO TA TRƯỚC KHI LÀM VIỆC CHO LÃO KHÂM.", "VÀ NẾU NGƯƠI GẶP KHÂM TRONG ĐÓ, ĐỪNG NGẠC NHIÊN. LÃO TỚI KINH CÙNG Ô KHA, RỒI BỊ BỎ LẠI NHƯ MỘT CÁI HÒM RỖNG."],
+		"wait": ["ĐIỆN CHÉP SỬ, PHÍA TÂY BẮC. BẢN CHÉP Ở PHÒNG ĐỌC."],
+		"done": ["NGƯƠI ĐỌC RỒI. DANH SÁCH CỦA VÃN. VÃN LẬP NÓ CHO TA: NHỮNG KẺ NGHE ĐƯỢC HAI TIẾNG. TA MUA TIẾNG CỦA HỌ. TA BÁN CHO Ô KHA.", "CÁI TÊN CUỐI CÙNG LÀ NGƯƠI. VÃN ĐỐT CUỐN SỔ ĐỂ TA KHÔNG ĐỌC ĐƯỢC TÊN ĐÓ. VÃN CHẾT VÌ GIẤU NGƯƠI KHỎI TA.", "CON GÁI TA ĐANG PHAI. Ô KHA HỨA CHỪA RIÊNG NÓ KHỎI CỐI XAY. LÃO NÓI DỐI. TA BIẾT LÃO NÓI DỐI. TA VẪN BÁN.", "NGƯƠI MUỐN LÀM GÌ VỚI TA THÌ LÀM. NHƯNG XUỐNG HỐ TRƯỚC ĐÃ. LÃO SẮP TREO CHUÔNG."],
+		"gold": 0, "xp": 7500, "potions": 3, "item": null,
+	},
+	"m25": {
+		"name": "MIỆNG CHUÔNG", "main": true, "giver": "kham", "ender": "kimyen", "after": ["m24"], "need": {"kill": {"okhab": 1, "first": 1}},
+		"goal": "XUỐNG TẦNG LƯỠI CHUÔNG, NGĂN Ô KHA TREO CHUÔNG",
+		"offer": ["CẦU THANG XUỐNG TẦNG LƯỠI CHUÔNG Ở CUỐI ĐIỆN NÀY. NGÀY XƯA THƯ LẠI DÙNG NÓ ĐỂ GHI NHỮNG TIẾNG CHUÔNG CUỐI.", "Ô KHA Ở DƯỚI ĐÓ. VÀ KHI NGƯƠI XUỐNG, KIM YẾN SẼ ĐEM QUÂN VÂY MIỆNG HỐ. CÔ TA KHÔNG MUỐN CHUÔNG IM. CÔ TA MUỐN CÁI CỐI XAY CỦA RIÊNG MÌNH."],
+		"wait": ["XUỐNG CẦU THANG Ở CUỐI ĐIỆN CHÉP SỬ."],
+		"done": ["TA ĐÃ ĐEM QUÂN XUỐNG. TA ĐÃ ĐỊNH CƯỚP NÓ KHỎI TAY NGƯƠI. RỒI TIẾNG ĐẦU TIÊN IM, VÀ QUÂN CỦA TA CHỈ ĐỨNG ĐÓ, NHƯ NGƯỜI VỪA TỈNH NGỦ.", "KHÔNG CÒN VỌNG TINH NÀO NỮA. TA SẼ GIÀ NHƯ MỌI NGƯỜI. CÓ LẼ CHẾT TRƯỚC MÙA XUÂN.", "Ô KHA BƯỚC VÀO LÀM QUẢ LẮC KHI NGƯƠI TỪ CHỐI LÃO. LÃO KHÔNG OÁN AI. PHÉP TÍNH CỦA LÃO VẪN CÒN ĐÓ, CHƯA AI GIẢI.", "VỀ ĐI. NGƯƠI CÒN MỘT TIẾNG PHẢI QUYẾT. CON BÉ CẦM ÂM THOA ĐANG ĐỢI NGƯƠI Ở TRẤN."],
+		"gold": 800, "xp": 12000, "potions": 3, "item": ["weapon", 2, 2],
+	},
+	"m26": {
+		"name": "TIẾNG CỦA VÃN", "main": true, "giver": "ngai", "after": ["m25"], "need": {"see": ["voice"]}, "branch": "van", "auto": true,
+		"goal": "QUYẾT ĐỊNH TIẾNG VÃN, RỒI VỀ GẶP NGẢI",
+		"offer": [], "wait": ["BẠN ĐÃ QUYẾT CHƯA? MÌNH KHÔNG HỎI LÀ GÌ. MÌNH CHỈ HỎI LÀ ĐÃ CHƯA."],
+		"done": [
+			["MẢNH CỦA BẠN IM RỒI. MÌNH LÊN DÂY MÃI MÀ NÓ KHÔNG NGÂN NỮA.", "VÃN ĐI RỒI. LẦN NÀY LÀ ĐI THẬT, KHÔNG PHẢI CHÌM THEO CON PHÀ. BẠN VẪN ĐÁNH ĐƯỢC NHƯ CŨ. TAY NGHỀ LÀ CỦA BẠN, KHÔNG PHẢI CỦA VÃN."],
+			["MẢNH CỦA BẠN VẪN NGÂN. MỎNG HƠN. MỖI TRẬN NÓ SẼ MỎNG HƠN NỮA.", "BẠN GIỮ VÃN LẠI. MÌNH HIỂU. MÌNH CŨNG MUỐN GIỮ THẦY KHÂM LẠI, DÙ THẦY LÀ NGƯỜI NHƯ THẾ."],
+		],
+		"reward": [{"gold": 0, "xp": 6000, "potions": 3, "item": ["charm", 2, 2]}, {"gold": 0, "xp": 6000, "potions": 3, "item": ["charm", 2, 2]}],
+		"toast": "HẾT CHƯƠNG NĂM",
+	},
 	"s3": {
 		"name": "TÊN BỊ ĐỤC", "main": false, "giver": "man", "after": ["m7"], "need": {"see": ["trunk_a", "trunk_b", "trunk_c"]},
 		"goal": "TÌM NHỮNG THÂN CÂY BỊ ĐỤC MẤT TÊN",
@@ -388,6 +515,14 @@ const QUESTS = {
 # Text shown when the hero examines a thing (E). `opts` turns the last line into a choice that sets a flag.
 
 const THINGS = {
+	"voice": {"name": "TIẾNG CỦA VÃN", "quest": "m26",
+		"lines": ["TRONG IM LẶNG CỦA HỐ, MẢNH CHUÔNG TRONG NGỰC BẠN NGÂN MỘT MÌNH. TIẾNG VÃN RÕ HƠN BAO GIỜ HẾT.", "'ĐỪNG ĐỂ HỌ BIẾT EM NGHE ĐƯỢC HAI TIẾNG. ĐỪNG ĐI TÌM.' RỒI MỘT CÂU MỚI, RẤT NHỎ: 'EM ĐÃ ĐI TÌM. VẬY THÌ CHỌN ĐI.'", "MỖI TRẬN BẠN ĐÁNH BẰNG MẢNH NÀY, VÃN MÒN ĐI MỘT CHÚT. BẠN CÓ THỂ THẢ VÃN ĐI. HOẶC GIỮ LẠI."],
+		"opts": ["THẢ TIẾNG VÃN", "GIỮ TIẾNG VÃN"], "flag": "van",
+		"after": [["BẠN NỚI TAY. MẢNH CHUÔNG NGÂN MỘT TIẾNG CUỐI, DÀI, RỒI IM. LẦN ĐẦU TIÊN TỪ ĐÊM VÃN CHẾT, TRONG ĐẦU BẠN CHỈ CÓ TIẾNG CỦA BẠN."], ["BẠN SIẾT TAY QUANH MẢNH CHUÔNG. NÓ VẪN NGÂN, NHỎ HƠN TRƯỚC. Ở ĐÂU ĐÓ TRONG TIẾNG NGÂN, VÃN THỞ DÀI, NHƯ NGÀY XƯA MỖI LẦN BẠN BƯỚNG."]]},
+	"kham_choice": {"name": "THẦY KHÂM",
+		"lines": ["KHÂM NGỒI BÊN CÁI HÒM RỖNG. ÔNG KHÔNG NGẨNG LÊN. 'TA KHÔNG XIN GÌ. TA CHỈ MUỐN NGƯƠI BIẾT LÀ TA BIẾT.'"],
+		"opts": ["THA CHO THẦY", "QUAY LƯNG"], "flag": "kham",
+		"after": [["BẠN NGỒI XUỐNG CẠNH ÔNG MỘT LÚC. ÔNG KHÓC, KHÔNG THÀNH TIẾNG."], ["BẠN QUAY LƯNG. SAU LƯNG BẠN, ÔNG GÕ NHẸ VÀO NẮP HÒM, NHƯ GÕ MÕ. LẦN ĐẦU TIÊN BẠN NGHE ÔNG GÕ."]]},
 	"marker_a": {"name": "MỎ NEO CỦA PHƯỜNG", "lines": ["BẠN CẠO LỚP MUỐI. TÊN KHẮC BÊN DƯỚI: 'BẢY. THỢ LẶN. TÌM ĐƯỢC MƯỜI HAI CÂN ĐỒNG TRONG MỘT NGÀY.'"]},
 	"marker_b": {"name": "MỎ NEO CỦA PHƯỜNG", "lines": ["BẠN CẠO LỚP MUỐI. TÊN KHẮC BÊN DƯỚI: 'MẬN CON. MƯỜI BỐN TUỔI. ĐI THEO MẸ RA BÃI.'"]},
 	"marker_c": {"name": "MỎ NEO CỦA PHƯỜNG", "lines": ["BẠN CẠO LỚP MUỐI. TÊN KHẮC BÊN DƯỚI: 'TÙNG. CHỒNG CỦA VÀNH. XUỐNG HẦM HAI LẤY MỘT CÁI ĐINH.'"]},
@@ -422,6 +557,18 @@ const THINGS = {
 }
 
 const SCENES = {
+	"list": {
+		"name": "BẢN CHÉP CUỐN SỔ CHÁY", "tex": "npc_archivist", "quest": "m24",
+		"lines": ["BÀ GIỮ SỬ ĐẶT MỘT CUỐN SỔ LÊN BÀN. BÌA DA, GIỐNG HỆT SỔ HÀNG CỦA THẦY KHÂM. 'MỌI THỨ BỊ ĐỐT TRONG NƯỚC NÀY ĐỀU ĐƯỢC CHÉP LẠI TRƯỚC. ĐÓ LÀ VIỆC CỦA TA.'", "MỖI TRANG MỘT CÁI TÊN, KÈM MỘT DÒNG: 'NGHE HAI TIẾNG. CHƯA BIẾT. ĐỪNG ĐỂ HỌ BIẾT.' CÓ NHỮNG CÁI TÊN BẠN NHẬN RA TỪ BIA MỘ Ở BẾN PHÀ.", "TRANG CUỐI CHỈ CÓ MỘT DÒNG, NÉT CHỮ RUN: TÊN CỦA BẠN. BÊN DƯỚI, VÃN VIẾT: 'ĐỨA NÀY THÌ KHÔNG BÁN. ĐỨA NÀY LÀ CỦA TÔI.'", "BÀ GIỮ SỬ LẬT THÊM MỘT TỜ RỜI, VIẾT BẰNG MỰC MỚI. 'MẢNH CỦA NGƯƠI NGÂN BẰNG TIẾNG VÃN. MỖI LẦN NGƯƠI ĐÁNH, NGƯƠI DÙNG VÃN. NGƯƠI ĐÃ MÀI MÒN VÃN SUỐT ĐƯỜNG TỚI ĐÂY.'", "'TA GHI LẠI VÌ KHÔNG AI KHÁC GHI. NGƯỜI TA ĐỐT SỔ CHỨ KHÔNG ĐỐT ĐƯỢC CHUYỆN.'"],
+	},
+	"standoff": {
+		"name": "HAI PHE TRƯỚC CỔNG", "tex": "", "quest": "m19",
+		"lines": ["BÊN BẮC CON ĐƯỜNG, NGƯỜI CỦA HỘI GIỮ LẶNG ĐỨNG THÀNH HÀNG, ĐÁ NIÊM BUỘC SAU LƯNG. BÊN NAM, DÒNG VỌNG THÂN NGỒI QUANH NHỮNG NGỌN NẾN, MIỆNG LẨM NHẨM TÊN NGƯỜI CHẾT.", "'MỞ LÒ RA. ĐỂ HỌ ĐI.' 'NIÊM NÓ LẠI. ĐỂ HỌ YÊN.' HAI CÂU NÓI CÙNG MỘT ĐIỀU, VÀ CẢ HAI ĐỀU KHÔNG HỎI NHỮNG NGƯỜI TRONG LÒ MUỐN GÌ.", "GIỮA ĐƯỜNG, MỘT TỐP THỢ MỎ ĐỨNG KHOANH TAY, CUỐC TRÊN VAI. HỌ KHÔNG ĐỨNG VỀ BÊN NÀO. HỌ ĐỨNG TRƯỚC BÁT CƠM CỦA MÌNH.", "MỘT CÂY CUNG BÊN BẮC KÉO CĂNG, RỒI HẠ XUỐNG. TỐ DIÊN ĐẶT TAY LÊN VAI NGƯỜI LÍNH. KHÔNG AI THỞ MẠNH."],
+	},
+	"ledger": {
+		"name": "SỔ ĐO CỦA Ô KHA", "tex": "npc_okha", "quest": "m20",
+		"lines": ["Ô KHA RÓT TRÀ CHO BẠN NHƯ RÓT CHO MỘT NGƯỜI BẠN CŨ. RỒI ÔNG MỞ MỘT CUỐN SỔ DÀY BẰNG CẢ GANG TAY.", "'NHÀ TA ĐÚC CHUÔNG MẸ. TỔ TIÊN TA ĐẬP VỠ NÓ. CẢ HAI ĐỀU LÀ VIỆC ĐÚNG. NGƯƠI MUỐN NGHE VÌ SAO KHÔNG?'", "'CHUÔNG MẸ LÀ CỐI XAY. NÓ NGHIỀN KÝ ỨC NGƯỜI CHẾT THÀNH VỌNG TINH. VỌNG TINH NUÔI TRIỀU ĐÌNH SỐNG HÀNG TRĂM NĂM. TỔ TIÊN TA THẤY VẬY, NÊN ĐẬP NÓ.'", "'TỪ ĐÊM RẠN, NGƯỜI CHẾT KHÔNG TAN NỮA. HẦM VỌNG MỌC KHẮP NƠI. TA ĐANG ĐÚC MỘT CÁI CHUÔNG MỚI: KHÔNG XAY, CHỈ RU. TA CẦN TIẾNG CỦA NHỮNG KẺ NGHE ĐƯỢC HAI ÂM ĐỂ LÊN DÂY NÓ. NHƯ VÃN. NHƯ NGƯƠI.'", "SAU LƯNG ÔNG, KHUÔN CHUÔNG THỬ RUNG LÊN KHI BẠN NHẮC TỚI NGẢI. Ô KHA NHÌN NÓ RẤT LÂU. 'CON BÉ ĐÓ KHÔNG ĐIẾC VỌNG. NÓ LÀ VỌNG. KHÂM ĐÃ GIẤU NÓ KHỎI TA MƯỜI LĂM NĂM.'"],
+	},
 	"manifest": {
 		"name": "SỔ HÀNG CỦA HẠM ĐỘI", "tex": "", "quest": "m15",
 		"lines": ["GIỮA HẦM HAI, MỘT CUỐN SỔ BỌC DA NẰM TRÊN NẮP HÒM, KHÔ NGUYÊN NHƯ VỪA ĐƯỢC ĐẶT XUỐNG.", "'HÀNG CỦA CHUÔNG. BỐN TRĂM HÒM. VỌNG TINH, LOẠI MỘT. GIAO TẬN TAY TRIỀU ĐÌNH.' DÒNG NÀO CŨNG ĐƯỢC KÝ BẰNG CÙNG MỘT DẤU: MỘT CÁI CHUÔNG CÓ VẾT NỨT.", "BẠN MỞ MỘT CÁI HÒM. BÊN TRONG LÀ NHỮNG HẠT SÁNG NHƯ MUỐI. MẢNH CHUÔNG TRONG NGỰC BẠN KÊU LÊN, VÀ BẠN NGHE THẤY HÀNG TRĂM GIỌNG NÓI CÙNG LÚC, KHÔNG GIỌNG NÀO NÓI HẾT CÂU.", "CHUÔNG MẸ KHÔNG CHỈ XÓA TÊN. NÓ NGHIỀN NGƯỜI CHẾT THÀNH THỨ GÌ ĐÓ CÓ THỂ ĐÓNG HÒM VÀ CHỞ ĐI.", "TRÊN BOONG KỲ HẠM, MỘT NGỌN ĐÈN NHÚC NHÍCH. ĐÔ ĐỐC VẪN CÒN ĐI TUẦN."],
@@ -438,6 +585,16 @@ const SCENES = {
 
 # One line per finished main quest, shown in the journal. A list is picked by that quest's choice.
 const RECAP = {
+	"m22": "Ô KHA ĐÃ LÊN KINH. KIM YẾN, NGƯỜI THỪA KẾ BA TRĂM MƯỜI TUỔI ĐANG GIÀ ĐI TỪNG THÁNG, CHO BẠN ĐI CÙNG MỘT ĐOẠN.",
+	"m23": "BẠN DẸP BỌN THƯ LẠI CHÉP TRÊN PHỐ KINH.",
+	"m24": "CUỐN SỔ VÃN ĐỐT LÀ DANH SÁCH NHỮNG KẺ NGHE HAI TIẾNG. TÊN CUỐI LÀ BẠN. BẠN ĐÃ MÀI MÒN VÃN SUỐT ĐƯỜNG ĐI.",
+	"m25": "Ô KHA NGÃ VÀ BƯỚC VÀO LÀM QUẢ LẮC. TIẾNG ĐẦU TIÊN IM. KIM YẾN ĐỊNH CƯỚP CHUÔNG RỒI BUÔNG TAY.",
+	"m26": ["BẠN ĐÃ THẢ TIẾNG VÃN. MẢNH CHUÔNG IM.", "BẠN ĐÃ GIỮ TIẾNG VÃN. MẢNH CHUÔNG VẪN NGÂN, MỎNG DẦN."],
+	"m17": "TIẾNG VÃN ĐANG Ở LÒ TÁI THANH, TRÊN DÃY MỎ CÂM. BÁC THAN NÓI CẢ DÃY NÚI SỐNG NHỜ CÁI LÒ ĐÓ.",
+	"m18": "BẠN DẸP NGƯỜI XỈ QUANH LÀNG THỢ. BÁC THAN CHỈ CHO BẠN CỬA KHÔNG KHÓA.",
+	"m19": "HỘI GIỮ LẶNG VÀ DÒNG VỌNG THÂN SUÝT ĐÁNH NHAU TRƯỚC CỔNG LÒ. Ô KHA MỜI BẠN VÀO LÀM KHÁCH.",
+	"m20": "Ô KHA NÓI HẾT: CHUÔNG MẸ LÀ CỐI XAY NGƯỜI CHẾT, VÀ ÔNG ĐANG ĐÚC CÁI CHUÔNG MỚI. NGẢI KHÔNG ĐIẾC VỌNG: CÔ LÀ VỌNG.",
+	"m21": "BẠN LẤY LẠI TIẾNG VÃN VÀ NGHE THÊM BA CHỮ: 'ĐỪNG ĐI TÌM.' LÒ SẬP MỘT NỬA. TỐ DIÊN DÙNG MẢNH CHUÔNG CỨU QUÂN VÀ BỊ HỘI TƯỚC CHỨC.",
 	"m12": "LÃO KHÂM GỬI BẠN XUỐNG BIỂN MUỐI NGÂN TÌM 'HÀNG CỦA CHUÔNG'. Ở ĐÓ, LÒ ĐÚC TRẢ GẤP BA CHO MỖI MẢNH CHUÔNG.",
 	"m13": "BẠN DỌN LŨ CUA MUỐI CHO PHƯỜNG CỦA CHỊ VÀNH.",
 	"m14": "THẺ HÀNG CỦA HẠM ĐỘI CHỈ CÙNG MỘT CHỖ: KỲ HẠM, HẦM HAI, 'HÀNG CỦA CHUÔNG. KHÔNG MỞ.'",
@@ -479,3 +636,13 @@ const AFTER_CHAT = {
 # The Admiral always drops this: a charm of salt from his coat. Critical hits chill.
 static func admiral_unique() -> Dictionary:
 	return {"name": "MUỐI ÁO ĐÔ ĐỐC", "slot": "charm", "rar": 3, "tier": 2, "stats": {"hp": 45, "crit": 6}, "uniq": "salt"}
+
+# Bach Lo always drops his hammer: the last strike of every chain sets the foe burning.
+static func forge_unique() -> Dictionary:
+	return {"name": "BÚA BẠCH LÔ", "slot": "weapon", "rar": 3, "tier": 2, "stats": {"atk": 18, "stag": 40}, "uniq": "forge"}
+
+# The ending, shown full screen after m26, by flags.van: [0] the voice was released, [1] it was kept.
+const EPILOGUE = [
+	["CHUÔNG MẸ KHÔNG ĐƯỢC ĐÚC LẠI. PHẦN CÒN SỐNG CỦA NÓ ĐÃ IM. VỌNG KHÔNG CÒN DÀY LÊN ĐỀU NỮA MÀ DÂNG RỒI RÚT, NHƯ THỦY TRIỀU. NGƯỜI TA GỌI ĐÓ LÀ TRIỀU VỌNG.", "MẢNH CHUÔNG TRONG NGỰC BẠN IM. BẠN VẪN ĐÁNH NHƯ CŨ, BẰNG ĐÔI TAY VÃN ĐÃ DẠY VÀ BẠN ĐÃ LUYỆN. CÓ ĐÊM BẠN TỈNH DẬY, CHỜ MỘT TIẾNG NÓI, VÀ CHỈ CÓ TIẾNG MÕ TRẤN.", "NGẢI RA VÀNH HỐ ĐO TRIỀU VỌNG MỖI SÁNG. PHÉP TÍNH CỦA Ô KHA VẪN TREO ĐÓ: NẾU KHÔNG XAY NGƯỜI CHẾT, THÌ LÀM GÌ VỚI HỌ. CHƯA AI GIẢI.", "HẾT."],
+	["CHUÔNG MẸ KHÔNG ĐƯỢC ĐÚC LẠI. PHẦN CÒN SỐNG CỦA NÓ ĐÃ IM. VỌNG KHÔNG CÒN DÀY LÊN ĐỀU NỮA MÀ DÂNG RỒI RÚT, NHƯ THỦY TRIỀU. NGƯỜI TA GỌI ĐÓ LÀ TRIỀU VỌNG.", "MẢNH CHUÔNG TRONG NGỰC BẠN VẪN NGÂN. MỖI LẦN BẠN LÊN CẤP, VÃN NÓI MỘT CÂU, NGẮN HƠN LẦN TRƯỚC. MỘT NGÀY NÀO ĐÓ VÃN SẼ CHỈ CÒN LÀ MỘT TIẾNG THỞ. BẠN BIẾT, VÀ BẠN VẪN GIỮ.", "NGẢI RA VÀNH HỐ ĐO TRIỀU VỌNG MỖI SÁNG. PHÉP TÍNH CỦA Ô KHA VẪN TREO ĐÓ: NẾU KHÔNG XAY NGƯỜI CHẾT, THÌ LÀM GÌ VỚI HỌ. CHƯA AI GIẢI.", "HẾT."],
+]

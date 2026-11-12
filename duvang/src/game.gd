@@ -25,7 +25,7 @@ const DODGE_SPEED = 192.0
 const DODGE_INV = 0.25
 const DODGE_RECHARGE = 1.6
 const BAG = 24
-const MUSIC = {"town": 0, "field": 1, "dungeon": 2, "forest": 4, "heart": 2, "salt": 1, "fleet": 2}
+const MUSIC = {"town": 0, "field": 1, "dungeon": 2, "forest": 4, "heart": 2, "salt": 1, "fleet": 2, "mines": 4, "foundry": 3, "capital": 0, "archive": 2, "maw": 3}
 
 # [startup, active, recovery, damage x attack, reach, half angle, lunge speed, hitstop, shake]
 const ATK = [
@@ -296,6 +296,12 @@ func enter_zone(id: String, at: Vector2) -> void:
 	zone = World.build(id)
 	if qs.get("m11", "") == "done":
 		World.fate(zone, flags.get("village", 0))
+	if qs.has("m17") and zone.id == "town":
+		zone.npcs = zone.npcs.filter(func(n): return n.id != "dien")
+	if zone.id == "maw" and flags.has("first_dead") and not flags.has("van"):
+		zone.things.append({"id": "voice", "pos": tp_maw_voice(), "h": 60.0})
+	if qs.get("s5", "") == "done" and zone.id == "mines":
+		World.lantern(zone, 18.5, 24.2)
 	if qs.get("m16", "") == "done":
 		zone.npcs = zone.npcs.filter(func(n): return n.id != "kham")
 	if not maps.has(id):
@@ -335,7 +341,7 @@ func enter_zone(id: String, at: Vector2) -> void:
 	nums.clear()
 	if not sim.get("no_spawns", false):
 		for s in zone.spawns:
-			if s.has("once") and flags.has(s.once):
+			if (s.has("once") and flags.has(s.once)) or (s.has("req") and not flags.has(s.req)):
 				continue
 			var nf = spawn(s.kind, s.pos)
 			if s.has("elite"):
@@ -1476,6 +1482,8 @@ func swing_hits(a: Array) -> void:
 						mark(f, "shock")
 					if tree.has("tempest") and p.elem_t > 0.0:
 						mark(f, p.elem)
+				if last and has_uniq("forge"):
+					mark(f, "burn")
 				elif p.skill == "toll" and tree.has("afterglow"):
 					for mk in ["burn", "chill", "shock"]:
 						mark(f, mk)
@@ -1685,6 +1693,35 @@ func kill(f: Dictionary) -> void:
 		save_game()
 	elif zone.respawn:
 		dead.append({"kind": f.kind, "pos": f.home, "t": 45.0, "elite": elite})
+	if f.kind == "okhab":
+		flags["okha_dead"] = 1
+		shake = 5.0
+		toast("Ô KHA BUÔNG QUẢ LẮC. DƯỚI HỐ, CÓ THỨ GÌ ĐÓ THỨC DẬY.", VONG)
+		var fp = f.pos + Vector2(14 * TS, 0)
+		for s in zone.spawns:
+			if s.kind == "first":
+				fp = s.pos
+		spawn("first", fp).state = "spawn"
+		save_game()
+	if f.kind == "first":
+		flags["first_dead"] = 1
+		shake = 6.0
+		clouds.clear()
+		toast("TIẾNG ĐẦU TIÊN IM BẶT. MẢNH CHUÔNG TRONG NGỰC BẠN LÀ TIẾNG DUY NHẤT CÒN LẠI.", VONG)
+		zone.things.append({"id": "voice", "pos": f.pos + Vector2(0, 30), "h": 60.0})
+		save_game()
+	if f.kind == "forgemaster":
+		flags["forgemaster_dead"] = 1
+		drop(f.pos, "item", 0, D.forge_unique())
+		shake = 4.0
+		toast("BẠCH LÔ BUÔNG BÚA. LÒ RÈN NGUỘI DẦN.", VONG)
+		save_game()
+	if f.kind == "mold":
+		flags["mold_dead"] = 1
+		clouds.clear()
+		shake = 5.0
+		toast("KHUÔN SỐNG VỠ. HÀNG TRĂM TIẾNG BAY RA, TRONG ĐÓ CÓ MỘT TIẾNG BẠN BIẾT.", VONG)
+		save_game()
 	if f.kind == "admiral":
 		flags["admiral_dead"] = 1
 		drop(f.pos, "item", 0, D.admiral_unique())
@@ -2055,11 +2092,11 @@ func boss_summon(f: Dictionary) -> void:
 	if f.sum < 2 and f.hp < f.mhp * marks[f.sum]:
 		f.sum += 1
 		Sfx.play("clap", 0.7)
-		toast("THỦY THỦ CHÌM NGHE LỆNH ĐÔ ĐỐC." if f.kind == "admiral" else "KẺ CHẾT ĐUỐI ĐÁP LỜI NGỌN ĐÈN.", VONG)
+		toast(D.FOES[f.kind].get("call_text", "KẺ CHẾT ĐUỐI ĐÁP LỜI NGỌN ĐÈN."), VONG)
 		for i in 2:
 			var q = f.pos + Vector2.from_angle(randf() * TAU) * 60.0
 			if free_at(q, 8.0):
-				spawn("diver" if f.kind == "admiral" else "reed", q).state = "spawn"
+				spawn(D.FOES[f.kind].get("summon", "reed"), q).state = "spawn"
 
 func strike(f: Dictionary, K: Dictionary) -> void:
 	var dmg = K.dmg * (1.0 + (zone.mult - 1.0) * 0.7)
@@ -2122,15 +2159,15 @@ func strike(f: Dictionary, K: Dictionary) -> void:
 					slam_fx(f.pos, 60.0)
 				"spores":
 					for q in f.pods:
-						clouds.append({"pos": q, "r": 34.0, "t": 5.0, "tick": 0.0, "dmg": dmg * 0.5})
+						clouds.append({"pos": q, "r": 34.0, "t": 5.0, "tick": 0.0, "dmg": dmg * 0.5, "col": D.FOES[f.kind].get("cloud", Color("c9e36a"))})
 					Sfx.play("spit", 0.5)
 				"call":
 					Sfx.play("clap", 0.5)
-					toast("RỪNG NHỚ LẠI BẦY SÓI.", VONG)
+					toast(D.FOES[f.kind].get("call_text", "RỪNG NHỚ LẠI BẦY SÓI."), VONG)
 					for i in 3:
 						var q = f.pos + Vector2.from_angle(randf() * TAU) * 70.0
 						if free_at(q, 8.0):
-							spawn("wolf", q).state = "spawn"
+							spawn(D.FOES[f.kind].get("summon", "wolf"), q).state = "spawn"
 		"leech":
 			f.kb = f.dir * 300.0
 			f.bite = true
@@ -2147,13 +2184,13 @@ func strike(f: Dictionary, K: Dictionary) -> void:
 					slam_fx(f.tpos, 42.0)
 				"call":
 					f.hp = minf(f.mhp, f.hp + f.mhp * 0.12)
-					nums.append({"pos": f.pos + Vector2(0, -foe_h(f)), "txt": "ĐÃ THU PHÍ", "life": 1.0, "col": Color("8fe08a")})
+					nums.append({"pos": f.pos + Vector2(0, -foe_h(f)), "txt": D.FOES[f.kind].get("heal_text", "ĐÃ THU PHÍ"), "life": 1.0, "col": Color("8fe08a")})
 					Sfx.play("clap", 0.6)
 					if foes.size() < 6:
 						for i in 2:
 							var q = f.pos + Vector2.from_angle(randf() * TAU) * 56.0
 							if free_at(q, 8.0):
-								spawn("reed", q).state = "spawn"
+								spawn(D.FOES[f.kind].get("summon", "reed"), q).state = "spawn"
 		"boss":
 			match f.atk:
 				"sweep":
@@ -2370,7 +2407,7 @@ func _draw() -> void:
 	for f in foes:
 		if f.state == "wind":
 			var k = clampf(f.st / f.wind, 0.0, 1.0)
-			match f.kind:
+			match ai(f):
 				"reed": tele(cone_pts(f.pos, f.dir, 36.0, 50.0), f.pos, k)
 				"porter": tele(circle_pts(f.tpos, 48.0), f.tpos, k)
 				"heron": tele(line_pts(f.pos + f.dir * 12.0, f.dir, 210.0, 3.0), f.pos + f.dir * 12.0, k)
@@ -2765,6 +2802,9 @@ func turnin(id: String) -> void:
 			second_m = sec()
 	if Q.has("toast"):
 		toast(Q.toast, VONG)
+	if id == "m26":
+		say("", "", D.EPILOGUE[flags.get("van", 0)], "", "")
+		talk["story"] = true
 	give_xp(R.xp)
 	for nid in D.ORDER:
 		if q_open(nid) and D.QUESTS[nid].get("auto", false):
@@ -4997,6 +5037,8 @@ func shot_hit(f: Dictionary, b: Dictionary) -> void:
 		return
 	if p.venom > 0.0:
 		poison(f, 1)
+	if b.last and has_uniq("forge"):
+		mark(f, "burn")
 	if b.zap:
 		mark(f, "shock")
 	if tree.has("tempest") and p.elem_t > 0.0:
@@ -5010,3 +5052,7 @@ func shot_hit(f: Dictionary, b: Dictionary) -> void:
 # a foe's way of fighting: its own kind, or the kind named by "ai" in data.gd
 func ai(f: Dictionary) -> String:
 	return D.FOES[f.kind].get("ai", f.kind)
+
+# ---------------------------------------------------------------- chapter five
+func tp_maw_voice() -> Vector2:
+	return Vector2(44 * TS, 22 * TS)

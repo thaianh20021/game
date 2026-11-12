@@ -52,6 +52,11 @@ static func build(id: String) -> Dictionary:
 		"heart": return heart()
 		"salt": return salt()
 		"fleet": return fleet()
+		"mines": return mines()
+		"foundry": return foundry()
+		"capital": return capital()
+		"archive": return archive()
+		"maw": return maw()
 	return town()
 
 # ---------------------------------------------------------------- Woodclapper Town
@@ -467,6 +472,8 @@ static func salt() -> Dictionary:
 	fill(z, 42, 44, 49, 49, 3)      # down to the Stranded Fleet
 	z.portals.append({"rect": Rect2(tp(44, 0), Vector2(TS * 4, TS * 1.2)), "to": "field", "at": tp(37.5, 41.0), "label": "VỀ ĐẦM LAU", "need": ""})
 	z.portals.append({"rect": Rect2(tp(43, 48.6), Vector2(TS * 6, TS * 1.4)), "to": "fleet", "at": tp(5.0, 16.0), "label": "HẠM ĐỘI MẮC CẠN", "need": "m15"})
+	fill(z, 47, 25, 91, 26, 3)      # the boardwalk east to the Mute Mines
+	z.portals.append({"rect": Rect2(tp(90.6, 23), Vector2(TS * 1.4, TS * 5)), "to": "mines", "at": tp(3.0, 25.5), "label": "DÃY MỎ CÂM", "need": "m17"})
 	z.start = tp(45.5, 3.0)
 	z.decor.append({"tex": "tent", "pos": tp(39.0, 9.0), "solid": true})
 	z.decor.append({"tex": "tent", "pos": tp(52.5, 8.6), "solid": true})
@@ -548,4 +555,228 @@ static func fleet() -> Dictionary:
 	z.decor.append({"tex": "saltpile", "pos": tp(18.0, 21.0), "solid": true, "bw": 20.0})
 	# the cargo book is read in the hold, before the officers' deck
 	z.scenes.append({"id": "manifest", "rect": Rect2(tp(63.5, 13), Vector2(TS * 3, TS * 6)), "at": tp(58.0, 15.4)})
+	return z
+
+# ---------------------------------------------------------------- chapter four: the Mute Mines
+# Snow on the slopes east of the salt. The miners' village in the west, shafts along the north ridge,
+# slag heaps to the south, and the two camps facing each other before the foundry gate in the east.
+static func mines() -> Dictionary:
+	var z = empty("mines", "DÃY MỎ CÂM", 94, 50)
+	z.theme = "snow"
+	z.respawn = true
+	z.tier = 2
+	z.mult = 3.2
+	for y in z.h:
+		for x in z.w:
+			var dx = (x - 47.0) / 43.0
+			var dy = (y - 25.0) / 22.0
+			var a = atan2(dy, dx)
+			var d = sqrt(dx * dx + dy * dy) + sin(a * 6.0 + 0.4) * 0.06 + sin(a * 13.0 + 1.7) * 0.03
+			if d < 1.0:
+				var n = int(Art.noise(x * 0.17, y * 0.19, 67) * 100.0) - 30
+				z.grid[y][x] = 2 if n < 22 else 1
+	for rock in [[30, 10, 5.0, 2.4], [58, 9, 6.0, 2.6], [40, 38, 3.4, 2.0], [66, 36, 4.0, 2.2]]:
+		for y in z.h:
+			for x in z.w:
+				if Vector2((x - rock[0]) / rock[2], (y - rock[1]) / rock[3]).length() < 1.0:
+					z.grid[y][x] = 0
+	fill(z, 0, 24, 10, 27, 3)       # the boardwalk in from the salt
+	fill(z, 10, 18, 26, 32, 2)      # the miners' village
+	fill(z, 26, 25, 80, 26, 3)      # the cart road to the foundry
+	fill(z, 72, 18, 84, 32, 2)      # the yard before the foundry gate
+	fill(z, 84, 24, 93, 27, 3)
+	z.portals.append({"rect": Rect2(tp(0, 23), Vector2(TS * 1.2, TS * 5)), "to": "salt", "at": tp(88.0, 25.5), "label": "VỀ BIỂN MUỐI", "need": ""})
+	z.portals.append({"rect": Rect2(tp(92.6, 23), Vector2(TS * 1.4, TS * 5)), "to": "foundry", "at": tp(5.0, 16.0), "label": "LÒ TÁI THANH", "need": "m20"})
+	fill(z, 46, 0, 48, 10, 3)       # the pass north to the capital
+	z.portals.append({"rect": Rect2(tp(45, 0), Vector2(TS * 5, TS * 1.2)), "to": "capital", "at": tp(47.0, 48.0), "label": "KINH THÀNH KIM THƯỢNG", "need": "m22"})
+	z.start = tp(3.0, 25.5)
+	z.decor.append({"tex": "hut", "pos": tp(13.0, 21.0), "solid": true})
+	z.decor.append({"tex": "hut", "pos": tp(22.0, 20.6), "solid": true})
+	z.decor.append({"tex": "hut", "pos": tp(14.0, 31.0), "solid": true})
+	z.decor.append({"tex": "furnace", "pos": tp(18.5, 26.4), "solid": true, "bw": 40.0})
+	z.decor.append({"tex": "cart", "pos": tp(24.0, 29.6), "solid": true})
+	for q in [[11.5, 24.0], [25.0, 23.5], [20.0, 31.0]]:
+		lantern(z, q[0], q[1])
+	for x in [36.0, 50.0, 64.0]:
+		lantern(z, x, 24.6)
+	for q in [[22, 12], [44, 8], [68, 12]]:
+		z.decor.append({"tex": "mineshaft", "pos": land(z, q[0], q[1]), "solid": true, "bw": 50.0})
+	for q in [[30, 40], [50, 42], [60, 33], [78, 40]]:
+		z.decor.append({"tex": "slagheap", "pos": land(z, q[0], q[1]), "solid": true, "bw": 40.0})
+	# the two camps: the Silence Keepers to the north of the road, the Echo-Kin to the south
+	for q in [[74.0, 20.0], [79.0, 20.0], [74.5, 31.6], [79.5, 31.6]]:
+		z.decor.append({"tex": "banner", "pos": tp(q[0], q[1]), "solid": true, "bw": 10.0})
+	z.decor.append({"tex": "tent", "pos": tp(76.5, 19.0), "solid": true})
+	z.decor.append({"tex": "tent", "pos": tp(77.0, 32.8), "solid": true})
+	z.npcs = [{"id": "than", "pos": tp(17.0, 24.0)}, {"id": "dien", "pos": tp(80.5, 22.6)}]
+	z.scenes.append({"id": "standoff", "rect": Rect2(tp(70.5, 22), Vector2(TS * 3, TS * 8)), "at": tp(78.0, 25.6)})
+	# foes: slag heaps walk, smiths' echoes by the shafts, bronze moths over the road
+	for q in [[32, 37], [52, 39], [62, 30], [76, 38], [44, 33]]:
+		z.spawns.append({"kind": "slag", "pos": land(z, q[0], q[1])})
+	for q in [[24, 15], [42, 13], [46, 12], [66, 15], [70, 14], [36, 17]]:
+		z.spawns.append({"kind": "smith", "pos": land(z, q[0], q[1])})
+	for q in [[40, 22], [56, 20], [62, 29], [48, 30], [34, 29]]:
+		z.spawns.append({"kind": "moth", "pos": land(z, q[0], q[1])})
+	z.spawns.append({"kind": "smith", "pos": land(z, 56, 14), "elite": "volatile"})
+	z.spawns.append({"kind": "moth", "pos": land(z, 58, 36), "elite": "warding"})
+	return z
+
+# The Retuning Furnace: a casting hall, the cooling racks, the bellows gallery, and the pit where the mould lives.
+static func foundry() -> Dictionary:
+	var z = empty("foundry", "LÒ TÁI THANH", 114, 34)
+	z.theme = "forge"
+	z.dark = true
+	z.tier = 2
+	z.mult = 3.6
+	fill(z, 2, 12, 12, 20, 2)       # the gatehouse, where the founder waits
+	fill(z, 12, 15, 18, 16, 3)
+	fill(z, 18, 8, 32, 23, 1)       # the casting hall
+	fill(z, 20, 10, 30, 21, 2)
+	fill(z, 32, 15, 38, 16, 3)
+	fill(z, 38, 6, 52, 25, 3)       # the cooling racks
+	fill(z, 41, 9, 43, 11, 0)
+	fill(z, 47, 19, 49, 21, 0)
+	fill(z, 52, 15, 58, 16, 3)
+	fill(z, 58, 8, 72, 23, 1)       # the bellows gallery
+	fill(z, 60, 10, 70, 21, 2)
+	fill(z, 72, 15, 80, 16, 3)
+	fill(z, 80, 4, 110, 29, 2)      # the pit
+	for y in range(4, 30):
+		for x in range(80, 111):
+			if Vector2((x - 95.0) / 15.0, (y - 16.5) / 12.5).length() > 1.0:
+				z.grid[y][x] = 0
+	for q in [[4.0, 12.5], [11.0, 19.5], [19.0, 9.0], [31.0, 22.0], [39.0, 7.0], [51.0, 24.0], [59.0, 9.0], [71.0, 22.0], [86.0, 8.0], [104.0, 8.0], [86.0, 25.0], [104.0, 25.0]]:
+		lantern(z, q[0], q[1])
+	z.portals.append({"rect": Rect2(tp(2, 12), Vector2(TS * 1.2, TS * 8)), "to": "mines", "at": tp(90.0, 25.5), "label": "RA DÃY MỎ CÂM", "need": ""})
+	z.start = tp(5.0, 16.0)
+	z.npcs = [{"id": "okha", "pos": tp(9.5, 14.0)}]
+	z.scenes.append({"id": "ledger", "rect": Rect2(tp(7.5, 12), Vector2(TS * 3, TS * 8)), "at": tp(9.5, 14.4)})
+	for q in [[22, 11], [27, 20], [24, 15], [29, 12]]:
+		z.spawns.append({"kind": "smith", "pos": tp(q[0], q[1])})
+	for q in [[42, 14], [48, 12], [45, 22]]:
+		z.spawns.append({"kind": "moth", "pos": tp(q[0], q[1])})
+	z.spawns.append({"kind": "slag", "pos": tp(50.0, 16.0)})
+	for q in [[62, 12], [68, 19]]:
+		z.spawns.append({"kind": "slag", "pos": tp(q[0], q[1])})
+	for q in [[64, 16], [66, 11]]:
+		z.spawns.append({"kind": "smith", "pos": tp(q[0], q[1])})
+	z.spawns.append({"kind": "moth", "pos": tp(70.0, 15.0), "elite": "warding"})
+	z.spawns.append({"kind": "smith", "pos": tp(60.0, 20.0), "elite": "volatile"})
+	z.spawns.append({"kind": "mold", "pos": tp(101.0, 16.5), "once": "mold_dead"})
+	z.spawns.append({"kind": "forgemaster", "pos": tp(90.0, 16.5), "once": "forgemaster_dead"})
+	z.decor.append({"tex": "furnace", "pos": tp(25.0, 9.2), "solid": true, "bw": 40.0})
+	z.decor.append({"tex": "slagheap", "pos": tp(45.0, 7.6), "solid": true, "bw": 40.0})
+	z.decor.append({"tex": "slagheap", "pos": tp(40.0, 23.8), "solid": true, "bw": 40.0})
+	z.decor.append({"tex": "crates", "pos": tp(60.5, 9.6), "solid": true})
+	z.decor.append({"tex": "banner", "pos": tp(14.0, 13.0), "solid": true, "bw": 10.0})
+	return z
+
+# ---------------------------------------------------------------- chapter five: the Golden Capital and the Bell's Mouth
+# A capital gone quiet around a pit. The south gate from the pass, the avenue north to the palace steps,
+# the five camps around the rim of the Bell's Mouth in the middle, the Hall of Records to the north-west.
+static func capital() -> Dictionary:
+	var z = empty("capital", "KINH THÀNH KIM THƯỢNG", 96, 52)
+	z.theme = "gold"
+	z.tier = 2
+	z.mult = 4.0
+	z.respawn = true
+	fill(z, 4, 4, 91, 47, 1)
+	for y in range(4, 48):
+		for x in range(4, 92):
+			if int(Art.noise(x * 0.21, y * 0.17, 81) * 100.0) < 24:
+				z.grid[y][x] = 2
+	fill(z, 45, 40, 49, 51, 3)      # the south gate
+	fill(z, 46, 6, 48, 40, 3)       # the avenue
+	fill(z, 10, 24, 86, 25, 3)      # the cross street
+	fill(z, 12, 8, 26, 14, 2)       # before the Hall of Records
+	# the Bell's Mouth: a pit nobody fills
+	for y in range(14, 36):
+		for x in range(32, 64):
+			if Vector2((x - 48.0) / 11.0, (y - 25.0) / 7.5).length() < 1.0:
+				z.grid[y][x] = 0
+	z.portals.append({"rect": Rect2(tp(45, 50.6), Vector2(TS * 5, TS * 1.4)), "to": "mines", "at": tp(47.0, 2.5), "label": "VỀ DÃY MỎ CÂM", "need": ""})
+	z.portals.append({"rect": Rect2(tp(17, 5.2), Vector2(TS * 4, TS * 1.4)), "to": "archive", "at": tp(5.0, 16.0), "label": "ĐIỆN CHÉP SỬ", "need": "m24"})
+	z.start = tp(47.0, 48.0)
+	z.decor.append({"tex": "house_hall", "pos": tp(47.5, 6.0), "solid": true})
+	z.decor.append({"tex": "house_shop", "pos": tp(19.0, 7.0), "solid": true})
+	for q in [[40.0, 40.0], [55.0, 40.0], [40.0, 10.0], [55.0, 10.0], [10.0, 22.0], [86.0, 22.0]]:
+		z.decor.append({"tex": "pillar", "pos": tp(q[0], q[1]), "solid": true, "bw": 14.0})
+	for q in [[30.0, 26.0], [66.0, 26.0], [40.0, 34.5], [56.0, 34.5], [48.0, 15.0]]:
+		z.decor.append({"tex": "railing", "pos": tp(q[0], q[1]), "solid": true, "bw": 30.0})
+	# five camps on the rim: the Silence Keepers, the Echo-Kin, the Guild, the miners, the throne's guard
+	for q in [[24.0, 18.0], [72.0, 18.0], [24.0, 32.0], [72.0, 32.0], [62.0, 42.0]]:
+		z.decor.append({"tex": "tent", "pos": tp(q[0], q[1]), "solid": true})
+		z.decor.append({"tex": "banner", "pos": tp(q[0] + 3.5, q[1] - 0.5), "solid": true, "bw": 10.0})
+	for q in [[44.0, 44.0], [51.0, 44.0], [44.0, 20.0], [52.0, 20.0], [20.0, 25.5], [76.0, 25.5], [30.0, 10.0], [66.0, 10.0]]:
+		lantern(z, q[0], q[1])
+	z.npcs = [{"id": "kimyen", "pos": tp(49.5, 9.0)}, {"id": "dien", "pos": tp(70.0, 21.0)}]
+	for q in [[16, 30], [22, 38], [74, 38], [80, 30], [30, 42]]:
+		z.spawns.append({"kind": "scribe", "pos": tp(q[0], q[1])})
+	for q in [[14, 40], [82, 40], [36, 14], [60, 14]]:
+		z.spawns.append({"kind": "censer", "pos": tp(q[0], q[1])})
+	for q in [[70, 44], [26, 44], [84, 12]]:
+		z.spawns.append({"kind": "guard", "pos": tp(q[0], q[1])})
+	z.spawns.append({"kind": "scribe", "pos": tp(80.0, 16.0), "elite": "warding"})
+	z.spawns.append({"kind": "guard", "pos": tp(12.0, 34.0), "elite": "volatile"})
+	return z
+
+# The Hall of Records: stacks, a reading room where Van's book is copied, and Master Kham at the far end.
+static func archive() -> Dictionary:
+	var z = empty("archive", "ĐIỆN CHÉP SỬ", 100, 32)
+	z.theme = "gold"
+	z.dark = true
+	z.tier = 2
+	z.mult = 4.2
+	fill(z, 2, 12, 10, 19, 2)       # the door
+	fill(z, 10, 15, 16, 16, 3)
+	fill(z, 16, 7, 32, 24, 1)       # the stacks
+	fill(z, 18, 9, 30, 22, 2)
+	fill(z, 32, 15, 38, 16, 3)
+	fill(z, 38, 8, 54, 23, 2)       # the reading room
+	fill(z, 54, 15, 60, 16, 3)
+	fill(z, 60, 6, 76, 25, 1)       # the copyists' gallery
+	fill(z, 62, 8, 74, 23, 2)
+	fill(z, 76, 15, 82, 16, 3)
+	fill(z, 82, 9, 96, 22, 2)       # the last room, where Kham waits
+	for q in [[4.0, 12.5], [17.0, 8.0], [31.0, 23.0], [39.0, 9.0], [53.0, 22.0], [61.0, 7.0], [75.0, 24.0], [84.0, 10.0], [94.0, 21.0]]:
+		lantern(z, q[0], q[1])
+	z.portals.append({"rect": Rect2(tp(2, 12), Vector2(TS * 1.2, TS * 8)), "to": "capital", "at": tp(19.0, 9.5), "label": "RA KINH THÀNH", "need": ""})
+	z.portals.append({"rect": Rect2(tp(95, 13), Vector2(TS * 1.2, TS * 6)), "to": "maw", "at": tp(6.0, 20.0), "label": "XUỐNG TẦNG LƯỠI CHUÔNG", "need": "m25"})
+	z.start = tp(5.0, 16.0)
+	for q in [[19.0, 8.6], [23.0, 8.6], [27.0, 8.6], [19.0, 21.0], [23.0, 21.0], [27.0, 21.0], [63.0, 7.6], [68.0, 7.6], [73.0, 7.6]]:
+		z.decor.append({"tex": "shelf", "pos": tp(q[0], q[1]), "solid": true, "bw": 26.0})
+	z.decor.append({"tex": "pillar", "pos": tp(42.0, 10.0), "solid": true, "bw": 14.0})
+	z.decor.append({"tex": "pillar", "pos": tp(50.0, 10.0), "solid": true, "bw": 14.0})
+	z.npcs = [{"id": "archivist", "pos": tp(44.0, 12.0)}, {"id": "kham", "pos": tp(90.0, 15.0)}]
+	z.scenes.append({"id": "list", "rect": Rect2(tp(44.5, 13), Vector2(TS * 3, TS * 6)), "at": tp(47.0, 15.4)})
+	z.things.append({"id": "kham_choice", "pos": tp(91.5, 17.0), "h": 40.0})
+	for q in [[21, 12], [26, 18], [24, 15], [29, 11]]:
+		z.spawns.append({"kind": "scribe", "pos": tp(q[0], q[1])})
+	for q in [[40, 19], [52, 19]]:
+		z.spawns.append({"kind": "censer", "pos": tp(q[0], q[1])})
+	for q in [[64, 12], [70, 20], [72, 12]]:
+		z.spawns.append({"kind": "guard", "pos": tp(q[0], q[1])})
+	z.spawns.append({"kind": "scribe", "pos": tp(66.0, 16.0), "elite": "warding"})
+	z.spawns.append({"kind": "censer", "pos": tp(74.0, 16.0), "elite": "volatile"})
+	return z
+
+# The Bell's Tongue: a ledge inside the pit, and the bell's living remains below it.
+static func maw() -> Dictionary:
+	var z = empty("maw", "TẦNG LƯỠI CHUÔNG", 64, 40)
+	z.theme = "gold"
+	z.dark = true
+	z.tier = 2
+	z.mult = 4.5
+	fill(z, 2, 17, 10, 23, 3)       # the stair down
+	for y in z.h:
+		for x in z.w:
+			if Vector2((x - 36.0) / 24.0, (y - 20.0) / 16.0).length() < 1.0:
+				z.grid[y][x] = 2 if (x + y) % 7 != 0 else 1
+	z.portals.append({"rect": Rect2(tp(2, 17), Vector2(TS * 1.2, TS * 6)), "to": "archive", "at": tp(92.0, 15.5), "label": "LÊN ĐIỆN CHÉP SỬ", "need": ""})
+	z.start = tp(6.0, 20.0)
+	z.decor.append({"tex": "bellframe", "pos": tp(36.0, 8.0), "solid": true, "bw": 60.0})
+	for q in [[18.0, 10.0], [54.0, 10.0], [18.0, 31.0], [54.0, 31.0]]:
+		lantern(z, q[0], q[1])
+	z.spawns.append({"kind": "okhab", "pos": tp(30.0, 20.0), "once": "okha_dead"})
+	z.spawns.append({"kind": "first", "pos": tp(44.0, 20.0), "once": "first_dead", "req": "okha_dead"})
 	return z
