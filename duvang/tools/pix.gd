@@ -19,7 +19,13 @@ func is_bg(c: Color) -> bool:
 
 func _init() -> void:
 	var a = OS.get_cmdline_user_args()
-	src = Image.load_from_file(a[0])
+	# the router answers in PNG (GPT) or JPEG (Gemini) whatever the file is called: look at the bytes
+	var bytes = FileAccess.get_file_as_bytes(a[0])
+	src = Image.new()
+	if bytes.size() > 2 and bytes[0] == 0xFF and bytes[1] == 0xD8:
+		src.load_jpg_from_buffer(bytes)
+	else:
+		src.load_png_from_buffer(bytes)
 	src.convert(Image.FORMAT_RGBA8)
 	var th = int(a[1])
 	var names = a[2].split(",")

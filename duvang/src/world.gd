@@ -67,6 +67,7 @@ static func debts(z: Dictionary) -> void:
 	var at = {"field": [12, 30], "forest": [30, 33], "salt": [24, 31]}
 	var fixed = {"dungeon": Vector2(39.5, 18.5), "town": Vector2(25.5, 10.0)}
 	var ids = {"field": "debt_potter", "dungeon": "debt_mother", "forest": "debt_ferry", "salt": "debt_diver", "town": "debt_say"}
+	mutes(z)
 	if not ids.has(z.id):
 		return
 	var pos = tp(fixed[z.id].x, fixed[z.id].y) if fixed.has(z.id) else land(z, at[z.id][0], at[z.id][1])
@@ -797,3 +798,15 @@ static func maw() -> Dictionary:
 	z.spawns.append({"kind": "okhab", "pos": tp(30.0, 20.0), "once": "okha_dead"})
 	z.spawns.append({"kind": "first", "pos": tp(44.0, 20.0), "once": "first_dead", "req": "okha_dead"})
 	return z
+
+# the Eight Mute Clappers, each a riddle away from the one before
+static func mutes(z: Dictionary) -> void:
+	var at = {"town": [1, Vector2(8.5, 25.0), false], "field": [2, Vector2(62, 36), true], "dungeon": [3, Vector2(83.5, 10.5), false],
+		"forest": [4, Vector2(68, 10), true], "salt": [5, Vector2(18, 14), true], "fleet": [6, Vector2(78.0, 11.0), false],
+		"mines": [7, Vector2(82.5, 30.0), false], "capital": [8, Vector2(86.0, 44.0), false]}
+	if not at.has(z.id):
+		return
+	var e = at[z.id]
+	var pos = land(z, int(e[1].x), int(e[1].y)) if e[2] else tp(e[1].x, e[1].y)
+	z.decor.append({"tex": "clapper", "pos": pos, "solid": true})
+	z.things.append({"id": "mute_%d" % e[0], "pos": pos + Vector2(0, 8), "h": 34.0})

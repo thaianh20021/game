@@ -274,3 +274,13 @@ Không NPC nào giao. Ngọn hải đăng ở bờ khô phía đông nam Biển 
 (`21000 - số ngày Unix`). Xem nó ở hai ngày khác nhau (`flags.lh_days`, lưu dạng chuỗi) thì người gác đèn hiện ra trên tháp:
 nói thật (đèn tắt) hoặc thắp đèn theo nhịp ông chờ (đèn vẫn chớp); cờ `lamp`, thưởng kinh nghiệm qua khóa `xp` của THINGS.
 Sprite tháp đèn còn đang sinh; trước khi có, chỉ có điểm xem. Kiểm tra nhanh: `gen/lh.gd`.
+
+## Cập nhật 2026-11-12 (chuỗi Tám Chiếc Mõ Câm, theo brief mục 3.8)
+
+Không NPC nào giao. Tám chiếc mõ gỗ ở tám khu (trấn, Đầm Lau, Bến Phà Cũ, Rừng Thở, Biển Muối, Hạm Đội, Dãy Mỏ Câm, Kinh Thành),
+`World.mutes`. Chỉ chiếc kế tiếp trong chuỗi mới "nói" (`flags.mutes`); mỗi chiếc giữ lời cuối của một người thuộc một
+Âm Gốc (ứng với tám mastery) và câu đố chỉ tới chiếc sau (`D.MUTES`). Chiếc thứ tám rơi Mõ Tám Tiếng (bùa độc nhất:
+dùng tuyệt kỹ hồi 8% máu và 8 Nộ). Kiểm tra nhanh: `gen/mutes.gd`.
+
+Ảnh: `tools/gen.sh` giờ thử lần lượt nhiều key (`DV_KEYS`) rồi nhiều model, mặc định Gemini 3.1 image trước (chủ dự án chọn);
+`tools/pix.gd` đọc cả PNG lẫn JPEG.

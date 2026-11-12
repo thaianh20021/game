@@ -148,6 +148,7 @@ const UNIQ_TEXT = {
 	"seed": "MỖI DẤU TRÊN KẺ ĐỊCH: +8% SÁT THƯƠNG",
 	"salt": "ĐÒN CHÍ MẠNG LÀM KẺ ĐỊCH LẠNH",
 	"forge": "ĐÒN CUỐI CHUỖI ĐỂ LẠI CHÁY",
+	"eight": "DÙNG TUYỆT KỸ: HỒI 8% MÁU VÀ 8 NỘ",
 }
 
 const POTION_COST = 15
@@ -557,6 +558,14 @@ const QUESTS = {
 # Text shown when the hero examines a thing (E). `opts` turns the last line into a choice that sets a flag.
 
 const THINGS = {
+	"mute_1": {"name": "MÕ CÂM", "lines": []},
+	"mute_2": {"name": "MÕ CÂM", "lines": []},
+	"mute_3": {"name": "MÕ CÂM", "lines": []},
+	"mute_4": {"name": "MÕ CÂM", "lines": []},
+	"mute_5": {"name": "MÕ CÂM", "lines": []},
+	"mute_6": {"name": "MÕ CÂM", "lines": []},
+	"mute_7": {"name": "MÕ CÂM", "lines": []},
+	"mute_8": {"name": "MÕ CÂM", "lines": []},
 	"lighthouse": {"name": "NGỌN HẢI ĐĂNG GIỮA ĐẤT KHÔ", "lines": []},
 	"lamp_keeper": {"name": "NGƯỜI GÁC ĐÈN", "lines": ["TRÊN ĐỈNH THÁP, MỘT ÔNG GIÀ NGỒI CẠNH NGỌN ĐÈN, TAY CẦM CUỐN LỊCH ĐÃ XÉ GẦN HẾT. 'HÔM NAY BỚT MỘT NGÀY. TÀU SẮP VỀ RỒI.'", "'HẠM ĐỘI ĐI BA TRĂM NĂM TRƯỚC. HỌ HỨA VỀ KHI TÔI ĐẾM HẾT. TÔI ĐẾM CHẬM LẠI MỘT CHÚT, ĐỂ HỌ KỊP.'", "ÔNG KHÔNG BIẾT BIỂN ĐÃ CẠN. ÔNG KHÔNG BIẾT HẠM ĐỘI NẰM CÁCH ĐÂY MỘT DẶM, TRONG MUỐI."],
 		"opts": ["NÓI THẬT", "THẮP ĐÈN THEO NHỊP"], "flag": "lamp", "xp": 3000,
@@ -707,3 +716,21 @@ const EPILOGUE = [
 	["CHUÔNG MẸ KHÔNG ĐƯỢC ĐÚC LẠI. PHẦN CÒN SỐNG CỦA NÓ ĐÃ IM. VỌNG KHÔNG CÒN DÀY LÊN ĐỀU NỮA MÀ DÂNG RỒI RÚT, NHƯ THỦY TRIỀU. NGƯỜI TA GỌI ĐÓ LÀ TRIỀU VỌNG.", "MẢNH CHUÔNG TRONG NGỰC BẠN IM. BẠN VẪN ĐÁNH NHƯ CŨ, BẰNG ĐÔI TAY VÃN ĐÃ DẠY VÀ BẠN ĐÃ LUYỆN. CÓ ĐÊM BẠN TỈNH DẬY, CHỜ MỘT TIẾNG NÓI, VÀ CHỈ CÓ TIẾNG MÕ TRẤN.", "NGẢI RA VÀNH HỐ ĐO TRIỀU VỌNG MỖI SÁNG. PHÉP TÍNH CỦA Ô KHA VẪN TREO ĐÓ: NẾU KHÔNG XAY NGƯỜI CHẾT, THÌ LÀM GÌ VỚI HỌ. CHƯA AI GIẢI.", "HẾT."],
 	["CHUÔNG MẸ KHÔNG ĐƯỢC ĐÚC LẠI. PHẦN CÒN SỐNG CỦA NÓ ĐÃ IM. VỌNG KHÔNG CÒN DÀY LÊN ĐỀU NỮA MÀ DÂNG RỒI RÚT, NHƯ THỦY TRIỀU. NGƯỜI TA GỌI ĐÓ LÀ TRIỀU VỌNG.", "MẢNH CHUÔNG TRONG NGỰC BẠN VẪN NGÂN. MỖI LẦN BẠN LÊN CẤP, VÃN NÓI MỘT CÂU, NGẮN HƠN LẦN TRƯỚC. MỘT NGÀY NÀO ĐÓ VÃN SẼ CHỈ CÒN LÀ MỘT TIẾNG THỞ. BẠN BIẾT, VÀ BẠN VẪN GIỮ.", "NGẢI RA VÀNH HỐ ĐO TRIỀU VỌNG MỖI SÁNG. PHÉP TÍNH CỦA Ô KHA VẪN TREO ĐÓ: NẾU KHÔNG XAY NGƯỜI CHẾT, THÌ LÀM GÌ VỚI HỌ. CHƯA AI GIẢI.", "HẾT."],
 ]
+
+# ---------------------------------------------------------------- the Eight Mute Clappers (a hunt, no one gives it)
+# A carpenter of the Night of Cracking carved eight wooden clappers, each holding the last words of someone of one root tone.
+# Only the next clapper in the chain speaks; its words are the riddle for the one after. [where, the last words, the riddle]
+const MUTES = [
+	["CHIẾN BINH", "'TÔI ĐỨNG GIỮ CỔNG TRẤN CẢ ĐÊM. KHI TIẾNG CHUÔNG LĂN QUA, TÔI KHÔNG LÙI. TÔI KHÔNG BIẾT LÀ PHẢI LÙI.'", "'ĐI TÌM CHỖ CÒ ĐỨNG MỘT CHÂN, NƠI ĐẦM LAU GẶP NƯỚC Ở BỜ ĐÔNG NAM.'"],
+	["NGUYÊN TỐ SƯ", "'TÔI GỌI LỬA, GỌI SƯƠNG, GỌI SÉT. ĐÊM ĐÓ TÔI GỌI CẢ BA CÙNG LÚC, VÀ KHÔNG CÁI NÀO TRẢ LỜI.'", "'NƠI NGƯỜI GÁC PHÀ PHƠI LƯỚI, TRÊN GÁC CAO, TRƯỚC KHI LÊN BOONG.'"],
+	["SÁT THỦ", "'TÔI GIẾT BẰNG MỘT NHÁT. ĐÊM ĐÓ TÔI HỌC RẰNG CÓ NHỮNG THỨ KHÔNG CÓ LƯNG ĐỂ ĐÂM.'", "'ĐI TỚI NƠI RỪNG THỞ RA, Ở GÓC ĐÔNG BẮC, NƠI SÓI KHÔNG BAO GIỜ ĐI MỘT MÌNH.'"],
+	["THỢ SĂN", "'TÔI THEO DẤU MỌI THỨ. ĐÊM ĐÓ TÔI THEO DẤU TIẾNG CHUÔNG, VÀ NÓ DẪN TÔI VỀ CHÍNH NHÀ MÌNH.'", "'XUỐNG NƠI BIỂN ĐÃ CẠN, PHÍA TÂY BẮC, NƠI MUỐI CHẤT THÀNH ĐỐNG NHƯ MỘ.'"],
+	["HỘ VỆ", "'TÔI CHE CHO BA ĐỨA NHỎ BẰNG TẤM KHIÊN CỦA TÔI. KHIÊN CHẶN ĐƯỢC ĐÁ. KHÔNG CHẶN ĐƯỢC TIẾNG.'", "'VÀO HẦM TÀU, TỚI BOONG SĨ QUAN, NƠI ĐÔ ĐỐC TỪNG ĐỨNG NHÌN XUỐNG.'"],
+	["THUẬT SĨ LINH HỒN", "'TÔI NÓI CHUYỆN VỚI NGƯỜI CHẾT CẢ ĐỜI. ĐÊM ĐÓ HỌ IM, VÀ TÔI HIỂU LÀ HỌ ĐANG BỊ ĐEM ĐI.'", "'LÊN NÚI TUYẾT, TỚI SÂN TRƯỚC CỔNG LÒ, NƠI HAI PHE ĐỨNG NHÌN NHAU.'"],
+	["KỸ SƯ CỔ VẬT", "'TÔI SỬA ĐƯỢC MỌI CỖ MÁY. TÔI ĐÃ THỬ SỬA CÁI CHUÔNG. TÔI CHỈ LÀM NÓ KÊU TO HƠN.'", "'LÊN KINH, TỚI GÓC ĐÔNG NAM, NƠI CỔNG KHÔNG AI CANH NỮA.'"],
+	["TƯ TẾ", "'TÔI CẦU NGUYỆN CHO NHỮNG NGƯỜI SẮP ĐI. ĐÊM ĐÓ TÔI CẦU NGUYỆN CHO CẢ NHỮNG NGƯỜI KHÔNG ĐƯỢC ĐI. TÔI LÀ NGƯỜI CUỐI CÙNG. NGƯƠI ĐÃ NGHE ĐỦ TÁM TIẾNG.'", ""],
+]
+
+# The eighth clapper gives this: the charm of eight tones. Every ultimate heals and fills a little.
+static func eight_unique() -> Dictionary:
+	return {"name": "MÕ TÁM TIẾNG", "slot": "charm", "rar": 3, "tier": 2, "stats": {"hp": 50, "cdr": 8}, "uniq": "eight"}

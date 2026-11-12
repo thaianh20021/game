@@ -779,6 +779,9 @@ func cast(id: String) -> bool:
 			p.rage = minf(100.0, p.rage + cost)
 	if el != "" and tree.has("th_reso") and p.soulform > 0.0:
 		p.smult = 1.2
+	if N.kind == "u" and has_uniq("eight"):
+		p.hp = minf(stats.mhp, p.hp + stats.mhp * 0.08)
+		p.rage = minf(100.0, p.rage + 8.0)
 	if N.has("heat"):
 		add_heat(float(N.heat))
 	if el != "":
@@ -2898,6 +2901,9 @@ func start_talk(npc: String) -> void:
 	say(who.name, who.tex, c[mini(c.size() - 1, main_done() / 2)], service(npc), "")
 
 func look(id: String) -> void:
+	if id.begins_with("mute_"):
+		mute_clapper(int(id.substr(5)))
+		return
 	if id == "lighthouse":
 		lighthouse()
 		return
@@ -5090,3 +5096,25 @@ func lighthouse() -> void:
 	else:
 		lines.append("KHÔNG CÓ TÀU NÀO. KHÔNG CÓ NƯỚC. NGỌN ĐÈN VẪN CHỚP.")
 	say("NGỌN HẢI ĐĂNG GIỮA ĐẤT KHÔ", "", lines, "", "")
+
+# ---------------------------------------------------------------- the Eight Mute Clappers
+# Only the next clapper in the chain speaks (flags.mutes counts those heard). The eighth gives the charm.
+func mute_clapper(k: int) -> void:
+	var n = int(flags.get("mutes", 0))
+	var lines = []
+	if k == n + 1:
+		flags["mutes"] = k
+		var M = D.MUTES[k - 1]
+		lines = ["BẠN GÕ VÀO CHIẾC MÕ GỖ. NÓ KHÔNG KÊU. NHƯNG MẢNH CHUÔNG TRONG NGỰC BẠN NGHE THẤY MỘT GIỌNG, ÂM GỐC %s. (%d/8)" % [M[0], k], M[1]]
+		if M[2] != "":
+			lines.append(M[2])
+		Sfx.play("clap", 0.5 + 0.1 * k)
+		if k == 8:
+			lines.append("TÁM CHIẾC MÕ ĐÃ NÓI XONG. CHIẾC CUỐI CÙNG RỜI KHỎI GIÁ, NHẸ NHƯ MỘT CHIẾC LÁ, VÀ NẰM GỌN TRONG TAY BẠN.")
+			drop(p.pos + Vector2(0, 10), "item", 0, D.eight_unique())
+		save_game()
+	elif k <= n:
+		lines = ["CHIẾC MÕ ĐÃ NÓI HẾT NHỮNG GÌ NÓ GIỮ."]
+	else:
+		lines = ["MỘT CHIẾC MÕ GỖ CŨ, KHẮC TAY. GÕ VÀO KHÔNG KÊU. CÓ LẼ NÓ ĐANG CHỜ MỘT CHIẾC KHÁC NÓI TRƯỚC."]
+	say("MÕ CÂM", "", lines, "", "")
