@@ -59,6 +59,12 @@ static func add(g, e: Dictionary, el: String) -> void:
 		burst(g, e, el)
 
 static func burst(g, e: Dictionary, el: String) -> void:
+	g.wx_depth += 1
+	burst_body(g, e, el)
+	g.wx_depth -= 1
+	g.infuse("", D.EL_COL[el])
+
+static func burst_body(g, e: Dictionary, el: String) -> void:
 	var c: Vector2 = g.center(e)
 	var col: Color = D.EL_COL[el]
 	var base = (8.0 + g.floor_i * 2.5) * g.st.react

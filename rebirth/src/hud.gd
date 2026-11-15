@@ -36,7 +36,9 @@ const REACT_HELP = [
 ]
 const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER", "book": "ALCHEMY NOTEBOOK", "spell": "SKILL TRAINING"}
 
-static func buff_rect(i: int) -> Rect2:
+static func buff_rect(i: int, n: int = 3) -> Rect2:
+	if n >= 4:
+		return Rect2(13 + i * 115, 84, 109, 112)
 	return Rect2(55 + i * 127, 84, 116, 112)
 
 static func menu_rect(kind: String, i: int) -> Rect2:
@@ -78,6 +80,7 @@ static func draw(g, ci: CanvasItem) -> void:
 			Wx.draw(g, ci)
 			draw_play(g, ci)
 			g.Tutor.draw(g, ci, Hud_self())
+			g.Twist.draw_hud(g, ci)
 			match g.state:
 				"pause": draw_pause(g, ci)
 				"buff": draw_buff(g, ci)
@@ -217,6 +220,15 @@ static func draw_play(g, ci: CanvasItem) -> void:
 	else:
 		bar(ci, Vector2(18, 27), 60, p.en, p.men, Color("4aa8f0"), false)
 	Px.text(ci, Vector2(82, 26), str(int(p.en)), PALE)
+	var inf: Array = p.get("inf", [])
+	for i in D.INF.max:
+		var ix = 112.0 + i * 9.0
+		var on = i < inf.size()
+		var ic: Color = inf[i].col if on else Color(0.3, 0.28, 0.36)
+		if on and inf.size() == D.INF.max and int(t * 8.0) % 2 == 0:
+			ic = Color.WHITE
+		ci.draw_colored_polygon(PackedVector2Array([Vector2(ix, 26), Vector2(ix + 4, 30), Vector2(ix, 34), Vector2(ix - 4, 30)]), INK)
+		ci.draw_colored_polygon(PackedVector2Array([Vector2(ix, 27), Vector2(ix + 3, 30), Vector2(ix, 33), Vector2(ix - 3, 30)]), ic)
 	var sx = 110.0
 	if p.slow > 0.0:
 		big(ci, Art.T["ic_ice"], Vector2(sx, 5), 1.0)
@@ -609,22 +621,24 @@ static func draw_buff(g, ci: CanvasItem) -> void:
 	var m = g.mouse()
 	for i in g.buff_choices.size():
 		var b = g.buff_choices[i]
-		var r = buff_rect(i)
+		var r = buff_rect(i, g.buff_choices.size())
+		var cx = r.size.x / 2.0
+		var cursed: bool = b.has("curse")
 		var hov = r.has_point(m) or (g.pad_used and i == g.buff_sel)
-		panel(ci, r, Color(0.16, 0.1, 0.24, 0.97) if hov else Color(0.09, 0.06, 0.15, 0.95), GOLD if hov else Color("9352cb"))
+		panel(ci, r, Color(0.16, 0.1, 0.24, 0.97) if hov else Color(0.09, 0.06, 0.15, 0.95), GOLD if hov else (Color("ff4a5e") if cursed else Color("9352cb")))
 		var bic = "bl_" + str(b.get("id", ""))
 		if Art.T.has(bic):
 			# its own emblem on a small plate that lights up under the pointer
-			ci.draw_rect(Rect2(r.position + Vector2(58 - 16, 8), Vector2(32, 32)), Color(0.04, 0.03, 0.08, 0.9))
-			ci.draw_rect(Rect2(r.position + Vector2(58 - 16, 8), Vector2(32, 32)), GOLD if hov else Color("55307f"), false, 1.0)
-			big(ci, Art.T[bic], r.position + Vector2(58 - 13.5, 10.5 + (sin(g.time * 4.0 + i) if hov else 0.0)), 3.0)
+			ci.draw_rect(Rect2(r.position + Vector2(cx - 16, 8), Vector2(32, 32)), Color(0.04, 0.03, 0.08, 0.9))
+			ci.draw_rect(Rect2(r.position + Vector2(cx - 16, 8), Vector2(32, 32)), GOLD if hov else Color("55307f"), false, 1.0)
+			big(ci, Art.T[bic], r.position + Vector2(cx - 13.5, 10.5 + (sin(g.time * 4.0 + i) if hov else 0.0)), 3.0)
 		else:
-			big(ci, Art.T["tome"], r.position + Vector2(58 - 15, 10), 3.0)
-		Px.ctext(ci, r.position + Vector2(58, 44), b.name, GOLD)
-		var lines = wrap_text(b.desc, 17)
+			big(ci, Art.T["tome"], r.position + Vector2(cx - 15, 10), 3.0)
+		Px.ctext(ci, r.position + Vector2(cx, 44), b.name, Color("ff6a8a") if cursed else GOLD)
+		var lines = wrap_text(b.desc, 16)
 		for k in lines.size():
-			Px.ctext(ci, r.position + Vector2(58, 60 + k * 10), lines[k], PALE)
-		Px.ctext(ci, r.position + Vector2(58, 99), "PRESS %d" % (i + 1), DIM)
+			Px.ctext(ci, r.position + Vector2(cx, 60 + k * 10), lines[k], PALE)
+		Px.ctext(ci, r.position + Vector2(cx, 99), "PRESS %d" % (i + 1), DIM)
 	Wish.draw_buff_line(g, ci, Hud_self())
 
 static func draw_end(g, ci: CanvasItem, win: bool) -> void:

@@ -195,7 +195,7 @@ static func snapshot(g) -> PackedByteArray:
 	var snap = {
 		fl = g.floor_i, pl = g.players, en = en, bu = bu, pr = pr, pk = pk, zo = g.zones, it = g.inter, te = g.teles, al = g.allies, tr = g.traps, fd = g.fields, pa = g.patches,
 		lock = g.lock.id if g.lock != null else -1, rooms = rooms, cr = cr, nums = g.nums, rings = g.rings, bolts = g.bolts,
-		sl = g.slashes, fla = g.flashes, bn = g.banner, boss = g.boss.uid if g.boss != null else 0, kills = g.kills, rt = g.run_time,
+		sl = g.slashes, ix = g.infx, fla = g.flashes, bn = g.banner, boss = g.boss.uid if g.boss != null else 0, kills = g.kills, rt = g.run_time,
 		sfx = Sfx.log.duplicate(), bl = g.net.blog.duplicate(), bk = g.boss_kills,
 	}
 	Sfx.log.clear()
@@ -255,6 +255,7 @@ static func apply(g, data: PackedByteArray) -> void:
 	g.rings = snap.rings
 	g.bolts = snap.bolts
 	g.slashes = snap.sl
+	g.infx = snap.get("ix", [])
 	g.flashes = snap.fla
 	g.kills = snap.kills
 	g.boss_kills = snap.bk

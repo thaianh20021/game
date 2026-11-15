@@ -34,6 +34,7 @@ const Puzzle = preload("res://src/puzzle.gd")
 const Spell = preload("res://src/spell.gd")
 const Chem = preload("res://src/chem.gd")
 const Tutor = preload("res://src/tutor.gd")
+const Twist = preload("res://src/twist.gd")
 
 # The view. The HUD and menus are laid out on a 480 x 270 sheet (UW x UH) that sits in the
 # middle of the screen; on a wider or taller screen the world simply shows more (VW x VH)
@@ -86,6 +87,8 @@ var state_t = 0.0
 var rng = RandomNumberGenerator.new()
 var time = 0.0
 var hitstop = 0.0
+var wx_depth = 0     # > 0 while weather (reactions, fields, storms, spells) is dealing damage
+var full_hit = false # set while a break lands, so it is not cut down
 var shake = 0.0
 var cam = Vector2.ZERO
 var cam_tl = Vector2.ZERO
@@ -117,6 +120,7 @@ var nums = []
 var bolts = []
 var rings = []
 var slashes = []
+var infx = []      # drawn releases of a charged dash: {pos, ang, kind, r, t, a, b, n}
 var flashes = []
 var ghosts = []
 var near = null
@@ -174,6 +178,9 @@ var sim_p2 = null
 var pending_coop = false
 var pending_resume = false
 var buff_sel = 0
+var curses = []        # twist.gd: curses taken this run
+var curse_lock = {}    # {slot, floor}: an element sealed for one floor
+var twist_t = 0.0
 var pause_sel = 0
 var pause_page = ""  # "" the list, "guide" the reference sheet
 var pause_arm = ""   # the row that asked "are you sure"
@@ -294,7 +301,7 @@ func tip(id: String, text: String, sub: String) -> void:
 	if in_lobby or Meta.S.tips.has(id):
 		return
 	Meta.S.tips[id] = true
-	banner = {text = text, sub = Pad.hint(self, sub) if id in ["burst", "swap"] else sub, t = 4.5}
+	banner = {text = text, sub = Pad.hint(self, sub) if id in ["burst", "swap", "inf"] else sub, t = 4.5}
 
 # Picks up the run saved at the start of its last floor.
 func resume_run() -> void:
@@ -762,7 +769,7 @@ func update_buff() -> void:
 	for i in buff_choices.size():
 		if jpk(KEY_1 + i):
 			pick = i
-		if jpk("m1") and Hud.buff_rect(i).has_point(mouse()):
+		if jpk("m1") and Hud.buff_rect(i, buff_choices.size()).has_point(mouse()):
 			pick = i
 	if pick >= 0 and state_t > 0.3:
 		pick_buff(pick)
@@ -933,6 +940,8 @@ func start_run(seed: int = 0, daily: bool = false) -> void:
 	run_daily = daily
 	el_use = {}
 	nem_met = false
+	curses = []
+	curse_lock = {}
 	Meta.S.run = {}
 	run_heat = 0 if daily else Meta.S.heat
 	Meta.S.last_seed = run_seed
@@ -1085,6 +1094,7 @@ func new_floor() -> void:
 			pl.pet.pos = pl.pos
 	bind(players[0])
 	Nemesis.place_grave(self)
+	Twist.floor_start(self)
 	cam = players[me].pos
 	fade = 1.0
 	banner = {text = D.BIOMES[bi].name, sub = "FLOOR %d-%d" % [bi + 1, floor_i % 2 + 1] + Wx.sub(self), t = 3.2 if Wx.sub(self) == "" else 4.5}
@@ -1132,6 +1142,8 @@ func offer_buffs(stay: bool) -> void:
 		var k = rng.randi() % pool.size()
 		buff_choices.append(pool[k])
 		pool.remove_at(k)
+	if not in_lobby:
+		buff_choices.append(Twist.cursed_offer(self, buff_choices))
 	buff_stay = stay
 	buff_sel = 0
 	say = ""
@@ -1145,6 +1157,11 @@ func next_floor() -> void:
 		end_run(true)
 		return
 	offer_buffs(false)
+
+func take_buff(b: Dictionary) -> void:
+	apply_buff(b.id)
+	if b.has("curse"):
+		apply_buff(b.id)
 
 func apply_buff(id: String) -> void:
 	p.buffs.append(id)
@@ -1166,7 +1183,7 @@ func pick_buff(i: int) -> void:
 	if local_coop():
 		# same screen: each hero takes a turn and may choose differently
 		bind(players[buff_turn])
-		apply_buff(buff_choices[i].id)
+		take_buff(buff_choices[i])
 		bind(players[me])
 		if buff_turn < players.size() - 1:
 			buff_turn += 1
@@ -1177,8 +1194,10 @@ func pick_buff(i: int) -> void:
 		# over LAN the host's choice is shared by the whole party
 		for pl in players:
 			bind(pl)
-			apply_buff(buff_choices[i].id)
+			take_buff(buff_choices[i])
 		bind(players[me])
+	if buff_choices[i].has("curse"):
+		Twist.take_curse(self, buff_choices[i].curse, buff_stay)
 	buff_turn = 0
 	Sfx.play("pick")
 	if not buff_stay:
@@ -1328,6 +1347,7 @@ func update_play(dt: float) -> void:
 	update_zones(dt)
 	Combo.update(self, dt)
 	Tutor.update(self, dt)
+	Twist.update(self, dt)
 	Spell.update(self, dt)
 	if not in_lobby:
 		Traps.update(self, dt)
@@ -1371,6 +1391,7 @@ func update_player(dt: float) -> void:
 	for k in ["cd", "dash_cd", "inv", "skill_cd", "skill2_cd", "shield_t", "haste_t", "rage_t", "flash", "swing", "slow", "noregen", "ar_t"]:
 		p[k] = maxf(0.0, p[k] - dt)
 	p.kick = maxf(0.0, p.kick - dt * 30.0)
+	inf_tick(dt)
 	p.pose = maxf(0.0, float(p.get("pose", 0.0)) - dt)
 
 	if jpk(KEY_SPACE) and p.dash_cd <= 0.0:
@@ -1378,6 +1399,7 @@ func update_player(dt: float) -> void:
 		p.dash_cd = 0.75 * st.dashcd
 		p.dash_dir = mv if mv != Vector2.ZERO else p.aim
 		p.dash_hit = []
+		inf_take()
 		Sfx.play("dash")
 		burst(p.pos, 6, Color(0.9, 0.9, 1.0, 0.8), 40.0, 0.3)
 	var riding = p.mount != null and p.mount.hp > 0
@@ -1387,6 +1409,8 @@ func update_player(dt: float) -> void:
 		tip("mire", "MIRE", "IT SLOWS ANYTHING ON FOOT. DASH THROUGH IT.")
 	if p.dash_t > 0.0:
 		p.dash_t -= dt
+		if p.dash_t <= 0.0 and p.has("inf_rel"):
+			inf_release()
 		v = p.dash_dir * 310.0
 		ghosts.append({pos = p.pos, flip = p.face < 0, t = 0.22, spr = p.spr})
 		if riding:
@@ -1451,6 +1475,8 @@ func update_player(dt: float) -> void:
 		mana_sync(p)
 		for i in 3:
 			var rate = 1.0 / D.SAT.rest if i != p.eli else (0.0 if firing() else 1.0 / D.SAT.idle)
+			if Twist.dry(self):
+				rate = 0.0
 			p.sat[i] = minf(1.0, p.sat[i] + rate * dt)
 			if p.spent[i] and p.sat[i] >= D.SAT.back:
 				p.spent[i] = false
@@ -1811,6 +1837,8 @@ func interact(it: Dictionary) -> void:
 			Nemesis.spare(self, it)
 		"grave":
 			Nemesis.take_grave(self, it)
+		"shard":
+			Twist.take_shard(self, it)
 		"relic":
 			it.gone = true
 			More.take_relic(self, it.id)
@@ -2001,8 +2029,7 @@ func update_rooms(dt: float) -> void:
 			if not cur.rect.grow(-1).has_point(Vector2i((pl.pos / TS).floor())):
 				pl.pos = trig.pos
 		bind(trig)
-		if cur.trial:
-			banner = {text = "FLAWLESS TRIAL", sub = "TAKE NO DAMAGE FOR A RELIC", t = 2.4}
+		Twist.lock_room(self, cur)
 		if cur.mod == "surge":
 			cur.surge_el = D.EL[rng.randi() % 4]
 		if cur.mod != "":
@@ -2036,6 +2063,8 @@ func spawn_tele(id: String, pos: Vector2, delay: float = 0.8, elite: bool = fals
 		var e = spawn_enemy(id, pos)
 		if lock != null and lock.mod == "surge":
 			e.el = lock.surge_el
+		if not elite:
+			Twist.mark(self, e)
 		if elite:
 			e.elite = true
 			e.mhp *= 3.0
@@ -2136,9 +2165,9 @@ func clear_room(r: Dictionary) -> void:
 			drop("key", rc(r), 1)
 		else:
 			drop("key", rc(r), 1)
-	if r.trial and hits == 0:
+	if Twist.passed(r, hits):
 		inter.append({kind = "relic", id = More.random_relic(self), pos = random_room_pos(r, 30.0)})
-		label(p.pos + Vector2(0, -30), "FLAWLESS!", Color("ffd24a"), true)
+		label(p.pos + Vector2(0, -30), "TRIAL PASSED", Color("ffd24a"), true)
 	for g in r.gates:
 		dg.grid[g.y * dg.w + g.x] = 1
 	Sfx.play("door")
@@ -2602,7 +2631,10 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 	if not dot and rng.randf() < st.crit:
 		mult *= 2.0
 		crit = true
-	var amt = dmg * mult
+	var amt = Twist.amount(self, e, dmg * mult, el, dot)
+	var weather = dot or wx_depth > 0
+	if weather and not full_hit and e.d.ai != "dummy":
+		amt *= D.INF.passive
 	e.hp -= amt
 	e.flash = 0.1
 	if not e.is_boss:
@@ -2627,6 +2659,108 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 	if e.hp <= 0.0:
 		if not Nemesis.try_yield(self, e):
 			kill(e)
+
+# Infuse: a reaction pours a charge into the weapon of the hero who caused it.
+func infuse(key: String, col: Color) -> void:
+	if not p.has("els"):
+		return
+	var inf: Array = p.get("inf", [])
+	if inf.size() >= D.INF.max:
+		inf.pop_front()
+	inf.append({key = key, col = col})
+	p.inf = inf
+	p.inf_t = D.INF.life
+	if inf.size() == D.INF.max:
+		label(p.pos + Vector2(0, -30), "FULL CHARGE", Color("ffd24a"))
+		Sfx.play("ui", 1.6)
+		tip("inf", "FULL CHARGE", "DASH (SPACE) INTO THE FOES TO LET IT ALL OUT.")
+
+func inf_tick(dt: float) -> void:
+	if p.get("inf", []).is_empty():
+		return
+	p.inf_t -= dt
+	if p.inf_t <= 0.0:
+		p.inf.pop_front()
+		p.inf_t = D.INF.fade
+
+# A dash takes the charges; they burst out where it ends.
+func inf_take() -> void:
+	if p.get("inf", []).is_empty():
+		return
+	p.inf_rel = p.inf
+	p.inf_from = p.pos
+	p.inf = []
+	p.inv = maxf(p.inv, 0.25)
+
+func inf_release() -> void:
+	var rel: Array = p.inf_rel
+	p.erase("inf_rel")
+	var n = rel.size()
+	if n == 0:
+		return
+	var last: Dictionary = rel[n - 1]
+	var col: Color = last.col
+	var wi = p.weapons[p.wi]
+	var dmg = (D.INF.dmg + D.INF.per_floor * floor_i) * st.react * Ext.wdmg(wi) * (1.0 + D.INF.step * (n - 1))
+	var pc = pcenter()
+	var dir: Vector2 = p.dash_dir.normalized() if p.dash_dir != Vector2.ZERO else Vector2.RIGHT
+	var hit = []
+	var els: Array = Array(last.key.split("+")) if last.key != "" else []
+	var kind = "fan"
+	var reach = 26.0
+	match D.WEAPONS[wi.id].type:
+		"melee":
+			kind = "ring"
+			reach = D.INF.radius + 14.0 * n
+			# a full ring around you
+			var r = D.INF.radius + 14.0 * n
+			for e in enemies:
+				if not e.dead and center(e).distance_to(pc) < r + e.hr:
+					hit.append(e)
+		"beam", "chain":
+			# a lance on along the dash
+			kind = "lance"
+			reach = 150.0 + 40.0 * n
+			var far: Vector2 = pc + dir * (150.0 + 40.0 * n)
+			for e in enemies:
+				if not e.dead and Geometry2D.get_closest_point_to_segment(center(e), pc, far).distance_to(center(e)) < 10.0 + 4.0 * n + e.hr:
+					hit.append(e)
+			bolts.append({a = pc, b = far, col = col, t = 0.35, straight = true})
+			bolts.append({a = pc, b = far, col = Color.WHITE, t = 0.18, straight = true})
+		_:
+			# a fan of heavy charged shots
+			var k = 1 + 2 * n
+			for i in k:
+				var a = dir.angle() + (i - (k - 1) / 2.0) * 0.22
+				add_bullet(pc + dir * 8.0, Vector2.from_angle(a) * 260.0, {dmg = dmg * 0.6, el = "", r = 4.0, life = 1.0, aoe = 20.0 + 6.0 * n, kind = "orb", inf = els})
+	full_hit = true
+	for e in hit:
+		hurt_enemy(e, dmg, "", (center(e) - pc).normalized() * 200.0, true, col)
+		if not e.dead and not e.is_boss:
+			e.stun = maxf(e.stun, 0.2 * n)
+		for el in els:
+			Chem.touch(self, e, el, dmg * 0.5, pc, D.EL_COL[el])
+	full_hit = false
+	infx.append({pos = pc, ang = dir.angle(), kind = kind, r = reach, t = 0.0, a = els[0] if els.size() > 0 else "", b = els[1] if els.size() > 1 else "", n = n, col = col})
+	for el in els:
+		burst(pc, 8, D.EL_COL[el], 110.0, 0.45)
+	if last.key != "":
+		# the dash leaves its reaction along the way: fire and water, a strip of steam
+		var from: Vector2 = p.get("inf_from", p.pos)
+		Combo.trail(self, from, p.pos + dir * (10.0 + 10.0 * n), last.key, n)
+		if n >= D.INF.max:
+			Combo.spawn(self, pc + dir * 20.0, last.key)
+	var txt = "INFUSE" if last.key == "" else str(D.REACT[last.key][0])
+	txt += [" SLASH", " LANCE", " VOLLEY"][["ring", "lance", "fan"].find(kind)] if n < D.INF.max else " OVERCHARGE"
+	label(pc + Vector2(0, -28), txt, Color.WHITE if n < D.INF.max else Color("ffd24a"), true)
+	burst(pc, 10 + 6 * n, col, 120.0 + 30.0 * n, 0.4)
+	burst(pc, 6, Color.WHITE, 80.0, 0.25)
+	flash(pc, 80.0 + 30.0 * n, col, 0.35)
+	if not hit.is_empty() or n >= D.INF.max:
+		hitstop = maxf(hitstop, 0.03 + 0.03 * n)
+	shake_add(2.0 + 2.0 * n)
+	Sfx.play("boom", 1.3 - 0.1 * n, -2.0)
+	charge_res(0.3 * n)
 
 func apply_el(e: Dictionary, el: String, dmg: float) -> void:
 	if reso_src:
@@ -2676,13 +2810,19 @@ func apply_el(e: Dictionary, el: String, dmg: float) -> void:
 func react(e: Dictionary, key: String) -> void:
 	var info = D.REACT[key]
 	var col: Color = info[1]
+	wx_depth += 1
+	react_body(e, key, info, col)
+	wx_depth -= 1
+	infuse(key, col)
+
+func react_body(e: Dictionary, key: String, info: Array, col: Color) -> void:
 	var base = (9.0 + floor_i * 3.0) * st.react
 	var c = center(e)
 	label(c + Vector2(0, -e.h2 - 14.0), Book.find(self, key), col, true)
 	Sfx.play("react")
 	charge_res()
 	Meta.record("reactions", key)
-	tip("react", "REACTION: " + info[0], "IT LEAVES A FIELD. ADD A THIRD ELEMENT FOR A STORM.")
+	tip("react", "REACTION: " + info[0], "IT CHARGES YOUR WEAPON. DASH TO LET IT OUT.")
 	Fx.react(self, c, key)
 	Combo.spawn(self, c, key)
 	mana_cost(Array(key.split("+")), D.SAT.react)
@@ -3039,6 +3179,11 @@ func update_bullets(dt: float) -> void:
 				var ec = center(e)
 				if Geometry2D.get_closest_point_to_segment(ec, prev, np).distance_squared_to(ec) < rr * rr:
 					hurt_enemy(e, b.dmg, b.el, b.vel.normalized() * 90.0)
+					if b.has("inf") and not e.dead:
+						full_hit = true
+						for iel in b.inf:
+							Chem.touch(self, e, iel, b.dmg * 0.5, b.pos - b.vel.normalized() * 8.0, D.EL_COL[iel])
+						full_hit = false
 					if (b.get("attune", false) or st.lens) and b.el != "" and not e.dead:
 						apply_el(e, b.el, 0.0)
 					if (b.kind == "arrow" and p.syn.has("thunder")) or b.get("zap", false):
@@ -3166,6 +3311,9 @@ func update_fx(dt: float) -> void:
 	for q in slashes:
 		q.t += dt
 	slashes = slashes.filter(func(q): return q.t < 0.16)
+	for q in infx:
+		q.t += dt
+	infx = infx.filter(func(q): return q.t < Fx.INF_T)
 	for q in flashes:
 		q.t -= dt
 	flashes = flashes.filter(func(q): return q.t > 0.0)
@@ -3334,7 +3482,7 @@ func draw_inter(ci: CanvasItem, it: Dictionary) -> void:
 			ci.draw_texture(sh, it.pos + Vector2(-8, 2))
 			ci.draw_arc(it.pos + Vector2(0, -6), 9.0 + sin(time * 4.0), 0.0, TAU, 14, Color(0.36, 0.83, 0.95, 0.6), 1.0)
 			spr(ci, "blueprint", it.pos + Vector2(0, -2.0 + sin(time * 3.0 + it.pos.x) * 2.0))
-		"npc", "egg", "deco", "talk", "smith", "alch", "fuse", "shrine", "bench", "grave":
+		"npc", "egg", "deco", "talk", "smith", "alch", "fuse", "shrine", "bench", "grave", "shard":
 			ci.draw_texture(sh, it.pos + Vector2(-8, 1))
 			var nb = 0.0
 			if it.spr.begins_with("npc_"):
@@ -3476,6 +3624,7 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 		var cy = topy - 5.0
 		ci.draw_line(Vector2(e.pos.x - 4.0, cy), Vector2(e.pos.x, cy - 3.0), Color(1, 1, 1, 0.8), 1.0)
 		ci.draw_line(Vector2(e.pos.x, cy - 3.0), Vector2(e.pos.x + 4.0, cy), Color(1, 1, 1, 0.8), 1.0)
+	Twist.draw_foe(self, ci, e, topy)
 	if e.elite:
 		ci.draw_arc(e.pos + Vector2(0, e.r - 1.0), e.r * 2.0 + sin(time * 5.0), 0.0, TAU, 18, Color(1.0, 0.82, 0.3, 0.8), 1.0)
 	if not e.is_boss and e.hp < e.mhp:
@@ -3509,6 +3658,12 @@ func draw_weapon(ci: CanvasItem) -> void:
 	ci.draw_texture(t, Vector2(-1.0 - p.kick + (3.0 if def.spr == "bow" else 0.0), -t.get_height() / 2.0))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	Fx.weapon_aura(self, ci, hand, w)
+	var inf: Array = p.get("inf", [])
+	if not inf.is_empty():
+		var ic: Color = inf[inf.size() - 1].col
+		var pulse = 0.5 + 0.5 * sin(time * (6.0 + 4.0 * inf.size()))
+		ci.draw_circle(hand + p.aim * 6.0, 2.0 + 1.5 * inf.size() + pulse, Color(ic.r, ic.g, ic.b, 0.2 + 0.12 * inf.size()))
+		ci.draw_circle(hand + p.aim * 6.0, 1.0 + 0.5 * inf.size(), Color(1, 1, 1, 0.5 + 0.5 * pulse))
 
 func plift() -> float:
 	return 6.0 if (p.mount != null and p.mount.hp > 0) else 0.0
@@ -3653,6 +3808,8 @@ func draw_top(ci: CanvasItem) -> void:
 		var k = q.t / 0.3
 		ci.draw_arc(q.pos, q.r * (0.3 + 0.7 * k), 0.0, TAU, 24, Color(q.col.r, q.col.g, q.col.b, 1.0 - k), 2.0)
 		ci.draw_arc(q.pos, q.r * (0.3 + 0.7 * k) - 2.0, 0.0, TAU, 24, Color(1, 1, 1, 0.6 * (1.0 - k)), 1.0)
+	for q in infx:
+		Fx.infuse(self, ci, q)
 	for q in slashes:
 		var k = q.t / 0.16
 		var a0 = q.ang - q.arc / 2.0 + q.arc * k * 0.5
@@ -3716,6 +3873,9 @@ func draw_prompt(ci: CanvasItem) -> void:
 			"chest": txt = "SEALED" if near.get("sealed", false) else "OPEN"
 			"spare": txt = "SPARE " + near.name
 			"grave": txt = "TAKE BACK " + wname(near.w)
+			"shard":
+				txt = "TAKE THE " + D.EL_NAME[near.el] + " SHARD"
+				col = D.EL_COL[near.el]
 			"portal": txt = "DESCEND" if floor_i < LAST_FLOOR else "ESCAPE"
 			"weapon":
 				txt = wname(near.w)

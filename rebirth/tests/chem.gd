@@ -124,7 +124,7 @@ func _init():
 	check(g.fields.size() == 1 and Combo.name_of(g.fields[0]) == "STEAM", "and became a steam field")
 	await frames(10)
 	shot("hijack")
-	# weather out-damages weapons
+	# weather still hurts, but only a share of its damage (Infuse): the weapon finishes
 	g.fields.clear()
 	var a = g.spawn_enemy("goblin", g.p.pos + Vector2(40, 0))
 	a.mhp = 99999.0
@@ -141,7 +141,7 @@ func _init():
 	await frames(60)
 	g.sim.erase("fire")
 	print("2s of wildfire ", snapped(by_field, 0.1), " vs 2s of basic weapon ", snapped(99999.0 - a.hp, 0.1))
-	check(by_field > (99999.0 - a.hp), "a field should out-damage a basic weapon")
+	check(by_field > 0.0, "a field still hurts")
 	g.enemies.clear()
 	# wishes
 	check(Wish.wish_buff("more health please") == "vital" and Wish.wish_buff("xuyên") == "pierce" and Wish.wish_buff("hồi sinh") == "wind2", "wish words")

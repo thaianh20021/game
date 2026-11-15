@@ -211,7 +211,9 @@ static func targets(g, f: Dictionary, power: float, col: Color) -> Array:
 					q = near[g.rng.randi() % near.size()].pos
 				g.tele_circle(q, 20.0, 0.5)
 				g.after(0.5, func():
+					g.wx_depth += 1
 					g.explode(q, 24.0, power * SCALE["stone"], "", 0, col)
+					g.wx_depth -= 1
 					g.parts.append({pos = q + Vector2(0, -40), vel = Vector2(0, 300), life = 0.12, max = 0.12, col = col, size = 3, grav = 0.0})
 					g.shake_add(2.0))
 		"leaf":

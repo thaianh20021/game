@@ -52,25 +52,35 @@ static func spawn(g, pos: Vector2, key: String) -> void:
 	Book.find(g, key)
 	var life = 5.0 * g.Wx.field_life(g, key)
 	for f in g.fields:
-		if f.tier == 2 and f.key == key and f.pos.distance_to(pos) < 26.0:
+		if f.tier == 2 and f.key == key and not f.get("trail", false) and f.pos.distance_to(pos) < 26.0:
 			f.life = life
 			return
-	if g.fields.size() >= D.FIELDS_MAX:
+	if plain(g) >= D.FIELDS_MAX:
 		# the oldest plain field makes room (a three-element effect is never pushed out by a field)
 		for i in g.fields.size():
-			if g.fields[i].tier == 2:
+			if g.fields[i].tier == 2 and not g.fields[i].get("trail", false):
 				g.fields.remove_at(i)
 				break
-	if g.fields.size() >= D.FIELDS_MAX:
+	if plain(g) >= D.FIELDS_MAX:
 		return
 	g.fields.append({pos = pos, r = FIELD_R, key = key, els = Array(key.split("+")), life = life, tick = 0.0, tier = 2, t = 0.0})
+
+static func plain(g) -> int:
+	return g.fields.filter(func(f): return not f.get("trail", false)).size()
+
+# A charged dash leaves its reaction along the way it went: fire and water leave a strip of steam.
+static func trail(g, a: Vector2, b: Vector2, key: String, n: int) -> void:
+	var k = 2 + 2 * n
+	for i in k:
+		var q = a.lerp(b, (i + 0.5) / float(k))
+		g.fields.append({pos = q, r = 13.0 + 2.0 * n, key = key, els = Array(key.split("+")), life = 2.0 + 0.8 * n, tick = 0.0, tier = 2, t = 0.0, trail = true})
 
 # Something of element el struck at pos: fields it touches move up a tier.
 static func touch(g, pos: Vector2, el: String, rad: float = 0.0) -> void:
 	if el == "" or el == "prism":
 		return
 	for f in g.fields:
-		if f.life <= 0.0 or f.els.has(el) or f.pos.distance_to(pos) > f.r + rad:
+		if f.life <= 0.0 or f.els.has(el) or f.get("trail", false) or f.pos.distance_to(pos) > f.r + rad:
 			continue
 		var col: Color
 		if f.tier == 2:
@@ -113,6 +123,11 @@ static func touch(g, pos: Vector2, el: String, rad: float = 0.0) -> void:
 static func update(g, dt: float) -> void:
 	if g.fields.is_empty():
 		return
+	g.wx_depth += 1
+	update_body(g, dt)
+	g.wx_depth -= 1
+
+static func update_body(g, dt: float) -> void:
 	var fl: int = g.floor_i
 	var m = 3.6 * g.st.react
 	for f in g.fields:
@@ -206,13 +221,16 @@ static func draw(g, ci: CanvasItem) -> void:
 			continue
 		var col: Color = col_of(f)
 		var a = clampf(f.life, 0.0, 1.0) * clampf(f.t * 4.0, 0.0, 1.0)
+		if f.get("trail", false):
+			a *= 0.5
 		var p: Vector2 = f.pos
 		if f.tier == 2:
 			ci.draw_circle(p, f.r, Color(col.r, col.g, col.b, 0.14 * a))
 			for i in 5:
 				var q = p + Vector2.from_angle(t * 0.8 + i * TAU / 5.0) * f.r * 0.5
 				ci.draw_circle(q, f.r * 0.42 + sin(t * 3.0 + i) * 2.0, Color(col.r, col.g, col.b, 0.13 * a))
-			ci.draw_arc(p, f.r, 0.0, TAU, 24, Color(col.r, col.g, col.b, 0.75 * a), 1.0)
+			if not f.get("trail", false):
+				ci.draw_arc(p, f.r, 0.0, TAU, 24, Color(col.r, col.g, col.b, 0.75 * a), 1.0)
 			if g.rng.randf() < 0.5:
 				var q = p + Vector2.from_angle(g.rng.randf() * TAU) * g.rng.randf() * f.r
 				g.parts.append({pos = q, vel = Vector2(g.rng.randf_range(-6, 6), -22 if f.key != "bolt+ice" else 40), life = 0.5, max = 0.5, col = col, size = 1 + g.rng.randi() % 2, grav = 0.0})
@@ -235,7 +253,7 @@ static func draw(g, ci: CanvasItem) -> void:
 
 static func draw_names(g, ci: CanvasItem) -> void:
 	for f in g.fields:
-		if not g.on_screen(f.pos, 20.0):
+		if not g.on_screen(f.pos, 20.0) or f.get("trail", false):
 			continue
 		var col: Color = col_of(f)
 		var a = clampf(f.life, 0.0, 1.0)
@@ -250,4 +268,4 @@ static func draw_names(g, ci: CanvasItem) -> void:
 static func lights(g, l: Callable) -> void:
 	for f in g.fields:
 		if g.on_screen(f.pos, f.r + 40.0):
-			l.call(f.pos, f.r * (2.0 if f.tier == 2 else 1.7), col_of(f) * (0.3 if f.tier == 2 else 0.4))
+			l.call(f.pos, f.r * (2.0 if f.tier == 2 else 1.7), col_of(f) * (0.06 if f.get("trail", false) else (0.3 if f.tier == 2 else 0.4)))

@@ -132,15 +132,29 @@ func run_hero(hero: int, fuse: int, pet: String, mount: String) -> void:
 					break
 			g.p.safe = g.p.pos
 			g.p.gold = 500
-			await step(20)
+			var p0 = g.p.pos
+			var jumped = ""
+			for q in 20:
+				var was = g.p.pos
+				await step(1)
+				if jumped == "" and g.p.pos.distance_to(was) > 40.0:
+					jumped = "jump at %d from %s to %s banner %s state %s" % [q, str(was), str(g.p.pos), str(g.banner.get("text", "")), g.state]
 			var n = 0
 			while not r.cleared and n < 5000 and g.state == "play":
 				if g.boss != null:
 					seen_boss[g.boss.id] = true
+				if g.lock == null and n % 60 == 59:
+					if not g.enemies.is_empty():
+						print("NOTE stray foe outside a locked room: floor ", g.floor_i, " ", g.enemies.map(func(e): return [e.id, e.get("ally", false), e.get("nem", false), Vector2i((e.pos / 16.0).floor())]), " room ", r.rect)
+					elif not r.rect.grow(-1).has_point(Vector2i((g.p.pos / 16.0).floor())):
+						print("NOTE bot put back into the room")
+						g.p.pos = p0
+				if g.lock != null and n % 40 == 0 and not g.p.get("inf", []).is_empty():
+					g.jp[KEY_SPACE] = true
 				await step(1)
 				n += 1
 			if not r.cleared:
-				print("FAIL room not cleared: floor ", g.floor_i, " type ", r.type, " enemies ", g.enemies.map(func(e): return e.id), " pending ", g.pending, " state ", g.state)
+				print("FAIL room not cleared: floor ", g.floor_i, " type ", r.type, " rule ", r.get("rule", ""), " wave ", r.wave, "/", r.waves, " lock ", g.lock != null, " curses ", g.curses, " enemies ", g.enemies.map(func(e): return e.id), " pending ", g.pending, " state ", g.state, " p ", Vector2i((g.p.pos / 16.0).floor()), " rect ", r.rect, " terr ", g.terr_at(g.p.pos), " free ", g.box_free(g.p.pos, 4.0), " inter ", g.inter.size(), " start ", Vector2i((p0 / 16.0).floor()), " ", jumped)
 				fails += 1
 			for it in g.inter.duplicate():
 				if it.kind in ["portal", "deco"] or g.state != "play" or (it.kind == "shrine" and g.p.mhp < 6):
