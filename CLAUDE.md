@@ -85,7 +85,9 @@ carried element, bosses that echo your three-element effect, element shards (a s
 written into the solo run save). `src/stage.gd` (`D.STAGE`): objective rooms (hold, hunt, survive, champion; `r.trial`
 rooms, `r.sc`), foe affixes (ward, leech, mark, brood; `e.afx`), boss armor that only releases break (`g.rel_hit`),
 wall slams, a camera kick (`game.cam_kick`), a boss seal that only a pure or trinity release breaks (`g.rel_shape`),
-six objectives in all (escort and dark added). The weapon type decides how charges behave (`Inf.RULE`), new releases are
+six objectives in all (escort and dark added). Elites are mirrors (`Stage.on_react`). Six `inf_*`-style relics and four
+synergies set `st.inf_*` flags in `calc_stats`; `game.rs` + `game.tally` feed the end-of-run tally; a new `Pfx` effect
+needs an `fx_<name>` sound in `sfx.gd`. The weapon type decides how charges behave (`Inf.RULE`), new releases are
 recorded in `Meta.S.rels`, and `src/pfx.gd` holds one-shot release effects, nine of them adapted from pixelfx (MIT:
 keep the credit in that file and in the README). On phones the world is drawn at `game.zoom` 1.25: every
 world-to-screen conversion must multiply by it (`mworld`, `mouse`, `on_screen`, `draw_lights`). Cursed blessings, trial rules and self-casting recipes were removed

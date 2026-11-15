@@ -29,6 +29,7 @@ const AFFIX = {
 	"leech": ["LEECH", Color("c57bff")],
 	"mark": ["MARKSMAN", Color("ff5a6a")],
 	"brood": ["BROOD", Color("a6e84e")],
+	"mirror": ["MIRROR", Color("ffd24a")],
 }
 
 # ---- affixes ---------------------------------------------------------------------
@@ -47,10 +48,14 @@ static func mark(g, e: Dictionary) -> void:
 			ks.shuffle()
 			for k in ks.slice(0, 2):
 				affix(g, e, k)
+		else:
+			# every other elite drinks your reactions and gives them back
+			affix(g, e, "mirror")
 		return
 	if g.floor_i < 1 or e.has("eats") or g.rng.randf() > D.STAGE.affix + D.STAGE.affix_floor * g.floor_i:
 		return
-	affix(g, e, AFFIX.keys()[g.rng.randi() % AFFIX.size()])
+	var plain = AFFIX.keys().filter(func(k): return k != "mirror")
+	affix(g, e, plain[g.rng.randi() % plain.size()])
 
 static func affix(g, e: Dictionary, k: String) -> void:
 	var l: Array = e.get("afx", [])
@@ -63,6 +68,22 @@ static func affix(g, e: Dictionary, k: String) -> void:
 		"leech": e.leech_t = 1.0
 		"mark": e.aim_t = g.rng.randf_range(1.5, 3.0)
 		"brood": e.brood_t = D.STAGE.brood
+		"mirror": e.mir = 0
+
+# A reaction went off at c: mirrors close by drink it; three, and they release it back.
+static func on_react(g, c: Vector2, col: Color) -> void:
+	for e in g.enemies:
+		if e.dead or not e.has("mir") or e.has("mir_t") or g.center(e).distance_to(c) > D.STAGE.mirror_r:
+			continue
+		e.mir += 1
+		e.mir_col = col
+		g.bolt(c, g.center(e), col)
+		g.label(g.center(e) + Vector2(0, -e.h2 - 16.0), "DRINKS %d/%d" % [e.mir, D.STAGE.mirror_n], AFFIX.mirror[1])
+		g.tip("mirror", "MIRROR", "IT DRINKS REACTIONS NEAR IT. AT THREE IT RELEASES THEM. KILL IT OR GET CLEAR.")
+		if e.mir >= D.STAGE.mirror_n:
+			e.mir_t = D.STAGE.mirror_wait
+			g.tele_circle(g.center(e), D.STAGE.mirror_blast, D.STAGE.mirror_wait)
+			Sfx.play("warn", 0.7)
 
 # What a hit really does, after everything else. rel is true for a release (ring, lance or one
 # of its shots).
@@ -99,7 +120,7 @@ static func amount(g, e: Dictionary, amt: float, rel: bool) -> float:
 			amt *= D.STAGE.brk
 		elif e.arm > 0.0:
 			if rel:
-				e.arm -= D.STAGE.arm_hit
+				e.arm -= D.STAGE.arm_hit * float(g.st.get("inf_sunder", 1.0))
 				if e.arm <= 0.0:
 					e.arm = 0.0
 					e.brk = D.STAGE.brk_t
@@ -146,6 +167,20 @@ static func tick_foe(g, e: Dictionary, dt: float) -> void:
 			e.erase("arm_t")
 			e.arm = D.STAGE.arm
 			g.label(g.center(e) + Vector2(0, -e.h2 - 20.0), "ARMOR RESTORED", Color("a8a7b8"))
+	if e.has("mir_t"):
+		# nothing stops a mirror that has begun: only killing it does
+		e.mir_t -= dt
+		if e.mir_t <= 0.0:
+			e.erase("mir_t")
+			e.mir = 0
+			var mc: Vector2 = g.center(e)
+			var mcol: Color = e.get("mir_col", AFFIX.mirror[1])
+			g.explode(mc, D.STAGE.mirror_blast, 1.0, "", 1, mcol)
+			for i in 12:
+				g.add_bullet(mc, Vector2.from_angle(i * TAU / 12.0 + g.time) * 95.0, {team = 1, el = e.el, r = 3.0, life = 3.0, dmg = 1})
+			g.Pfx.spawn(g, "radiance", mc, D.STAGE.mirror_blast)
+			g.label(mc + Vector2(0, -e.h2 - 16.0), "RELEASES", AFFIX.mirror[1], true)
+			g.shake_add(4.0)
 	if not e.has("afx") or e.frz > 0.0 or e.stun > 0.0 or e.born > 0.0:
 		return
 	if e.has("leech_t"):
@@ -229,6 +264,7 @@ static func slam(g, e: Dictionary) -> void:
 	if not e.dead:
 		e.stun = maxf(e.stun, 0.35)
 	g.label(c + Vector2(0, -e.h2 - 10.0), "SLAM", Color.WHITE)
+	g.tally("slam")
 	g.burst(c, 8, Color.WHITE, 90.0, 0.3)
 	g.shake_add(2.5)
 	Sfx.play("hit", 0.6)
@@ -360,6 +396,8 @@ static func feed(g, r: Dictionary, dt: float) -> void:
 static func finish(g, r: Dictionary, win: bool) -> void:
 	r.sc_over = true
 	r.sc_win = win
+	if win:
+		g.tally("obj")
 	if r.sc in ["hold", "survive", "escort"] or (r.sc == "hunt" and win):
 		# the objective ends the fight: whatever is left falls
 		r.wave = r.waves
@@ -447,6 +485,14 @@ static func draw_foe(g, ci: CanvasItem, e: Dictionary, topy: float) -> void:
 				var bk = 1.0 - clampf(float(e.get("brood_t", 0.0)) / D.STAGE.brood, 0.0, 1.0)
 				ci.draw_circle(at + Vector2(-2, 0), 2.0, col)
 				ci.draw_circle(at + Vector2(2, 0), 2.0, Color(col.r, col.g, col.b, 0.3 + 0.7 * bk))
+			"mirror":
+				for i in D.STAGE.mirror_n:
+					var on = i < int(e.get("mir", 0))
+					var mp = at + Vector2(-5 + i * 5, 0)
+					ci.draw_rect(Rect2(mp - Vector2(2, 2), Vector2(4, 4)), Color("16121d"))
+					ci.draw_rect(Rect2(mp - Vector2(1, 1), Vector2(2, 2)), (e.get("mir_col", col) if on else Color(col.r, col.g, col.b, 0.3)))
+				if e.has("mir_t") and int(g.time * 12.0) % 2 == 0:
+					ci.draw_arc(c, e.hr + 6.0, 0.0, TAU, 16, col, 2.0)
 		x += 10.0
 	if e.has("aim"):
 		# the marksman's line: thin while it tracks, bright once it has locked

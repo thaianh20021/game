@@ -31,9 +31,11 @@ static var EL_COL = {
 # left elements dead for too long): two resting pools bring in 13% of a pool per second together; steady painting spends 14%, a reaction 30%
 # (15% x 2), an effect 35%, a cast 40%. Waiting alone pays for one reaction every two and a
 # half seconds; anything faster has to be earned with a close weapon or mana orbs.
+# Painting was eased on 2026-11-15 (owner: the element in use was punished too hard): "drain" went from 7 to 10
+# seconds, and the element in use still refills while you fire, slowly ("fire" seconds for a full pool).
 # Close weapons are the way to earn mana back: painting with one drains at "melee" of the
 # rate, and each strike that lands gives "strike" to both resting pools (up to three foes).
-const SAT = {drain = 7.0, rest = 15.0, idle = 21.0, back = 0.35, react = 0.15, storm = 0.35, cast = 0.4, cast_max = 1.5, charge = 0.8, base = 160.0, melee = 0.5, strike = 0.06}
+const SAT = {drain = 10.0, rest = 15.0, idle = 21.0, fire = 42.0, back = 0.35, react = 0.15, storm = 0.35, cast = 0.4, cast_max = 1.5, charge = 0.8, base = 160.0, melee = 0.5, strike = 0.06}
 # seconds a foe cannot be stunned, frozen or rooted again after it gets free
 const CC_FREE = 1.5
 # reaction fields that may lie on the floor at once; only one three-element effect exists at a time
@@ -79,6 +81,8 @@ const STAGE = {affix = 0.12, affix_floor = 0.02, ward = 0.15, leech_r = 44.0, le
 	arm = 100.0, arm_hit = 34.0, arm_cut = 0.7, brk = 2.0, brk_t = 3.0, arm_back = 9.0,
 	slam = 5.0, slam_floor = 2.0, slam_v = 150.0,
 	hold = 14.0, hold_r = 40.0, hold_out = 45.0, survive = 22.0, rain = 1.2, rain_r = 20.0,
+	# mirror: an elite drinks "mirror_n" of your reactions within mirror_r, then releases them itself
+	mirror_n = 3, mirror_r = 80.0, mirror_wait = 0.9, mirror_blast = 46.0,
 	hunt = 20.0, courier_spd = 84.0, courier_hp = 2.5, feed = 3.5, feed_cap = 6, relic = 0.6,
 	# seal: at half health a boss seals itself for seal_t seconds and takes "seal" of all damage, unless a
 	# release of the asked shape (pure or trinity) breaks it; escort: seconds of walking beside the core;
@@ -354,6 +358,10 @@ const SYNERGIES = [
 	{id = "prismatic", name = "PRISMATIC", desc = "REACTIONS DEAL +40% DAMAGE"},
 	{id = "gunslinger", name = "GUNSLINGER", desc = "+15% DAMAGE, 20% OF SHOTS ARE FREE"},
 	{id = "beastlord", name = "BEASTLORD", desc = "PET SHOTS PIERCE, MOUNT GAINS 2 HEALTH"},
+	{id = "overflow", name = "OVERFLOW", desc = "FOURTH VESSEL + SEALED FLASK: RELEASES DEAL +25%"},
+	{id = "harvest", name = "HARVEST", desc = "REAPING + EMBER HEART: CHAINS START AT TWO FOES"},
+	{id = "hairtrigger", name = "HAIR TRIGGER", desc = "QUICK FLINT + LONG FUSE: PERFECT RELEASES ARE EASIER"},
+	{id = "alchemist", name = "ALCHEMIST", desc = "CATALYST + ELEMENT LENS: ONE REACTION IN FOUR CHARGES TWICE"},
 ]
 
 # sw = palette letters [mid, light, dark] used to tint the relic sprite
@@ -370,6 +378,13 @@ const RELICS = {
 	"greed": {name = "GREED", desc = "+50% GOLD, SHOPS COST 25% MORE", sw = ["y", "l", "n"]},
 	"cell": {name = "DEEP BATTERY", desc = "MANA ORBS GIVE DOUBLE", sw = ["c", "w", "b"]},
 	"compass": {name = "COMPASS", desc = "REVEALS THE WHOLE MAP AND ITS SECRETS", sw = ["n", "l", "N"]},
+	# relics for the charged weapon (src/infuse.gd)
+	"flint": {name = "QUICK FLINT", desc = "GATHER TWICE AS FAST", sw = ["o", "y", "R"]},
+	"fuse": {name = "LONG FUSE", desc = "AN ARMED WEAPON STAYS ARMED TWICE AS LONG", sw = ["g", "G", "K"]},
+	"chalice": {name = "PURE CHALICE", desc = "A PURE RELEASE HEALS 1", sw = ["y", "w", "o"]},
+	"eye": {name = "THIRD EYE", desc = "A TRINITY ECHOES ITS FIRST LAYER", sw = ["p", "m", "P"]},
+	"anvil": {name = "WAR ANVIL", desc = "RELEASES BREAK ARMOR TWICE AS FAST", sw = ["G", "w", "g"]},
+	"siphon": {name = "SIPHON", desc = "ARMING TAKES ONLY HALF THE MANA", sw = ["c", "C", "b"]},
 }
 
 const ACTIVES = {

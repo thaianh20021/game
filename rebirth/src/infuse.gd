@@ -77,6 +77,9 @@ static func add(g, key: String, col: Color, at = null) -> void:
 	var wt = wtype(p)
 	if RULE.has(wt):
 		g.tip("w_" + wt, RULE[wt][0], RULE[wt][1])
+	if g.rng.randf() < float(p.st.get("inf_twice", 0.0)) and p.inf.size() < cap(p):
+		give(g, p, {key = key, col = col})
+		g.label(p.pos + Vector2(0, -22), "ALCHEMY +1", col)
 	if wt == "melee" and at != null and p.pos.distance_to(at) < D.INF.near and p.inf.size() < cap(p):
 		# the risk of standing close pays twice
 		give(g, p, {key = key, col = col})
@@ -119,13 +122,17 @@ static func arm(g) -> void:
 		return
 	var need = D.SAT.cast * D.SAT.base / maxf(1.0, float(p.men))
 	p.inf_pow = 0.7 + 0.3 * clampf(p.sat[i] / need, 0.3, D.SAT.cast_max)
-	p.sat[i] = 0.0
-	p.spent[i] = true
+	if p.st.get("inf_thrift", false):
+		p.sat[i] *= 0.5
+		p.spent[i] = p.sat[i] < D.SAT.back
+	else:
+		p.sat[i] = 0.0
+		p.spent[i] = true
 	g.mana_total(p)
-	p.inf_arm = D.INF.arm
+	p.inf_arm = D.INF.arm * float(p.st.get("inf_armx", 1.0))
 	g.label(p.pos + Vector2(0, -30), "ARMED", Color("ffd24a"), true)
 	g.rings.append({pos = g.pcenter(), r = 22.0, t = 0.0, col = Color("ffd24a")})
-	Sfx.play("skill", 1.3)
+	Sfx.play("arm")
 	g.tip("arm", "ARMED", "DASH NOW: THE CHARGES BURST OUT WHERE THE DASH ENDS.")
 
 static func take(g) -> void:
@@ -146,7 +153,7 @@ static func graze(g) -> void:
 		return
 	var pc: Vector2 = g.pcenter()
 	for b in g.bullets:
-		if b.team == 1 and not b.dead and b.pos.distance_squared_to(pc) < D.INF.graze * D.INF.graze:
+		if b.team == 1 and not b.dead and b.pos.distance_squared_to(pc) < pow(D.INF.graze * float(p.st.get("inf_graze", 1.0)), 2.0):
 			p.inf_perf = true
 			g.burst(b.pos, 6, Color.WHITE, 70.0, 0.25)
 			return
@@ -170,6 +177,7 @@ static func release(g) -> void:
 		"lob": kind = "lob"
 	var base: float = (D.INF.dmg + D.INF.per_floor * g.floor_i) * g.st.react * g.Ext.wdmg(wi)
 	base *= float(p.get("inf_pow", 1.0))
+	base *= float(p.st.get("inf_dmg", 1.0))
 	if perfect:
 		base *= D.INF.perfect
 	if sh == "trinity":
@@ -201,6 +209,17 @@ static func release(g) -> void:
 		if l.key != "":
 			# the dash leaves its reactions along the way: fire and water, a strip of steam
 			g.Combo.trail(g, from.lerp(to, float(i) / layers.size()), from.lerp(to, float(i + 1) / layers.size()), l.key, l.k)
+	if sh == "trinity" and p.st.get("inf_echo", false):
+		# the third eye: the first layer comes round again
+		var l0: Dictionary = layers[0]
+		var ni = layers.size()
+		g.after(wait + D.INF.gap * ni, func(): layer(g, p, l0, ni, n, kind, base, pc, dir, wide, sh))
+	if sh == "pure" and p.st.get("inf_heal", false) and p.hp < p.mhp:
+		p.hp += 1
+		g.label(p.pos + Vector2(0, -22), "+1", Color("a6e84e"))
+	g.tally("rel")
+	if sh != "":
+		g.tally(sh)
 	if sh == "pure" and last.key != "":
 		g.Combo.spawn(g, pc + dir * 20.0, last.key)
 	var txt: String
@@ -229,8 +248,9 @@ static func release(g) -> void:
 	if perfect:
 		give(g, p, rel[0])
 		g.slowmo = D.INF.slow
+		g.tally("perf")
 		g.label(pc + Vector2(0, -40), "PERFECT", Color("7adfff"), true)
-		Sfx.play("ui", 2.0)
+		Sfx.play("fx_radiance", 1.4)
 		g.tip("perf", "PERFECT", "DASH THROUGH A SHOT WHILE CHARGED: MORE DAMAGE, ONE CHARGE BACK.")
 
 # One layer of a release: its damage, both aspects of its reaction, and its picture.
@@ -322,12 +342,14 @@ static func chain_end(g, p: Dictionary) -> void:
 	var ch: Dictionary = p.inf_ch
 	p.erase("inf_ch")
 	var n: int = ch.ids.size()
-	if n < D.INF.chain_min:
+	var cmin = int(p.get("st", {}).get("inf_chain", D.INF.chain_min))
+	g.tally("chain", n, true)
+	if n < cmin:
 		return
 	var txt = "CHAIN X%d" % n
 	if p.has("sat"):
 		for i in 3:
-			p.sat[i] = minf(1.0, p.sat[i] + D.INF.chain_mana * (n - D.INF.chain_min + 1))
+			p.sat[i] = minf(1.0, p.sat[i] + D.INF.chain_mana * (n - cmin + 1))
 			if p.spent[i] and p.sat[i] >= D.SAT.back:
 				p.spent[i] = false
 		g.mana_total(p)
@@ -349,6 +371,7 @@ static func note(g, p: Dictionary, kind: String, key: String) -> void:
 	if book.has(id):
 		return
 	book[id] = true
+	g.tally("new")
 	Meta.S["rels"] = book
 	Meta.S.gems += 1
 	var n = 0

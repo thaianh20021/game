@@ -54,6 +54,14 @@ static func refresh_syn(g) -> void:
 			act.append("gunslinger")
 	if p.pet != null and p.mount != null:
 		act.append("beastlord")
+	if p.buffs.has("inf_cap") and p.buffs.has("inf_hold"):
+		act.append("overflow")
+	if p.buffs.has("inf_reap") and p.buffs.has("inf_keep"):
+		act.append("harvest")
+	if p.relics.has("flint") and p.relics.has("fuse"):
+		act.append("hairtrigger")
+	if p.buffs.has("catalyst") and p.relics.has("lens"):
+		act.append("alchemist")
 	var changed = act.size() != p.syn.size()
 	for id in act:
 		if not p.syn.has(id):
