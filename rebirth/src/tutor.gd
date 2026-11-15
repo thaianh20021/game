@@ -134,7 +134,7 @@ static func draw(g, ci: CanvasItem, hud) -> void:
 	if st[0] in ["paint", "react", "storm"]:
 		var d = dummy(g)
 		if d != null:
-			var at: Vector2 = d.pos - g.cam_tl - g.hud_off + Vector2(0, -30.0 + sin(g.time * 6.0) * 2.0)
+			var at: Vector2 = (d.pos - g.cam_tl) * g.zoom - g.hud_off + Vector2(0, -30.0 + sin(g.time * 6.0) * 2.0)
 			for k in 4:
 				ci.draw_rect(Rect2(at.x - 3 + k, at.y + k, 7 - k * 2, 1), Color("ffd24a"))
 			ci.draw_rect(Rect2(at.x - 1, at.y - 5, 3, 5), Color("ffd24a"))

@@ -154,7 +154,7 @@ func run_hero(hero: int, fuse: int, pet: String, mount: String) -> void:
 				await step(1)
 				n += 1
 			if not r.cleared:
-				print("FAIL room not cleared: floor ", g.floor_i, " type ", r.type, " rule ", r.get("rule", ""), " wave ", r.wave, "/", r.waves, " lock ", g.lock != null, " curses ", g.curses, " enemies ", g.enemies.map(func(e): return e.id), " pending ", g.pending, " state ", g.state, " p ", Vector2i((g.p.pos / 16.0).floor()), " rect ", r.rect, " terr ", g.terr_at(g.p.pos), " free ", g.box_free(g.p.pos, 4.0), " inter ", g.inter.size(), " start ", Vector2i((p0 / 16.0).floor()), " ", jumped)
+				print("FAIL room not cleared: floor ", g.floor_i, " type ", r.type, " goal ", r.get("sc", ""), " wave ", r.wave, "/", r.waves, " lock ", g.lock != null, " enemies ", g.enemies.map(func(e): return e.id), " pending ", g.pending, " state ", g.state, " p ", Vector2i((g.p.pos / 16.0).floor()), " rect ", r.rect, " terr ", g.terr_at(g.p.pos), " free ", g.box_free(g.p.pos, 4.0), " inter ", g.inter.size(), " start ", Vector2i((p0 / 16.0).floor()), " ", jumped)
 				fails += 1
 			for it in g.inter.duplicate():
 				if it.kind in ["portal", "deco"] or g.state != "play" or (it.kind == "shrine" and g.p.mhp < 6):

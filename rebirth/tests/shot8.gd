@@ -21,7 +21,7 @@ func _initialize():
 			break
 	room.cleared = true
 	var c: Vector2 = g.rc(room)
-	var shots = [["blade", "fire+water", 3], ["blade", "bolt+ice", 1], ["beam", "light+void", 2], ["pistol", "leaf+metal", 3], ["blade", "stone+wind", 2], ["blade", "mech+tox", 3]]
+	var shots = [["blade", "fire+water,bolt+ice,leaf+metal", 3], ["beam", "fire+water,light+void,bolt+tox", 3], ["pistol", "fire+ice,stone+wind,mech+tox", 3], ["blade", "fire+water", 3]]
 	for i in shots.size():
 		var sh = shots[i]
 		g.enemies.clear()
@@ -37,8 +37,9 @@ func _initialize():
 			e.born = 0.0
 			e.stun = 99.0
 		g.p.inf = []
+		var ks = sh[1].split(",")
 		for k in sh[2]:
-			g.infuse(sh[1], g.D.REACT[sh[1]][1])
+			g.infuse(ks[k % ks.size()], g.D.REACT[ks[k % ks.size()]][1])
 		await frames(8)
 		if i == 0:
 			root.get_texture().get_image().save_png("C:/Users/ADMIN/AppData/Local/Temp/rb_inf_charged.png")
@@ -53,7 +54,7 @@ func _initialize():
 		while g.p.dash_t > 0.0:
 			await frames(1)
 		g.hitstop = 0.0
-		for fr in [3, 9]:
+		for fr in [3, 9, 15]:
 			await frames(3 if fr == 3 else 6)
 			g.banner.t = 0.0
 			g.nums.clear()

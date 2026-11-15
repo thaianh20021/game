@@ -98,7 +98,7 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weath
 			r.elite = rng.randf() < 0.28
 			if rng.randf() < 0.3:
 				r.mod = ["dark", "haste", "surge"][rng.randi() % 3]
-			r.trial = not r.elite and rng.randf() < 0.2
+			r.trial = not r.elite and rng.randf() < 0.3
 		for y in range(r.rect.position.y, r.rect.end.y):
 			for x in range(r.rect.position.x, r.rect.end.x):
 				grid[y * w + x] = 1

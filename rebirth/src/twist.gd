@@ -1,10 +1,8 @@
 extends RefCounted
-# Five things that make the player look before painting:
+# Three things that make the player look before painting:
 #   eaters   some foes feed on one of the elements you carry (it grows, splits or heals)
 #   echo     a boss absorbs the first three-element effect that touches it and casts it back
-#   curses   a fourth, cursed offer on the blessing screen: the blessing twice, at a price
 #   shards   a strange element lying on a floor replaces your third slot until the floor ends
-#   trials   trial rooms have one of four rules and pay a relic
 
 const D = preload("res://src/data.gd")
 const Sfx = preload("res://src/sfx.gd")
@@ -97,31 +95,6 @@ static func update(g, dt: float) -> void:
 				g.tip("eater", "IT EATS " + D.EL_NAME[e.eats], "LOOK AT THE MARK OVER A FOE. PAINT IT WITH SOMETHING ELSE.")
 				sated(g, e)
 	echo_update(g, dt)
-	# a cursed slot stays empty for its floor
-	if g.curse_lock.get("floor", -1) == g.floor_i:
-		for pl in g.players:
-			if pl.has("sat"):
-				pl.sat[g.curse_lock.slot] = 0.0
-				pl.spent[g.curse_lock.slot] = true
-	# the restless trial: never stand still
-	if g.lock != null and g.lock.get("rule", "") == "restless" and not g.enemies.is_empty():
-		var keep = g.p
-		for pl in g.players:
-			if pl.get("down", false):
-				continue
-			pl.still = 0.0 if pl.moving or pl.dash_t > 0.0 else float(pl.get("still", 0.0)) + dt
-			if pl.still > 2.0:
-				pl.still = 0.0
-				g.bind(pl)
-				g.label(pl.pos + Vector2(0, -24), "KEEP MOVING", Color("ff6a6a"))
-				g.hurt_player(1)
-		g.bind(keep)
-
-# Mana does not come back by itself here.
-static func dry(g) -> bool:
-	if g.lock == null:
-		return false
-	return g.lock.get("rule", "") == "dry" or (g.curses.has("dry") and g.lock.type == "boss")
 
 # ---- boss echo -------------------------------------------------------------------
 
@@ -186,29 +159,6 @@ static func echo_update(g, dt: float) -> void:
 				g.zones.append({pos = at, r = 34.0, el = ec.el if ec.el != "" else "tox", life = 4.5, team = 1, tick = 0.3})
 				g.rings.append({pos = at, r = 34.0, t = 0.0, col = ec.col}))
 
-# ---- curses ----------------------------------------------------------------------
-
-const CURSE = {
-	"lock": "ONE ELEMENT IS SEALED FOR A FLOOR",
-	"dry": "NO MANA RETURNS IN BOSS ROOMS",
-	"waves": "EVERY FIGHT HAS ONE MORE WAVE",
-}
-
-# The fourth offer: one of the three, twice as strong, with a price.
-static func cursed_offer(g, choices: Array) -> Dictionary:
-	var b = choices[g.rng.randi() % choices.size()]
-	var kinds = CURSE.keys()
-	var k: String = kinds[g.rng.randi() % kinds.size()]
-	return {id = b.id, name = b.name + " X2", desc = "TWICE. " + CURSE[k], curse = k}
-
-static func take_curse(g, kind: String, stay: bool) -> void:
-	match kind:
-		"lock":
-			g.curse_lock = {slot = g.rng.randi() % 3, floor = g.floor_i if stay else g.floor_i + 1}
-		_:
-			g.curses.append(kind)
-	Sfx.play("roar", 1.8, -6.0)
-
 # ---- shards ----------------------------------------------------------------------
 
 static func floor_start(g) -> void:
@@ -216,8 +166,6 @@ static func floor_start(g) -> void:
 		if pl.has("els_home"):
 			pl.els = pl.els_home
 			pl.erase("els_home")
-	if g.curse_lock.get("floor", -1) == g.floor_i and g.p.has("els"):
-		g.after(3.4, func(): g.banner = {text = D.EL_NAME[g.p.els[g.curse_lock.slot]] + " IS SEALED", sub = "THE CURSE HOLDS UNTIL THIS FLOOR ENDS", t = 3.0})
 	if g.floor_i < 1 or g.rng.randf() > 0.5 or not g.p.has("els"):
 		return
 	var rooms = g.dg.rooms.filter(func(r): return r.type == "fight")
@@ -247,26 +195,6 @@ static func take_shard(g, it: Dictionary) -> void:
 	g.burst(it.pos, 14, col, 90.0, 0.6)
 	Sfx.play("chest", 1.2)
 
-# ---- trials ----------------------------------------------------------------------
-
-const RULE = {
-	"flawless": ["FLAWLESS TRIAL", "TAKE NO DAMAGE FOR A RELIC"],
-	"restless": ["RESTLESS TRIAL", "STAND STILL FOR TWO SECONDS AND IT HURTS"],
-	"dry": ["DROUGHT TRIAL", "NO MANA RETURNS BY ITSELF. STRIKE UP CLOSE TO EARN IT."],
-}
-
-# Called when a room locks.
-static func lock_room(g, r: Dictionary) -> void:
-	if r.type == "fight":
-		r.waves += g.curses.count("waves")
-	if r.trial:
-		var ks = RULE.keys()
-		r.rule = ks[g.rng.randi() % ks.size()]
-		g.banner = {text = RULE[r.rule][0], sub = RULE[r.rule][1], t = 3.0}
-
-static func passed(r: Dictionary, hits: int) -> bool:
-	return r.trial and (r.get("rule", "flawless") != "flawless" or hits == 0)
-
 # ---- drawing ---------------------------------------------------------------------
 
 # The mark over a foe that eats an element: its icon in a toothed frame.
@@ -283,16 +211,3 @@ static func draw_foe(g, ci: CanvasItem, e: Dictionary, topy: float) -> void:
 	ci.draw_texture(g.Art.T["ic_" + el], at + Vector2(2, 2))
 	ci.draw_arc(e.pos + Vector2(0, e.r - 1.0), e.r * 1.7 + sin(g.time * 6.0), 0.0, TAU, 16, Color(col.r, col.g, col.b, 0.7), 1.0)
 
-# Rule of the room and the curses carried, under the top of the HUD sheet.
-static func draw_hud(g, ci: CanvasItem) -> void:
-	if g.in_lobby or g.state != "play":
-		return
-	var y = 46.0
-	if g.lock != null and g.lock.get("rule", "") != "" and g.banner.t <= 0.0:
-		Px.ctext(ci, Vector2(240, y), RULE[g.lock.rule][0], Color("ffd24a"))
-		y += 10.0
-	var marks = g.curses.duplicate()
-	if g.curse_lock.get("floor", -1) == g.floor_i:
-		marks.append("lock")
-	if not marks.is_empty() and g.banner.t <= 0.0 and g.boss == null:
-		Px.ctext(ci, Vector2(240, y), "CURSED: " + ", ".join(marks.map(func(k): return {"lock": "SEALED ELEMENT", "dry": "DRY BOSS ROOMS", "waves": "MORE WAVES"}[k])), Color("ff6a8a"))

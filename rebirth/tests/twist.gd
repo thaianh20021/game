@@ -1,10 +1,9 @@
 extends SceneTree
-# Eaters, the boss echo, cursed blessings, element shards and trial rules.
+# Eaters, the boss echo and element shards.
 const Meta = preload("res://src/meta.gd")
 const D = preload("res://src/data.gd")
 const Twist = preload("res://src/twist.gd")
 const Combo = preload("res://src/combo.gd")
-const Hud = preload("res://src/hud.gd")
 var g
 var fails = 0
 func check(c, what):
@@ -123,35 +122,6 @@ func _init():
 	g.bullets.clear()
 	g.zones.clear()
 
-	# ---- cursed blessings ----
-	g.offer_buffs(true)
-	check(g.buff_choices.size() == 4 and g.buff_choices[3].has("curse"), "a fourth, cursed offer")
-	check(Hud.buff_rect(3, 4).end.x <= 480.0 and Hud.buff_rect(0, 4).position.x >= 0.0, "four cards fit the sheet")
-	g.buff_choices[3] = {id = "vital", name = "IRON HEART X2", desc = "", curse = "waves"}
-	var mhp = g.p.mhp
-	await frames(12)
-	g.pick_buff(3)
-	check(g.p.mhp == mhp + 4 and g.curses == ["waves"], "the blessing counts twice and the curse sticks: %d %s" % [g.p.mhp, str(g.curses)])
-	var w0 = room.waves
-	Twist.lock_room(g, room)
-	check(room.waves == w0 + 1, "one more wave")
-	g.offer_buffs(true)
-	g.buff_choices[3] = {id = "crit", name = "", desc = "", curse = "lock"}
-	await frames(12)
-	g.pick_buff(3)
-	check(g.curse_lock.floor == g.floor_i, "a sealed element for this floor")
-	g.p.sat = [1.0, 1.0, 1.0]
-	g.p.spent = [false, false, false]
-	await frames(3)
-	check(g.p.spent[g.curse_lock.slot] and g.p.sat[g.curse_lock.slot] == 0.0, "the sealed slot stays empty")
-	g.curse_lock = {}
-	g.curses = ["dry"]
-	check(not Twist.dry(g), "dry only bites in a boss room")
-	g.lock = {type = "boss", id = 99}
-	check(Twist.dry(g), "there mana does not return")
-	g.lock = null
-	g.curses = []
-
 	# ---- shards ----
 	var found = false
 	for k in 30:
@@ -168,37 +138,6 @@ func _init():
 	g.new_floor()
 	check(g.p.els == ["fire", "ice", "bolt"] and not g.p.has("els_home"), "until the floor ends")
 
-	# ---- trials ----
-	await frames(5)
-	room = null
-	for r in g.dg.rooms:
-		if r.type == "fight":
-			room = r
-			break
-	g.p.pos = g.rc(room)
-	room.trial = true
-	var rules = {}
-	for k in 60:
-		Twist.lock_room(g, room)
-		rules[room.rule] = true
-	check(rules.size() == 3, "three trial rules")
-	check(Twist.passed({trial = true, rule = "flawless"}, 0) and not Twist.passed({trial = true, rule = "flawless"}, 1) and Twist.passed({trial = true, rule = "dry"}, 3) and not Twist.passed({trial = false}, 0), "who earns the relic")
-	g.enemies.clear()
-	var d1 = foe(g.p.pos + Vector2(50, 0))
-	g.st.crit = 0.0
-	g.lock = room
-	room.rule = "restless"
-	g.p.hp = g.p.mhp
-	g.p.ar = 0
-	g.p.inv = 0.0
-	var hp0 = g.p.hp
-	for k in 80:
-		d1.stun = 99.0
-		await frames(1)
-	check(g.p.hp < hp0, "restless trial: standing still hurts")
-	room.rule = "dry"
-	check(Twist.dry(g), "drought trial: no mana by itself")
-	g.lock = null
 	await frames(10)
 	print("TWIST OK" if fails == 0 else "TWIST FAILED %d" % fails)
 	quit(1 if fails > 0 else 0)

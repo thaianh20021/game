@@ -5,18 +5,18 @@ extends RefCounted
 
 const Px = preload("res://src/font.gd")
 
-const STICK_R = 26.0
+const STICK_R = 30.0
 # id: [centre, radius, label, key pushed into the game's just-pressed set]
 const BUTTONS = {
-	"dash": [Vector2(458, 150), 14.0, "DASH", KEY_SPACE],
-	"s1": [Vector2(430, 124), 13.0, "1", "m2"],
-	"s2": [Vector2(398, 112), 13.0, "2", KEY_F],
-	"burst": [Vector2(364, 118), 12.0, "R", KEY_R],
-	"swap": [Vector2(332, 146), 12.0, "Q", KEY_Q],
+	"dash": [Vector2(456, 146), 17.0, "DASH", KEY_SPACE],
+	"s1": [Vector2(424, 116), 16.0, "1", "m2"],
+	"s2": [Vector2(388, 98), 16.0, "2", KEY_F],
+	"burst": [Vector2(350, 104), 15.0, "R", KEY_R],
+	"swap": [Vector2(320, 138), 15.0, "Q", KEY_Q],
 	# changing element is the main verb after firing: a big button right beside the fire stick
-	"el": [Vector2(366, 172), 17.0, "", KEY_TAB],
-	"use": [Vector2(338, 212), 13.0, "E", KEY_E],
-	"pause": [Vector2(240, 12), 9.0, "II", KEY_ESCAPE],
+	"el": [Vector2(366, 172), 21.0, "", KEY_TAB],
+	"use": [Vector2(332, 216), 16.0, "E", KEY_E],
+	"pause": [Vector2(240, 13), 11.0, "II", KEY_ESCAPE],
 }
 
 # Where a control really sits, in HUD coordinates: controls keep their distance from the

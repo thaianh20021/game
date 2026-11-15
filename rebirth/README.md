@@ -37,12 +37,41 @@ You do not shoot foes down; you build weather, and you forge with words.
   burst, lance, seeker, arc, beam, chain, lob); the element decides what it does. Every
   element hits the same through any weapon. The hero wears the chosen element as a ring
   underfoot and three orbiting motes.
-- Infuse. Weather no longer kills on its own: reactions, fields, three-element effects, burns,
-  resonance and spells deal 30% of their damage. Each reaction pours a charge into your weapon
-  (three at most, shown as diamonds beside the mana bars; they fade after 8 s). A dash lets them
-  out where it ends, shaped by the weapon: a ring for melee, a lance for beams and chains, a fan
-  of heavy shots for the rest. The dash also leaves the reaction along its path (fire and water
-  leave a strip of steam); three charges hit far harder and leave a full field. Numbers: `D.INF`.
+- Infuse (`src/infuse.gd`). Weather no longer kills on its own: reactions, fields, three-element
+  effects, burns, resonance and spells deal 30% of their damage. Each reaction pours a charge into
+  your weapon (three at most, diamonds beside the mana bars; they fade after 8 s). A dash lets
+  them out where it ends, shaped by the weapon: a ring for melee, a lance for beams and chains, a
+  fan of heavy shots for the rest. Charges release as layers: equal ones merge into one stronger
+  layer (three equal = PURE: wider, and it leaves the full field), different ones go off one
+  after another, each with both aspects of its reaction (three different = TRINITY). The dash
+  leaves each reaction as a strip along its path. Dash through an enemy shot while charged for a
+  PERFECT release (more damage, one charge back, slowed time). One release that strikes three
+  foes or more is a CHAIN (mana back; five give a charge back). Five blessings build on it:
+  Fourth Vessel, Ember Heart, Sealed Flask, Wide Wake, Reaping. Numbers: `D.INF`.
+- Stage (`src/stage.gd`). Three fight rooms in ten are objective rooms: HOLD a circle until it
+  fills, HUNT a courier before it gets away, SURVIVE a barrage, or beat a CHAMPION (an elite with
+  two affixes). Winning pays coins and often a relic. Ordinary foes can carry an affix, marked
+  over their head: WARDED (takes 15% until a release breaks the ward), LEECH (drinks your charges
+  up close), MARKSMAN (shows a red line, then a fast shot: dash out), BROOD (splits if left
+  alive). Bosses wear armor (plates over their health bar): other damage is cut to 70%, three
+  release layers break it, and a broken boss is stunned and takes double for 3 s. A foe knocked
+  hard into a wall is slammed (hurt and stunned). Numbers: `D.STAGE`.
+  Removed with this: cursed blessings, trial-room rules, and recipes that cast themselves.
+  Two more objectives: ESCORT a core that moves while you stand by it, and LIGHTS OUT (a dark
+  room that a release lights for 4 s). At half health a boss SEALS itself for 12 s and takes 10%
+  damage; a pure release (three equal charges) or a trinity (three different), whichever it asks
+  for, breaks the seal and stuns it.
+- The weapon decides how it charges: a melee weapon gets a second charge from a reaction right
+  beside you; beams and chains hold charges twice as long; a lobbed weapon drops the release
+  where you aim; the others fire faster for a while after their volley.
+- Notebook of releases: each new pairing of a reaction and a release shape is recorded (one gem;
+  every tenth of a shape pays 25). The count is on the pause screen.
+- Release effects (`src/pfx.gd`): frost nova, chain lightning, geyser, ground slam, hit flash,
+  fire ring, poison cloud, leaf storm and black hole are adapted from pixelfx
+  (https://github.com/patch-gg/pixelfx, MIT License; parts of it after Hugo Duprez's Sprite
+  Fusion pixel art VFX, MIT). Palettes, beats and shapes are kept; the drawing is rewritten for
+  a top-down view. Each element of a release brings its effect; a wall slam shows the ground slam.
+- Phones: the world is drawn 1.25 times larger (`game.zoom`) and the touch buttons are bigger.
 - Eaters. From the second floor on about a fifth of ordinary foes feed on one of the three
   elements you carry (the mark over them shows which): a grower takes no damage from it,
   heals and swells (three meals), a splitter becomes two, a feeder heals while it stands in
@@ -345,7 +374,10 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/chem.gd` | Chemistry generator: aspects of the fifteen elements, generated reactions, fields and storms |
 | `src/tutor.gd` | The first lesson at the training dummy |
 | `src/storm.gd` | The fourteen forms a three-element effect can take |
-| `src/twist.gd` | Eater foes, boss echo, cursed offers, element shards, trial rules |
+| `src/twist.gd` | Eater foes, boss echo, element shards |
+| `src/stage.gd` | Room objectives, foe affixes, boss armor, wall slams |
+| `src/pfx.gd` | One-shot release effects (nine adapted from pixelfx, MIT) |
+| `src/infuse.gd` | Weapon charges: layers, shapes by weapon, perfect release, chain count |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
@@ -381,8 +413,10 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `mana.gd` | Mana pools, reaction costs, field limits, control immunity, gathered casts |
 | `typing.gd` | Touch-only menus and typing screens: tap twice to confirm, naming a skill, Back is Escape |
 | `pause.gd` | Pause menu rows, confirmation of destructive rows, difficulty dials |
-| `twist.gd` | Eaters, boss echo, cursed blessings, element shards, trial rules |
-| `inf.gd` | Infuse: weather cut down, reactions charge the weapon, a dash releases it |
+| `twist.gd` | Eaters, boss echo, element shards |
+| `stage.gd` | Objectives, affixes, boss armor, wall slams |
+| `shot8.gd`, `shot9.gd`, `shot10.gd` | Pictures: releases; objectives and affixes; effect gallery and phone view |
+| `inf.gd` | Infuse: weather cut down, charges, layered releases, perfect, chain, its blessings |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |
 | `shot4.gd`, `shot5.gd` | Phone-shaped screenshots: wide view, lesson, blessing cards (`--resolution 1400x630`) |
 | `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |

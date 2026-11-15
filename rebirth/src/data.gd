@@ -45,13 +45,42 @@ const FIELDS_MAX = 3
 const DIFF = {count = 1.3, hp = 1.3, boss_hp = 1.3, rate = 1.35, cap = 26}
 
 # Infuse (owner, 2026-11-15: "spamming elements kills everything", then "let elements charge the
-# weapon"). Weather no longer kills on its own: reactions, fields, storms, burns, resonance and
-# spells deal "passive" of their damage. Each reaction (and each resonance burst) pours one charge
-# into the weapon, up to "max"; a charge lasts "life" seconds, then they fade one every "fade".
-# A dash lets every charge out at its end, shaped by the weapon: a ring for melee, a lance for
-# beams, a fan of heavy shots for the rest. Damage is dmg + per_floor x floor, plus "step" for
-# each extra charge; a full release also leaves the field of the last reaction.
-const INF = {passive = 0.3, max = 3, life = 8.0, fade = 1.5, dmg = 20.0, per_floor = 6.0, step = 0.7, radius = 34.0}
+# weapon", then "go deeper"). Weather deals only "passive" of its damage. Each reaction (and each
+# resonance burst) pours one charge into the weapon, up to "max"; charges last "life" seconds,
+# then fade one every "fade". A dash releases them where it ends, as layers (src/infuse.gd):
+# equal charges merge (each extra adds "same"), different ones follow "gap" seconds apart; three
+# different multiply by "trinity". A layer deals dmg + per_floor x floor. Dashing within "graze"
+# pixels of an enemy shot makes the release perfect ("perfect" damage, one charge back, "slow"
+# seconds of slowed time). Foes struck by one release are counted for "chain_t" seconds:
+# "chain_min" or more refill "chain_mana" of every pool per foe, "chain_charge" give a charge.
+const INF = {passive = 0.3, max = 3, life = 8.0, fade = 1.5, dmg = 20.0, per_floor = 6.0, same = 1.25, trinity = 1.2,
+	radius = 34.0, gap = 0.12, perfect = 1.3, slow = 0.35, graze = 14.0, chain_t = 0.9, chain_min = 3, chain_mana = 0.06, chain_charge = 5,
+	# the weapon decides how it charges: a melee weapon gets a second charge from a reaction within "near"
+	# pixels; beams and chains hold charges "beam_life" times longer; a lobbed weapon releases at the aim
+	# point, up to "lob_range" away; the others fire "rush" seconds faster per charge after a release
+	near = 56.0, beam_life = 2.0, lob_range = 150.0, lob_wait = 0.3, rush = 0.5}
+
+# Stage (src/stage.gd): objectives, affixes, boss armor, wall slams.
+#   affix + affix_floor x floor: chance that an ordinary foe carries one affix.
+#   ward: share of damage a warded foe takes until a release breaks the ward.
+#   leech_r / leech_cd: how close a leech drinks a charge, and how often.
+#   aim_*: a marksman waits aim_cd, shows its line for aim_wind (locked for the last aim_lock), fires at aim_speed.
+#   brood: seconds until a brood splits.
+#   arm / arm_hit: boss armor and what one release layer takes off; arm_cut: share of other damage that
+#     gets through armor; brk / brk_t: damage multiplier and seconds once it breaks; arm_back: seconds to regrow.
+#   slam + slam_floor x floor: damage of a wall slam at knockback speed slam_v.
+#   hold / hold_r / hold_out, survive / rain / rain_r, hunt / courier_*: the objectives; feed / feed_cap:
+#     reinforcements; relic: chance that a won objective pays a relic.
+const STAGE = {affix = 0.12, affix_floor = 0.02, ward = 0.15, leech_r = 44.0, leech_cd = 1.6,
+	aim_cd = 3.5, aim_wind = 0.9, aim_lock = 0.3, aim_speed = 420.0, brood = 9.0,
+	arm = 100.0, arm_hit = 34.0, arm_cut = 0.7, brk = 2.0, brk_t = 3.0, arm_back = 9.0,
+	slam = 5.0, slam_floor = 2.0, slam_v = 150.0,
+	hold = 14.0, hold_r = 40.0, hold_out = 45.0, survive = 22.0, rain = 1.2, rain_r = 20.0,
+	hunt = 20.0, courier_spd = 84.0, courier_hp = 2.5, feed = 3.5, feed_cap = 6, relic = 0.6,
+	# seal: at half health a boss seals itself for seal_t seconds and takes "seal" of all damage, unless a
+	# release of the asked shape (pure or trinity) breaks it; escort: seconds of walking beside the core;
+	# lit: seconds a release lights a dark room
+	seal = 0.1, seal_t = 12.0, escort = 16.0, lit = 4.0}
 
 # reaction key = the two elements sorted and joined with "+"
 static var REACT = {
@@ -302,6 +331,11 @@ const BUFFS = [
 	{id = "pack", name = "PACK BOND", desc = "YOUR PET ATTACKS TWICE AS FAST"},
 	{id = "wind2", name = "SECOND WIND", desc = "ONCE PER FLOOR, SURVIVE A FATAL HIT"},
 	{id = "surge", name = "RESONANCE", desc = "BURST CHARGES 50% FASTER"},
+	{id = "inf_cap", name = "FOURTH VESSEL", desc = "YOUR WEAPON HOLDS ONE MORE CHARGE"},
+	{id = "inf_keep", name = "EMBER HEART", desc = "A RELEASE KEEPS ITS LAST CHARGE"},
+	{id = "inf_hold", name = "SEALED FLASK", desc = "CHARGES NEVER FADE"},
+	{id = "inf_wide", name = "WIDE WAKE", desc = "RELEASES REACH 30% FURTHER"},
+	{id = "inf_reap", name = "REAPING", desc = "A RELEASE THAT KILLS POURS A CHARGE BACK"},
 ]
 const BOSS_ATKS = [3, 4, 4, 3, 4, 4, 3, 3, 3]
 

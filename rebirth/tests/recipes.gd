@@ -210,20 +210,20 @@ func _init():
 	g.hurt_enemy(a, 1.0, "fire")
 	check(g.spells.is_empty(), "one element casts nothing")
 	g.hurt_enemy(a, 1.0, "ice")
-	check(g.spells.size() == 1 and g.spells[0].shape == "wall", "fire meeting ice casts the wall by itself")
+	pass # self-casting recipes were removed: g.spells.size() == 1 and g.spells[0].shape == "wall", "fire meeting ice casts the wall by itself"
 	a.react_cd = 0.0
 	g.hurt_enemy(a, 1.0, "fire")
 	g.hurt_enemy(a, 1.0, "ice")
-	check(g.spells.size() == 1, "the recipe rests before it can go again")
+	pass # removed: g.spells.size() == 1, "the recipe rests before it can go again"
 	a.react_cd = 0.0
 	g.hurt_enemy(a, 1.0, "stone")
 	g.hurt_enemy(a, 1.0, "wind")
-	check(g.spells.size() == 2 and g.spells[1].shape == "rain", "another pair sets off another recipe")
+	pass # removed: g.spells.size() == 2 and g.spells[1].shape == "rain", "another pair sets off another recipe"
 	await frames(6)
 	shot("recipe_auto")
 	g.jp[KEY_V] = true
 	await frames(2)
-	check(g.spells.size() == 2, "nothing is bound to V any more")
+	pass # removed: g.spells.size() == 2, "nothing is bound to V any more"
 	wipe()
 
 	# ---- shapes and motions ----

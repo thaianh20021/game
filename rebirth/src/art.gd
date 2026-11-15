@@ -663,6 +663,56 @@ lnnlllnnl
 ...lll...
 ..lnnnl..
 ...lll...""",
+	"bl_inf_cap": """
+....y....
+...yYy...
+....y....
+.c..c..c.
+cCc.C.cCc
+.c..c..c.
+.........
+..ggggg..
+.........""",
+	"bl_inf_keep": """
+.........
+....o....
+...oyo...
+..oyYyo..
+..oyYyo..
+...ooo...
+..RRRRR..
+...RRR...
+.........""",
+	"bl_inf_hold": """
+...ggg...
+...gKg...
+..ggggg..
+.gcccccg.
+.gcCCCcg.
+.gcCwCcg.
+.gcccccg.
+..ggggg..
+.........""",
+	"bl_inf_wide": """
+.........
+..ccccc..
+.c.....c.
+c..yyy..c
+c..yYy..c
+c..yyy..c
+.c.....c.
+..ccccc..
+.........""",
+	"bl_inf_reap": """
+..GGGGG..
+.G....G..
+......G..
+.....Gr..
+....G.rr.
+...K..rr.
+..K....r.
+.K.......
+.........""",
 	"bl_crit": """
 ....y....
 .........
