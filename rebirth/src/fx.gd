@@ -183,3 +183,125 @@ static func fuse_aura(g, ci: CanvasItem, pl: Dictionary) -> void:
 		ci.draw_rect(Rect2(q.round(), Vector2(1, 1)), Color("ffd24a") if sin(a) > 0.0 else Color(1.0, 0.82, 0.3, 0.45))
 	if g.rng.randf() < 0.06:
 		part(g, pl.pos + Vector2(g.rng.randf_range(-5, 5), -4), Vector2(0, -22), 0.5, Color("ffd24a"))
+
+# ---- the release of a charged dash -------------------------------------------------
+# Drawn from the two elements that made the charge: each has its own mark (flames, spikes,
+# zigzags, bubbles...), and they alternate along the shape the weapon gives the release.
+const INF_T = 0.5
+
+static func infuse(g, ci: CanvasItem, q: Dictionary) -> void:
+	var k: float = clampf(q.t / INF_T, 0.0, 1.0)
+	var ease = 1.0 - (1.0 - k) * (1.0 - k)
+	var fade = 1.0 - k
+	var ca: Color = D.EL_COL[q.a] if q.a != "" else q.col
+	var cb: Color = D.EL_COL[q.b] if q.b != "" else Color.WHITE
+	var pts = []   # [position, normal]
+	match q.kind:
+		"ring":
+			var rr: float = q.r * (0.35 + 0.65 * ease)
+			ci.draw_arc(q.pos, rr, 0.0, TAU, 32, Color(ca.r, ca.g, ca.b, 0.85 * fade), 3.0)
+			ci.draw_arc(q.pos, rr - 3.0, 0.0, TAU, 32, Color(cb.r, cb.g, cb.b, 0.7 * fade), 2.0)
+			ci.draw_arc(q.pos, rr + 2.0, 0.0, TAU, 32, Color(1, 1, 1, 0.8 * fade), 1.0)
+			var cnt = 12 + 2 * int(q.n)
+			for i in cnt:
+				var d = Vector2.from_angle(q.ang + TAU * i / cnt + k * 0.6)
+				pts.append([q.pos + d * rr, d])
+		"lance":
+			var dir = Vector2.from_angle(q.ang)
+			var far: Vector2 = q.pos + dir * q.r
+			var w = (3.0 + 2.0 * q.n) * fade
+			ci.draw_line(q.pos, far, Color(ca.r, ca.g, ca.b, 0.8 * fade), w + 3.0)
+			ci.draw_line(q.pos, far, Color(cb.r, cb.g, cb.b, 0.9 * fade), w)
+			ci.draw_line(q.pos, far, Color(1, 1, 1, fade), 1.0)
+			var perp = dir.orthogonal()
+			var cnt = int(q.r / 14.0)
+			for i in cnt:
+				var side = 1.0 if i % 2 == 0 else -1.0
+				pts.append([q.pos + dir * (10.0 + i * 14.0) + perp * side * (3.0 + 6.0 * ease), perp * side])
+		_:
+			var half = 0.22 * int(q.n) + 0.15
+			var rr: float = q.r * (0.4 + 1.2 * ease)
+			ci.draw_arc(q.pos, rr, q.ang - half, q.ang + half, 12, Color(ca.r, ca.g, ca.b, 0.85 * fade), 3.0)
+			ci.draw_arc(q.pos, rr - 3.0, q.ang - half, q.ang + half, 12, Color(cb.r, cb.g, cb.b, 0.8 * fade), 2.0)
+			var cnt = 5 + 2 * int(q.n)
+			for i in cnt:
+				var d = Vector2.from_angle(q.ang - half + 2.0 * half * i / (cnt - 1))
+				pts.append([q.pos + d * rr, d])
+	var s = 7.0 + 2.0 * q.n
+	for i in pts.size():
+		mark(g, ci, q.a if i % 2 == 0 else q.b, pts[i][0], pts[i][1], k, s, i)
+
+# One element's mark at a point, pointing along nrm. k is 0..1 through the effect.
+static func mark(g, ci: CanvasItem, el: String, at: Vector2, nrm: Vector2, k: float, s: float, i: int) -> void:
+	var fade = 1.0 - k
+	if el == "x":
+		var wild = ["fire", "ice", "bolt", "tox", "stone", "wind", "light", "void", "water", "leaf", "metal"]
+		el = wild[(i + int(g.time * 10.0)) % wild.size()]
+	var c: Color = D.EL_COL[el] if el != "" else Color.WHITE
+	c.a = fade
+	var white = Color(1, 1, 1, fade)
+	var perp = nrm.orthogonal()
+	var flick = sin(g.time * 30.0 + i * 1.7)
+	match el:
+		"fire":
+			var tip = at + nrm * s * (1.1 + 0.3 * flick) + perp * flick * 2.0
+			ci.draw_colored_polygon(PackedVector2Array([at - perp * 3.0, tip, at + perp * 3.0]), c)
+			ci.draw_colored_polygon(PackedVector2Array([at - perp * 1.5, at + nrm * s * 0.6, at + perp * 1.5]), Color(1.0, 0.9, 0.4, fade))
+		"ice":
+			ci.draw_colored_polygon(PackedVector2Array([at - perp * 1.5, at + nrm * s * 1.5, at + perp * 1.5]), c)
+			ci.draw_line(at, at + nrm * s * 1.3, white, 1.0)
+			ci.draw_line(at + nrm * s * 0.5 - perp * 3.0, at + nrm * s * 0.5 + perp * 3.0, white, 1.0)
+		"bolt":
+			var pl = PackedVector2Array([at])
+			for j in 4:
+				var jit = sin(i * 12.9 + j * 78.2 + floor(g.time * 20.0) * 3.1) * 3.5
+				pl.append(at + nrm * s * 0.4 * (j + 1) + perp * jit)
+			ci.draw_polyline(pl, c, 2.0)
+			ci.draw_polyline(pl, white, 1.0)
+		"tox":
+			ci.draw_circle(at + nrm * s * k, 2.5 * fade + 1.0, c)
+			ci.draw_circle(at + nrm * s * (0.4 + k) + perp * 3.0, 1.5 * fade + 0.5, c)
+			ci.draw_circle(at + nrm * s * k - perp + nrm, 1.0, white)
+		"stone", "earth":
+			var cc = at + nrm * s * k
+			ci.draw_set_transform(cc, k * 4.0 + i, Vector2.ONE)
+			ci.draw_rect(Rect2(-3, -3, 6, 6), c)
+			ci.draw_rect(Rect2(-3, -3, 3, 2), Color(1, 1, 1, 0.5 * fade))
+			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		"wind":
+			var a = nrm.angle()
+			ci.draw_arc(at - nrm * s, s * 1.2, a - 0.7 + k * 1.2, a + 0.3 + k * 1.2, 8, c, 1.5)
+			ci.draw_arc(at - nrm * s, s * 0.8, a - 0.3 + k * 1.6, a + 0.5 + k * 1.6, 8, white, 1.0)
+		"light":
+			ci.draw_line(at, at + nrm * s * 1.8, c, 2.0)
+			ci.draw_line(at, at + nrm * s * 1.8, white, 1.0)
+			ci.draw_circle(at, 1.5, white)
+		"void":
+			var cc = at + nrm * s * (1.0 - k)
+			ci.draw_circle(cc, 3.5 * fade + 1.0, Color(0.08, 0.02, 0.14, fade))
+			ci.draw_arc(cc, 4.5 * fade + 1.0, 0.0, TAU, 10, c, 1.0)
+		"water":
+			var a = nrm.angle()
+			ci.draw_arc(at - nrm * s * 0.5, s * 0.8, a - 0.9, a + 0.9, 8, c, 2.5)
+			ci.draw_arc(at - nrm * s * 0.5, s * 0.8 + 2.0, a - 0.5, a + 0.5, 6, white, 1.0)
+			ci.draw_circle(at + nrm * s * (0.6 + k) + perp * 2.0 * flick, 1.0, white)
+		"leaf":
+			var cc = at + nrm * s * k + perp * flick * 2.0
+			ci.draw_colored_polygon(PackedVector2Array([cc - nrm * 4.0, cc + perp * 2.0, cc + nrm * 4.0, cc - perp * 2.0]), c)
+			ci.draw_line(cc - nrm * 3.0, cc + nrm * 3.0, Color(1, 1, 1, 0.6 * fade), 1.0)
+		"wood":
+			ci.draw_line(at, at + nrm * s * 1.2, c, 2.0)
+			ci.draw_line(at + nrm * s * 0.6, at + nrm * s * 1.0 + perp * 4.0, c, 1.5)
+			ci.draw_line(at + nrm * s * 0.4, at + nrm * s * 0.8 - perp * 4.0, c, 1.5)
+		"metal":
+			ci.draw_line(at - perp * s * 0.7 + nrm * 2.0, at + perp * s * 0.7 + nrm * s * 0.6, c, 2.0)
+			ci.draw_line(at - perp * s * 0.7 + nrm * 2.0, at + perp * s * 0.7 + nrm * s * 0.6, white, 1.0)
+		"mech":
+			var cc = at + nrm * s * 0.5
+			ci.draw_set_transform(cc, g.time * 8.0 + i, Vector2.ONE)
+			ci.draw_rect(Rect2(-3, -1, 6, 2), c)
+			ci.draw_rect(Rect2(-1, -3, 2, 6), c)
+			ci.draw_rect(Rect2(-1, -1, 2, 2), white)
+			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		_:
+			ci.draw_circle(at + nrm * s * k, 2.0, c)

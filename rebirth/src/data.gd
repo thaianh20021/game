@@ -44,6 +44,15 @@ const FIELDS_MAX = 3
 # (1.35 = it shoots 35% more often); waves: extra waves in a fight room from the third floor on.
 const DIFF = {count = 1.3, hp = 1.3, boss_hp = 1.3, rate = 1.35, cap = 26}
 
+# Infuse (owner, 2026-11-15: "spamming elements kills everything", then "let elements charge the
+# weapon"). Weather no longer kills on its own: reactions, fields, storms, burns, resonance and
+# spells deal "passive" of their damage. Each reaction (and each resonance burst) pours one charge
+# into the weapon, up to "max"; a charge lasts "life" seconds, then they fade one every "fade".
+# A dash lets every charge out at its end, shaped by the weapon: a ring for melee, a lance for
+# beams, a fan of heavy shots for the rest. Damage is dmg + per_floor x floor, plus "step" for
+# each extra charge; a full release also leaves the field of the last reaction.
+const INF = {passive = 0.3, max = 3, life = 8.0, fade = 1.5, dmg = 20.0, per_floor = 6.0, step = 0.7, radius = 34.0}
+
 # reaction key = the two elements sorted and joined with "+"
 static var REACT = {
 	"fire+ice": ["MELT", Color("d8f6ff")],

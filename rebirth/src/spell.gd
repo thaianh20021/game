@@ -257,6 +257,11 @@ static func on_react(g, key: String, pos: Vector2) -> bool:
 	return false
 
 static func cast(g, r: Dictionary, pos: Vector2) -> void:
+	g.wx_depth += 1
+	cast_body(g, r, pos)
+	g.wx_depth -= 1
+
+static func cast_body(g, r: Dictionary, pos: Vector2) -> void:
 	var key: String = Chem.pair_key(r.els[0], r.els[1])
 	var col: Color = D.REACT[key][1]
 	var dir: Vector2 = g.p.aim if g.p.aim.length() > 0.1 else Vector2.RIGHT
@@ -346,6 +351,11 @@ static func eat_bullets(g, s: Dictionary, a: Vector2, b: Vector2, w: float) -> v
 			g.parts.append({pos = bl.pos, vel = Vector2(0, -20), life = 0.25, max = 0.25, col = s.col, size = 2, grav = 0.0})
 
 static func update(g, dt: float) -> void:
+	g.wx_depth += 1
+	update_body(g, dt)
+	g.wx_depth -= 1
+
+static func update_body(g, dt: float) -> void:
 	if g.spells.is_empty():
 		return
 	for s in g.spells:

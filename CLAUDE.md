@@ -80,7 +80,12 @@ edges and `g.mworld()` for the aim point), generated app icon (`tests/icon.gd`),
 fourteen forms from the completing element (`src/storm.gd`; a new element needs a `FORM` and `SCALE` entry),
 touch typing screens that lift above the keyboard (`game.kb_lift`, `kb_show`, `kb_h`: never call
 `DisplayServer.virtual_keyboard_*` directly, headless has none) with OK/CANCEL in `touch.gd`, a pause
-menu (`game.update_pause`), difficulty dials (`D.DIFF`). Keep `window/stretch/scale_mode` integer: the owner
+menu (`game.update_pause`), difficulty dials (`D.DIFF`), and in `src/twist.gd`: foes that eat a
+carried element, bosses that echo your three-element effect, a cursed fourth blessing, element shards,
+four trial-room rules (curses and a shard-swapped slot are not written into the solo run save). Infuse (`D.INF`, `game.infuse`, `inf_release`, `Combo.trail`): weather deals only `passive` of its damage; each
+reaction charges the weapon and a dash releases it (owner, 2026-11-15: spamming elements killed everything;
+they chose weapon charging over readied foes).
+Anything new that is weather (not a direct player hit) must run inside `g.wx_depth += 1 ... -= 1` or pass `dot = true`. Keep `window/stretch/scale_mode` integer: the owner
 found fractional scaling blurry on the phone. Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a

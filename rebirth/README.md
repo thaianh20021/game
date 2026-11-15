@@ -37,6 +37,26 @@ You do not shoot foes down; you build weather, and you forge with words.
   burst, lance, seeker, arc, beam, chain, lob); the element decides what it does. Every
   element hits the same through any weapon. The hero wears the chosen element as a ring
   underfoot and three orbiting motes.
+- Infuse. Weather no longer kills on its own: reactions, fields, three-element effects, burns,
+  resonance and spells deal 30% of their damage. Each reaction pours a charge into your weapon
+  (three at most, shown as diamonds beside the mana bars; they fade after 8 s). A dash lets them
+  out where it ends, shaped by the weapon: a ring for melee, a lance for beams and chains, a fan
+  of heavy shots for the rest. The dash also leaves the reaction along its path (fire and water
+  leave a strip of steam); three charges hit far harder and leave a full field. Numbers: `D.INF`.
+- Eaters. From the second floor on about a fifth of ordinary foes feed on one of the three
+  elements you carry (the mark over them shows which): a grower takes no damage from it,
+  heals and swells (three meals), a splitter becomes two, a feeder heals while it stands in
+  a field or pool of it. Paint them with something else.
+- Boss echo. A boss learns the first three-element effect that touches it and casts it back
+  every six seconds as rings, fans, falling strikes or a pool, depending on the effect.
+- Cursed offers. The blessing screen has a fourth card: one of the three blessings twice,
+  with a curse (an element sealed for the next floor, no mana returning in boss rooms, or
+  one more wave in every fight for the rest of the run).
+- Element shards. Half the floors hide a shard of an element you do not carry; taking it
+  replaces your third slot until the floor ends.
+- Trial rooms now have one of three rules and pay a relic: flawless (no damage taken),
+  restless (two seconds standing still hurts), drought (no mana by
+  itself).
 - Pause menu (Esc, Start, the II button or the phone's Back): resume, settings, guide (the
   reaction sheet, your blessings and the controls), abandon run or quit to title, exit game.
   Rows that throw something away ask once more. Exiting a solo run keeps the save from the
@@ -325,6 +345,7 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/chem.gd` | Chemistry generator: aspects of the fifteen elements, generated reactions, fields and storms |
 | `src/tutor.gd` | The first lesson at the training dummy |
 | `src/storm.gd` | The fourteen forms a three-element effect can take |
+| `src/twist.gd` | Eater foes, boss echo, cursed offers, element shards, trial rules |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
 | `src/arms.gd` | Fusion traits; homing and returning projectiles |
@@ -360,6 +381,8 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `mana.gd` | Mana pools, reaction costs, field limits, control immunity, gathered casts |
 | `typing.gd` | Touch-only menus and typing screens: tap twice to confirm, naming a skill, Back is Escape |
 | `pause.gd` | Pause menu rows, confirmation of destructive rows, difficulty dials |
+| `twist.gd` | Eaters, boss echo, cursed blessings, element shards, trial rules |
+| `inf.gd` | Infuse: weather cut down, reactions charge the weapon, a dash releases it |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |
 | `shot4.gd`, `shot5.gd` | Phone-shaped screenshots: wide view, lesson, blessing cards (`--resolution 1400x630`) |
 | `shot3.gd` | Screenshot of the fifteen element crystals in the Hearth (run without `--headless`) |
