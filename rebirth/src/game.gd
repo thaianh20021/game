@@ -99,6 +99,7 @@ var pfx = []         # one-shot pixel effects (src/pfx.gd)
 var lit_t = 0.0      # a release lights a dark room for this long
 var zoom = 1.0       # the world is drawn this much larger (phones)
 var kick_v = Vector2.ZERO  # the camera lurches this way and settles
+var look = Vector2.ZERO    # smoothed look-ahead of the camera
 var shake = 0.0
 var cam = Vector2.ZERO
 var cam_tl = Vector2.ZERO
@@ -714,7 +715,14 @@ func _process(dt: float) -> void:
 	if state != "title" and me < players.size():
 		bind(players[me])
 	if state != "title" and not p.is_empty():
-		var target = p.pos + (mouse() - Vector2(UW, UH) / 2.0) * 0.16
+		var want: Vector2
+		if cin != null or p1_pad or (tin.on and state == "play"):
+			# sticks: a short, steady lean toward the aim
+			want = p.aim * 10.0
+		else:
+			want = (mouse() - Vector2(UW, UH) / 2.0) * 0.16 / zoom
+		look = look.lerp(want, minf(1.0, dt * 3.0))
+		var target = p.pos + look
 		if local_coop():
 			# shared screen: keep the camera between the heroes still standing
 			var sum = Vector2.ZERO
@@ -729,7 +737,8 @@ func _process(dt: float) -> void:
 		shake = maxf(0.0, shake - dt * 22.0)
 		var sh = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * shake
 		kick_v = kick_v.lerp(Vector2.ZERO, minf(1.0, dt * 14.0))
-		cam_tl = (cam - Vector2(VW, VH) / (2.0 * zoom) + sh + kick_v).round()
+		# snapped to whole screen pixels, so the zoomed world never shimmers against the camera
+		cam_tl = ((cam - Vector2(VW, VH) / (2.0 * zoom) + sh + kick_v) * zoom).round() / zoom
 		world.position = (-cam_tl * zoom).round()
 	post.material.set_shader_parameter("tint_a", dmg_flash * 0.3)
 	scene_layer.queue_redraw()
@@ -1503,7 +1512,11 @@ func update_player(dt: float) -> void:
 					parts.append({pos = pcenter() + Vector2.from_angle(qa) * 24.0, vel = -Vector2.from_angle(qa) * 70.0, life = 0.3, max = 0.3, col = D.EL_COL[act_el(p)], size = 2, grav = 0.0})
 		else:
 			if float(p.get("chg", 0.0)) >= D.SAT.charge:
-				cast_big(mw)
+				# with charges in the weapon the gathered mana arms it; otherwise it is cast
+				if p.get("inf", []).is_empty():
+					cast_big(mw)
+				else:
+					Inf.arm(self)
 			p.chg = 0.0
 	if jpk(KEY_E) and near != null:
 		interact(near)
@@ -1609,10 +1622,10 @@ func cast_big(mw: Vector2) -> void:
 		Sfx.play("deny")
 		return
 	var need = D.SAT.cast * D.SAT.base / maxf(1.0, float(p.men))
-	var k = clampf(p.sat[i] / need, 0.3, 1.0)
-	p.sat[i] = maxf(0.0, p.sat[i] - need)
-	if p.sat[i] <= 0.0:
-		p.spent[i] = true
+	# it takes everything that element has left, and is as strong as what it took
+	var k = clampf(p.sat[i] / need, 0.3, D.SAT.cast_max)
+	p.sat[i] = 0.0
+	p.spent[i] = true
 	mana_total(p)
 	p.casts = int(p.get("casts", 0)) + 1
 	var wi = p.weapons[p.wi]
@@ -2748,7 +2761,7 @@ func react_body(e: Dictionary, key: String, info: Array, col: Color) -> void:
 	Sfx.play("react")
 	charge_res()
 	Meta.record("reactions", key)
-	tip("react", "REACTION: " + info[0], "IT CHARGES YOUR WEAPON. DASH TO LET IT OUT.")
+	tip("react", "REACTION: " + info[0], "IT CHARGES YOUR WEAPON. GATHER, THEN DASH, TO LET IT OUT.")
 	Fx.react(self, c, key)
 	Combo.spawn(self, c, key)
 	mana_cost(Array(key.split("+")), D.SAT.react)
@@ -3602,6 +3615,13 @@ func draw_weapon(ci: CanvasItem) -> void:
 		var pulse = 0.5 + 0.5 * sin(time * (6.0 + 4.0 * inf.size()))
 		ci.draw_circle(hand + p.aim * 6.0, 2.0 + 1.5 * inf.size() + pulse, Color(ic.r, ic.g, ic.b, 0.2 + 0.12 * inf.size()))
 		ci.draw_circle(hand + p.aim * 6.0, 1.0 + 0.5 * inf.size(), Color(1, 1, 1, 0.5 + 0.5 * pulse))
+		var full = float(p.get("inf_arm", 0.0)) > 0.0
+		for i in inf.size():
+			var oa = time * (5.0 if full else 2.5) + i * TAU / inf.size()
+			var op = p.pos + Vector2(0, -6.0 - plift()) + Vector2(cos(oa) * 13.0, sin(oa) * 7.0)
+			var oc: Color = inf[i].col
+			ci.draw_colored_polygon(PackedVector2Array([op + Vector2(0, -3), op + Vector2(3, 0), op + Vector2(0, 3), op + Vector2(-3, 0)]), Color("16121d"))
+			ci.draw_colored_polygon(PackedVector2Array([op + Vector2(0, -2), op + Vector2(2, 0), op + Vector2(0, 2), op + Vector2(-2, 0)]), Color.WHITE if (full and int(time * 10.0) % 2 == 0) else oc)
 
 func plift() -> float:
 	return 6.0 if (p.mount != null and p.mount.hp > 0) else 0.0

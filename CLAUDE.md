@@ -90,7 +90,8 @@ recorded in `Meta.S.rels`, and `src/pfx.gd` holds one-shot release effects, nine
 keep the credit in that file and in the README). On phones the world is drawn at `game.zoom` 1.25: every
 world-to-screen conversion must multiply by it (`mworld`, `mouse`, `on_screen`, `draw_lights`). Cursed blessings, trial rules and self-casting recipes were removed
 (owner, 2026-11-15). Infuse (`D.INF`, `src/infuse.gd`, `Combo.trail`, drawn by `Fx.infuse`): weather deals only `passive` of its damage; each
-reaction charges the weapon and a dash releases the charges as layers (equal charges merge, three equal = pure, three
+reaction charges the weapon; gathering on the element key arms it (`Inf.arm`, empties that pool; a bare dash releases
+nothing, owner 2026-11-15) and a dash while armed releases the charges as layers (equal charges merge, three equal = pure, three
 different = trinity), with a perfect release for dashing through a shot, a chain count per release, and five `inf_*`
 blessings (owner, 2026-11-15: spamming elements killed everything; they chose weapon charging over readied foes).
 Anything new that is weather (not a direct player hit) must run inside `g.wx_depth += 1 ... -= 1` or pass `dot = true`. Keep `window/stretch/scale_mode` integer: the owner

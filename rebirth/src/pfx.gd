@@ -117,6 +117,8 @@ static func frost(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 			var d = Vector2.from_angle(a)
 			var base = p + d * rr
 			var h: float = rg[2] * grow * (0.75 + 0.5 * rnd(q.seed, ri * 20.0 + i))
+			if h < 1.0:
+				continue
 			var wd: float = rg[3]
 			var n = d.orthogonal()
 			ci.draw_colored_polygon(PackedVector2Array([base - n * wd, base + d * h, base + n * wd, base - d * h * 0.3]), c("frost", 4, fade))
@@ -274,6 +276,8 @@ static func fire(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 		var d = Vector2.from_angle(a)
 		var flick = 0.7 + 0.3 * sin(q.t * 38.0 + i * 2.3)
 		var h = (9.0 * (1.0 - w) + 4.0) * flick * fade
+		if h < 1.0:
+			continue
 		var base = p + d * front
 		var nrm = d.orthogonal()
 		var tip = base + d * h * 0.4 + Vector2(0, -h)
@@ -333,6 +337,8 @@ static func leaf(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 		var at = p + Vector2.from_angle(a) * rr + Vector2(0, -6.0 * u)
 		var turn = q.t * 9.0 + i
 		var flip = cos(q.t * 13.0 + i * 1.7)
+		if absf(flip) < 0.3:
+			flip = 0.3 if flip >= 0.0 else -0.3
 		var d = Vector2.from_angle(turn)
 		var n = d.orthogonal() * 2.0 * flip
 		ci.draw_colored_polygon(PackedVector2Array([at - d * 3.5, at + n, at + d * 3.5, at - n]), c("leaf", 3 if flip < 0.0 else 4, fade))

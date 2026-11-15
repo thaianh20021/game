@@ -73,6 +73,7 @@ static func add(g, key: String, col: Color, at = null) -> void:
 	if not p.has("els"):
 		return
 	give(g, p, {key = key, col = col})
+	g.tip("inf1", "WEAPON CHARGED", "HOLD THE ELEMENT BUTTON TO ARM IT, THEN DASH TO RELEASE." if g.tin.on else g.Pad.hint(g, "HOLD 1 2 3 TO ARM IT, THEN DASH (SPACE) TO RELEASE."))
 	var wt = wtype(p)
 	if RULE.has(wt):
 		g.tip("w_" + wt, RULE[wt][0], RULE[wt][1])
@@ -84,12 +85,18 @@ static func add(g, key: String, col: Color, at = null) -> void:
 		var sh = shape(p.inf)
 		g.label(p.pos + Vector2(0, -30), {"pure": "PURE CHARGE", "trinity": "TRINITY CHARGE"}.get(sh, "FULL CHARGE"), Color("ffd24a"))
 		Sfx.play("ui", 1.6)
-		g.tip("inf", "FULL CHARGE", "DASH INTO THE FOES TO LET IT ALL OUT.")
+		g.tip("inf", "FULL CHARGE", "ARM IT (HOLD THE ELEMENT), THEN DASH INTO THE FOES.")
 
 static func tick(g, dt: float) -> void:
 	var p: Dictionary = g.p
 	if p.has("inf_ch") and g.time - float(p.inf_ch.t) > D.INF.chain_t:
 		chain_end(g, p)
+	if p.has("inf_arm"):
+		p.inf_arm -= dt
+		if p.inf_arm <= 0.0 or p.get("inf", []).is_empty():
+			if p.inf_arm <= 0.0:
+				g.label(p.pos + Vector2(0, -22), "UNARMED", Color("a8a7b8"))
+			p.erase("inf_arm")
 	if p.has("inf_rush"):
 		p.inf_rush -= dt
 		if p.inf_rush <= 0.0:
@@ -102,10 +109,30 @@ static func tick(g, dt: float) -> void:
 		p.inf_t = D.INF.fade
 
 # A dash takes the charges; they burst out where it ends.
+# Gathered mana arms the weapon: it empties the chosen element's pool, like a gathered cast.
+static func arm(g) -> void:
+	var p: Dictionary = g.p
+	var i: int = p.eli
+	if p.spent[i] or p.sat[i] < 0.1:
+		g.label(p.pos + Vector2(0, -22), "NO MANA", Color("ff6a6a"))
+		Sfx.play("deny")
+		return
+	var need = D.SAT.cast * D.SAT.base / maxf(1.0, float(p.men))
+	p.inf_pow = 0.7 + 0.3 * clampf(p.sat[i] / need, 0.3, D.SAT.cast_max)
+	p.sat[i] = 0.0
+	p.spent[i] = true
+	g.mana_total(p)
+	p.inf_arm = D.INF.arm
+	g.label(p.pos + Vector2(0, -30), "ARMED", Color("ffd24a"), true)
+	g.rings.append({pos = g.pcenter(), r = 22.0, t = 0.0, col = Color("ffd24a")})
+	Sfx.play("skill", 1.3)
+	g.tip("arm", "ARMED", "DASH NOW: THE CHARGES BURST OUT WHERE THE DASH ENDS.")
+
 static func take(g) -> void:
 	var p: Dictionary = g.p
-	if p.get("inf", []).is_empty():
+	if p.get("inf", []).is_empty() or float(p.get("inf_arm", 0.0)) <= 0.0:
 		return
+	p.erase("inf_arm")
 	p.inf_rel = p.inf
 	p.inf_from = p.pos
 	p.inf = []
@@ -142,6 +169,7 @@ static func release(g) -> void:
 		"beam", "chain": kind = "lance"
 		"lob": kind = "lob"
 	var base: float = (D.INF.dmg + D.INF.per_floor * g.floor_i) * g.st.react * g.Ext.wdmg(wi)
+	base *= float(p.get("inf_pow", 1.0))
 	if perfect:
 		base *= D.INF.perfect
 	if sh == "trinity":

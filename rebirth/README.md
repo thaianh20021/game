@@ -39,8 +39,9 @@ You do not shoot foes down; you build weather, and you forge with words.
   underfoot and three orbiting motes.
 - Infuse (`src/infuse.gd`). Weather no longer kills on its own: reactions, fields, three-element
   effects, burns, resonance and spells deal 30% of their damage. Each reaction pours a charge into
-  your weapon (three at most, diamonds beside the mana bars; they fade after 8 s). A dash lets
-  them out where it ends, shaped by the weapon: a ring for melee, a lance for beams and chains, a
+  your weapon (three at most, diamonds beside the mana bars; they fade after 8 s). Gather on the element key and let go to ARM the
+  weapon (that empties the element's pool; armed lasts 4 s); a dash while armed lets the charges
+  out where it ends, shaped by the weapon: a ring for melee, a lance for beams and chains, a
   fan of heavy shots for the rest. Charges release as layers: equal ones merge into one stronger
   layer (three equal = PURE: wider, and it leaves the full field), different ones go off one
   after another, each with both aspects of its reaction (three different = TRINITY). The dash
