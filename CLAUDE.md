@@ -97,7 +97,9 @@ nothing, owner 2026-11-15) and a dash while armed releases the charges as layers
 different = trinity), with a perfect release for dashing through a shot, a chain count per release, and five `inf_*`
 blessings (owner, 2026-11-15: spamming elements killed everything; they chose weapon charging over readied foes).
 Anything new that is weather (not a direct player hit) must run inside `g.wx_depth += 1 ... -= 1` or pass `dot = true`. Keep `window/stretch/scale_mode` integer: the owner
-found fractional scaling blurry on the phone. Next steps are in `rebirth/ROADMAP.md`.
+found fractional scaling blurry on the phone. Since 2026-11-16 the stretch mode is `canvas_items` (drawn at the screen's own
+resolution; the owner found the 600x270 buffer soft): anything per-pixel in a shader must divide `FRAGCOORD` by `px`.
+Items and weapons show a stat card (`game.item_card`, `Ext.wcard`, `Hud.draw_card`): give every new pickup kind one. Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; a debug APK builds and installs on the owner's phone (SDK path is in `rebirth/README.md`; use the adb in that SDK's platform-tools, `C:/adb/adb` is from 2015 and loses the device) but nobody has reported how it plays there; LAN was tested

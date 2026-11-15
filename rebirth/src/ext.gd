@@ -13,6 +13,74 @@ const Arms = preload("res://src/arms.gd")
 static func wdmg(w: Dictionary) -> float:
 	return 1.0 + 0.25 * int(w.get("lv", 0))
 
+# The numbers of a weapon in this hero's hands: damage of one hit, hits per shot, shots per
+# second, damage per second, mana per shot. Blessings, relics, level and traits are counted.
+static func wstats(g, wi: Dictionary) -> Dictionary:
+	var w: Dictionary = D.WEAPONS[wi.id].duplicate()
+	w.dmg = w.dmg * 0.7 * wdmg(wi) * float(wi.get("pow", 1.0))
+	var cd: float = w.cd
+	for tr in [wi.get("trait", "")] + wi.get("traits", []):
+		Arms.apply(w, tr)
+		if tr == "swift":
+			cd *= 0.75
+	var st: Dictionary = g.st
+	var n = 1
+	if w.type == "bullet":
+		n = int(w.get("n", 1)) + int(st.get("multi", 0))
+	var dmg: float = w.dmg * float(st.get("dmg", 1.0))
+	cd *= float(st.get("rate", 1.0))
+	return {dmg = dmg, n = n, rate = 1.0 / cd, dps = dmg * n / cd, cost = float(w.cost), type = w.type,
+		pierce = int(w.get("pierce", 0)) + (int(st.get("pierce", 0)) if w.type == "bullet" else 0),
+		bounce = int(w.get("bounce", 0)) + (int(st.get("bounce", 0)) if w.type == "bullet" else 0),
+		aoe = float(w.get("aoe", 0.0)), reach = float(w.get("range", 0.0)), jumps = int(w.get("n", 0)) if w.type == "chain" else 0}
+
+static func num(v: float) -> String:
+	return str(int(round(v))) if v >= 20.0 else str(snappedf(v, 0.1)).trim_suffix(".0")
+
+# The card of a weapon: [text, colour] lines. other is the weapon it would replace (or null).
+static func wcard(g, wi: Dictionary, other = null) -> Array:
+	var s = wstats(g, wi)
+	var def: Dictionary = D.WEAPONS[wi.id]
+	var pale = Color("d8d4e6")
+	var dim = Color("8f8aa3")
+	var out = []
+	var els = [wi.el] if wi.el != "" else []
+	if wi.get("el2", "") != "":
+		els.append(wi.el2)
+	out.append([("PRISM" if wi.el == "prism" else ("PLAIN" if els.is_empty() else " + ".join(els.map(func(k): return D.EL_NAME.get(k, k))))) + "  " + ["COMMON", "RARE", "EPIC", "LEGEND"][clampi(int(def.rar), 0, 3)], D.RAR_COL[def.rar]])
+	out.append(["DAMAGE %s%s   %s/S" % [num(s.dmg), (" X%d" % s.n) if s.n > 1 else "", num(s.rate)], pale])
+	var line = "PER SECOND %s" % num(s.dps)
+	var lc = pale
+	if other != null:
+		var d: float = s.dps - wstats(g, other).dps
+		if absf(d) >= 0.5:
+			line += "  (%s%s)" % ["+" if d > 0.0 else "-", num(absf(d))]
+			lc = Color("a6e84e") if d > 0.0 else Color("ff6a6a")
+	out.append([line, lc])
+	if s.cost > 0.0:
+		out.append(["MANA %s A SHOT" % num(s.cost), Color("4aa8f0")])
+	var bits = []
+	if s.reach > 0.0 and s.type == "melee":
+		bits.append("REACH %d" % int(s.reach))
+	if s.pierce > 0:
+		bits.append("PIERCE %d" % s.pierce)
+	if s.bounce > 0:
+		bits.append("BOUNCE %d" % s.bounce)
+	if s.aoe > 0.0:
+		bits.append("BLAST %d" % int(s.aoe))
+	if s.jumps > 0:
+		bits.append("JUMPS %d" % s.jumps)
+	if not bits.is_empty():
+		out.append(["  ".join(bits), pale])
+	for tr in [wi.get("trait", "")] + wi.get("traits", []):
+		if tr != "":
+			out.append([Arms.TRAIT_NAME[tr] + ": " + Arms.TRAIT_DESC[tr], Color("ffd24a")])
+	var rule: Array = g.Inf.RULE.get(s.type, [])
+	if not rule.is_empty():
+		for l in g.Hud.wrap_text("CHARGE: " + rule[1], 30):
+			out.append([l, dim])
+	return out
+
 static func wname(w: Dictionary) -> String:
 	var s = ""
 	if int(w.get("lv", 0)) > 0:

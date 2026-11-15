@@ -73,6 +73,14 @@ You do not shoot foes down; you build weather, and you forge with words.
   Fusion pixel art VFX, MIT). Palettes, beats and shapes are kept; the drawing is rewritten for
   a top-down view. Each element of a release brings its effect; a wall slam shows the ground slam.
 - Phones: the world is drawn 1.25 times larger (`game.zoom`) and the touch buttons are bigger.
+- The screen is drawn at its own resolution (`window/stretch/mode` is `canvas_items`, scale still
+  integer): pixels stay square and sharp, the zoomed world no longer has uneven pixels, and the
+  light dither keeps the size of a game pixel (`px` in the post shader).
+- Item cards (`game.item_card`, `Ext.wcard`, `Hud.draw_card`): standing at a weapon, relic, active,
+  shard, grave or shop item shows a card at the top of the screen. A weapon card gives damage per
+  hit, hits per shot, shots and damage per second (with the difference to the weapon in hand),
+  mana per shot, reach, pierce, bounce, blast, traits and how it charges. Swapping weapons shows
+  the card of the one now in hand for 3 s.
 - Six relics build on the charged weapon (Quick Flint, Long Fuse, Pure Chalice, Third Eye, War
   Anvil, Siphon) and four synergies (Overflow, Harvest, Hair Trigger, Alchemist). Every elite
   outside a champion room is a MIRROR: it drinks three of your reactions made near it, then
