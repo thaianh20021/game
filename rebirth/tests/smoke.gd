@@ -150,6 +150,8 @@ func run_hero(hero: int, fuse: int, pet: String, mount: String) -> void:
 						print("NOTE bot put back into the room")
 						g.p.pos = p0
 				if g.lock != null and n % 40 == 0 and not g.p.get("inf", []).is_empty():
+					if not g.p.get("inf", []).is_empty():
+						g.p.inf_arm = 2.0
 					g.jp[KEY_SPACE] = true
 				await step(1)
 				n += 1

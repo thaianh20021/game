@@ -269,6 +269,8 @@ func _init():
 	g.p.dash_cd = 0.0
 	g.sim[KEY_D] = true
 	for k in 12:
+		if not g.p.get("inf", []).is_empty():
+			g.p.inf_arm = 2.0
 		g.jp[KEY_SPACE] = true
 		await frames(1)
 		if g.p.dash_t > 0.0:

@@ -230,6 +230,12 @@ static func draw_play(g, ci: CanvasItem) -> void:
 			ic = Color.WHITE
 		ci.draw_colored_polygon(PackedVector2Array([Vector2(ix, 26), Vector2(ix + 4, 30), Vector2(ix, 34), Vector2(ix - 4, 30)]), INK)
 		ci.draw_colored_polygon(PackedVector2Array([Vector2(ix, 27), Vector2(ix + 3, 30), Vector2(ix, 33), Vector2(ix - 3, 30)]), ic)
+	if not inf.is_empty() and not g.tin.on:
+		if float(p.get("inf_arm", 0.0)) > 0.0:
+			if int(t * 6.0) % 2 == 0:
+				Px.text(ci, Vector2(112.0 + inf_cap * 9.0, 27), g.Pad.hint(g, "ARMED - SPACE: RELEASE"), GOLD)
+		else:
+			Px.text(ci, Vector2(112.0 + inf_cap * 9.0, 27), g.Pad.hint(g, "HOLD 1 2 3: ARM"), PALE)
 	var sx = 110.0
 	if p.slow > 0.0:
 		big(ci, Art.T["ic_ice"], Vector2(sx, 5), 1.0)
@@ -645,9 +651,13 @@ static func draw_buff(g, ci: CanvasItem) -> void:
 		var bic = "bl_" + str(b.get("id", ""))
 		if Art.T.has(bic):
 			# its own emblem on a small plate that lights up under the pointer
-			ci.draw_rect(Rect2(r.position + Vector2(cx - 16, 8), Vector2(32, 32)), Color(0.04, 0.03, 0.08, 0.9))
-			ci.draw_rect(Rect2(r.position + Vector2(cx - 16, 8), Vector2(32, 32)), GOLD if hov else Color("55307f"), false, 1.0)
-			big(ci, Art.T[bic], r.position + Vector2(cx - 13.5, 10.5 + (sin(g.time * 4.0 + i) if hov else 0.0)), 3.0)
+			ci.draw_rect(Rect2(r.position + Vector2(cx - 18, 6), Vector2(36, 36)), Color(0.04, 0.03, 0.08, 0.9))
+			ci.draw_rect(Rect2(r.position + Vector2(cx - 18, 6), Vector2(36, 36)), GOLD if hov else Color("55307f"), false, 1.0)
+			# centred on the plate whatever the emblem measures (art adds an outline to some)
+			var es: Vector2 = Art.T[bic].get_size() * 3.0
+			if es.x > 34.0:
+				es = Art.T[bic].get_size() * 2.0
+			ci.draw_texture_rect(Art.T[bic], Rect2((r.position + Vector2(cx, 24.0 + (sin(g.time * 4.0 + i) if hov else 0.0)) - es / 2.0).round(), es), false)
 		else:
 			big(ci, Art.T["tome"], r.position + Vector2(cx - 15, 10), 3.0)
 		Px.ctext(ci, r.position + Vector2(cx, 44), b.name, Color("ff6a8a") if cursed else GOLD)

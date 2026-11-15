@@ -146,10 +146,30 @@ static func draw(g, ci: CanvasItem) -> void:
 			ci.draw_texture(it, Vector2.ZERO)
 			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			ci.draw_texture(g.Art.T["ic_" + nxt], bp + Vector2(8, 6), Color(1, 1, 1, 0.75))
+			if not g.p.get("inf", []).is_empty() and float(g.p.get("inf_arm", 0.0)) <= 0.0 and int(g.time * 3.0) % 2 == 0:
+				Px.ctext(ci, bp + Vector2(0, -b[1] - 9.0), "HOLD", Color("ffd24a"), 1, false)
 			var gch: float = g.p.get("chg", 0.0)
 			if gch > 0.25:
 				var gk = clampf((gch - 0.25) / (g.D.SAT.charge - 0.25), 0.0, 1.0)
 				ci.draw_arc(bp, b[1] + 4.0, -PI / 2.0, -PI / 2.0 + TAU * gk, 24, Color.WHITE, 3.0)
+			continue
+		var inf: Array = g.p.get("inf", []) if id == "dash" else []
+		if not inf.is_empty() and float(g.p.get("inf_arm", 0.0)) <= 0.0:
+			# charged but not armed: the charges wait above the button
+			for i in inf.size():
+				var wa = -PI / 2.0 + (i - (inf.size() - 1) / 2.0) * 0.5
+				ci.draw_circle(bp + Vector2.from_angle(wa) * (b[1] + 7.0), 2.0, Color(inf[i].col.r, inf[i].col.g, inf[i].col.b, 0.6))
+		elif not inf.is_empty():
+			var ic: Color = inf[inf.size() - 1].col
+			var full = true
+			ci.draw_arc(bp, b[1] + 5.0, -PI / 2.0, -PI / 2.0 + TAU * clampf(g.p.inf_arm / g.D.INF.arm, 0.0, 1.0), 24, Color("ffd24a"), 2.0)
+			var pulse = 0.5 + 0.5 * sin(g.time * (12.0 if full else 6.0))
+			ci.draw_circle(bp, b[1] + (2.0 * pulse if full else 0.0), Color(ic.r, ic.g, ic.b, 0.35 + 0.25 * pulse))
+			ci.draw_arc(bp, b[1] + 2.0, 0.0, TAU, 24, Color.WHITE if full else ic, 2.0)
+			for i in inf.size():
+				var pa = -PI / 2.0 + (i - (inf.size() - 1) / 2.0) * 0.5
+				ci.draw_circle(bp + Vector2.from_angle(pa) * (b[1] + 7.0), 2.5, inf[i].col)
+			Px.ctext(ci, bp + Vector2(0, -3), "RELEASE", Color.WHITE, 1, false)
 			continue
 		ci.draw_circle(bp, b[1], Color(1, 1, 1, 0.3 if down else 0.1))
 		ci.draw_arc(bp, b[1], 0.0, TAU, 18, Color(1, 1, 1, 0.35), 1.0)

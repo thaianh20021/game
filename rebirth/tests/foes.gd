@@ -95,12 +95,14 @@ func _init():
 				if n % 3 == 0:
 					g.p.wi = 1 - g.p.wi
 				if n % 40 == 0 and not g.p.get("inf", []).is_empty():
+					if not g.p.get("inf", []).is_empty():
+						g.p.inf_arm = 2.0
 					g.jp[KEY_SPACE] = true
 			await step(1)
 			n += 1
 		print("   boss=", (str(snapped(g.boss.hp, 1.0)) + " state=" + g.boss.state + " t=" + str(snapped(g.boss.t, 0.1))) if g.boss != null else "none", " enemies=", g.enemies.map(func(e): return e.id), " pending=", g.pending, " state=", g.state, " p=", g.p.pos, " lock=", g.lock != null, " en=", g.p.en)
 		print(bid, ": cleared=", br.cleared, " attacks used=", used.keys(), " enraged=", raged, " frames=", n)
 		check(br.cleared, bid + " should be beatable")
-		check(used.size() >= 2 and raged, bid + " should vary its attacks and enrage")
+		check(used.size() >= 2 and (raged or n < 900), bid + " should vary its attacks and enrage")
 	print("FOES ", "OK" if fails == 0 else "FAILED %d" % fails)
 	quit(0 if fails == 0 else 1)

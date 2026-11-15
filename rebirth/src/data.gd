@@ -33,7 +33,7 @@ static var EL_COL = {
 # half seconds; anything faster has to be earned with a close weapon or mana orbs.
 # Close weapons are the way to earn mana back: painting with one drains at "melee" of the
 # rate, and each strike that lands gives "strike" to both resting pools (up to three foes).
-const SAT = {drain = 7.0, rest = 15.0, idle = 21.0, back = 0.35, react = 0.15, storm = 0.35, cast = 0.4, charge = 0.8, base = 160.0, melee = 0.5, strike = 0.06}
+const SAT = {drain = 7.0, rest = 15.0, idle = 21.0, back = 0.35, react = 0.15, storm = 0.35, cast = 0.4, cast_max = 1.5, charge = 0.8, base = 160.0, melee = 0.5, strike = 0.06}
 # seconds a foe cannot be stunned, frozen or rooted again after it gets free
 const CC_FREE = 1.5
 # reaction fields that may lie on the floor at once; only one three-element effect exists at a time
@@ -58,7 +58,10 @@ const INF = {passive = 0.3, max = 3, life = 8.0, fade = 1.5, dmg = 20.0, per_flo
 	# the weapon decides how it charges: a melee weapon gets a second charge from a reaction within "near"
 	# pixels; beams and chains hold charges "beam_life" times longer; a lobbed weapon releases at the aim
 	# point, up to "lob_range" away; the others fire "rush" seconds faster per charge after a release
-	near = 56.0, beam_life = 2.0, lob_range = 150.0, lob_wait = 0.3, rush = 0.5}
+	near = 56.0, beam_life = 2.0, lob_range = 150.0, lob_wait = 0.3, rush = 0.5,
+	# a dash only releases an ARMED weapon: gather on the element key (D.SAT.charge seconds) and let go; that
+	# empties the element's pool and arms the weapon for "arm" seconds (owner, 2026-11-15: a bare dash was spammable)
+	arm = 4.0}
 
 # Stage (src/stage.gd): objectives, affixes, boss armor, wall slams.
 #   affix + affix_floor x floor: chance that an ordinary foe carries one affix.

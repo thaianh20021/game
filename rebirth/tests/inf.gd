@@ -24,6 +24,8 @@ func dash(dir):
 	g.p.dash_cd = 0.0
 	g.sim[k] = true
 	for n in 12:
+		if not g.p.get("inf", []).is_empty():
+			g.p.inf_arm = 2.0
 		g.jp[KEY_SPACE] = true
 		await frames(1)
 		if g.p.dash_t > 0.0:
@@ -181,6 +183,56 @@ func _init():
 	check(g.p.inf.size() == 2, "reaping pours a charge back on a kill (plus the kept one): %d" % g.p.inf.size())
 	for bf in D.BUFFS:
 		check(g.Art.T.has("bl_" + bf.id), "emblem for " + bf.id)
+	# ---- a bare dash does not release: the weapon must be armed by gathering ----
+	g.p.buffs = []
+	g.calc_stats()
+	g.enemies.clear()
+	g.fields.clear()
+	g.bullets.clear()
+	g.p.weapons[g.p.wi] = {id = "blade", el = "fire", el2 = "", lv = 0}
+	g.p.pos = c + Vector2(-60, 0)
+	g.p.inf = [{key = "fire+ice", col = Color.WHITE}]
+	g.p.erase("inf_arm")
+	g.p.dash_cd = 0.0
+	g.sim[KEY_D] = true
+	for n in 12:
+		g.p.erase("inf_arm")
+		g.jp[KEY_SPACE] = true
+		await frames(1)
+		if g.p.dash_t > 0.0:
+			break
+	await frames(10)
+	g.sim.erase(KEY_D)
+	check(g.p.inf.size() == 1 and g.fields.is_empty(), "a bare dash keeps the charge")
+	g.p.sat = [1.0, 1.0, 1.0]
+	g.p.spent = [false, false, false]
+	g.hitstop = 0.0
+	g.slowmo = 0.0
+	g.sim["elh"] = true
+	for n in 60:
+		await frames(1)
+		if float(g.p.get("chg", 0.0)) >= D.SAT.charge + 0.05:
+			break
+	g.sim.erase("elh")
+	await frames(3)
+	check(float(g.p.get("inf_arm", 0.0)) > 0.0 and g.p.sat[g.p.eli] < 0.05 and g.p.spent[g.p.eli], "gathering arms the weapon and empties that element")
+	g.p.pos = c + Vector2(-60, 0)
+	g.p.dash_cd = 0.0
+	g.sim[KEY_D] = true
+	for n in 12:
+		g.jp[KEY_SPACE] = true
+		await frames(1)
+		if g.p.dash_t > 0.0:
+			break
+	await frames(10)
+	g.sim.erase(KEY_D)
+	check(g.p.inf.is_empty() and not g.p.has("inf_arm"), "an armed dash releases")
+	g.p.inf = [{key = "fire+ice", col = Color.WHITE}]
+	g.p.inf_arm = 0.1
+	await frames(8)
+	check(not g.p.has("inf_arm") and g.p.inf.size() == 1, "arming wears off, the charge stays")
+	g.p.sat = [1.0, 1.0, 1.0]
+	g.p.spent = [false, false, false]
 	# ---- the weapon decides how it charges ----
 	g.enemies.clear()
 	g.fields.clear()
@@ -202,7 +254,7 @@ func _init():
 	g.p.weapons[g.p.wi] = {id = lobs[0], el = "fire", el2 = "", lv = 0}
 	g.p.pos = c + Vector2(-60, 0)
 	var far = foe(c + Vector2(40, 0))
-	g.sim["mouse"] = far.pos - g.cam_tl - g.hud_off
+	g.sim["mouse"] = Vector2(9000, 135)  # far to the right: the release lands at full range that way
 	g.p.inf = [{key = "fire+ice", col = Color.WHITE}]
 	await dash(Vector2.LEFT)
 	await frames(14)

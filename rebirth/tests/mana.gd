@@ -108,6 +108,7 @@ func _init():
 	fill()
 	g.p.weapons[g.p.wi] = {id = "pistol", el = "fire", el2 = "", lv = 0}
 	g.p.eli = 0
+	g.p.inf = []
 	g.sim.elh = true
 	await frames(10)
 	check(g.bullets.is_empty() and float(g.p.chg) > 0.2, "holding the element key gathers")
