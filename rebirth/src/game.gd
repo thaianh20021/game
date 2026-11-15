@@ -58,11 +58,12 @@ shader_type canvas_item;
 uniform sampler2D scr : hint_screen_texture, filter_nearest;
 uniform sampler2D light : filter_linear;
 uniform float tint_a = 0.0;
+uniform float px = 1.0;
 const float B[16] = float[](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 void fragment() {
 	vec3 c = texture(scr, SCREEN_UV).rgb;
 	vec3 l = texture(light, SCREEN_UV).rgb;
-	ivec2 q = ivec2(FRAGCOORD.xy);
+	ivec2 q = ivec2(FRAGCOORD.xy / px);
 	float d = B[(q.x & 3) + (q.y & 3) * 4] / 16.0;
 	float m = max(l.r, max(l.g, l.b)) + 0.0001;
 	float lv = floor(m * 9.0 + d) / 9.0;
@@ -98,6 +99,7 @@ var rel_shape = ""   # "pure" or "trinity" while such a release lands
 var pfx = []         # one-shot pixel effects (src/pfx.gd)
 var pfx_snd = {}     # when each effect last made its sound
 var lit_t = 0.0      # a release lights a dark room for this long
+var card_t = 0.0     # the card of the weapon in hand shows for this long after a swap
 var rs = {}           # what this run did with the charged weapon (shown when it ends)
 var zoom = 1.0       # the world is drawn this much larger (phones)
 var kick_v = Vector2.ZERO  # the camera lurches this way and settles
@@ -589,6 +591,10 @@ func fit() -> void:
 		inset = maxf(inset, 8.0)
 	hud_edge = maxf(0.0, hud_off.x - inset)
 	zoom = 1.25 if (OS.has_feature("mobile") or sim.has("zoom")) else 1.0
+	# the screen is drawn at its own resolution: one game pixel covers this many screen pixels
+	var real: Vector2 = Vector2(get_window().size)
+	if post != null and post.material != null and sz.x > 0.0 and DisplayServer.get_name() != "headless":
+		post.material.set_shader_parameter("px", maxf(1.0, roundf(real.x / sz.x)))
 	if world != null:
 		world.scale = Vector2(zoom, zoom)
 
@@ -1320,6 +1326,7 @@ func after(t: float, fn: Callable) -> void:
 
 func update_play(dt: float) -> void:
 	run_time += dt
+	card_t = maxf(0.0, card_t - dt)
 	var due = []
 	for t in timers:
 		t[0] -= dt
@@ -1493,6 +1500,7 @@ func update_player(dt: float) -> void:
 		p.wi = 1 - p.wi
 		p.cd = maxf(p.cd, 0.12)
 		Sfx.play("ui")
+		card_t = 3.0
 		label(p.pos + Vector2(0, -22), wname(p.weapons[p.wi]), D.EL_COL[p.weapons[p.wi].el])
 	if firing() and p.cd <= 0.0 and p.spin <= 0.0:
 		try_fire()
@@ -3823,8 +3831,49 @@ func draw_top(ci: CanvasItem) -> void:
 	bind(players[me])
 	find_near()
 
+# What there is to know about the thing you stand at: [title, colour, [[line, colour], ...]].
+func item_card(it: Dictionary) -> Array:
+	var gold = Color("ffd24a")
+	var pale = Color("d8d4e6")
+	var wrap = func(s: String, c: Color) -> Array:
+		return Hud.wrap_text(s, 30).map(func(l): return [l, c])
+	match it.kind:
+		"weapon":
+			return [wname(it.w), D.EL_COL[it.w.el], Ext.wcard(self, it.w, p.weapons[p.wi])]
+		"grave":
+			return [wname(it.w), D.EL_COL[it.w.el], Ext.wcard(self, it.w, p.weapons[p.wi])]
+		"relic":
+			return [D.RELICS[it.id].name, gold, wrap.call(D.RELICS[it.id].desc, pale)]
+		"active":
+			return [D.ACTIVES[it.id].name, Color("5cd3f2"), wrap.call(D.ACTIVES[it.id].desc, pale)]
+		"shard":
+			return [D.EL_NAME[it.el] + " SHARD", D.EL_COL[it.el], wrap.call("REPLACES YOUR THIRD ELEMENT UNTIL THIS FLOOR ENDS. " + Chem.ASPECT.get(it.el, ""), pale)]
+		"shop":
+			var price = [["PRICE %d" % shop_price(it), gold if p.gold >= shop_price(it) else Color("ff6a6a")]]
+			match it.item.type:
+				"weapon": return [wname(it.item.w), D.EL_COL[it.item.w.el], Ext.wcard(self, it.item.w, p.weapons[p.wi]) + price]
+				"relic": return [D.RELICS[it.item.id].name, gold, wrap.call(D.RELICS[it.item.id].desc, pale) + price]
+				"tome": return [it.item.buff.name, gold, wrap.call(it.item.buff.desc, pale) + price]
+				"potion": return ["RED DRAUGHT", Color("e0444c"), [["HEALS 2 HEALTH", pale]] + price]
+				"cell": return ["MANA CELL", Color("4aa8f0"), [["REFILLS ALL THREE ELEMENTS", pale]] + price]
+	return []
+
+# The card to show now: the thing you stand at, or the weapon in hand just after a swap.
+func card_now() -> Array:
+	if state != "play" or p.is_empty():
+		return []
+	if near != null:
+		var c = item_card(near)
+		if not c.is_empty():
+			return c
+	if card_t > 0.0:
+		var cw = p.weapons[p.wi]
+		return [wname(cw), D.EL_COL[cw.el], Ext.wcard(self, cw)]
+	return []
+
 func draw_prompt(ci: CanvasItem) -> void:
 	if near != null and state == "play":
+		var card = item_card(near)
 		var txt = ""
 		var col = Color.WHITE
 		match near.kind:
@@ -3871,6 +3920,9 @@ func draw_prompt(ci: CanvasItem) -> void:
 					"relic":
 						txt = D.RELICS[near.item.id].name
 						col = Color("ffd24a")
+		if not card.is_empty():
+			# the card already names it
+			txt = "BUY" if near.kind == "shop" else "TAKE"
 		var at = near.pos + Vector2(0, -44 if (near.kind == "portal" or near.kind == "gate") else -30)
 		var ekey = Pad.key_name(self, "E")
 		var wdt = Px.width(ekey + " " + txt)

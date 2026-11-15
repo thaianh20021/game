@@ -81,6 +81,7 @@ static func draw(g, ci: CanvasItem) -> void:
 			draw_play(g, ci)
 			g.Tutor.draw(g, ci, Hud_self())
 			g.Stage.draw_hud(g, ci)
+			draw_card(g, ci)
 			match g.state:
 				"pause": draw_pause(g, ci)
 				"buff": draw_buff(g, ci)
@@ -666,6 +667,24 @@ static func draw_buff(g, ci: CanvasItem) -> void:
 			Px.ctext(ci, r.position + Vector2(cx, 60 + k * 10), lines[k], PALE)
 		Px.ctext(ci, r.position + Vector2(cx, 99), "PRESS %d" % (i + 1), DIM)
 	Wish.draw_buff_line(g, ci, Hud_self())
+
+# The card of an item or weapon: on the HUD sheet, top centre, so it is never dimmed or zoomed.
+static func draw_card(g, ci: CanvasItem) -> void:
+	var card: Array = g.card_now()
+	if card.is_empty():
+		return
+	var lines: Array = card[2]
+	var w = Px.width(card[0])
+	for l in lines:
+		w = maxf(w, Px.width(l[0]))
+	w += 12.0
+	var h = 16.0 + lines.size() * 9.0
+	var tl = Vector2(roundf(240.0 - w / 2.0), 26.0)
+	panel(ci, Rect2(tl, Vector2(w, h)), Color(0.05, 0.03, 0.09, 0.95), card[1])
+	Px.text(ci, tl + Vector2(6, 4), card[0], card[1])
+	ci.draw_rect(Rect2(tl + Vector2(5, 13), Vector2(w - 10, 1)), Color(1, 1, 1, 0.15))
+	for i in lines.size():
+		Px.text(ci, tl + Vector2(6, 16 + i * 9), lines[i][0], lines[i][1])
 
 static func draw_end(g, ci: CanvasItem, win: bool) -> void:
 	var a = clampf(g.state_t, 0.0, 1.0)
