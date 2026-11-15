@@ -275,6 +275,56 @@ func _init():
 		check(g.Pfx.DUR.has(g.Pfx.of(g, el)), "an effect for " + el)
 	await frames(40)
 	check(g.pfx.is_empty(), "and they end")
+	# ---- relics and synergies of the charged weapon ----
+	g.p.buffs = []
+	g.p.relics = ["flint", "fuse", "siphon"]
+	g.calc_stats()
+	g.More.refresh_syn(g)
+	check(absf(g.gather_t() - D.SAT.charge * 0.5) < 0.001, "quick flint halves the gather")
+	check(g.p.syn.has("hairtrigger") and g.st.get("inf_graze", 1.0) == 2.0, "flint and fuse make hair trigger")
+	g.p.sat = [1.0, 1.0, 1.0]
+	g.p.spent = [false, false, false]
+	g.p.inf = [{key = "fire+ice", col = Color.WHITE}]
+	Inf.arm(g)
+	check(absf(g.p.inf_arm - D.INF.arm * 2.0) < 0.01 and absf(g.p.sat[g.p.eli] - 0.5) < 0.01, "long fuse doubles the armed time, siphon keeps half: %.1f %.2f" % [g.p.inf_arm, g.p.sat[g.p.eli]])
+	g.p.erase("inf_arm")
+	g.p.relics = ["chalice", "eye"]
+	g.p.buffs = ["inf_cap", "inf_hold", "inf_reap", "inf_keep"]
+	g.calc_stats()
+	g.More.refresh_syn(g)
+	check(g.p.syn.has("overflow") and g.p.syn.has("harvest") and g.st.get("inf_dmg", 1.0) == 1.25 and g.st.get("inf_chain", 3) == 2, "overflow and harvest")
+	g.p.buffs = []
+	g.calc_stats()
+	g.More.refresh_syn(g)
+	g.calc_stats()
+	g.enemies.clear()
+	g.fields.clear()
+	g.infx.clear()
+	g.p.weapons[g.p.wi] = {id = "blade", el = "fire", el2 = "", lv = 0}
+	g.p.pos = c + Vector2(-60, 0)
+	foe(c)
+	g.p.inf = [{key = "fire+water", col = Color.WHITE}, {key = "bolt+ice", col = Color.WHITE}, {key = "light+void", col = Color.WHITE}]
+	await dash(Vector2.RIGHT)
+	var most = 0
+	for k in 14:
+		await frames(1)
+		most = maxi(most, g.infx.size())
+	check(most == 4, "third eye echoes the first layer of a trinity: %d" % most)
+	g.p.hp = g.p.mhp - 2
+	g.p.pos = c + Vector2(-60, 0)
+	g.p.inf = []
+	for i in 3:
+		g.infuse("fire+ice", Color.WHITE)
+	await dash(Vector2.RIGHT)
+	check(g.p.hp == g.p.mhp - 1, "pure chalice heals one")
+	check(int(g.rs.get("rel", 0)) > 5 and int(g.rs.get("trinity", 0)) >= 1 and int(g.rs.get("pure", 0)) >= 1 and int(g.rs.get("perf", 0)) >= 1 and int(g.rs.get("chain", 0)) >= 5, "the run is tallied: " + str(g.rs))
+	for id in D.RELICS:
+		check(g.Art.T.has("relic_" + id), "relic sprite " + id)
+	for k in g.Pfx.DUR:
+		check(g.Sfx.S.has("fx_" + k), "a sound for " + k)
+	check(g.Sfx.S.has("arm"), "a sound for arming")
+	g.p.relics = []
+	g.calc_stats()
 	# the dummy is never cut
 	var d = g.spawn_enemy("dummy", c + Vector2(0, -50))
 	var dh = d.hp

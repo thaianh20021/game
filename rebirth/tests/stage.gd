@@ -311,6 +311,50 @@ func _init():
 	await frames(4)
 	check(not sb2.has("seal") and sb2.sealed, "or it fades by itself, once")
 	g.enemies.clear()
+	# ---- the mirror elite ----
+	g.enemies.clear()
+	g.bullets.clear()
+	g.lock = null
+	var el1 = foe(g.p.pos + Vector2(50, 0))
+	el1.elite = true
+	Stage.mark(g, el1)
+	check(el1.get("afx", []) == ["mirror"], "an elite outside a champion room is a mirror: " + str(el1.get("afx", [])))
+	var plainn = 0
+	for i in 300:
+		var t2 = {is_boss = false, elite = false, d = {ai = "walk"}}
+		Stage.mark(g, t2)
+		if t2.get("afx", []).has("mirror"):
+			plainn += 1
+	check(plainn == 0, "ordinary foes are never mirrors")
+	for i in 2:
+		Stage.on_react(g, el1.pos + Vector2(10, 0), Color.WHITE)
+	Stage.on_react(g, el1.pos + Vector2(400, 0), Color.WHITE)
+	check(el1.mir == 2 and not el1.has("mir_t"), "it drinks reactions close by only: %d" % el1.mir)
+	Stage.on_react(g, el1.pos, Color.WHITE)
+	check(el1.has("mir_t"), "the third starts its release")
+	var hpm = g.p.hp + g.p.ar
+	g.p.inv = 0.0
+	g.p.pos = el1.pos + Vector2(20, 0)
+	for k in int(D.STAGE.mirror_wait * 30) + 4:
+		el1.pos = g.p.pos - Vector2(20, 0)
+		await frames(1)
+	check(el1.mir == 0 and g.bullets.filter(func(b): return b.team == 1).size() >= 8, "it bursts and throws a ring of shots")
+	check(g.p.hp + g.p.ar < hpm, "and it hurts to stand beside it")
+	g.enemies.clear()
+	g.bullets.clear()
+	g.p.relics = ["anvil"]
+	g.calc_stats()
+	var ab = g.spawn_enemy(g.dg.boss_id, g.p.pos + Vector2(60, 0))
+	ab.born = 0.0
+	ab.stun = 99.0
+	g.rel_hit = true
+	g.hurt_enemy(ab, 1.0, "", Vector2.ZERO, true)
+	g.hurt_enemy(ab, 1.0, "", Vector2.ZERO, true)
+	g.rel_hit = false
+	check(ab.arm == 0.0, "the war anvil breaks armor in two layers")
+	g.enemies.clear()
+	g.p.relics = []
+	g.calc_stats()
 	await frames(5)
 	print("STAGE OK" if fails == 0 else "STAGE FAILED %d" % fails)
 	quit(1 if fails > 0 else 0)

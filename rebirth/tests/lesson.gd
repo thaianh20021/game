@@ -86,7 +86,7 @@ func _init():
 	while not g.p.spent[0] and n < 40:
 		g.paint_el(0.5)
 		n += 1
-	check(g.p.spent[0] and n >= 10 and n <= 16, "about seven seconds of fire empties it: %d shots of 0.5 s" % n)
+	check(g.p.spent[0] and n >= 16 and n <= 24, "about ten seconds of fire empties it: %d shots of 0.5 s" % n)
 	check(g.paint_el(0.5) == "", "a spent element paints nothing")
 	g.set_el(1)
 	check(g.paint_el(0.2) == g.p.els[1], "the next element still paints")

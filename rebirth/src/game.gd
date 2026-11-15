@@ -96,7 +96,9 @@ var full_hit = false # set while a break lands, so it is not cut down
 var rel_hit = false  # set while a release (ring, lance or one of its shots) lands
 var rel_shape = ""   # "pure" or "trinity" while such a release lands
 var pfx = []         # one-shot pixel effects (src/pfx.gd)
+var pfx_snd = {}     # when each effect last made its sound
 var lit_t = 0.0      # a release lights a dark room for this long
+var rs = {}           # what this run did with the charged weapon (shown when it ends)
 var zoom = 1.0       # the world is drawn this much larger (phones)
 var kick_v = Vector2.ZERO  # the camera lurches this way and settles
 var look = Vector2.ZERO    # smoothed look-ahead of the camera
@@ -958,6 +960,7 @@ func net_event(kind: String, data: Dictionary) -> void:
 
 func start_run(seed: int = 0, daily: bool = false) -> void:
 	in_lobby = false
+	rs = {}
 	tut = {}
 	make_player()
 	prism_next = false
@@ -994,6 +997,10 @@ func calc_stats() -> void:
 			"gunslinger":
 				st.dmg += 0.15
 				st.free += 0.2
+			"overflow": st.inf_dmg = 1.25
+			"harvest": st.inf_chain = 2
+			"hairtrigger": st.inf_graze = 2.0
+			"alchemist": st.inf_twice = 0.25
 	for r in p.relics:
 		match r:
 			"glass": st.dmg += 0.4
@@ -1002,6 +1009,12 @@ func calc_stats() -> void:
 				st.dmg -= 0.15
 			"clock": st.rate *= 0.85
 			"lens": st.lens = true
+			"flint": st.inf_gather = 0.5
+			"fuse": st.inf_armx = 2.0
+			"chalice": st.inf_heal = true
+			"eye": st.inf_echo = true
+			"anvil": st.inf_sunder = 2.0
+			"siphon": st.inf_thrift = true
 	for b in p.buffs:
 		match b:
 			"catalyst": st.react += 0.6
@@ -1497,7 +1510,7 @@ func update_player(dt: float) -> void:
 	if p.has("els"):
 		mana_sync(p)
 		for i in 3:
-			var rate = 1.0 / D.SAT.rest if i != p.eli else (0.0 if firing() else 1.0 / D.SAT.idle)
+			var rate = 1.0 / D.SAT.rest if i != p.eli else (1.0 / D.SAT.fire if firing() else 1.0 / D.SAT.idle)
 			p.sat[i] = minf(1.0, p.sat[i] + rate * dt)
 			if p.spent[i] and p.sat[i] >= D.SAT.back:
 				p.spent[i] = false
@@ -1511,7 +1524,7 @@ func update_player(dt: float) -> void:
 					var qa = rng.randf() * TAU
 					parts.append({pos = pcenter() + Vector2.from_angle(qa) * 24.0, vel = -Vector2.from_angle(qa) * 70.0, life = 0.3, max = 0.3, col = D.EL_COL[act_el(p)], size = 2, grav = 0.0})
 		else:
-			if float(p.get("chg", 0.0)) >= D.SAT.charge:
+			if float(p.get("chg", 0.0)) >= gather_t():
 				# with charges in the weapon the gathered mana arms it; otherwise it is cast
 				if p.get("inf", []).is_empty():
 					cast_big(mw)
@@ -2757,6 +2770,7 @@ func react(e: Dictionary, key: String) -> void:
 func react_body(e: Dictionary, key: String, info: Array, col: Color) -> void:
 	var base = (9.0 + floor_i * 3.0) * st.react
 	var c = center(e)
+	Stage.on_react(self, c, col)
 	label(c + Vector2(0, -e.h2 - 14.0), Book.find(self, key), col, true)
 	Sfx.play("react")
 	charge_res()
@@ -3234,6 +3248,13 @@ func cam_kick(v: Vector2) -> void:
 	if Meta.S.opts.get("shake", true):
 		kick_v = v.limit_length(8.0)
 
+# Seconds of holding the element key before a gather is ready.
+func gather_t() -> float:
+	return D.SAT.charge * float(st.get("inf_gather", 1.0))
+
+func tally(k: String, n: int = 1, best: bool = false) -> void:
+	rs[k] = maxi(int(rs.get(k, 0)), n) if best else int(rs.get(k, 0)) + n
+
 func shake_add(v: float) -> void:
 	if not Meta.S.opts.get("shake", true):
 		return
@@ -3706,8 +3727,8 @@ func draw_player(ci: CanvasItem) -> void:
 			ci.draw_rect(Rect2(op.round(), Vector2(1, 1)), Color(1, 1, 1, 0.8))
 		var chg: float = p.get("chg", 0.0)
 		if chg > 0.25:
-			var ck = clampf((chg - 0.25) / (D.SAT.charge - 0.25), 0.0, 1.0)
-			var rdy = chg >= D.SAT.charge
+			var ck = clampf((chg - 0.25) / maxf(0.05, gather_t() - 0.25), 0.0, 1.0)
+			var rdy = chg >= gather_t()
 			ci.draw_arc(pcenter(), 34.0 - 12.0 * ck, 0.0, TAU, 32, Color(ac2.r, ac2.g, ac2.b, 0.25), 1.0)
 			ci.draw_arc(pcenter(), 34.0 - 12.0 * ck, -PI / 2.0, -PI / 2.0 + TAU * ck, 32, Color.WHITE if (rdy and int(time * 12.0) % 2 == 0) else ac2, 4.0)
 			ci.draw_circle(pcenter(), 10.0 * ck, Color(ac2.r, ac2.g, ac2.b, 0.4))

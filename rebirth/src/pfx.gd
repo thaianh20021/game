@@ -10,6 +10,7 @@ extends RefCounted
 # An effect is {k, pos, r, t, dur, seed, ang}; g.pfx holds the live ones (LAN guests get the list).
 
 const D = preload("res://src/data.gd")
+const Sfx = preload("res://src/sfx.gd")
 
 const DUR = {"frost": 0.9, "chain": 0.5, "geyser": 0.8, "slam": 0.7, "hit": 0.3, "fire": 0.8, "poison": 1.1, "leaf": 0.9, "hole": 1.0, "radiance": 0.6}
 # which effect an element brings to a release
@@ -34,6 +35,10 @@ static func spawn(g, k: String, pos: Vector2, r: float, ang: float = 0.0) -> voi
 	if not DUR.has(k) or g.pfx.size() > 40:
 		return
 	g.pfx.append({k = k, pos = pos, r = r, t = 0.0, dur = DUR[k], seed = g.rng.randi() % 1000, ang = ang})
+	# its own sound, but never the same one twice within a moment
+	if g.time - float(g.pfx_snd.get(k, -9.0)) > 0.09:
+		g.pfx_snd[k] = g.time
+		Sfx.play("fx_" + k, g.rng.randf_range(0.94, 1.06), -6.0 if k == "hit" else -3.0)
 
 # The effect an element brings ("x" picks any).
 static func of(g, el: String) -> String:

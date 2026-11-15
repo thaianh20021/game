@@ -73,6 +73,15 @@ You do not shoot foes down; you build weather, and you forge with words.
   Fusion pixel art VFX, MIT). Palettes, beats and shapes are kept; the drawing is rewritten for
   a top-down view. Each element of a release brings its effect; a wall slam shows the ground slam.
 - Phones: the world is drawn 1.25 times larger (`game.zoom`) and the touch buttons are bigger.
+- Six relics build on the charged weapon (Quick Flint, Long Fuse, Pure Chalice, Third Eye, War
+  Anvil, Siphon) and four synergies (Overflow, Harvest, Hair Trigger, Alchemist). Every elite
+  outside a champion room is a MIRROR: it drinks three of your reactions made near it, then
+  bursts and throws a ring of shots. The end-of-run screen tallies releases, pure and trinity,
+  perfects, the longest chain, wall slams, objectives and new notebook entries (`game.rs`; not
+  kept across a continued run, not sent to LAN guests). Each release effect has its own sound
+  (`fx_<name>` in `sfx.gd`), and arming has one.
+- Painting eased: the element in use drains over 10 s (was 7) and still refills slowly while
+  you fire (`D.SAT.fire`).
 - Eaters. From the second floor on about a fifth of ordinary foes feed on one of the three
   elements you carry (the mark over them shows which): a grower takes no damage from it,
   heals and swells (three meals), a splitter becomes two, a feeder heals while it stands in

@@ -150,7 +150,7 @@ static func draw(g, ci: CanvasItem) -> void:
 				Px.ctext(ci, bp + Vector2(0, -b[1] - 9.0), "HOLD", Color("ffd24a"), 1, false)
 			var gch: float = g.p.get("chg", 0.0)
 			if gch > 0.25:
-				var gk = clampf((gch - 0.25) / (g.D.SAT.charge - 0.25), 0.0, 1.0)
+				var gk = clampf((gch - 0.25) / maxf(0.05, g.gather_t() - 0.25), 0.0, 1.0)
 				ci.draw_arc(bp, b[1] + 4.0, -PI / 2.0, -PI / 2.0 + TAU * gk, 24, Color.WHITE, 3.0)
 			continue
 		var inf: Array = g.p.get("inf", []) if id == "dash" else []

@@ -687,8 +687,27 @@ static func draw_end(g, ci: CanvasItem, win: bool) -> void:
 		["NEMESIS", Nemesis.title(Nemesis.current()) if not Nemesis.current().is_empty() else "NONE"],
 		["SCORE", "%d   SEED %d%s" % [g.run_score, g.run_seed, "  DAILY" if g.run_daily else ("  HEAT %d" % g.run_heat)]],
 	]
+	var rs: Dictionary = g.rs
+	var wide = not rs.is_empty()
+	var lx = 46.0 if wide else 130.0
 	for i in rows.size():
-		Px.text(ci, Vector2(130, 96 + i * 13), rows[i][0], DIM)
-		Px.text(ci, Vector2(230, 96 + i * 13), rows[i][1], GEM if i == 5 else PALE)
+		Px.text(ci, Vector2(lx, 96 + i * 13), rows[i][0], DIM)
+		Px.text(ci, Vector2(lx + 88, 96 + i * 13), rows[i][1], GEM if i == 5 else PALE)
+	if wide:
+		# what the charged weapon did this run
+		var more = [
+			["RELEASES", str(int(rs.get("rel", 0)))],
+			["PURE / TRINITY", "%d / %d" % [int(rs.get("pure", 0)), int(rs.get("trinity", 0))]],
+			["PERFECT", str(int(rs.get("perf", 0)))],
+			["LONGEST CHAIN", "X%d" % int(rs.get("chain", 0))],
+			["WALL SLAMS", str(int(rs.get("slam", 0)))],
+			["OBJECTIVES", str(int(rs.get("obj", 0)))],
+			["NEW RELEASES", "+%d" % int(rs.get("new", 0))],
+			["NOTEBOOK", "%d FOUND" % Meta.S.get("rels", {}).size()],
+		]
+		ci.draw_rect(Rect2(296, 94, 1, 100), Color(1, 1, 1, 0.12))
+		for i in more.size():
+			Px.text(ci, Vector2(306, 96 + i * 13), more[i][0], DIM)
+			Px.text(ci, Vector2(396, 96 + i * 13), more[i][1], GOLD if (i == 6 and int(rs.get("new", 0)) > 0) else PALE)
 	if g.state_t > 1.0:
 		Px.ctext(ci, Vector2(240, 214), g.Pad.hint(g, "PRESS ENTER TO RETURN TO THE HEARTH"), GOLD.lerp(Color.WHITE, 0.5 + 0.5 * sin(g.time * 4.0)))
