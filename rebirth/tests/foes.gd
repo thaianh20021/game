@@ -81,7 +81,7 @@ func _init():
 		var used = {}
 		var raged = false
 		var n = 0
-		while not br.cleared and n < 4500 and g.state == "play":
+		while not br.cleared and n < 9000 and g.state == "play":
 			if g.boss != null:
 				used[g.boss.atk] = true
 				raged = raged or g.boss.get("raged", false)

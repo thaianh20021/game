@@ -81,10 +81,18 @@ fourteen forms from the completing element (`src/storm.gd`; a new element needs 
 touch typing screens that lift above the keyboard (`game.kb_lift`, `kb_show`, `kb_h`: never call
 `DisplayServer.virtual_keyboard_*` directly, headless has none) with OK/CANCEL in `touch.gd`, a pause
 menu (`game.update_pause`), difficulty dials (`D.DIFF`), and in `src/twist.gd`: foes that eat a
-carried element, bosses that echo your three-element effect, a cursed fourth blessing, element shards,
-four trial-room rules (curses and a shard-swapped slot are not written into the solo run save). Infuse (`D.INF`, `game.infuse`, `inf_release`, `Combo.trail`): weather deals only `passive` of its damage; each
-reaction charges the weapon and a dash releases it (owner, 2026-11-15: spamming elements killed everything;
-they chose weapon charging over readied foes).
+carried element, bosses that echo your three-element effect, element shards (a shard-swapped slot is not
+written into the solo run save). `src/stage.gd` (`D.STAGE`): objective rooms (hold, hunt, survive, champion; `r.trial`
+rooms, `r.sc`), foe affixes (ward, leech, mark, brood; `e.afx`), boss armor that only releases break (`g.rel_hit`),
+wall slams, a camera kick (`game.cam_kick`), a boss seal that only a pure or trinity release breaks (`g.rel_shape`),
+six objectives in all (escort and dark added). The weapon type decides how charges behave (`Inf.RULE`), new releases are
+recorded in `Meta.S.rels`, and `src/pfx.gd` holds one-shot release effects, nine of them adapted from pixelfx (MIT:
+keep the credit in that file and in the README). On phones the world is drawn at `game.zoom` 1.25: every
+world-to-screen conversion must multiply by it (`mworld`, `mouse`, `on_screen`, `draw_lights`). Cursed blessings, trial rules and self-casting recipes were removed
+(owner, 2026-11-15). Infuse (`D.INF`, `src/infuse.gd`, `Combo.trail`, drawn by `Fx.infuse`): weather deals only `passive` of its damage; each
+reaction charges the weapon and a dash releases the charges as layers (equal charges merge, three equal = pure, three
+different = trinity), with a perfect release for dashing through a shot, a chain count per release, and five `inf_*`
+blessings (owner, 2026-11-15: spamming elements killed everything; they chose weapon charging over readied foes).
 Anything new that is weather (not a direct player hit) must run inside `g.wx_depth += 1 ... -= 1` or pass `dot = true`. Keep `window/stretch/scale_mode` integer: the owner
 found fractional scaling blurry on the phone. Next steps are in `rebirth/ROADMAP.md`.
 

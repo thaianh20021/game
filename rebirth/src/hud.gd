@@ -80,7 +80,7 @@ static func draw(g, ci: CanvasItem) -> void:
 			Wx.draw(g, ci)
 			draw_play(g, ci)
 			g.Tutor.draw(g, ci, Hud_self())
-			g.Twist.draw_hud(g, ci)
+			g.Stage.draw_hud(g, ci)
 			match g.state:
 				"pause": draw_pause(g, ci)
 				"buff": draw_buff(g, ci)
@@ -221,11 +221,12 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		bar(ci, Vector2(18, 27), 60, p.en, p.men, Color("4aa8f0"), false)
 	Px.text(ci, Vector2(82, 26), str(int(p.en)), PALE)
 	var inf: Array = p.get("inf", [])
-	for i in D.INF.max:
+	var inf_cap = int(g.st.get("inf_max", D.INF.max))
+	for i in inf_cap:
 		var ix = 112.0 + i * 9.0
 		var on = i < inf.size()
 		var ic: Color = inf[i].col if on else Color(0.3, 0.28, 0.36)
-		if on and inf.size() == D.INF.max and int(t * 8.0) % 2 == 0:
+		if on and inf.size() == inf_cap and int(t * 8.0) % 2 == 0:
 			ic = Color.WHITE
 		ci.draw_colored_polygon(PackedVector2Array([Vector2(ix, 26), Vector2(ix + 4, 30), Vector2(ix, 34), Vector2(ix - 4, 30)]), INK)
 		ci.draw_colored_polygon(PackedVector2Array([Vector2(ix, 27), Vector2(ix + 3, 30), Vector2(ix, 33), Vector2(ix - 3, 30)]), ic)
@@ -393,7 +394,22 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		ci.draw_rect(Rect2(bx, 11, bw * k, 5), bc)
 		ci.draw_rect(Rect2(bx, 11, bw * k, 2), bc.lightened(0.4))
 		ci.draw_rect(Rect2(bx + bw / 2.0, 11, 1, 5), INK)
+		if b.has("arm"):
+			# armor: plates that a release knocks off; flashing gold while it is broken
+			var plates = int(ceil(D.STAGE.arm / D.STAGE.arm_hit))
+			var pw = 26.0
+			var px0 = (VW - plates * pw) / 2.0
+			ci.draw_rect(Rect2(px0 - 1, 3, plates * pw + 1, 5), INK)
+			if float(b.get("brk", 0.0)) > 0.0:
+				if int(t * 10.0) % 2 == 0:
+					ci.draw_rect(Rect2(px0, 4, (plates * pw - 1) * b.brk / D.STAGE.brk_t, 3), GOLD)
+			else:
+				for i in plates:
+					ci.draw_rect(Rect2(px0 + i * pw, 4, pw - 1, 3), Color("c6d0e0") if b.arm > i * D.STAGE.arm_hit + 0.01 else Color("3a3346"))
 		Px.ctext(ci, Vector2(VW / 2.0, 20), b.get("nem_name", b.d.name), Color("ff4a5e") if b.has("nem_name") else PALE)
+		if b.has("seal"):
+			Px.ctext(ci, Vector2(VW / 2.0, 40), "SEALED: " + ("THREE EQUAL CHARGES" if b.seal == "pure" else "THREE DIFFERENT CHARGES"), Color("c57bff"))
+			ci.draw_rect(Rect2(VW / 2.0 - 40, 49, 80.0 * clampf(float(b.get("seal_t", 0.0)) / D.STAGE.seal_t, 0.0, 1.0), 2), Color("c57bff"))
 		if b.el != "":
 			Px.text(ci, Vector2(bx, 30), "RESISTS", DIM)
 			big(ci, Art.T["ic_" + b.el], Vector2(bx + 44, 28), 1.0)

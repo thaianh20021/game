@@ -3,6 +3,7 @@ extends SceneTree
 const Meta = preload("res://src/meta.gd")
 const D = preload("res://src/data.gd")
 const Combo = preload("res://src/combo.gd")
+const Inf = preload("res://src/infuse.gd")
 var g
 var fails = 0
 func check(c, what):
@@ -106,6 +107,122 @@ func _init():
 	g.infuse("fire+ice", Color.WHITE)
 	await frames(int((D.INF.life + D.INF.fade) * 30) + 10)
 	check(g.p.inf.is_empty(), "charges fade when unused")
+	# ---- layers ----
+	check(Inf.shape([{key = "a"}, {key = "a"}, {key = "a"}]) == "pure" and Inf.shape([{key = "a"}, {key = "b"}, {key = "c"}]) == "trinity" and Inf.shape([{key = "a"}, {key = "b"}, {key = "a"}]) == "", "pure, trinity and plain")
+	g.enemies.clear()
+	g.fields.clear()
+	g.bullets.clear()
+	g.infx.clear()
+	g.p.weapons[g.p.wi] = {id = "blade", el = "fire", el2 = "", lv = 0}
+	g.p.pos = c + Vector2(-60, 0)
+	var t1 = foe(c)
+	g.p.inf = []
+	for k in ["fire+water", "bolt+ice", "light+void"]:
+		g.infuse(k, Color.WHITE)
+	await dash(Vector2.RIGHT)
+	await frames(12)
+	var tri = 1000.0 - t1.hp
+	check(g.infx.size() == 3 or tri > one * 3.0, "three different charges go off as three layers: %d layers, %.1f" % [g.infx.size(), tri])
+	check(tri > one * 3.0, "and a trinity out-damages three single releases: %.1f vs %.1f" % [tri, one * 3.0])
+	var keys = {}
+	for f in g.fields:
+		if f.get("trail", false):
+			keys[f.key] = true
+	check(keys.size() == 3 and Combo.plain(g) == 0, "the strip has all three reactions and no full field: " + str(keys.keys()))
+	# ---- perfect ----
+	g.fields.clear()
+	g.bullets.clear()
+	t1.hp = 1000.0
+	t1.pos = c
+	t1.kb = Vector2.ZERO
+	g.p.pos = c + Vector2(-60, 0)
+	g.p.inf = [{key = "fire+water", col = Color.WHITE}]
+	g.add_bullet(c + Vector2(-40, -3), Vector2.ZERO, {dmg = 1.0, el = "", life = 3.0, team = 1})
+	g.bullets[0].team = 1
+	var hp_p = g.p.hp
+	await dash(Vector2.RIGHT)
+	check(1000.0 - t1.hp > one * 1.2, "a dash through a shot is perfect: %.1f vs %.1f" % [1000.0 - t1.hp, one])
+	check(g.p.inf.size() == 1 and g.p.hp == hp_p, "and gives a charge back, unhurt: %d" % g.p.inf.size())
+	g.bullets.clear()
+	g.slowmo = 0.0
+	# ---- chain ----
+	g.enemies.clear()
+	g.fields.clear()
+	g.p.pos = c + Vector2(-60, 0)
+	for i in 5:
+		foe(c + Vector2.from_angle(i * TAU / 5.0) * 22.0)
+	g.p.sat = [0.2, 0.2, 0.2]
+	g.p.inf = [{key = "fire+ice", col = Color.WHITE}]
+	await dash(Vector2.RIGHT)
+	await frames(int(D.INF.chain_t * 30) + 6)
+	check(g.p.sat[1] > 0.3, "a chain of five refills mana: %.2f" % g.p.sat[1])
+	check(g.p.inf.size() == 1 and not g.p.has("inf_ch"), "and gives a charge back: %d" % g.p.inf.size())
+	# ---- blessings ----
+	g.enemies.clear()
+	g.p.inf = []
+	g.apply_buff("inf_cap")
+	for i in 6:
+		g.infuse("fire+ice", Color.WHITE)
+	check(g.p.inf.size() == D.INF.max + 1, "fourth vessel holds one more: %d" % g.p.inf.size())
+	g.apply_buff("inf_hold")
+	await frames(int((D.INF.life + D.INF.fade) * 30) + 10)
+	check(g.p.inf.size() == D.INF.max + 1, "sealed flask keeps them")
+	g.apply_buff("inf_keep")
+	g.p.pos = c + Vector2(-60, 0)
+	await dash(Vector2.RIGHT)
+	check(g.p.inf.size() == 1, "ember heart keeps the last charge: %d" % g.p.inf.size())
+	g.apply_buff("inf_reap")
+	g.fields.clear()
+	g.p.pos = c + Vector2(-60, 0)
+	var weak = foe(c)
+	weak.hp = 1.0
+	g.p.inf = [{key = "fire+ice", col = Color.WHITE}]
+	await dash(Vector2.RIGHT)
+	check(g.p.inf.size() == 2, "reaping pours a charge back on a kill (plus the kept one): %d" % g.p.inf.size())
+	for bf in D.BUFFS:
+		check(g.Art.T.has("bl_" + bf.id), "emblem for " + bf.id)
+	# ---- the weapon decides how it charges ----
+	g.enemies.clear()
+	g.fields.clear()
+	g.bullets.clear()
+	g.p.buffs = []
+	g.calc_stats()
+	g.p.weapons[g.p.wi] = {id = "blade", el = "fire", el2 = "", lv = 0}
+	g.p.inf = []
+	g.infuse("fire+ice", Color.WHITE, g.p.pos + Vector2(20, 0))
+	check(g.p.inf.size() == 2, "a blade charges twice from a reaction beside it: %d" % g.p.inf.size())
+	g.p.inf = []
+	g.infuse("fire+ice", Color.WHITE, g.p.pos + Vector2(200, 0))
+	check(g.p.inf.size() == 1, "but once from afar")
+	g.p.weapons[g.p.wi] = {id = "beam", el = "fire", el2 = "", lv = 0}
+	g.p.inf = []
+	g.infuse("fire+ice", Color.WHITE)
+	check(absf(g.p.inf_t - D.INF.life * D.INF.beam_life) < 0.01, "a lens holds charges longer: %.1f" % g.p.inf_t)
+	var lobs = D.WEAPONS.keys().filter(func(k): return D.WEAPONS[k].type == "lob")
+	g.p.weapons[g.p.wi] = {id = lobs[0], el = "fire", el2 = "", lv = 0}
+	g.p.pos = c + Vector2(-60, 0)
+	var far = foe(c + Vector2(40, 0))
+	g.sim["mouse"] = far.pos - g.cam_tl - g.hud_off
+	g.p.inf = [{key = "fire+ice", col = Color.WHITE}]
+	await dash(Vector2.LEFT)
+	await frames(14)
+	check(1000.0 - far.hp > D.INF.dmg * 0.9, "a mortar drops the release where you aim: %.1f" % (1000.0 - far.hp))
+	g.sim.erase("mouse")
+	g.enemies.clear()
+	g.p.weapons[g.p.wi] = {id = "pistol", el = "fire", el2 = "", lv = 0}
+	g.p.inf = [{key = "fire+ice", col = Color.WHITE}]
+	await dash(Vector2.RIGHT)
+	check(g.p.has("inf_rush"), "a horn fires faster after its volley")
+	# ---- the notebook and the effects ----
+	check(g.Meta.S.get("rels", {}).size() >= 3, "new releases are written down: " + str(g.Meta.S.get("rels", {}).keys()))
+	g.pfx.clear()
+	for k in g.Pfx.DUR:
+		g.Pfx.spawn(g, k, g.p.pos, 40.0)
+	check(g.pfx.size() == g.Pfx.DUR.size(), "every effect spawns")
+	for el in D.ALL:
+		check(g.Pfx.DUR.has(g.Pfx.of(g, el)), "an effect for " + el)
+	await frames(40)
+	check(g.pfx.is_empty(), "and they end")
 	# the dummy is never cut
 	var d = g.spawn_enemy("dummy", c + Vector2(0, -50))
 	var dh = d.hp

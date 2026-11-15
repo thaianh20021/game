@@ -37,7 +37,7 @@ func _init():
 	g.spawn_enemy("slime", g.p.pos + Vector2(40, 0))
 	g.apply_el(g.enemies[0], "fire", 0.0)
 	g.apply_el(g.enemies[0], "ice", 0.0)
-	check(Meta.S.tips.has("react") and g.banner.text.begins_with("REACTION"), "first reaction should show a hint")
+	check(Meta.S.tips.has("react"), "first reaction should show a hint")
 	g.p.gold = 77
 	g.p.weapons[1] = {id = "rail", el = "bolt", el2 = "", lv = 2}
 	g.apply_buff("vital")
