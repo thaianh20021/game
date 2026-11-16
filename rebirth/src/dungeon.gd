@@ -15,9 +15,10 @@ const SIZES = {
 	"fight": [[15, 11], [17, 11], [17, 13], [19, 13], [21, 13]],
 }
 
-static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weather: String = "clear", drill: bool = false) -> Dictionary:
+static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weather: String = "clear", drill: bool = false, rush: bool = false) -> Dictionary:
 	# the Training Grounds: six fight rooms in a row and nothing beside them
-	var n_main = 8 if drill else 4 + floor_i / 2 + (0 if boss else 1)
+	# Boss Rush: a start, one fight to warm up, the boss; a shop on the side
+	var n_main = 8 if drill else (3 if rush else 4 + floor_i / 2 + (0 if boss else 1))
 	var cells = [Vector2i(0, 0)]
 	var used = {Vector2i(0, 0): 0}
 	while cells.size() < n_main:
@@ -48,6 +49,8 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weath
 		sides.append("puzzle")
 	if drill:
 		sides = []
+	if rush:
+		sides = ["shop"]
 	for type in sides:
 		for attempt in 40:
 			var base = 1 + rng.randi() % (n_main - 2)
@@ -261,7 +264,7 @@ static func _terr_tile(img: Image, x: int, y: int, kind: int, bi: int, b: Dictio
 	var oy = y * TS
 	if kind == 4:
 		# dry brush: burns, and the fire walks from tile to tile
-		var gc: Color = [Color("8a9a3c"), Color("b89a4a"), Color("9a8a6a")][bi]
+		var gc: Color = [Color("8a9a3c"), Color("b89a4a"), Color("9a8a6a"), Color("8f9a8a")][bi]
 		for i in 9:
 			var px = (i * 5 + x * 3) % 14 + 1
 			var py = (i * 7 + y * 5) % 11 + 3
@@ -270,8 +273,8 @@ static func _terr_tile(img: Image, x: int, y: int, kind: int, bi: int, b: Dictio
 			img.set_pixel(ox + px + (i % 2), oy + py - 2, gc.lightened(0.3))
 		return
 	if kind == 1:
-		var mud: Color = [Color("3d5a34"), Color("2a1b1c"), Color("5f86b4")][bi]
-		var hi: Color = [Color("6f9a4c"), Color("f2812f"), Color("c6f4ff")][bi]
+		var mud: Color = [Color("3d5a34"), Color("2a1b1c"), Color("5f86b4"), Color("3a4a5a")][bi]
+		var hi: Color = [Color("6f9a4c"), Color("f2812f"), Color("c6f4ff"), Color("b8f0d0")][bi]
 		for py in 16:
 			for px in 16:
 				var c = img.get_pixel(ox + px, oy + py).lerp(mud, 0.72)

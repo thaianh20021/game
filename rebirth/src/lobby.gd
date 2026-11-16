@@ -296,6 +296,8 @@ static func rows(g, kind: String) -> Array:
 				fn = func(): o[k[1]] = (int(o[k[1]]) + 1) % 5})
 		rs.append({name = "FULLSCREEN: " + ("ON" if o.full else "OFF"), desc = "SWITCH BETWEEN WINDOW AND FULL SCREEN", cost = 0, state = "owned", tag = "CHANGE", fn = func(): o.full = not o.full})
 		rs.append({name = "SCREEN SHAKE: " + ("ON" if o.shake else "OFF"), desc = "TURN OFF IF THE SHAKING BOTHERS YOU", cost = 0, state = "owned", tag = "CHANGE", fn = func(): o.shake = not o.shake})
+		rs.append({name = "CONTROLS", desc = "CHOOSE THE KEY FOR EACH ACTION", cost = 0, state = "owned", tag = "OPEN",
+			fn = func(): g.menu_next = "keys"})
 		if g.in_lobby:
 			rs.append({name = "REPLAY THE LESSON", desc = "THE FIRST LESSON AT THE TRAINING DUMMY, AGAIN", cost = 0, state = "owned", tag = "START",
 				fn = func():
@@ -304,6 +306,18 @@ static func rows(g, kind: String) -> Array:
 			rs.append({name = "TRAINING GROUNDS", desc = "SIX ROOMS THAT TEACH CHARGING, RELEASES, WARDS, MIRRORS AND BOSSES", cost = 0, state = "owned", tag = "START",
 				fn = func(): g.Drill.start(g)})
 		return rs
+	if kind == "keys":
+		var ks = []
+		for a in g.BINDABLE:
+			var k: int = a[1]
+			ks.append({name = "%s: %s" % [a[0], "PRESS A KEY" if g.bind_wait == k else g.key_label(k)], desc = "", cost = 0, state = "owned", tag = "",
+				fn = func(): g.bind_wait = k})
+		ks.append({name = "RESET ALL KEYS", desc = "", cost = 0, state = "owned", tag = "",
+			fn = func():
+				Meta.S.opts.binds = {}
+				g.rebuild_binds()
+				Meta.save()})
+		return ks
 	if Hub.KINDS.has(kind):
 		return Hub.rows(g, kind)
 	if kind == "book":
@@ -390,8 +404,10 @@ static func rows(g, kind: String) -> Array:
 			out.append({name = "NORMAL RUN", desc = "A FRESH RANDOM DUNGEON AT HEAT %d" % Meta.S.heat, cost = 0, state = "owned", tag = "START",
 				fn = func(): g.pending_start = [0, false]})
 			var tk = str(Meta.today())
-			out.append({name = "DAILY RUN %s  BEST %d" % [tk, int(Meta.S.daily.get(tk, 0))], desc = "SKY: " + Wx.forecast(Meta.today()), cost = 0, state = "owned", tag = "START",
+			out.append({name = "DAILY RUN %s  BEST %d" % [tk, int(Meta.S.daily.get(tk, 0))], desc = "ONE SKY FOR EVERY FLOOR: " + Wx.NAME[Wx.daily_kind(Meta.today())] + ". " + Wx.NOTE[Wx.daily_kind(Meta.today())], cost = 0, state = "owned", tag = "START",
 				fn = func(): g.pending_start = [Meta.today(), true]})
+			out.append({name = "BOSS RUSH  BEST %d" % int(Meta.S.get("rush", 0)), desc = "ONE BOSS FROM EACH ZONE, THE LOOM LAST. A SHOP BETWEEN.", cost = 0, state = "owned", tag = "START",
+				fn = func(): g.pending_start = [0, false, "rush"]})
 			out.append({name = "SEEDED RUN: " + (g.seed_in if g.seed_in != "" else "TYPE DIGITS"), desc = "SAME SEED, SAME DUNGEON. LAST SEED %d" % Meta.S.last_seed, cost = 0, tag = "START",
 				state = "owned" if g.seed_in != "" else "locked", fn = func(): g.pending_start = [int(g.seed_in), false]})
 			var hd = "NO CURSES" if Meta.S.heat == 0 else D.HEAT[Meta.S.heat - 1]
@@ -508,7 +524,7 @@ static func activate(g, row: Dictionary) -> void:
 		g.set_state("play")
 		for it in g.inter:
 			if it.kind == "gate":
-				g.start_run(ps[0], ps[1])
+				g.start_run(ps[0], ps[1], ps[2] if ps.size() > 2 else "")
 				return
 		return
 	if g.menu_close:

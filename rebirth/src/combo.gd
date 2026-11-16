@@ -93,6 +93,7 @@ static func touch(g, pos: Vector2, el: String, rad: float = 0.0) -> void:
 			f.els.append(el)
 			f.tier = 3
 			f.key = Chem.storm_key(f.els)
+			g.Spire.on_storm(g, f.pos)
 			f.r = STORM_R
 			f.life = 6.0
 			f.tick = 0.0

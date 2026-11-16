@@ -97,7 +97,12 @@ const STAGE = {affix = 0.12, affix_floor = 0.02, ward = 0.15, leech_r = 44.0, le
 # Weapon mechanics (src/wmods.gd): gathering, spirits, rally, hex, weight.
 const WMOD = {charge_max = 1.0, charge_mult = 2.0, summon_n = 8, spirit_t = 6.0, spirit_max = 2, spirit_cd = 0.55,
 	spirit_r = 150.0, spirit_dmg = 4.0, spirit_floor = 1.5, rally_max = 5, rally_step = 0.06, rally_t = 2.0, hex_t = 2.0,
-	heavy_cd = 1.6, heavy_dmg = 2.0, heavy_kb = 120.0}
+	heavy_cd = 1.6, heavy_dmg = 2.0, heavy_kb = 120.0, heavy_stop = 0.05,
+	# foes that answer the mechanics (src/counter.gd): share of a floor's foes, and the numbers
+	ctr = 0.3, ctr_floor = 0.03, ctr_max = 0.5, shell_cut = 0.25, anchor_cut = 0.5,
+	purge_cd = 3.5, purge_r = 60.0, net_r = 60.0, net_cd = 1.5, damp_cd = 0.6, damp_r = 70.0,
+	# the forge: chance of a fusion with two mechanics and its damage bonus; what salvaging gives
+	twin = 0.25, twin_pow = [1.1, 1.25], salvage_mat = 2, salvage_scrap = 4}
 
 # reaction key = the two elements sorted and joined with "+"
 static var REACT = {
@@ -319,6 +324,7 @@ const ENEMIES = {
 	"rootking": {spr = "rootking_b", name = "THE ROOT KING", hp = 600, spd = 18, ai = "boss", boss = 6, touch = 1, r = 14, sc = 2.0, cost = 0},
 	"wyrm": {spr = "wyrm_b", name = "THE CINDER WYRM", hp = 860, spd = 30, ai = "boss", boss = 7, touch = 1, el = "fire", r = 14, sc = 2.0, cost = 0},
 	"sentinel": {spr = "sentinel_b", name = "THE PRISM SENTINEL", hp = 1100, spd = 22, ai = "boss", boss = 8, touch = 1, r = 14, sc = 2.0, cost = 0, fly = true},
+	"loom": {spr = "loom_b", name = "THE TEMPEST LOOM", hp = 1500, spd = 18, ai = "boss", boss = 9, touch = 1, r = 15, sc = 2.0, cost = 0, fly = true},
 	"dummy": {spr = "dummy", hp = 99999, spd = 0, ai = "dummy", r = 5, cost = 0},
 }
 
@@ -332,6 +338,9 @@ static var BIOMES = [
 	{name = "CRYSTAL ARCHIVE", roster = ["wisp", "skel", "necro", "shade", "turret", "guard", "pyro"], bosses = ["lich", "void", "sentinel"],
 		ambient = Color(0.17, 0.22, 0.34), floor = [Color("3b4c70"), Color("344364"), Color("44577e")], grout = Color("232d48"),
 		accent = Color("7fe3ff"), face = [Color("6780b6"), Color("4d6194"), Color("35446c")], cap = Color("111626"), edge = Color("95afe0")},
+	{name = "STORM SPIRE", roster = ["wisp", "imp", "shade", "guard", "magma", "necro", "boar", "skel"], bosses = ["loom"],
+		ambient = Color(0.16, 0.20, 0.26), floor = [Color("4a5560"), Color("434d58"), Color("525e6a")], grout = Color("2c333c"),
+		accent = Color("b8f0d0"), face = [Color("7d8fa0"), Color("62738a"), Color("465566")], cap = Color("121820"), edge = Color("a9c4d6")},
 ]
 
 const BUFFS = [
@@ -359,7 +368,12 @@ const BUFFS = [
 	{id = "inf_wide", name = "WIDE WAKE", desc = "RELEASES REACH 30% FURTHER"},
 	{id = "inf_reap", name = "REAPING", desc = "A RELEASE THAT KILLS POURS A CHARGE BACK"},
 ]
-const BOSS_ATKS = [3, 4, 4, 3, 4, 4, 3, 3, 3]
+const BOSS_ATKS = [3, 4, 4, 3, 4, 4, 3, 3, 3, 3]
+
+# The Storm Spire and the Tempest Loom (src/spire.gd): weather by phase (from hp share down),
+# what a weave lets through, how close a storm must be to tear it, and what tearing gives.
+const SPIRE = {phases = [["rain", 1.0], ["gale", 0.75], ["drought", 0.5], ["fog", 0.25]],
+	weave_cut = 0.1, weave_t = 30.0, storm_r = 110.0, torn_t = 6.0, torn_mult = 1.6, stun_t = 3.0}
 
 # ---- synergies: hidden bonuses for carrying the right combination ----------------
 const SYNERGIES = [

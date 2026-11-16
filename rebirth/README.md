@@ -89,6 +89,34 @@ You do not shoot foes down; you build weather, and you forge with words.
   after the weapon in hand, the other one, and a third kind), each with a different new
   mechanic, an inherited trait, both elements, a level more and more power. Pick with 1 2 3, a
   click or tap, or the pad. Blessing, hex sigil and summon rise effects follow pixelfx too.
+- Feel of the mechanics: a climbing tone while gathering and a heavy shot sound, a thud with a
+  frozen beat and a shove for WEIGHT (once per quarter second, so beams do not stutter), a chirp
+  when spirits are called and shoot, a rising tick per RALLY stack. Phones and gamepads rumble
+  (`game.buzz`, follows the screen shake setting; Android needs the vibrate permission, set).
+  Slow weapons push harder (`game.kb_of`), and how a foe dies shows the element that finished
+  it: ash and embers, shattered ice, crackling sparks, a melting puddle, flying chunks or leaves
+  (`Fx.death`).
+- Foes that answer mechanics (`src/counter.gd`, numbers in `D.WMOD`): every floor after the
+  first has one kind, fixed by the seed like the weather and shown under the map name and in a
+  banner. SHELLED (plain hits do a quarter; a gathered shot, a heavy hit or a release cracks the
+  shell), ANCHORED (no push, big hits halved), PURIFIER (wipes hexes and elements around it),
+  NETTER (catches spirits), DAMPER (no rally from hitting it, rally drains near it). Weather is
+  never cut. The forge marks each fusion GOOD VS or POOR VS the floor's kind.
+- The forge sometimes offers a TWIN fusion with two mechanics at a lower bonus (`D.WMOD.twin`),
+  and a fourth choice under the cards: SALVAGE keeps both weapons and gives two of each
+  material and four scrap, once per forge (key 4, d-pad down).
+- The Storm Spire (`src/spire.gd`, `D.SPIRE`): a fourth zone, floors 4-1 and 4-2, so a run is
+  eight floors. Its boss is always the Tempest Loom. It has four phases that set the floor's
+  weather (rain, gale, drought, fog) and each starts with a weave that turns away nine tenths of
+  every hit, weather included. A storm (three elements in one field) within 110 px tears it:
+  stunned for 3 s, 60% more damage for 6 s. An untorn weave frays after 30 s. Attacks: rows of
+  thread with a gap, weather strikes on marked circles, a shuttle spiral.
+- Boss Rush (run board): one boss from each zone, the Loom last. Each floor is a start, one
+  fight and the boss, with a shop beside; a blessing between bosses; best is kept. The daily
+  run now has one sky for every floor (`Wx.daily_kind`).
+- Key rebinding (Settings > CONTROLS): thirteen actions; taking a key another action uses trades
+  them; Esc keeps the old key; menus always keep the usual keys; keyboard prompts name the new
+  keys. Stored in `Meta.S.opts.binds` (`game.BINDABLE`, `set_bind`, `phys`).
 - Training Grounds (`src/drill.gd`): from the pause menu or Settings in the Hearth. One floor of
   six fight rooms in a row, each a scripted lesson: charge and release (the hint follows what you
   have in hand), pure and trinity, wards, the perfect release, the mirror, boss armor and seal.
@@ -203,6 +231,8 @@ Open this `rebirth` folder in Godot 4.7 and press F5, or:
 | E | Talk, open, pick up, buy, enter |
 | Esc | Pause (reaction cheat sheet, foe cunning). O in pause: settings |
 
+Every key above except Esc and the mouse can be changed in Settings > CONTROLS.
+
 ## Gamepad
 
 On-screen prompts follow what player one is holding: plug a pad in (or press anything on it) and
@@ -253,7 +283,8 @@ safe area (`game.fit`, `hud_off`, `hud_edge`). The big button beside the fire st
 element and shows how much of the current one is left. The launcher icon is painted by
 `tests/icon.gd` into `icon.png`, `icon_fg.png`, `icon_bg.png` (the only image files in the project).
 
-`export_presets.cfg` has an Android preset (arm64, landscape, network permissions). Building an APK
+`export_presets.cfg` has Web (`build/web/index.html`, no threads, so it runs on itch.io; LAN
+play does not work in a browser) and Windows (`build/win/dungeon-core.exe`) presets as well, and an Android preset (arm64, landscape, network permissions). Building an APK
 needs the Android SDK set in Godot's Editor Settings; then: `godot --headless --path rebirth --export-debug Android build/dungeon-core.apk`.
 
 Built on 2026-11-11 with the SDK at
@@ -415,6 +446,8 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/pfx.gd` | One-shot release effects (nine adapted from pixelfx, MIT) |
 | `src/drill.gd` | The Training Grounds: six scripted lesson rooms |
 | `src/wmods.gd` | Weapon mechanics: gathering, spirits, rally, hex, weight |
+| `src/counter.gd` | Foes that answer weapon mechanics, one kind per floor |
+| `src/spire.gd` | The Storm Spire and its boss, the Tempest Loom |
 | `src/infuse.gd` | Weapon charges: layers, shapes by weapon, perfect release, chain count |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
@@ -454,7 +487,12 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `twist.gd` | Eaters, boss echo, element shards |
 | `stage.gd` | Objectives, affixes, boss armor, wall slams |
 | `drill.gd` | Training Grounds: layout, every lesson room, no death, the way home |
-| `wmods.gd` | Weapon mechanics, each one |
+| `wmods.gd` | Weapon mechanics, each one; hit feel and element deaths |
+| `counter.gd` | Foes that answer mechanics, the forge's GOOD/POOR mark |
+| `spire.gd` | The fourth zone, the Loom's phases and weave, winning on floor 8 |
+| `modes.gd` | Boss Rush and the daily's single sky |
+| `keys.gd` | Key rebinding |
+| `shot15.gd` | Pictures: controls page, answering foes, forge with salvage |
 | `shot8.gd`, `shot9.gd`, `shot10.gd` | Pictures: releases; objectives and affixes; effect gallery and phone view |
 | `inf.gd` | Infuse: weather cut down, charges, layered releases, perfect, chain, its blessings |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |

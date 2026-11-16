@@ -102,7 +102,12 @@ resolution; the owner found the 600x270 buffer soft): anything per-pixel in a sh
 Weapon mechanics (`src/wmods.gd`, `D.WMOD`: gathering, spirits, rally, hex, weight) are traits in `Arms.TRAIT_NAME`; the Word
 Forge offers three ready-made fusions instead of a typed command (owner, 2026-11-16), its word lists stay for wishes. Weapon rarity (0 to 3, legend added 2026-11-16) adds arming perks (`Inf.tier`, `Inf.TIER_TEXT`); anything indexed by
 `rar` needs four entries. The Training Grounds (`src/drill.gd`, `g.drill`) teach the charged weapon in six scripted rooms; when a mechanic
-changes, update its lesson there. Items and weapons show a stat card (`game.item_card`, `Ext.wcard`, `Hud.draw_card`): give every new pickup kind one. Next steps are in `rebirth/ROADMAP.md`.
+changes, update its lesson there. Items and weapons show a stat card (`game.item_card`, `Ext.wcard`, `Hud.draw_card`): give every new pickup kind one. Since 2026-11-16: hit feel (`game.buzz`, `kb_of`, `Fx.death`), foes that answer mechanics (`src/counter.gd`,
+one kind per floor from the seed; the forge marks fits), twin fusions and SALVAGE at the forge, a fourth zone (Storm
+Spire, `src/spire.gd`, `LAST_FLOOR` 7: anything indexed by biome needs four entries) whose boss the Tempest Loom sets
+the weather per phase and is only opened by a storm, Boss Rush (`game.run_mode`), a one-sky daily (`Wx.floor_weather`),
+key rebinding (`game.BINDABLE`; only play reads rebound keys), Web and Windows export presets.
+Next steps are in `rebirth/ROADMAP.md`.
 
 Not done or unverified: balance has never been tuned by hand-play; gamepads were not tested on a
 physical controller; a debug APK builds and installs on the owner's phone (SDK path is in `rebirth/README.md`; use the adb in that SDK's platform-tools, `C:/adb/adb` is from 2015 and loses the device) but nobody has reported how it plays there; LAN was tested

@@ -32,8 +32,12 @@ static func held(g, dt: float) -> bool:
 	if g.firing() and p.spin <= 0.0:
 		var was: float = p.get("wchg", 0.0)
 		p.wchg = minf(D.WMOD.charge_max, was + dt)
+		# a tone that climbs while it gathers
+		if p.wchg < D.WMOD.charge_max and int(was / 0.09) != int(p.wchg / 0.09):
+			Sfx.play("gather", 0.7 + 1.4 * p.wchg / D.WMOD.charge_max, -3.0)
 		if p.wchg >= D.WMOD.charge_max and was < D.WMOD.charge_max:
 			Sfx.play("arm", 1.5)
+			g.buzz(40, 0.3)
 			g.rings.append({pos = g.pcenter(), r = 14.0, t = 0.0, col = Color.WHITE})
 		return true
 	var k: float = p.get("wchg", 0.0)
@@ -43,6 +47,12 @@ static func held(g, dt: float) -> bool:
 		g.try_fire()
 		p.erase("wk")
 		g.shake_add(1.0 + 3.0 * k)
+		var kk = k / D.WMOD.charge_max
+		Sfx.play("gshot", 1.3 - 0.5 * kk, -2.0 + 4.0 * kk)
+		g.cam_kick(-p.aim * (1.0 + 4.0 * kk))
+		g.buzz(int(30 + 90 * kk), 0.4 + 0.5 * kk)
+		if kk >= 0.99:
+			g.hitstop = maxf(g.hitstop, 0.05)
 	return true
 
 # Called by try_fire on the private copy of the weapon about to fire.
@@ -56,12 +66,14 @@ static func shape_shot(g, w: Dictionary) -> void:
 		if w.type == "melee":
 			w.range = float(w.range) * (1.0 + 0.4 * k)
 		p.cd *= 1.0 + k
+		w.kb = g.kb_of(w) * (1.0 + 1.5 * k)
 	var n = int(p.get("rally", 0))
 	if n > 0 and has(p, "rally"):
 		w.dmg *= 1.0 + D.WMOD.rally_step * n
 		p.cd /= 1.0 + D.WMOD.rally_step * n
 	if has(p, "heavy"):
 		p.cd *= D.WMOD.heavy_cd
+		Sfx.play("thud", 1.5, -5.0)
 
 # ---- on hit ----------------------------------------------------------------------
 
@@ -77,12 +89,25 @@ static func on_hit(g, e: Dictionary) -> void:
 		if fresh:
 			g.Pfx.spawn(g, "hex", g.center(e) + Vector2(0, -e.h2 - 4.0), 10.0)
 			g.tip("hex", "HEXED", "A HEXED FOE TAKES 50% MORE FROM EVERYTHING.")
-	if has(p, "heavy") and not e.is_boss:
-		e.kb += (g.center(e) - g.pcenter()).normalized() * D.WMOD.heavy_kb
-	if has(p, "rally"):
+	if has(p, "heavy"):
+		# a thud, a frozen beat, a shove
+		if not e.is_boss and e.get("ctr", "") != "anchor":
+			e.kb += (g.center(e) - g.pcenter()).normalized() * D.WMOD.heavy_kb
+		e.flash = 0.16
+		# a beam or a spray would freeze the game: one beat per quarter second
+		if g.time - float(p.get("thud_at", -9.0)) > 0.25:
+			p.thud_at = g.time
+			Sfx.play("thud", 1.0)
+			g.hitstop = maxf(g.hitstop, D.WMOD.heavy_stop)
+			g.shake_add(2.5)
+			g.cam_kick((g.center(e) - g.pcenter()).normalized() * 2.0)
+			g.buzz(45, 0.6)
+	if has(p, "rally") and e.get("ctr", "") != "damp":
 		var was = int(p.get("rally", 0))
 		p.rally = mini(D.WMOD.rally_max, was + 1)
 		p.rally_t = D.WMOD.rally_t
+		if p.rally > was:
+			Sfx.play("rally", 0.9 + 0.12 * p.rally, -4.0)
 		if p.rally == D.WMOD.rally_max and was < D.WMOD.rally_max:
 			g.Pfx.spawn(g, "bless", p.pos, 16.0)
 			g.label(p.pos + Vector2(0, -26), "RALLIED", Color("ffd24a"))
@@ -102,6 +127,8 @@ static func summon(g, p: Dictionary) -> void:
 	var at: Vector2 = p.pos + Vector2(0, -14)
 	g.spirits.append({pos = at, t = D.WMOD.spirit_t, cd = 0.3, el = el, own = int(p.get("idx", 0)), seed = g.rng.randf() * TAU})
 	g.Pfx.spawn(g, "summon", p.pos, 14.0)
+	Sfx.play("chirp", 1.0)
+	g.after(0.09, func(): Sfx.play("chirp", 1.35))
 	g.tip("summon", "SPIRIT", "EVERY EIGHTH HIT CALLS A SPIRIT THAT FIGHTS BESIDE YOU.")
 
 # ---- per frame -------------------------------------------------------------------
@@ -136,6 +163,7 @@ static func update(g, dt: float) -> void:
 			if e != null:
 				s.cd = D.WMOD.spirit_cd
 				var dir: Vector2 = (g.center(e) - s.pos).normalized()
+				Sfx.play("chirp", g.rng.randf_range(1.3, 1.8), -7.0)
 				g.add_bullet(s.pos, dir * 240.0, {dmg = D.WMOD.spirit_dmg + D.WMOD.spirit_floor * g.floor_i, el = s.el, r = 2.5, life = 1.0, kind = "orb", homing = 2.0})
 	g.spirits = keep
 

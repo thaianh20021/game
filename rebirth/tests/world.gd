@@ -72,7 +72,7 @@ func _init():
 			seen[Wx.weather_for(s, fl)] = true
 			check(Wx.weather_for(s, fl) == Wx.weather_for(s, fl), "weather depends only on the seed")
 	check(seen.size() == 5, "every kind of weather turns up")
-	check(Wx.forecast(Meta.today()) == Wx.forecast(Meta.today()) and Wx.forecast(5).split(" ").size() == 5, "the daily forecast is stable")
+	check(Wx.forecast(Meta.today()) == Wx.forecast(Meta.today()) and Wx.forecast(5).split(" ").size() == 7, "the daily forecast is stable")
 	var wet = 0
 	var dry = 0
 	var brush_wet = 0

@@ -23,9 +23,20 @@ static func weather_for(seed: int, floor_i: int) -> String:
 	rng.seed = hash([seed, floor_i, "sky"])
 	return KINDS[rng.randi() % KINDS.size()]
 
+# The daily run has one weather for every floor after the first (owner, 2026-11-16).
+static func daily_kind(seed: int) -> String:
+	var rng = RandomNumberGenerator.new()
+	rng.seed = hash([seed, "daily"])
+	return ["rain", "drought", "fog", "gale"][rng.randi() % 4]
+
+static func floor_weather(seed: int, floor_i: int, daily: bool) -> String:
+	if daily and floor_i > 0:
+		return daily_kind(seed)
+	return weather_for(seed, floor_i)
+
 static func forecast(seed: int) -> String:
 	var out = []
-	for fl in range(1, 6):
+	for fl in range(1, 8):
 		out.append(NAME[weather_for(seed, fl)])
 	return " ".join(out)
 

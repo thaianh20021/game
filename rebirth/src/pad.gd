@@ -171,10 +171,24 @@ static func key_name(g, k: String) -> String:
 	return k if st == "" else str(NAMES[st].get(k, k))
 
 # A whole hint line with every key name in it swapped.
+# Keyboard prompts follow rebound keys (Settings > CONTROLS).
+static func keys(g, text: String) -> String:
+	if g.bind_rev.is_empty():
+		return text
+	var rx = RegEx.new()
+	rx.compile("(?<![A-Z0-9])(SPACE|SHIFT|E|Q|F|R)(?![A-Z0-9'])")
+	var map = {"SPACE": KEY_SPACE, "SHIFT": KEY_SHIFT, "E": KEY_E, "Q": KEY_Q, "F": KEY_F, "R": KEY_R}
+	var out = ""
+	var at = 0
+	for m in rx.search_all(text):
+		out += text.substr(at, m.get_start() - at) + g.key_label(map[m.get_string()])
+		at = m.get_end()
+	return out + text.substr(at)
+
 static func hint(g, text: String) -> String:
 	var st = style(g)
 	if st == "":
-		return text
+		return keys(g, text)
 	var id = st + text
 	if _cache.has(id):
 		return _cache[id]
