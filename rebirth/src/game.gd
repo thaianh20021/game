@@ -1500,7 +1500,9 @@ func update_player(dt: float) -> void:
 		p.wi = 1 - p.wi
 		p.cd = maxf(p.cd, 0.12)
 		Sfx.play("ui")
-		card_t = 3.0
+		if lock == null and enemies.is_empty():
+			# only out of a fight: in one it would cover the room
+			card_t = 3.0
 		label(p.pos + Vector2(0, -22), wname(p.weapons[p.wi]), D.EL_COL[p.weapons[p.wi].el])
 	if firing() and p.cd <= 0.0 and p.spin <= 0.0:
 		try_fire()
@@ -3866,7 +3868,7 @@ func card_now() -> Array:
 		var c = item_card(near)
 		if not c.is_empty():
 			return c
-	if card_t > 0.0:
+	if card_t > 0.0 and lock == null:
 		var cw = p.weapons[p.wi]
 		return [wname(cw), D.EL_COL[cw.el], Ext.wcard(self, cw)]
 	return []

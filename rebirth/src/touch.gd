@@ -7,15 +7,19 @@ const Px = preload("res://src/font.gd")
 
 const STICK_R = 30.0
 # id: [centre, radius, label, key pushed into the game's just-pressed set]
+# The right thumb rests on the fire stick (its home is FIRE_HOME); everything it needs in a fight
+# sits on an arc round that rest, the most used closest: dash straight to the left, the element
+# (tap to switch, hold to arm) up and left, the two skills above. Less used buttons sit on an
+# outer arc, and E (talk, take) sits low, away from the fight.
+const FIRE_HOME = Vector2(420, 214)
 const BUTTONS = {
-	"dash": [Vector2(456, 146), 17.0, "DASH", KEY_SPACE],
-	"s1": [Vector2(424, 116), 16.0, "1", "m2"],
-	"s2": [Vector2(388, 98), 16.0, "2", KEY_F],
-	"burst": [Vector2(350, 104), 15.0, "R", KEY_R],
-	"swap": [Vector2(320, 138), 15.0, "Q", KEY_Q],
-	# changing element is the main verb after firing: a big button right beside the fire stick
-	"el": [Vector2(366, 172), 21.0, "", KEY_TAB],
-	"use": [Vector2(332, 216), 16.0, "E", KEY_E],
+	"dash": [Vector2(369, 216), 18.0, "DASH", KEY_SPACE],
+	"el": [Vector2(382, 176), 21.0, "", KEY_TAB],
+	"s1": [Vector2(420, 166), 16.0, "1", "m2"],
+	"s2": [Vector2(451, 177), 16.0, "2", KEY_F],
+	"burst": [Vector2(370, 142), 14.0, "R", KEY_R],
+	"swap": [Vector2(337, 184), 14.0, "Q", KEY_Q],
+	"use": [Vector2(337, 244), 15.0, "E", KEY_E],
 	"pause": [Vector2(240, 13), 11.0, "II", KEY_ESCAPE],
 }
 
@@ -121,7 +125,7 @@ static func draw(g, ci: CanvasItem) -> void:
 	ci.draw_circle(lb, STICK_R, Color(1, 1, 1, 0.07))
 	ci.draw_arc(lb, STICK_R, 0.0, TAU, 24, faint, 1.0)
 	ci.draw_circle(lp, 10.0, Color(1, 1, 1, 0.3))
-	var rb: Vector2 = t.r_base if t.r_id != -1 else at(g, Vector2(412, 208))
+	var rb: Vector2 = t.r_base if t.r_id != -1 else at(g, FIRE_HOME)
 	var rp: Vector2 = rb + t.aim * STICK_R
 	ci.draw_circle(rb, STICK_R, Color(1.0, 0.4, 0.4, 0.09 if not t.fire else 0.16))
 	ci.draw_arc(rb, STICK_R, 0.0, TAU, 24, Color(1.0, 0.6, 0.6, 0.3), 1.0)

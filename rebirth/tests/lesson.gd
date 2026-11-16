@@ -95,11 +95,14 @@ func _init():
 	check(g.p.sat[2] >= 1.0, "an untouched element stays full")
 	# touch layout: the element button is big and beside the fire stick
 	var el = Touch.BUTTONS["el"]
-	check(el[1] >= 16.0 and el[0].distance_to(Vector2(412, 208)) < 70.0, "the element button sits by the fire stick")
+	check(el[1] >= 16.0 and el[0].distance_to(Touch.FIRE_HOME) < 70.0, "the element button sits by the fire stick")
 	for a in Touch.BUTTONS:
 		for b in Touch.BUTTONS:
 			if a < b:
 				check(Touch.BUTTONS[a][0].distance_to(Touch.BUTTONS[b][0]) > Touch.BUTTONS[a][1] + Touch.BUTTONS[b][1], "buttons do not overlap: %s %s" % [a, b])
+	for a in Touch.BUTTONS:
+		check(Touch.BUTTONS[a][0].distance_to(Touch.FIRE_HOME) > Touch.BUTTONS[a][1] + Touch.STICK_R, "no button covers the fire stick: " + a)
+		check(a == "pause" or Touch.BUTTONS[a][0].distance_to(Touch.FIRE_HOME) < 100.0, "every fight button is within the right thumb reach: " + a)
 	await frames(10)
 	print("LESSON OK" if fails == 0 else "LESSON FAILED %d" % fails)
 	quit(1 if fails > 0 else 0)
