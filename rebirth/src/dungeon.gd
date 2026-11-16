@@ -15,8 +15,9 @@ const SIZES = {
 	"fight": [[15, 11], [17, 11], [17, 13], [19, 13], [21, 13]],
 }
 
-static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weather: String = "clear") -> Dictionary:
-	var n_main = 4 + floor_i / 2 + (0 if boss else 1)
+static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weather: String = "clear", drill: bool = false) -> Dictionary:
+	# the Training Grounds: six fight rooms in a row and nothing beside them
+	var n_main = 8 if drill else 4 + floor_i / 2 + (0 if boss else 1)
 	var cells = [Vector2i(0, 0)]
 	var used = {Vector2i(0, 0): 0}
 	while cells.size() < n_main:
@@ -45,6 +46,8 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weath
 		sides.append("shrine")
 	if rng.randf() < 0.6:
 		sides.append("puzzle")
+	if drill:
+		sides = []
 	for type in sides:
 		for attempt in 40:
 			var base = 1 + rng.randi() % (n_main - 2)
@@ -57,7 +60,7 @@ static func generate(rng: RandomNumberGenerator, floor_i: int, boss: bool, weath
 			break
 
 	# a sealed side room behind a cracked wall of one of the fight rooms
-	if rng.randf() < 0.65:
+	if rng.randf() < 0.65 and not drill:
 		for attempt in 40:
 			var base = 1 + rng.randi() % (n_main - 2)
 			var nc = rooms[base].cell + [Vector2i(0, 1), Vector2i(0, -1)][rng.randi() % 2]

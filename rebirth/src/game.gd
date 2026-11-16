@@ -38,6 +38,7 @@ const Twist = preload("res://src/twist.gd")
 const Inf = preload("res://src/infuse.gd")
 const Stage = preload("res://src/stage.gd")
 const Pfx = preload("res://src/pfx.gd")
+const Drill = preload("res://src/drill.gd")
 
 # The view. The HUD and menus are laid out on a 480 x 270 sheet (UW x UH) that sits in the
 # middle of the screen; on a wider or taller screen the world simply shows more (VW x VH)
@@ -49,6 +50,7 @@ var VH = 270.0
 var hud_off = Vector2.ZERO
 var hud_edge = 0.0
 var tut = {}  # the first lesson, see tutor.gd
+var drill = {}  # the Training Grounds, see drill.gd
 const TS = 16
 const LAST_FLOOR = 5
 const BDEF = {team = 0, dmg = 1.0, el = "", r = 2.0, life = 1.5, pierce = 0, bounce = 0, aoe = 0.0, kind = "orb", lob = false}
@@ -357,10 +359,13 @@ func set_state(s: String) -> void:
 func pause_rows() -> Array:
 	var out = [["resume", "RESUME", "RELEASES FOUND: %d" % Meta.S.get("rels", {}).size()], ["opts", "SETTINGS", "SOUND, MUSIC, SCREEN SHAKE"], ["guide", "GUIDE", "REACTIONS, YOUR BLESSINGS, CONTROLS"]]
 	if in_lobby:
+		out.append(["drill", "TRAINING GROUNDS", "SIX ROOMS: CHARGE, RELEASE, WARDS, MIRRORS, BOSSES"])
 		out.append(["title", "QUIT TO TITLE", ""])
+	elif not drill.is_empty():
+		out.append(["abandon", "LEAVE TRAINING", "BACK TO THE HEARTH"])
 	elif net.mode == "client":
 		out.append(["leave", "LEAVE THE GAME", "BACK TO YOUR OWN HEARTH"])
-	else:
+	elif drill.is_empty():
 		out.append(["abandon", "ABANDON RUN", "THE RUN ENDS HERE AND COUNTS AS A DEFEAT"])
 	out.append(["exit", "EXIT GAME", "PROGRESS IS SAVED" if (in_lobby or net.mode != "" or players.size() > 1) else "YOU CAN CONTINUE FROM THE START OF THIS FLOOR"])
 	return out
@@ -420,6 +425,7 @@ func update_pause() -> void:
 			Net.leave(self)
 			goto_lobby()
 		"abandon": end_run(false)
+		"drill": Drill.start(self)
 		"exit":
 			Meta.save()
 			get_tree().quit()
@@ -432,6 +438,7 @@ func goto_title() -> void:
 	Sfx.play_music(4)
 
 func goto_lobby() -> void:
+	drill = {}
 	world.visible = true
 	post.visible = true
 	fade = 1.0
@@ -506,6 +513,9 @@ func update_menu() -> void:
 
 # Ends a run: converts what you did into gems and teaches the foes a little.
 func end_run(won: bool) -> void:
+	if not drill.is_empty():
+		Drill.finish(self, false)
+		return
 	if not won and not in_lobby and players.all(func(q): return q.hp <= 0):
 		Nemesis.on_death(self)
 		Nemesis.bury(self)
@@ -1075,7 +1085,7 @@ func new_floor() -> void:
 	var bi = floor_i / 2
 	# the layout of a floor depends only on the run seed, so seeds can be shared
 	drng.seed = hash([run_seed, floor_i])
-	dg = Dungeon.generate(drng, floor_i, floor_i % 2 == 1, Wx.weather_for(run_seed, floor_i))
+	dg = Dungeon.generate(drng, floor_i, floor_i % 2 == 1 and drill.is_empty(), "clear" if not drill.is_empty() else Wx.weather_for(run_seed, floor_i), not drill.is_empty())
 	dg.boss_id = D.BIOMES[bi].bosses[drng.randi() % D.BIOMES[bi].bosses.size()]
 	rebake()
 	props = dg.props
@@ -1196,6 +1206,9 @@ func offer_buffs(stay: bool) -> void:
 	set_state("buff")
 
 func next_floor() -> void:
+	if Drill.active(self):
+		Drill.finish(self, true)
+		return
 	Sfx.play("portal")
 	Meta.stat("floors")
 	if floor_i >= LAST_FLOOR:
@@ -2087,7 +2100,8 @@ func update_rooms(dt: float) -> void:
 				sub = {"dark": "YOUR LIGHT FALTERS", "haste": "FOES MOVE FASTER", "surge": "FOES ARE INFUSED"}[cur.mod], t = 2.2}
 		spawn_wave(cur)
 	Stage.update(self, dt)
-	if lock != null and pending == 0 and enemies.is_empty() and not Stage.busy(self):
+	Drill.update(self, dt)
+	if lock != null and pending == 0 and enemies.is_empty() and not Stage.busy(self) and not Drill.busy(self):
 		wave_wait += dt
 		if wave_wait > 0.45:
 			wave_wait = 0.0
@@ -2131,6 +2145,8 @@ func spawn_tele(id: String, pos: Vector2, delay: float = 0.8, elite: bool = fals
 		burst(center(e), 10, Color("ff5a6a"), 70.0, 0.35))
 
 func spawn_wave(r: Dictionary) -> void:
+	if Drill.wave(self, r):
+		return
 	r.wave += 1
 	if r.type == "boss":
 		var bid: String = dg.boss_id
@@ -2976,6 +2992,7 @@ func hurt_player(dmg: int, el: String = "") -> void:
 		p.inv = 2.5
 		label(p.pos + Vector2(0, -26), "PHOENIX FEATHER", Color("ff8a3a"), true)
 		explode(pcenter(), 70.0, 25.0, "fire", 0)
+	Drill.spare(self)
 	if p.hp <= 0:
 		p.hp = 0
 		burst(pcenter(), 30, Color("ff5a6a"), 120.0, 0.8)

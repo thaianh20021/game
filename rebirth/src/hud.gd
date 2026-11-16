@@ -80,6 +80,7 @@ static func draw(g, ci: CanvasItem) -> void:
 			Wx.draw(g, ci)
 			draw_play(g, ci)
 			g.Tutor.draw(g, ci, Hud_self())
+			g.Drill.draw(g, ci, Hud_self())
 			g.Stage.draw_hud(g, ci)
 			draw_card(g, ci)
 			match g.state:

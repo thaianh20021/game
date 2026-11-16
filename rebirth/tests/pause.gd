@@ -26,7 +26,7 @@ func _init():
 	g.set_state("pause")
 	await frames(10)
 	var ids = g.pause_rows().map(func(r): return r[0])
-	check(ids == ["resume", "opts", "guide", "title", "exit"], "hearth rows: " + str(ids))
+	check(ids == ["resume", "opts", "guide", "drill", "title", "exit"], "hearth rows: " + str(ids))
 	await press(KEY_DOWN)
 	check(g.pause_sel == 1, "down moves")
 	await press(KEY_ENTER)

@@ -76,6 +76,11 @@ You do not shoot foes down; you build weather, and you forge with words.
 - The screen is drawn at its own resolution (`window/stretch/mode` is `canvas_items`, scale still
   integer): pixels stay square and sharp, the zoomed world no longer has uneven pixels, and the
   light dither keeps the size of a game pixel (`px` in the post shader).
+- Training Grounds (`src/drill.gd`): from the pause menu or Settings in the Hearth. One floor of
+  six fight rooms in a row, each a scripted lesson: charge and release (the hint follows what you
+  have in hand), pure and trinity, wards, the perfect release, the mirror, boss armor and seal.
+  A room lets you on once the thing is done, or after 75 s. Nobody dies there, nothing is saved
+  as a run, and the exit portal leads home (+20 gems the first time).
 - Item cards (`game.item_card`, `Ext.wcard`, `Hud.draw_card`): standing at a weapon, relic, active,
   shard, grave or shop item shows a card at the top of the screen. A weapon card gives damage per
   hit, hits per shot, shots and damage per second (with the difference to the weapon in hand),
@@ -395,6 +400,7 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/twist.gd` | Eater foes, boss echo, element shards |
 | `src/stage.gd` | Room objectives, foe affixes, boss armor, wall slams |
 | `src/pfx.gd` | One-shot release effects (nine adapted from pixelfx, MIT) |
+| `src/drill.gd` | The Training Grounds: six scripted lesson rooms |
 | `src/infuse.gd` | Weapon charges: layers, shapes by weapon, perfect release, chain count |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
@@ -433,6 +439,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `pause.gd` | Pause menu rows, confirmation of destructive rows, difficulty dials |
 | `twist.gd` | Eaters, boss echo, element shards |
 | `stage.gd` | Objectives, affixes, boss armor, wall slams |
+| `drill.gd` | Training Grounds: layout, every lesson room, no death, the way home |
 | `shot8.gd`, `shot9.gd`, `shot10.gd` | Pictures: releases; objectives and affixes; effect gallery and phone view |
 | `inf.gd` | Infuse: weather cut down, charges, layered releases, perfect, chain, its blessings |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |
