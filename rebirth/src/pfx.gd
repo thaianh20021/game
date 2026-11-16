@@ -3,7 +3,9 @@ extends RefCounted
 #
 # Nine of these are adapted from pixelfx (https://github.com/patch-gg/pixelfx, MIT License,
 # parts of it after Hugo Duprez's Sprite Fusion pixel art VFX, MIT): frost nova, chain lightning,
-# geyser, ground slam, hit flash, fire ring, poison cloud, leaf storm and black hole. Their
+# geyser, ground slam, hit flash, fire ring, poison cloud, leaf storm and black hole. Blessing,
+# hex sigil and summon rise (for weapon mechanics, src/wmods.gd) follow pixelfx's holy/blessing,
+# shadow/hex-sigil and spawn/summon-rise the same way. Their
 # palettes, beats and shapes are kept; the originals are side views on their own engine, so the
 # drawing is rewritten here for a top-down view and Godot's CanvasItem. "radiance" is ours.
 #
@@ -12,7 +14,7 @@ extends RefCounted
 const D = preload("res://src/data.gd")
 const Sfx = preload("res://src/sfx.gd")
 
-const DUR = {"frost": 0.9, "chain": 0.5, "geyser": 0.8, "slam": 0.7, "hit": 0.3, "fire": 0.8, "poison": 1.1, "leaf": 0.9, "hole": 1.0, "radiance": 0.6}
+const DUR = {"frost": 0.9, "chain": 0.5, "geyser": 0.8, "slam": 0.7, "hit": 0.3, "fire": 0.8, "poison": 1.1, "leaf": 0.9, "hole": 1.0, "radiance": 0.6, "bless": 0.8, "hex": 0.7, "summon": 0.7}
 # which effect an element brings to a release
 const OF = {
 	"fire": "fire", "ice": "frost", "bolt": "chain", "tox": "poison", "water": "geyser", "stone": "slam", "earth": "slam",
@@ -29,6 +31,9 @@ const PAL = {
 	"chain": ["1a1040", "3a2a8a", "6a5ae0", "a0b4ff", "fff2ae", "ffffff"],
 	"hole": ["0a0614", "24103e", "4a1f7a", "7a3ab8", "b070e8", "e6c8ff"],
 	"radiance": ["6a4a10", "c98a1c", "ffd24a", "fff2ae", "ffffff"],
+	"bless": ["5a3a08", "a8741a", "e8b23a", "ffd24a", "fff2ae", "ffffff"],
+	"hex": ["14061e", "3a0f52", "6a1f8a", "a83ad0", "e07aff", "ffd0ff"],
+	"summon": ["102438", "1e4f6e", "3a8fb0", "7ad8e8", "c8f6ff", "ffffff"],
 }
 
 static func spawn(g, k: String, pos: Vector2, r: float, ang: float = 0.0) -> void:
@@ -81,6 +86,9 @@ static func draw(g, ci: CanvasItem) -> void:
 			"leaf": leaf(g, ci, q, u)
 			"hole": hole(g, ci, q, u)
 			"radiance": radiance(g, ci, q, u)
+			"bless": bless(g, ci, q, u)
+			"hex": hex(g, ci, q, u)
+			"summon": summon(g, ci, q, u)
 
 # Frost nova: frost spirals into a spinning snowflake, then a wave blooms three rings of crystals.
 static func frost(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
@@ -389,6 +397,61 @@ static func radiance(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 		ci.draw_line(at - Vector2(2, 0), at + Vector2(3, 0), c("radiance", 3, a), 1.0)
 		ci.draw_line(at - Vector2(0, 2), at + Vector2(0, 3), c("radiance", 3, a), 1.0)
 		dot(ci, at, c("radiance", 4, a))
+
+# Blessing: a soft cone of light from above, sparkles drifting down through it.
+static func bless(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
+	var p: Vector2 = q.pos
+	var a = clampf(u / 0.15, 0.0, 1.0) * clampf((1.0 - u) / 0.3, 0.0, 1.0)
+	var top = p + Vector2(0, -q.r * 3.0)
+	shape(ci, [top + Vector2(-3, 0), top + Vector2(3, 0), p + Vector2(q.r, 0), p + Vector2(-q.r, 0)], c("bless", 3, 0.22 * a))
+	shape(ci, [top + Vector2(-1, 0), top + Vector2(1, 0), p + Vector2(q.r * 0.4, 0), p + Vector2(-q.r * 0.4, 0)], c("bless", 4, 0.3 * a))
+	for i in 9:
+		var k = fposmod(u * 1.5 + rnd(q.seed, i), 1.0)
+		var at = top.lerp(p, k) + Vector2((rnd(q.seed, i + 9.0) - 0.5) * q.r * 1.4 * k, 0)
+		var tw = 0.5 + 0.5 * sin(g.time * 20.0 + i)
+		dot(ci, at, c("bless", 5 if tw > 0.5 else 4, a))
+		if tw > 0.8:
+			dot(ci, at + Vector2(-1, 0), c("bless", 4, a * 0.6))
+			dot(ci, at + Vector2(1, 0), c("bless", 4, a * 0.6))
+	ci.draw_arc(p, q.r * (0.6 + 0.4 * u), 0.0, TAU, 20, c("bless", 3, a * 0.8), 1.0)
+
+# Hex sigil: a burning pen traces a circle and a star, it flares white and crumbles into embers.
+static func hex(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
+	var p: Vector2 = q.pos
+	var draw_k = clampf(u / 0.45, 0.0, 1.0)
+	var fade = clampf((1.0 - u) / 0.3, 0.0, 1.0)
+	var flare = u > 0.45 and u < 0.55
+	var col = Color.WHITE if flare else c("hex", 4, fade)
+	ci.draw_arc(p, q.r, -PI / 2.0, -PI / 2.0 + TAU * draw_k, 20, col, 1.0)
+	var star = []
+	for i in 5:
+		star.append(p + Vector2.from_angle(-PI / 2.0 + i * TAU * 2.0 / 5.0) * q.r * 0.85)
+	var segs = int(draw_k * 5.0)
+	for i in segs:
+		ci.draw_line(star[i], star[(i + 1) % 5], c("hex", 3, fade) if not flare else Color.WHITE, 1.0)
+	if u < 0.45:
+		# the pen
+		var pen = p + Vector2.from_angle(-PI / 2.0 + TAU * draw_k) * q.r
+		dot(ci, pen, c("hex", 5), 2.0)
+	if u > 0.5:
+		for i in 8:
+			var at = p + Vector2.from_angle(rnd(q.seed, i) * TAU) * q.r * rnd(q.seed, i + 3.0) + Vector2(0, (u - 0.5) * 30.0 * (0.5 + rnd(q.seed, i + 7.0)))
+			dot(ci, at, c("hex", 4 if i % 2 else 5, fade))
+
+# Summon rise: a ring opens on the floor, motes spiral up out of it and a flash marks the arrival.
+static func summon(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
+	var p: Vector2 = q.pos
+	var fade = clampf((1.0 - u) / 0.35, 0.0, 1.0)
+	var w = 1.0 - pow(1.0 - clampf(u / 0.3, 0.0, 1.0), 2.0)
+	ci.draw_arc(p, q.r * w, 0.0, TAU, 20, c("summon", 3, fade), 2.0)
+	ci.draw_arc(p, q.r * w - 3.0, 0.0, TAU, 20, c("summon", 2, fade * 0.7), 1.0)
+	for i in 10:
+		var k = fposmod(u * 1.3 + rnd(q.seed, i), 1.0)
+		var ang = rnd(q.seed, i + 4.0) * TAU + k * 6.0
+		var at = p + Vector2(cos(ang) * q.r * (1.0 - k) , sin(ang) * q.r * 0.5 * (1.0 - k) - k * 22.0)
+		dot(ci, at, c("summon", 4 if i % 2 else 5, fade))
+	if u > 0.25 and u < 0.45:
+		ci.draw_circle(p + Vector2(0, -16), 5.0 * (1.0 - (u - 0.25) / 0.2), c("summon", 5, 0.9))
 
 # Three or four points as one flat shape. draw_primitive never triangulates, so a shape squashed
 # thin for a frame does not raise an error the way draw_colored_polygon does.

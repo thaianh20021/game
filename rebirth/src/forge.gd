@@ -1,7 +1,7 @@
 extends RefCounted
-# The Word Forge: melt both carried weapons into one stronger, partly random weapon,
-# steered by a command. The command is plain words in English or Vietnamese (with or
-# without accents), or a sequence of gamepad buttons. Rule-based keyword matching, no model.
+# The Word Forge: melt both carried weapons into one stronger weapon. It offers three
+# ready-made fusions to choose from (it used to take a typed command). The word lists below are
+# still used by wishes and skill names.
 
 const D = preload("res://src/data.gd")
 const Art = preload("res://src/art.gd")
@@ -99,7 +99,58 @@ static func parse(text: String, pad: Array) -> Dictionary:
 			list.append(t[2])
 	return res
 
-# ---- the screen ------------------------------------------------------------------
+# ---- the screen: three ready-made fusions to choose from (owner, 2026-11-16: no typing) ------
+
+const CARD_W = 152.0
+
+# Three fusions of the two carried weapons: shaped after the one in hand, after the other one,
+# and after a third kind; each carries one of the new weapon mechanics (src/wmods.gd), a
+# trait inherited from the other parent, both parents' elements, a level more and more power.
+static func options(g) -> Array:
+	var p = g.p
+	var rng: RandomNumberGenerator = g.rng
+	var w = p.weapons[p.wi]
+	var o = p.weapons[1 - p.wi]
+	var els = []
+	for q in [w.el, w.get("el2", ""), o.el, o.get("el2", "")]:
+		if q != "" and q != "prism" and not els.has(q):
+			els.append(q)
+	if els.is_empty():
+		els.append(D.EL[rng.randi() % 4])
+	var types = [D.WEAPONS[w.id].type, D.WEAPONS[o.id].type]
+	var others = D.WEAPONS.keys().filter(func(k): return not D.WEAPONS[k].get("bp", false) and not types.has(D.WEAPONS[k].type) and int(D.WEAPONS[k].rar) in [1, 2])
+	if others.is_empty():
+		others = D.WEAPONS.keys().filter(func(k): return k != w.id and k != o.id)
+	var ids = [w.id, o.id, others[rng.randi() % others.size()]]
+	if ids[1] == ids[0]:
+		ids[1] = others[rng.randi() % others.size()]
+	var mech: Array = g.WMods.NEW.duplicate()
+	for i in range(mech.size() - 1, 0, -1):
+		var j = rng.randi() % (i + 1)
+		var tmp = mech[i]
+		mech[i] = mech[j]
+		mech[j] = tmp
+	# gathering makes no sense on a beam: it would be one tick of it
+	for i in 3:
+		if mech[i] == "charge" and D.WEAPONS[ids[i]].type == "beam":
+			mech[i] = mech[3]
+			mech[3] = "charge"
+	var out = []
+	for i in 3:
+		var base: String = ids[i]
+		var e1: String = els[i % els.size()]
+		var e2: String = els[(i + 1) % els.size()] if els.size() > 1 else ""
+		out.append({
+			"id": base, "el": e1, "el2": e2 if e2 != e1 else "",
+			"lv": mini(5, maxi(int(w.get("lv", 0)), int(o.get("lv", 0))) + 1),
+			"trait": Arms.trait_of(o.id if i == 0 else w.id), "traits": [mech[i]],
+			"pow": snappedf(rng.randf_range(1.3, 1.6), 0.01),
+			"fname": PREFIX[rng.randi() % PREFIX.size()] + " " + D.WEAPONS[base].name,
+		})
+	return out
+
+static func card_rect(i: int) -> Rect2:
+	return Rect2(240.0 - CARD_W * 1.5 - 4.0 + i * (CARD_W + 4.0), 52, CARD_W, 168)
 
 static func open(g, it: Dictionary) -> void:
 	var p = g.p
@@ -112,51 +163,58 @@ static func open(g, it: Dictionary) -> void:
 		Sfx.play("deny")
 		g.label(at, "NOT ENOUGH GOLD", Color("ff6a6a"))
 		return
-	g.forge = {text = "", pad = [], it = it, idx = p.idx}
+	g.forge = {opts = options(g), sel = 0, it = it, idx = p.idx}
 	g.set_state("forge")
 	Sfx.play("ui")
-	if g.tin.on:
-		g.kb_show(true)
 
 static func close(g) -> void:
-	if g.tin.on:
-		g.kb_show(false)
 	g.set_state("play")
 
+# Typing is gone; kept so old callers do nothing.
 static func key_input(g, ev: InputEventKey) -> void:
-	var f = g.forge
-	if ev.keycode == KEY_BACKSPACE:
-		if f.text != "":
-			f.text = f.text.substr(0, f.text.length() - 1)
-		elif not f.pad.is_empty():
-			f.pad.pop_back()
-	elif ev.unicode >= 32 and ev.unicode != 127 and f.text.length() < MAXLEN:
-		f.text += char(ev.unicode)
+	pass
 
 static func update(g) -> void:
 	var f = g.forge
 	if not g.pad_jp.is_empty():
 		for dev in g.pad_jp:
 			for b in g.pad_jp[dev]:
-				if b == JOY_BUTTON_START:
-					confirm(g)
-					return
-				elif b == JOY_BUTTON_BACK:
-					close(g)
-					return
-				elif b == JOY_BUTTON_LEFT_SHOULDER:
-					if not f.pad.is_empty():
-						f.pad.pop_back()
-				elif PAD.has(b) and f.pad.size() < 8:
-					f.pad.append(b)
-					Sfx.play("ui")
+				match b:
+					JOY_BUTTON_DPAD_LEFT:
+						f.sel = (f.sel + 2) % 3
+						Sfx.play("ui")
+					JOY_BUTTON_DPAD_RIGHT:
+						f.sel = (f.sel + 1) % 3
+						Sfx.play("ui")
+					JOY_BUTTON_A, JOY_BUTTON_START:
+						confirm(g, f.sel)
+						return
+					JOY_BUTTON_B, JOY_BUTTON_BACK:
+						close(g)
+						return
 		return
 	if g.state_t < 0.15:
 		return
+	var m: Vector2 = g.mouse()
+	for i in 3:
+		if card_rect(i).has_point(m):
+			if f.sel != i and not g.tin.on:
+				f.sel = i
+			if g.jpk("m1"):
+				confirm(g, i)
+				return
+	for i in 3:
+		if g.jpk(KEY_1 + i):
+			confirm(g, i)
+			return
+	if g.jpk(KEY_LEFT) or g.jpk(KEY_A):
+		f.sel = (f.sel + 2) % 3
+	elif g.jpk(KEY_RIGHT) or g.jpk(KEY_D):
+		f.sel = (f.sel + 1) % 3
 	if g.jpk(KEY_ESCAPE):
 		close(g)
-	elif g.jpk(KEY_ENTER) or g.jpk(KEY_KP_ENTER):
-		confirm(g)
+	elif g.jpk(KEY_ENTER) or g.jpk(KEY_KP_ENTER) or g.jpk(KEY_SPACE):
+		confirm(g, f.sel)
 
 static func build(g, text: String, pad: Array) -> Dictionary:
 	var p = g.p
@@ -192,22 +250,24 @@ static func build(g, text: String, pad: Array) -> Dictionary:
 		"fname": PREFIX[rng.randi() % PREFIX.size()] + " " + D.WEAPONS[base].name,
 	}
 
-static func confirm(g) -> void:
+
+static func confirm(g, i: int = 0) -> void:
 	var f = g.forge
 	g.bind(g.players[mini(int(f.idx), g.players.size() - 1)])
 	var p = g.p
 	if p.weapons[1] == null or p.gold < COST:
 		close(g)
 		return
-	var res = build(g, f.text, f.pad)
+	var res: Dictionary = f.opts[clampi(i, 0, f.opts.size() - 1)]
 	p.gold -= COST
 	p.weapons = [res, null]
 	p.wi = 0
 	g.Meta.record("weapons", res.id)
 	close(g)
-	var names = [Arms.TRAIT_NAME[res.trait]]
-	for t in res.traits:
-		names.append(Arms.TRAIT_NAME[t])
+	var names = []
+	for t in [res.trait] + res.traits:
+		if t != "":
+			names.append(Arms.TRAIT_NAME[t])
 	g.banner = {text = res.fname, sub = "+%d%% DAMAGE. %s" % [int((res.pow - 1.0) * 100.0), ", ".join(names)], t = 4.5}
 	var pos: Vector2 = f.it.pos if f.it != null else p.pos
 	g.rings.append({pos = pos, r = 60.0, t = 0.0, col = Color("ffd24a")})
@@ -220,45 +280,25 @@ static func confirm(g) -> void:
 
 static func draw(g, ci: CanvasItem, Hud) -> void:
 	var f = g.forge
-	var p = g.p
-	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.78))
-	Hud.panel(ci, Rect2(60, 34, 360, 196), Color(0.07, 0.05, 0.12, 0.97), Color("ffd24a"))
-	Px.ctext(ci, Vector2(240, 42), "WORD FORGE", Color("ffd24a"), 2)
-	if p.weapons[1] != null:
-		for i in 2:
-			var w = p.weapons[i]
-			var t: Texture2D = Art.T[Art.wtex(w)]
-			var x = 150 + i * 180
-			ci.draw_texture(t, Vector2(x - t.get_width() / 2.0, 70 - t.get_height() / 2.0).round())
-			Px.ctext(ci, Vector2(x, 80), g.wname(w).substr(0, 26), D.EL_COL[w.el])
-		Px.ctext(ci, Vector2(240, 66), "+", Color("ffd24a"), 2)
-	Px.ctext(ci, Vector2(240, 96), "DESCRIBE THE WEAPON YOU WANT. ENGLISH OR VIETNAMESE.", Color("d9d4c7"))
-	# the command line
-	var line = fold(f.text).to_upper()
-	for b in f.pad:
-		line += (" " if line != "" else "") + PAD[b][0]
-	Hud.panel(ci, Rect2(90, 108, 300, 18), Color(0.02, 0.01, 0.05, 1.0), Color("7adfff"))
-	Px.text(ci, Vector2(96, 114), line + ("_" if int(g.time * 3.0) % 2 == 0 else ""), Color.WHITE)
-	# what the forge understood
-	var k = parse(f.text, f.pad)
-	var x0 = 96.0
-	Px.text(ci, Vector2(x0, 134), "ELEMENT", Color("6b6779"))
-	if k.els.is_empty():
-		Px.text(ci, Vector2(x0 + 60, 134), "FROM BOTH WEAPONS", Color("6b6779"))
-	for i in mini(2, k.els.size()):
-		ci.draw_texture(Art.T["ic_" + k.els[i]], Vector2(x0 + 60 + i * 60, 132))
-		Px.text(ci, Vector2(x0 + 70 + i * 60, 134), D.EL_NAME[k.els[i]], D.EL_COL[k.els[i]])
-	Px.text(ci, Vector2(x0, 146), "SHAPE", Color("6b6779"))
-	Px.text(ci, Vector2(x0 + 60, 146), k.shape if k.shape != "" else "ONE OF THE TWO", Color("d9d4c7") if k.shape != "" else Color("6b6779"))
-	Px.text(ci, Vector2(x0, 158), "TRAITS", Color("6b6779"))
-	var names = []
-	for t in k.traits.slice(0, 2):
-		names.append(Arms.TRAIT_NAME[t])
-	Px.text(ci, Vector2(x0 + 60, 158), ", ".join(names) if not names.is_empty() else "A RANDOM ONE", Color("ffd24a") if not names.is_empty() else Color("6b6779"))
-	Px.ctext(ci, Vector2(240, 174), "TRY: FAST FIRE BOW   /   CUNG LUA NHANH   /   KIEM BANG MANH", Color("6b6779"))
-	Px.ctext(ci, Vector2(240, 184), "PAD: D-PAD ELEMENT, A MANY, B BLAST, X PIERCE, Y SEEK, RB FAST", Color("6b6779"))
-	if g.tin.on:
-		Px.ctext(ci, Vector2(240, 202), "OK: FORGE FOR %d GOLD" % COST, Color("ffd24a"))
-	else:
-		Px.ctext(ci, Vector2(240, 202), "ENTER OR START: FORGE FOR %d GOLD      ESC OR BACK: CANCEL" % COST, Color("ffd24a"))
-	Px.ctext(ci, Vector2(240, 216), "BOTH WEAPONS ARE CONSUMED. THE RESULT IS ALWAYS STRONGER.", Color("d9d4c7"))
+	ci.draw_rect(g.full(), Color(0.02, 0.01, 0.05, 0.85))
+	Px.ctext(ci, Vector2(240, 24), "WORD FORGE: CHOOSE A FUSION", Color("ffd24a"), 2)
+	Px.ctext(ci, Vector2(240, 40), "BOTH WEAPONS MELT INTO THE ONE YOU PICK. %d GOLD." % COST, Color("d9d4c7"))
+	for i in f.opts.size():
+		var w: Dictionary = f.opts[i]
+		var r = card_rect(i)
+		var on: bool = i == f.sel
+		Hud.panel(ci, r, Color(0.12, 0.08, 0.2, 0.97) if on else Color(0.07, 0.05, 0.12, 0.95), Color("ffd24a") if on else D.RAR_COL[int(D.WEAPONS[w.id].rar)])
+		var t: Texture2D = Art.T[Art.wtex(w)]
+		var sc = 2.0 if t.get_height() <= 9 else 1.0
+		ci.draw_texture_rect(t, Rect2((r.position + Vector2(r.size.x / 2.0, 14) - t.get_size() * sc / 2.0).round(), t.get_size() * sc), false)
+		Px.text(ci, r.position + Vector2(4, 4), str(i + 1), Color("ffd24a") if on else Color("6b6779"))
+		var mech: String = w.traits[0]
+		Px.ctext(ci, r.position + Vector2(r.size.x / 2.0, 28), Arms.TRAIT_NAME[mech], Color("ffd24a"))
+		var y = r.position.y + 38.0
+		for l in g.Ext.wcard(g, w, g.p.weapons[g.p.wi], 24):
+			if y > r.end.y - 8.0:
+				break
+			Px.text(ci, Vector2(r.position.x + 4, y), l[0], l[1])
+			y += 9.0
+	var how = "TAP A CARD TO FORGE IT" if g.tin.on else ("D-PAD TO CHOOSE, A TO FORGE, B TO LEAVE" if g.p1_pad else "1 2 3 OR CLICK TO FORGE, ESC TO LEAVE")
+	Px.ctext(ci, Vector2(240, 228), how, Color("6b6779"))
