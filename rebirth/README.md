@@ -81,6 +81,14 @@ You do not shoot foes down; you build weather, and you forge with words.
   layer of the weapon's own element; legend, the dash is ready again at once after the release
   and you are untouchable for 1 s. Four legendary weapons (Skyfall Tusk, Aurora Lens, Choir of
   Horns, Comet Drum) turn up more often on deeper floors. The weapon card lists the tiers.
+- Weapon mechanics (`src/wmods.gd`, `D.WMOD`): five traits a fused weapon can carry. GATHERING
+  (hold fire, let go: one shot of up to 3x damage), SPIRITS (every 8th hit calls a spirit that
+  shoots for 6 s, two at most), RALLY (hits stack up to 5: +6% damage and fire rate each),
+  HEXING (hits make the foe take 50% more for 2 s), WEIGHT (40% slower, twice as hard, pushes).
+- The Word Forge no longer takes a typed command: it offers three ready-made fusions (shaped
+  after the weapon in hand, the other one, and a third kind), each with a different new
+  mechanic, an inherited trait, both elements, a level more and more power. Pick with 1 2 3, a
+  click or tap, or the pad. Blessing, hex sigil and summon rise effects follow pixelfx too.
 - Training Grounds (`src/drill.gd`): from the pause menu or Settings in the Hearth. One floor of
   six fight rooms in a row, each a scripted lesson: charge and release (the hint follows what you
   have in hand), pure and trinity, wards, the perfect release, the mirror, boss armor and seal.
@@ -406,6 +414,7 @@ Wind-up and attack frames are hand-drawn for all 8 heroes, 11 foe shapes and 9 b
 | `src/stage.gd` | Room objectives, foe affixes, boss armor, wall slams |
 | `src/pfx.gd` | One-shot release effects (nine adapted from pixelfx, MIT) |
 | `src/drill.gd` | The Training Grounds: six scripted lesson rooms |
+| `src/wmods.gd` | Weapon mechanics: gathering, spirits, rally, hex, weight |
 | `src/infuse.gd` | Weapon charges: layers, shapes by weapon, perfect release, chain count |
 | `src/ext.gd` | Skills, pet follow and shots, mounts, burst, workshop stations, second boss set |
 | `src/foes.gd` | Charged specials of ordinary foes; third boss of each biome |
@@ -445,6 +454,7 @@ five heroes using a bot in god mode. Every test uses its own save file. Run the 
 | `twist.gd` | Eaters, boss echo, element shards |
 | `stage.gd` | Objectives, affixes, boss armor, wall slams |
 | `drill.gd` | Training Grounds: layout, every lesson room, no death, the way home |
+| `wmods.gd` | Weapon mechanics, each one |
 | `shot8.gd`, `shot9.gd`, `shot10.gd` | Pictures: releases; objectives and affixes; effect gallery and phone view |
 | `inf.gd` | Infuse: weather cut down, charges, layered releases, perfect, chain, its blessings |
 | `icon.gd` | Paints the app icon files (run headless after changing the design) |

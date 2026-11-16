@@ -23,6 +23,8 @@ static func wstats(g, wi: Dictionary) -> Dictionary:
 		Arms.apply(w, tr)
 		if tr == "swift":
 			cd *= 0.75
+		if tr == "heavy":
+			cd *= D.WMOD.heavy_cd
 	var st: Dictionary = g.st
 	var n = 1
 	if w.type == "bullet":
@@ -38,7 +40,7 @@ static func num(v: float) -> String:
 	return str(int(round(v))) if v >= 20.0 else str(snappedf(v, 0.1)).trim_suffix(".0")
 
 # The card of a weapon: [text, colour] lines. other is the weapon it would replace (or null).
-static func wcard(g, wi: Dictionary, other = null) -> Array:
+static func wcard(g, wi: Dictionary, other = null, wrap: int = 30) -> Array:
 	var s = wstats(g, wi)
 	var def: Dictionary = D.WEAPONS[wi.id]
 	var pale = Color("d8d4e6")
@@ -74,13 +76,14 @@ static func wcard(g, wi: Dictionary, other = null) -> Array:
 		out.append(["  ".join(bits), pale])
 	for tr in [wi.get("trait", "")] + wi.get("traits", []):
 		if tr != "":
-			out.append([Arms.TRAIT_NAME[tr] + ": " + Arms.TRAIT_DESC[tr], Color("ffd24a")])
+			for l in g.Hud.wrap_text(Arms.TRAIT_NAME[tr] + ": " + Arms.TRAIT_DESC[tr], wrap):
+				out.append([l, Color("ffd24a")])
 	for t in range(1, int(def.rar) + 1):
-		for l in g.Hud.wrap_text("ARMED " + g.Inf.TIER_TEXT[t], 30):
+		for l in g.Hud.wrap_text("ARMED " + g.Inf.TIER_TEXT[t], wrap):
 			out.append([l, D.RAR_COL[t]])
 	var rule: Array = g.Inf.RULE.get(s.type, [])
 	if not rule.is_empty():
-		for l in g.Hud.wrap_text("CHARGE: " + rule[1], 30):
+		for l in g.Hud.wrap_text("CHARGE: " + rule[1], wrap):
 			out.append([l, dim])
 	return out
 

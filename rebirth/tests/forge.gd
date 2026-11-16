@@ -1,5 +1,5 @@
 extends SceneTree
-# Word Forge: command parsing in English, Vietnamese and pad buttons; the forged weapon; two starting weapons.
+# Word Forge: the word lists, three ready-made fusions, the forged weapon; two starting weapons.
 const Meta = preload("res://src/meta.gd")
 const D = preload("res://src/data.gd")
 const Forge = preload("res://src/forge.gd")
@@ -42,52 +42,55 @@ func _init():
 	g.goto_lobby()
 	g.start_run(5, false)
 	check(g.p.weapons[1] != null and g.p.weapons[1].el != g.p.weapons[0].el, "heroes start with two weapons of different elements")
-	# the forge screen: typed text, confirm
+	# the forge screen: three ready-made fusions, no typing
 	g.p.weapons = [{id = "pistol", el = "tox", el2 = "", lv = 1}, {id = "blade", el = "", el2 = "", lv = 0}]
 	g.p.gold = 10
 	g.interact({kind = "fuse", pos = g.p.pos})
 	check(g.state == "play", "no gold, no forge")
 	g.p.gold = 100
 	g.interact({kind = "fuse", pos = g.p.pos})
-	check(g.state == "forge", "the altar opens the forge")
-	type("cung lửa nhanh")
-	check(g.forge.text == "cung lửa nhanh", "typing fills the command: " + g.forge.text)
+	check(g.state == "forge" and g.forge.opts.size() == 3, "the altar offers three fusions")
+	var opts: Array = g.forge.opts
+	var mechs = {}
+	for o in opts:
+		mechs[o.traits[0]] = true
+	check(mechs.size() == 3 and mechs.keys().all(func(m): return g.WMods.NEW.has(m)), "each offers a different new mechanic: " + str(mechs.keys()))
+	check(opts[0].id == "pistol" and opts[1].id == "blade" and not (opts[2].id in ["pistol", "blade"]), "shaped after the one in hand, the other, and a third kind: " + str(opts.map(func(o): return o.id)))
+	check(opts.all(func(o): return o.pow >= 1.3 and int(o.lv) == 2 and o.has("fname")), "all stronger, a level more, named")
 	await frames(12)
 	if vis:
 		var im = root.get_texture().get_image()
-		im.resize(1440, 810, Image.INTERPOLATE_NEAREST)
 		im.save_png("C:/Users/ADMIN/AppData/Local/Temp/rb_forge.png")
-	g.jp[KEY_ENTER] = true
+	g.jp[KEY_2] = true
 	await frames(2)
 	var w = g.p.weapons[0]
 	print("forged: ", g.wname(w), " ", w)
-	check(g.state == "play" and g.p.gold == 70 and g.p.weapons[1] == null, "forging costs gold and consumes both")
-	check(w.el == "fire" and w.id in ["bow", "crossbow", "kunai"] and (w.trait == "swift" or w.traits.has("swift")) and w.pow >= 1.3 and int(w.lv) == 2, "the command steers the result")
-	check(w.has("fname") and g.wname(w).contains(w.fname), "forged weapons get their own name")
-	# it fires, and harder than its base
+	check(g.state == "play" and g.p.gold == 70 and g.p.weapons[1] == null and w == opts[1], "2 forges the second offer, for gold, consuming both")
+	# it fires
 	var e = g.spawn_enemy("goblin", g.p.pos + Vector2(40, 0))
 	e.mhp = 99999.0
 	e.hp = 99999.0
 	e.stun = 99.0
+	g.p.weapons = [opts[0], null]
 	g.sim["mouse"] = Vector2(340, 135)
 	g.sim["fire"] = true
 	await frames(40)
 	g.sim.erase("fire")
+	await frames(4)
 	check(e.hp < 99999.0, "the forged weapon works")
-	# pad: buttons build the command, START confirms
+	# pad: right, then A
 	g.enemies.clear()
 	g.p.weapons = [{id = "wand", el = "ice", el2 = "", lv = 0}, {id = "rail", el = "bolt", el2 = "", lv = 2}]
 	g.interact({kind = "fuse", pos = g.p.pos})
-	for b in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_B, JOY_BUTTON_START]:
+	var popts: Array = g.forge.opts
+	for b in [JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_A]:
 		var ev = InputEventJoypadButton.new()
 		ev.device = 0
 		ev.button_index = b
 		ev.pressed = true
 		g._input(ev)
 		await frames(2)
-	w = g.p.weapons[0]
-	print("pad forged: ", g.wname(w))
-	check(g.state == "play" and w.el == "tox" and (w.traits == ["blast"] or w.trait == "blast") and w.id in ["wand", "rail"] and int(w.lv) == 3, "pad combo forges too")
+	check(g.state == "play" and g.p.weapons[0] == popts[2] and int(g.p.weapons[0].lv) == 3, "the pad picks and forges")
 	# empty command still gives something stronger
 	g.p.weapons = [{id = "bow", el = "fire", el2 = "", lv = 0}, {id = "coil", el = "bolt", el2 = "", lv = 0}]
 	var r = Forge.build(g, "", [])

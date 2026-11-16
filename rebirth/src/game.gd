@@ -39,6 +39,7 @@ const Inf = preload("res://src/infuse.gd")
 const Stage = preload("res://src/stage.gd")
 const Pfx = preload("res://src/pfx.gd")
 const Drill = preload("res://src/drill.gd")
+const WMods = preload("res://src/wmods.gd")
 
 # The view. The HUD and menus are laid out on a 480 x 270 sheet (UW x UH) that sits in the
 # middle of the screen; on a wider or taller screen the world simply shows more (VW x VH)
@@ -173,6 +174,7 @@ var pending_say = ""
 var say_mode = ""
 var sky_t = 3.0
 var spells = []
+var spirits = []  # spirits called by a weapon (wmods.gd)
 var spell_cds = [0.0, 0.0, 0.0]
 var roll_slot = 0
 # sprite afterimages: dying foes squash flat, dashing bosses leave trails
@@ -559,8 +561,6 @@ func _input(ev: InputEvent) -> void:
 		return
 	if state in ["buff", "say"] and ev is InputEventKey and ev.pressed:
 		Wish.key_input(self, ev)
-	if state == "forge" and ev is InputEventKey and ev.pressed:
-		Forge.key_input(self, ev)
 	if ev is InputEventKey and ev.pressed and not ev.echo:
 		# an on-screen keyboard sends keys with no physical code
 		jp[ev.physical_keycode if ev.physical_keycode != KEY_NONE else ev.keycode] = true
@@ -627,7 +627,6 @@ func kb_lift() -> float:
 	if not tin.on:
 		return 0.0
 	match state:
-		"forge": return 30.0
 		"say": return 52.0 if say_mode.begins_with("rc") else (66.0 if say_mode != "" else 56.0)
 		"buff": return 100.0 if (say != "" or kb_h() > 0) else 0.0
 	return 0.0
@@ -1072,6 +1071,7 @@ func clear_world() -> void:
 	traps = []
 	fields = []
 	spells = []
+	spirits = []
 	patches = []
 
 func rebake() -> void:
@@ -1405,6 +1405,7 @@ func update_play(dt: float) -> void:
 	Combo.update(self, dt)
 	Tutor.update(self, dt)
 	Twist.update(self, dt)
+	WMods.update(self, dt)
 	Spell.update(self, dt)
 	if not in_lobby:
 		Traps.update(self, dt)
@@ -1519,7 +1520,9 @@ func update_player(dt: float) -> void:
 			# only out of a fight: in one it would cover the room
 			card_t = 3.0
 		label(p.pos + Vector2(0, -22), wname(p.weapons[p.wi]), D.EL_COL[p.weapons[p.wi].el])
-	if firing() and p.cd <= 0.0 and p.spin <= 0.0:
+	if WMods.held(self, dt):
+		pass
+	elif firing() and p.cd <= 0.0 and p.spin <= 0.0:
 		try_fire()
 	if jpk("m2") or jpk(KEY_SHIFT):
 		Ext.cast(self, 0, mw)
@@ -1764,6 +1767,9 @@ func try_fire() -> void:
 			Arms.apply(w, tr)
 			if tr == "swift":
 				p.cd *= 0.75
+	if p.has("wk") or WMods.has(p, "rally") or WMods.has(p, "heavy"):
+		w = w.duplicate()
+		WMods.shape_shot(self, w)
 	fire_weapon(w, paint_el(p.cd * (D.SAT.melee if w.type == "melee" else 1.0)), pcenter() + p.aim * 8.0, p.aim)
 
 func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> void:
@@ -2723,6 +2729,8 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 		Sfx.play("hit", 1.0, -3.0)
 		burst(center(e), 3, c, 60.0, 0.25)
 		Fx.hit(self, center(e), el)
+	if not weather and not full_hit and not rel_hit and e.hp > 0.0:
+		WMods.on_hit(self, e)
 	if el != "" and not resist and e.hp > 0.0:
 		# only direct hits build resonance; pools and burns do not
 		reso_src = not dot
@@ -3819,6 +3827,7 @@ func draw_top(ci: CanvasItem) -> void:
 	for q in infx:
 		Fx.infuse(self, ci, q)
 	Pfx.draw(self, ci)
+	WMods.draw(self, ci)
 	for q in slashes:
 		var k = q.t / 0.16
 		var a0 = q.ang - q.arc / 2.0 + q.arc * k * 0.5

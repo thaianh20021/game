@@ -7,10 +7,13 @@ const D = preload("res://src/data.gd")
 const TRAIT_NAME = {
 	"multi": "SPLITTING", "pierce": "PIERCING", "bounce": "REBOUND", "blast": "BLASTING",
 	"zap": "ARCING", "homing": "SEEKING", "swift": "HASTE", "keen": "THE EDGE",
+	"charge": "GATHERING", "summon": "SPIRITS", "rally": "RALLY", "hex": "HEXING", "heavy": "WEIGHT",
 }
 const TRAIT_DESC = {
 	"multi": "+2 PROJECTILES", "pierce": "PIERCES 2 MORE FOES", "bounce": "BOUNCES TWICE MORE", "blast": "HITS EXPLODE",
 	"zap": "HITS ARC TO A SECOND FOE", "homing": "SHOTS SEEK FOES", "swift": "25% FASTER", "keen": "+25% DAMAGE",
+	"charge": "HOLD FIRE TO GATHER, LET GO: UP TO 3X DAMAGE", "summon": "EVERY 8TH HIT CALLS A SPIRIT FOR 6 S",
+	"rally": "HITS STACK +6% DAMAGE AND SPEED, UP TO 5", "hex": "HITS HEX: THE FOE TAKES 50% MORE", "heavy": "40% SLOWER, HITS TWICE AS HARD, PUSHES",
 }
 
 # What a weapon passes on when it is the one consumed by a fusion.
@@ -78,6 +81,8 @@ static func apply(w: Dictionary, tr: String) -> void:
 				w.dmg *= 1.25
 		"keen":
 			w.dmg *= 1.25
+		"heavy":
+			w.dmg *= D.WMOD.heavy_dmg
 
 # Called for every flying player bullet before it moves.
 static func steer(g, b: Dictionary, dt: float) -> void:

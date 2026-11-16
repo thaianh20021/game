@@ -48,7 +48,7 @@ static func handle(g, ev: InputEvent) -> void:
 		if ev.pressed:
 			t.tap = pos
 			g.jp["m1"] = true
-			if g.state in ["say", "forge"] or (g.state == "buff" and g.say != ""):
+			if g.state == "say" or (g.state == "buff" and g.say != ""):
 				if ok_rect(g).has_point(pos):
 					g.jp[KEY_ENTER] = true
 				elif no_rect(g).has_point(pos):
@@ -110,7 +110,7 @@ static func aim_dir(g) -> Vector2:
 
 static func draw(g, ci: CanvasItem) -> void:
 	var t = g.tin
-	if t.on and (g.state in ["say", "forge"] or (g.state == "buff" and g.say != "")):
+	if t.on and (g.state == "say" or (g.state == "buff" and g.say != "")):
 		for q in [[ok_rect(g), "OK", Color("a6e84e")], [no_rect(g), "CANCEL", Color("ff6a6a")]]:
 			var r: Rect2 = q[0]
 			ci.draw_rect(r, Color(0.05, 0.03, 0.1, 0.95))

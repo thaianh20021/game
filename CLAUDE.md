@@ -99,7 +99,8 @@ blessings (owner, 2026-11-15: spamming elements killed everything; they chose we
 Anything new that is weather (not a direct player hit) must run inside `g.wx_depth += 1 ... -= 1` or pass `dot = true`. Keep `window/stretch/scale_mode` integer: the owner
 found fractional scaling blurry on the phone. Since 2026-11-16 the stretch mode is `canvas_items` (drawn at the screen's own
 resolution; the owner found the 600x270 buffer soft): anything per-pixel in a shader must divide `FRAGCOORD` by `px`.
-Weapon rarity (0 to 3, legend added 2026-11-16) adds arming perks (`Inf.tier`, `Inf.TIER_TEXT`); anything indexed by
+Weapon mechanics (`src/wmods.gd`, `D.WMOD`: gathering, spirits, rally, hex, weight) are traits in `Arms.TRAIT_NAME`; the Word
+Forge offers three ready-made fusions instead of a typed command (owner, 2026-11-16), its word lists stay for wishes. Weapon rarity (0 to 3, legend added 2026-11-16) adds arming perks (`Inf.tier`, `Inf.TIER_TEXT`); anything indexed by
 `rar` needs four entries. The Training Grounds (`src/drill.gd`, `g.drill`) teach the charged weapon in six scripted rooms; when a mechanic
 changes, update its lesson there. Items and weapons show a stat card (`game.item_card`, `Ext.wcard`, `Hud.draw_card`): give every new pickup kind one. Next steps are in `rebirth/ROADMAP.md`.
 

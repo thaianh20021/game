@@ -94,6 +94,11 @@ const STAGE = {affix = 0.12, affix_floor = 0.02, ward = 0.15, leech_r = 44.0, le
 	# lit: seconds a release lights a dark room
 	seal = 0.1, seal_t = 12.0, escort = 16.0, lit = 4.0}
 
+# Weapon mechanics (src/wmods.gd): gathering, spirits, rally, hex, weight.
+const WMOD = {charge_max = 1.0, charge_mult = 2.0, summon_n = 8, spirit_t = 6.0, spirit_max = 2, spirit_cd = 0.55,
+	spirit_r = 150.0, spirit_dmg = 4.0, spirit_floor = 1.5, rally_max = 5, rally_step = 0.06, rally_t = 2.0, hex_t = 2.0,
+	heavy_cd = 1.6, heavy_dmg = 2.0, heavy_kb = 120.0}
+
 # reaction key = the two elements sorted and joined with "+"
 static var REACT = {
 	"fire+ice": ["MELT", Color("d8f6ff")],
