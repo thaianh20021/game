@@ -120,5 +120,22 @@ func _init():
 		check(g.Arms.TRAIT_NAME.has(t) and g.Arms.TRAIT_DESC.has(t), "card text for " + t)
 	for k in ["bless", "hex", "summon"]:
 		check(g.Pfx.DUR.has(k) and g.Sfx.S.has("fx_" + k), "effect and sound: " + k)
+	# feel: sounds, push by weapon weight, a death that shows the finishing element
+	for k in ["gather", "gshot", "thud", "chirp", "rally"]:
+		check(g.Sfx.S.has(k), "sound " + k)
+	check(g.kb_of(D.WEAPONS["pistol"]) < g.kb_of({cd = 1.0}), "slow weapons push harder")
+	arm_with("pistol", "heavy")
+	g.hitstop = 0.0
+	g.p.erase("thud_at")
+	g.hurt_enemy(e, 1.0, "")
+	check(g.hitstop >= D.WMOD.heavy_stop - 0.001, "a heavy hit stops the frame")
+	g.hitstop = 0.0
+	g.hurt_enemy(e, 1.0, "")
+	check(g.hitstop == 0.0, "but not on every hit of a stream")
+	var f2 = foe(c + Vector2(40, 0))
+	f2.hp = 1.0
+	g.parts.clear()
+	g.hurt_enemy(f2, 50.0, "ice")
+	check(f2.dead and g.parts.filter(func(q): return q.grav > 200.0).size() >= 8, "an ice kill shatters")
 	print("WMODS OK" if fails == 0 else "WMODS FAILED %d" % fails)
 	quit(1 if fails > 0 else 0)

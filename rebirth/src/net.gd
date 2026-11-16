@@ -158,7 +158,7 @@ static func start(g) -> void:
 	g.players.append(guest)
 	build_looks(g)
 	g.bind(g.players[0])
-	g.rpc("net_event", "start", {seed = g.run_seed, floor = g.floor_i, boss = g.dg.boss_id, heat = g.run_heat, host = g.players[0]})
+	g.rpc("net_event", "start", {seed = g.run_seed, floor = g.floor_i, boss = g.dg.boss_id, heat = g.run_heat, host = g.players[0], daily = g.run_daily, mode = g.run_mode})
 
 # Each player's sprite is built locally from a small description, so fused and woven
 # heroes look the same on both screens.
@@ -305,7 +305,8 @@ static func on_event(g, kind: String, data: Dictionary) -> void:
 			g.me = 1
 			g.run_seed = data.seed
 			g.run_heat = data.heat
-			g.run_daily = false
+			g.run_daily = bool(data.get("daily", false))
+			g.run_mode = str(data.get("mode", ""))
 			g.kills = 0
 			g.boss_kills = 0
 			floor_event(g, data)
@@ -321,7 +322,7 @@ static func floor_event(g, data: Dictionary) -> void:
 	g.floor_i = data.floor
 	var bi = g.floor_i / 2
 	g.drng.seed = hash([g.run_seed, g.floor_i])
-	g.dg = Dungeon.generate(g.drng, g.floor_i, g.floor_i % 2 == 1, g.Wx.weather_for(g.run_seed, g.floor_i))
+	g.dg = Dungeon.generate(g.drng, g.floor_i, g.floor_i % 2 == 1, g.Wx.floor_weather(g.run_seed, g.floor_i, g.run_daily), false, g.run_mode == "rush")
 	g.dg.boss_id = data.boss
 	g.rebake()
 	g.props = []
@@ -334,7 +335,7 @@ static func floor_event(g, data: Dictionary) -> void:
 	g.cam = g.net.pred
 	g.fade = 1.0
 	g.banner = {text = D.BIOMES[bi].name, sub = "FLOOR %d-%d" % [bi + 1, g.floor_i % 2 + 1] + g.Wx.sub(g), t = 3.2}
-	Sfx.play_music(bi)
+	Sfx.play_music(Sfx.biome_track(bi))
 
 # ---- guest: per-frame work -------------------------------------------------------
 

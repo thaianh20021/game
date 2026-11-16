@@ -40,6 +40,8 @@ const Stage = preload("res://src/stage.gd")
 const Pfx = preload("res://src/pfx.gd")
 const Drill = preload("res://src/drill.gd")
 const WMods = preload("res://src/wmods.gd")
+const Counter = preload("res://src/counter.gd")
+const Spire = preload("res://src/spire.gd")
 
 # The view. The HUD and menus are laid out on a 480 x 270 sheet (UW x UH) that sits in the
 # middle of the screen; on a wider or taller screen the world simply shows more (VW x VH)
@@ -53,7 +55,7 @@ var hud_edge = 0.0
 var tut = {}  # the first lesson, see tutor.gd
 var drill = {}  # the Training Grounds, see drill.gd
 const TS = 16
-const LAST_FLOOR = 5
+const LAST_FLOOR = 7
 const BDEF = {team = 0, dmg = 1.0, el = "", r = 2.0, life = 1.5, pierce = 0, bounce = 0, aoe = 0.0, kind = "orb", lob = false}
 
 const POST = """
@@ -94,6 +96,8 @@ var state_t = 0.0
 var rng = RandomNumberGenerator.new()
 var time = 0.0
 var hitstop = 0.0
+var buzz_at = 0
+var hit_big = false # set while a gathered shot lands (src/counter.gd)
 var slowmo = 0.0    # seconds of slowed time left (a perfect release)
 var wx_depth = 0     # > 0 while weather (reactions, fields, storms, spells) is dealing damage
 var full_hit = false # set while a break lands, so it is not cut down
@@ -212,6 +216,7 @@ var drng = RandomNumberGenerator.new()
 var run_seed = 0
 var run_daily = false
 var run_heat = 0
+var run_mode = "" # "" or "rush" (four bosses in a row)
 var run_score = 0
 
 var world: Node2D
@@ -306,6 +311,7 @@ func _ready() -> void:
 	goto_title()
 
 func apply_opts() -> void:
+	rebuild_binds()
 	var o = Meta.S.opts
 	Sfx.set_volume(int(o.get("sfx", 4)) / 4.0, int(o.get("music", 4)) / 4.0)
 	if DisplayServer.get_name() != "headless":
@@ -341,6 +347,7 @@ func resume_run() -> void:
 	calc_stats()
 	run_seed = int(r.seed)
 	run_daily = bool(r.daily)
+	run_mode = str(r.get("mode", ""))
 	run_heat = int(r.heat)
 	floor_i = int(r.floor)
 	kills = int(r.kills)
@@ -531,6 +538,8 @@ func end_run(won: bool) -> void:
 	Meta.S.gems += gems_won
 	Meta.S.runs += 1
 	Meta.S.best = max(Meta.S.best, floor_i + 1)
+	if run_mode == "rush":
+		Meta.S.rush = maxi(int(Meta.S.get("rush", 0)), boss_kills)
 	if run_daily:
 		var dk = str(Meta.today())
 		Meta.S.daily[dk] = max(int(Meta.S.daily.get(dk, 0)), run_score)
@@ -561,9 +570,21 @@ func _input(ev: InputEvent) -> void:
 		return
 	if state in ["buff", "say"] and ev is InputEventKey and ev.pressed:
 		Wish.key_input(self, ev)
+	if ev is InputEventKey and ev.pressed and not ev.echo and bind_wait >= 0:
+		var code: int = ev.physical_keycode if ev.physical_keycode != KEY_NONE else ev.keycode
+		if code != KEY_ESCAPE:
+			set_bind(bind_wait, code)
+		bind_wait = -1
+		if state == "menu":
+			menu.rows = Lobby.rows(self, menu.kind)
+		Sfx.play("pick")
+		return
 	if ev is InputEventKey and ev.pressed and not ev.echo:
 		# an on-screen keyboard sends keys with no physical code
-		jp[ev.physical_keycode if ev.physical_keycode != KEY_NONE else ev.keycode] = true
+		var code: int = ev.physical_keycode if ev.physical_keycode != KEY_NONE else ev.keycode
+		if state == "play" and not bind_rev.is_empty():
+			code = int(bind_rev.get(code, code))
+		jp[code] = true
 		p1_pad = false
 	elif ev is InputEventMouseButton and ev.pressed:
 		jp["m%d" % ev.button_index] = true
@@ -578,7 +599,48 @@ func jpk(k) -> bool:
 func key(k: int) -> bool:
 	if cin != null:
 		return false
-	return sim.has(k) or Input.is_physical_key_pressed(k)
+	return sim.has(k) or Input.is_physical_key_pressed(phys(k))
+
+# ---- key rebinding (Settings > CONTROLS). Actions keep their default key as their name; the
+# key that really does it is in Meta.S.opts.binds. Only play reads the new keys: menus keep
+# the usual ones so a bad binding can always be undone.
+const BINDABLE = [["MOVE UP", KEY_W], ["MOVE LEFT", KEY_A], ["MOVE DOWN", KEY_S], ["MOVE RIGHT", KEY_D],
+	["DASH", KEY_SPACE], ["SKILL ONE", KEY_SHIFT], ["SKILL TWO", KEY_F], ["BURST", KEY_R], ["SWAP WEAPON", KEY_Q],
+	["INTERACT", KEY_E], ["ELEMENT ONE", KEY_1], ["ELEMENT TWO", KEY_2], ["ELEMENT THREE", KEY_3]]
+var bind_wait = -1   # the action waiting for a key
+var bind_rev = {}    # physical key -> action, or KEY_NONE for a default key given away
+
+func phys(k: int) -> int:
+	return int(Meta.S.opts.get("binds", {}).get(str(k), k))
+
+func rebuild_binds() -> void:
+	bind_rev = {}
+	var b: Dictionary = Meta.S.opts.get("binds", {})
+	for a in BINDABLE:
+		if b.has(str(a[1])):
+			if not bind_rev.has(a[1]):
+				bind_rev[a[1]] = KEY_NONE
+	for a in BINDABLE:
+		if b.has(str(a[1])):
+			bind_rev[int(b[str(a[1])])] = a[1]
+
+# Gives action k the physical key code; whoever had that key takes k's old one.
+func set_bind(k: int, code: int) -> void:
+	var b: Dictionary = Meta.S.opts.get("binds", {})
+	var old = phys(k)
+	for a in BINDABLE:
+		if a[1] != k and phys(a[1]) == code:
+			b[str(a[1])] = old
+	b[str(k)] = code
+	for a in BINDABLE:
+		if int(b.get(str(a[1]), a[1])) == a[1]:
+			b.erase(str(a[1]))
+	Meta.S.opts.binds = b
+	rebuild_binds()
+	Meta.save()
+
+func key_label(k: int) -> String:
+	return OS.get_keycode_string(phys(k)).to_upper()
 
 # Matches the layers to the real screen (called at boot and whenever the window changes).
 func fit() -> void:
@@ -975,8 +1037,9 @@ func net_snap(data: PackedByteArray) -> void:
 func net_event(kind: String, data: Dictionary) -> void:
 	Net.on_event(self, kind, data)
 
-func start_run(seed: int = 0, daily: bool = false) -> void:
+func start_run(seed: int = 0, daily: bool = false, mode: String = "") -> void:
 	in_lobby = false
+	run_mode = mode
 	rs = {}
 	tut = {}
 	make_player()
@@ -994,7 +1057,7 @@ func start_run(seed: int = 0, daily: bool = false) -> void:
 	if not daily:
 		Hub.apply_boons(self, More)
 	Meta.record("weapons", p.weapons[0].id)
-	floor_i = 0
+	floor_i = 1 if run_mode == "rush" else 0
 	kills = 0
 	boss_kills = 0
 	run_time = 0.0
@@ -1087,7 +1150,7 @@ func new_floor() -> void:
 	var bi = floor_i / 2
 	# the layout of a floor depends only on the run seed, so seeds can be shared
 	drng.seed = hash([run_seed, floor_i])
-	dg = Dungeon.generate(drng, floor_i, floor_i % 2 == 1 and drill.is_empty(), "clear" if not drill.is_empty() else Wx.weather_for(run_seed, floor_i), not drill.is_empty())
+	dg = Dungeon.generate(drng, floor_i, floor_i % 2 == 1 and drill.is_empty(), "clear" if not drill.is_empty() else Wx.floor_weather(run_seed, floor_i, run_daily), not drill.is_empty(), run_mode == "rush")
 	dg.boss_id = D.BIOMES[bi].bosses[drng.randi() % D.BIOMES[bi].bosses.size()]
 	rebake()
 	props = dg.props
@@ -1157,12 +1220,13 @@ func new_floor() -> void:
 	cam = players[me].pos
 	fade = 1.0
 	banner = {text = D.BIOMES[bi].name, sub = "FLOOR %d-%d" % [bi + 1, floor_i % 2 + 1] + Wx.sub(self), t = 3.2 if Wx.sub(self) == "" else 4.5}
-	Sfx.play_music(bi)
+	Counter.floor_start(self)
+	Sfx.play_music(Sfx.biome_track(bi))
 	if net.mode == "host" and players.size() > 1 and players[1].get("remote", false):
-		rpc("net_event", "floor", {floor = floor_i, boss = dg.boss_id})
+		rpc("net_event", "floor", {floor = floor_i, boss = dg.boss_id, daily = run_daily, mode = run_mode})
 	# solo runs are saved at the start of every floor after the first
 	if players.size() == 1 and net.mode == "" and floor_i > 0:
-		Meta.S.run = {seed = run_seed, daily = run_daily, heat = run_heat, floor = floor_i, kills = kills, bk = boss_kills, time = run_time, player = var_to_str(players[0])}
+		Meta.S.run = {seed = run_seed, daily = run_daily, mode = run_mode, heat = run_heat, floor = floor_i, kills = kills, bk = boss_kills, time = run_time, player = var_to_str(players[0])}
 		Meta.save()
 
 func random_weapon() -> Dictionary:
@@ -1257,7 +1321,7 @@ func pick_buff(i: int) -> void:
 	buff_turn = 0
 	Sfx.play("pick")
 	if not buff_stay:
-		floor_i += 1
+		floor_i += 2 if run_mode == "rush" else 1
 		new_floor()
 	set_state("play")
 
@@ -1786,7 +1850,7 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 					dmg = w.dmg, el = el, r = float(w.get("r", 2)), life = w.get("life", 1.4),
 					pierce = w.get("pierce", 0) + st.pierce, bounce = w.get("bounce", 0) + st.bounce,
 					aoe = w.get("aoe", 0.0), kind = w.get("kind", "orb"),
-					homing = w.get("homing", 0.0), boomer = w.get("boomer", false), zap = w.get("zap", false)})
+					homing = w.get("homing", 0.0), boomer = w.get("boomer", false), zap = w.get("zap", false), kb = kb_of(w), big = float(p.get("wk", 0.0)) >= 0.5})
 			if w.get("kind", "") != "flame":
 				burst(origin, 3, col, 50.0, 0.15)
 				Fx.muzzle(self, origin, dir, el)
@@ -1802,7 +1866,7 @@ func fire_weapon(w: Dictionary, el: String, origin: Vector2, dir: Vector2) -> vo
 					continue
 				var d = center(e) - pc
 				if d.length() < rg + e.hr and (d.length() < 10.0 or absf(angle_difference(dir.angle(), d.angle())) < w.arc / 2.0):
-					hurt_enemy(e, w.dmg, el, d.normalized() * 140.0)
+					hurt_enemy(e, w.dmg, el, d.normalized() * maxf(140.0, kb_of(w)))
 					struck += 1
 			for b in bullets:
 				if b.team == 1 and not b.lob:
@@ -2255,7 +2319,7 @@ func clear_room(r: Dictionary) -> void:
 		inter.append({kind = "chest", pos = c + Vector2(-40, 10), loot = "weapon", open = false})
 		inter.append({kind = "chest", pos = c + Vector2(40, 10), loot = "reward", open = false})
 		drop("heart", c, 1)
-		Sfx.play_music(floor_i / 2)
+		Sfx.play_music(Sfx.biome_track(floor_i / 2))
 	else:
 		var cp = c
 		if solid_at(cp.x, cp.y):
@@ -2545,6 +2609,7 @@ func boss_ai(e: Dictionary, dt: float, dir: Vector2) -> void:
 		1: boss_tyrant(e, rage)
 		2: boss_lich(e, rage)
 		3, 4, 5: Ext.boss(self, e, rage, dir)
+		9: Spire.boss(self, e, rage, dir)
 		_: Foes.boss(self, e, rage, dir)
 
 func tele_circle(pos: Vector2, r: float, dur: float) -> void:
@@ -2719,9 +2784,14 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 	if weather and not full_hit and e.d.ai != "dummy":
 		amt *= D.INF.passive
 	amt = Stage.amount(self, e, amt, rel_hit)
+	amt = Counter.amount(self, e, amt, weather, Counter.big_hit(self, rel_hit))
+	if e.id == Spire.ID:
+		amt = Spire.amount(self, e, amt)
 	e.hp -= amt
-	e.flash = 0.1
-	if not e.is_boss:
+	e.flash = maxf(e.flash, 0.1)
+	if el != "":
+		e.last_el = el
+	if not e.is_boss and e.get("ctr", "") != "anchor":
 		e.kb += kb
 	var c: Color = col if col != null else D.EL_COL[el]
 	num(center(e) + Vector2(rng.randf_range(-5, 5), -e.h2 - 4.0), str(max(1, int(round(amt)))) + ("!" if crit else ""), c, crit)
@@ -2886,8 +2956,12 @@ func kill(e: Dictionary) -> void:
 		p.skill_cd = maxf(0.0, p.skill_cd - 0.4)
 		p.skill2_cd = maxf(0.0, p.skill2_cd - 0.4)
 	var c = center(e)
-	burst(c, 12, e.col, 90.0, 0.5)
+	burst(c, 8, e.col, 90.0, 0.5)
 	burst(c, 5, Color.WHITE, 60.0, 0.3)
+	var del: String = e.get("last_el", "")
+	if del == "" and not e.st.is_empty():
+		del = e.st.keys()[0]
+	Fx.death(self, e, del)
 	Sfx.play("die")
 	shake_add(2.0)
 	var d = e.d
@@ -2917,6 +2991,7 @@ func kill(e: Dictionary) -> void:
 		boss_kills += 1
 		hitstop = 0.25
 		shake_add(10.0)
+		buzz(260, 1.0)
 		Sfx.play("boom")
 		banner = {text = d.name, sub = "DEFEATED", t = 3.0}
 		drop("coin", c, 25)
@@ -2975,6 +3050,7 @@ func hurt_player(dmg: int, el: String = "") -> void:
 	p.ar_t = 3.5
 	p.flash = 0.2
 	dmg_flash = 1.0 if d > 0 else 0.5
+	buzz(110 if d > 0 else 50, 0.8 if d > 0 else 0.4)
 	tip("armor", "ARMOR GROWS BACK", "AVOID HITS FOR A FEW SECONDS. HEALTH DOES NOT.")
 	shake_add(5.0)
 	hitstop = maxf(hitstop, 0.05)
@@ -3169,7 +3245,9 @@ func update_bullets(dt: float) -> void:
 				if Geometry2D.get_closest_point_to_segment(ec, prev, np).distance_squared_to(ec) < rr * rr:
 					rel_hit = b.has("inf")
 					rel_shape = b.get("inf_sh", "")
-					hurt_enemy(e, b.dmg, b.el, b.vel.normalized() * 90.0)
+					hit_big = b.get("big", false)
+					hurt_enemy(e, b.dmg, b.el, b.vel.normalized() * float(b.get("kb", 90.0)))
+					hit_big = false
 					rel_hit = false
 					rel_shape = ""
 					if b.has("inf"):
@@ -3280,6 +3358,20 @@ func bolt(a: Vector2, b: Vector2, col: Color) -> void:
 
 func flash(pos: Vector2, r: float, col: Color, dur: float) -> void:
 	flashes.append({pos = pos, r = r, col = col, t = dur, max = dur})
+
+# How hard a weapon's hit pushes: slow, heavy weapons push more. A weapon may set its own "kb".
+func kb_of(w: Dictionary) -> float:
+	return float(w.get("kb", clampf(40.0 + float(w.cd) * 180.0, 50.0, 200.0)))
+
+# A short rumble on phones and gamepads; it follows the screen shake setting.
+func buzz(ms: int, amp: float = 0.5) -> void:
+	if not Meta.S.opts.get("shake", true) or Time.get_ticks_msec() - buzz_at < 70:
+		return
+	buzz_at = Time.get_ticks_msec()
+	if OS.has_feature("mobile"):
+		Input.vibrate_handheld(ms, amp)
+	for j in Input.get_connected_joypads():
+		Input.start_joy_vibration(j, amp * 0.6, amp, ms / 1000.0)
 
 func cam_kick(v: Vector2) -> void:
 	if Meta.S.opts.get("shake", true):
@@ -3633,6 +3725,7 @@ func draw_enemy(ci: CanvasItem, e: Dictionary) -> void:
 		ci.draw_line(Vector2(e.pos.x - 4.0, cy), Vector2(e.pos.x, cy - 3.0), Color(1, 1, 1, 0.8), 1.0)
 		ci.draw_line(Vector2(e.pos.x, cy - 3.0), Vector2(e.pos.x + 4.0, cy), Color(1, 1, 1, 0.8), 1.0)
 	Twist.draw_foe(self, ci, e, topy)
+	Spire.draw_foe(self, ci, e)
 	Stage.draw_foe(self, ci, e, topy)
 	if e.elite:
 		ci.draw_arc(e.pos + Vector2(0, e.r - 1.0), e.r * 2.0 + sin(time * 5.0), 0.0, TAU, 18, Color(1.0, 0.82, 0.3, 0.8), 1.0)

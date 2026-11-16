@@ -313,3 +313,47 @@ static func shape(ci: CanvasItem, pts: Array, col: Color) -> void:
 	for i in pts.size():
 		cs.append(col)
 	ci.draw_primitive(PackedVector2Array(pts), cs, PackedVector2Array())
+
+# ---- deaths ----------------------------------------------------------------------
+
+# How a foe goes depends on the element that finished it (owner, 2026-11-16): fire leaves
+# ash and embers, ice shatters, storm crackles apart, venom melts into a puddle, and so on.
+static func death(g, e: Dictionary, el: String) -> void:
+	var c: Vector2 = g.center(e)
+	var big = 1.6 if e.is_boss else (1.25 if e.elite else 1.0)
+	var n = int(8 * big)
+	match el:
+		"fire":
+			for i in n:
+				part(g, c + rv(g, 5.0), Vector2(g.rng.randf_range(-20, 20), g.rng.randf_range(-70, -30)), g.rng.randf_range(0.4, 0.8), Color("ffd24a") if i % 3 else Color("fff2ae"), 1, -20.0)
+			for i in n / 2:
+				part(g, c + rv(g, 4.0), Vector2(g.rng.randf_range(-8, 8), -18), 0.9, Color(0.35, 0.32, 0.36, 0.8), 2)
+			g.flash(c, 40.0 * big, Color("f2812f"), 0.25)
+		"ice", "water":
+			var sc: Color = Color("c6f4ff") if el == "ice" else Color("5fb8ff")
+			for i in n + 4:
+				var a = i * TAU / float(n + 4) + g.rng.randf() * 0.4
+				part(g, c, Vector2.from_angle(a) * g.rng.randf_range(70.0, 150.0) + Vector2(0, -30), 0.45, Color.WHITE if i % 3 == 0 else sc, 2, 260.0)
+			Sfx.play("freeze" if el == "ice" else "shoot_water", 1.4, -4.0)
+		"bolt", "light":
+			for i in 4:
+				var a = i * TAU / 4.0 + g.rng.randf()
+				g.bolts.append({a = c, b = c + Vector2.from_angle(a) * (14.0 + 8.0 * big), col = D.EL_COL[el], t = 0.14, straight = false})
+			g.flash(c, 46.0 * big, D.EL_COL[el], 0.2)
+		"tox", "void":
+			var tc: Color = D.EL_COL[el]
+			for i in n:
+				part(g, c + Vector2(g.rng.randf_range(-6, 6), 2), Vector2(g.rng.randf_range(-30, 30), g.rng.randf_range(-10, 10)), 0.7, tc, 2, 0.0)
+			for i in 3:
+				part(g, c + rv(g, 5.0), Vector2(0, -12), 0.9, Color(tc.r, tc.g, tc.b, 0.6), 2, -15.0)
+			g.rings.append({pos = e.pos + Vector2(0, e.r), r = 12.0 * big, t = 0.0, col = tc})
+		"stone", "earth", "metal", "mech":
+			for i in n:
+				part(g, c + rv(g, 3.0), Vector2(g.rng.randf_range(-70, 70), g.rng.randf_range(-110, -50)), 0.6, D.EL_COL[el] if i % 2 else Color("8a7f74"), 2, 320.0)
+			g.shake_add(1.5)
+		"wind", "leaf", "wood":
+			for i in n:
+				var a = i * TAU / float(n)
+				part(g, c + Vector2.from_angle(a) * 4.0, Vector2.from_angle(a + 1.3) * 70.0, 0.55, D.EL_COL[el], 1 + i % 2, -10.0)
+		_:
+			pass

@@ -34,7 +34,7 @@ const REACT_HELP = [
 	["ice", "tox", "BLIGHT - LEAVES ROT: +50% DAMAGE TAKEN"],
 	["bolt", "tox", "PLAGUE - LEAVES MIASMA: POISONS ALL"],
 ]
-const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "bench": "WORKBENCH", "prep": "QUARTERMASTER", "book": "ALCHEMY NOTEBOOK", "spell": "SKILL TRAINING"}
+const MENU_TITLE = {"tree": "SKILL TREE", "armor": "HERO UPGRADES", "beast": "PETS AND MOUNTS", "fuse": "SOUL ALTAR", "loom": "SOUL LOOM", "board": "RUN BOARD", "codex": "ARCHIVE", "garden": "GARDEN", "coop": "CO-OP", "quest": "BOUNTY BOARD", "trophy": "TROPHY CASE", "armory": "QUARTERMASTER", "brew": "KITCHEN", "tailor": "TAILOR", "opts": "SETTINGS", "keys": "CONTROLS", "bench": "WORKBENCH", "prep": "QUARTERMASTER", "book": "ALCHEMY NOTEBOOK", "spell": "SKILL TRAINING"}
 
 static func buff_rect(i: int, n: int = 3) -> Rect2:
 	if n >= 4:
@@ -44,6 +44,8 @@ static func buff_rect(i: int, n: int = 3) -> Rect2:
 static func menu_rect(kind: String, i: int) -> Rect2:
 	if kind == "tree":
 		return Rect2(98 + (i / 3) * 98, 80 + (i % 3) * 40, 88, 30)
+	if kind == "keys":
+		return Rect2(100 + (i % 2) * 142, 52 + (i / 2) * 20, 138, 18)
 	return Rect2(100, 52 + i * 21, 280, 20)
 
 static func Hud_self():
@@ -388,7 +390,7 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		Px.text(ci, Vector2(5, 249), Hub.boon_text(), Color("a6e84e"))
 	else:
 		var bi = g.floor_i / 2
-		Px.text(ci, Vector2(5, 259), "%s %d-%d" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1] + ("" if Wx.now(g) == "clear" else "  " + Wx.NAME[Wx.now(g)]), DIM)
+		Px.text(ci, Vector2(5, 259), "%s %d-%d" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1] + ("" if Wx.now(g) == "clear" else "  " + Wx.NAME[Wx.now(g)]) + ("" if g.Counter.now(g) == "" else "  " + g.Counter.KIND[g.Counter.now(g)][0]), DIM)
 
 	ci.draw_set_transform(Vector2.ZERO)
 	if g.boss != null:
@@ -550,6 +552,8 @@ static func draw_menu(g, ci: CanvasItem) -> void:
 				Px.text(ci, Vector2(r.end.x - 23, r.position.y + 6), stx[0], stx[1])
 			else:
 				Px.text(ci, Vector2(r.end.x - 6 - Px.width(stx[0]), r.position.y + 6), stx[0], stx[1])
+	if kind == "keys":
+		Px.ctext(ci, Vector2(240, 210), "CHOOSE AN ACTION, THEN PRESS ITS NEW KEY. ESC KEEPS THE OLD ONE", PALE)
 	if g.menu.msg != "":
 		Px.ctext(ci, Vector2(240, 224), g.menu.msg, Color("ff6a6a"))
 	Px.ctext(ci, Vector2(240, 235), "TAP TO CHOOSE   TAP AGAIN TO CONFIRM   X CLOSES" if g.tin.on else g.Pad.hint(g, "W/S CHOOSE   ENTER OR CLICK CONFIRM   ESC CLOSE"), DIM)
@@ -592,7 +596,7 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 		Px.ctext(ci, Vector2(240, 64 + rows.size() * 26 + 6), rows[g.pause_sel][2], DIM)
 		if not g.in_lobby:
 			var bi = g.floor_i / 2
-			Px.ctext(ci, Vector2(240, 232), "%s %d-%d   SEED %d   HEAT %d%s" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1, g.run_seed, g.run_heat, "   DAILY" if g.run_daily else ""], DIM)
+			Px.ctext(ci, Vector2(240, 232), "%s %d-%d   SEED %d   HEAT %d%s" % [D.BIOMES[bi].name, bi + 1, g.floor_i % 2 + 1, g.run_seed, g.run_heat, ("   DAILY" if g.run_daily else "") + ("   BOSS RUSH" if g.run_mode == "rush" else "")], DIM)
 		Px.ctext(ci, Vector2(240, 246), "TAP A ROW" if g.tin.on else g.Pad.hint(g, "W/S CHOOSE   ENTER CONFIRM   ESC RESUME"), DIM)
 		return
 	Px.ctext(ci, Vector2(240, 18), "GUIDE", GOLD, 3)
@@ -633,7 +637,7 @@ static func draw_pause(g, ci: CanvasItem) -> void:
 			Px.text(ci, Vector2(320, y2), "* " + s.name, GOLD)
 			y2 += 10
 	if not g.in_lobby:
-		Px.text(ci, Vector2(30, 248), "SEED %d   HEAT %d%s" % [g.run_seed, g.run_heat, "   DAILY" if g.run_daily else ""], DIM)
+		Px.text(ci, Vector2(30, 248), "SEED %d   HEAT %d%s" % [g.run_seed, g.run_heat, ("   DAILY" if g.run_daily else "") + ("   BOSS RUSH" if g.run_mode == "rush" else "")], DIM)
 	Px.ctext(ci, Vector2(240, 170), g.Pad.hint(g, "WASD MOVE   MOUSE AIM   LMB FIRE   SPACE DASH   Q SWAP   E USE"), PALE)
 	Px.ctext(ci, Vector2(240, 182), g.Pad.hint(g, "RMB SKILL ONE   F SKILL TWO   R ELEMENTAL BURST WHEN CHARGED"), PALE)
 	Px.ctext(ci, Vector2(240, 200), "THE FOES LEARN. CUNNING %d%%. THEY LEAD THEIR SHOTS %d%% OF THE TIME." % [int(Meta.cunning() * 100.0), int(Meta.lead_share() * 100.0)], Color("ff8a6a"))

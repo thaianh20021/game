@@ -15,6 +15,7 @@ extends RefCounted
 const D = preload("res://src/data.gd")
 const Sfx = preload("res://src/sfx.gd")
 const Px = preload("res://src/font.gd")
+const Counter = preload("res://src/counter.gd")
 
 const GOAL = {
 	"hold": ["HOLD THE CIRCLE", "STAND IN IT UNTIL IT FILLS"],
@@ -42,6 +43,7 @@ static func mark(g, e: Dictionary) -> void:
 		return
 	if e.is_boss or e.d.ai == "dummy" or g.in_lobby:
 		return
+	Counter.mark(g, e)
 	if e.elite:
 		if g.lock != null and g.lock.get("sc", "") == "champion":
 			var ks = AFFIX.keys()
@@ -140,6 +142,9 @@ static func amount(g, e: Dictionary, amt: float, rel: bool) -> float:
 
 # Per-foe upkeep, every frame (before the foe acts).
 static func tick_foe(g, e: Dictionary, dt: float) -> void:
+	Counter.tick(g, e, dt)
+	if e.is_boss:
+		g.Spire.tick(g, e, dt)
 	if e.has("slam_cd"):
 		e.slam_cd -= dt
 	if e.has("brk"):
@@ -147,7 +152,7 @@ static func tick_foe(g, e: Dictionary, dt: float) -> void:
 		if e.brk <= 0.0:
 			e.erase("brk")
 			e.arm_t = D.STAGE.arm_back
-	if e.is_boss and e.d.ai != "dummy" and not e.get("nem", false) and not e.has("sealed") and e.hp < e.mhp * 0.5 and e.hp > 0.0 and not g.in_lobby:
+	if e.is_boss and e.d.ai != "dummy" and not e.get("nem", false) and e.id != g.Spire.ID and not e.has("sealed") and e.hp < e.mhp * 0.5 and e.hp > 0.0 and not g.in_lobby:
 		# half way down it seals itself: only the asked release breaks the seal early
 		e.sealed = true
 		e.seal = "pure" if g.rng.randf() < 0.5 else "trinity"
@@ -450,6 +455,7 @@ static func draw(g, ci: CanvasItem) -> void:
 		ci.draw_rect(Rect2(c + Vector2.from_angle(a) * rad - Vector2(1, 1), Vector2(2, 2)), Color(1.0, 0.9, 0.6, 0.8))
 
 static func draw_foe(g, ci: CanvasItem, e: Dictionary, topy: float) -> void:
+	Counter.draw_foe(g, ci, e, topy)
 	var c: Vector2 = g.center(e)
 	if e.get("courier", false):
 		var y = topy - 10.0 + sin(g.time * 8.0) * 1.5

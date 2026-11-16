@@ -56,7 +56,7 @@ func _init():
 		mechs[o.traits[0]] = true
 	check(mechs.size() == 3 and mechs.keys().all(func(m): return g.WMods.NEW.has(m)), "each offers a different new mechanic: " + str(mechs.keys()))
 	check(opts[0].id == "pistol" and opts[1].id == "blade" and not (opts[2].id in ["pistol", "blade"]), "shaped after the one in hand, the other, and a third kind: " + str(opts.map(func(o): return o.id)))
-	check(opts.all(func(o): return o.pow >= 1.3 and int(o.lv) == 2 and o.has("fname")), "all stronger, a level more, named")
+	check(opts.all(func(o): return o.pow >= (1.3 if o.traits.size() == 1 else D.WMOD.twin_pow[0]) and int(o.lv) == 2 and o.has("fname")), "all stronger, a level more, named")
 	await frames(12)
 	if vis:
 		var im = root.get_texture().get_image()
@@ -91,6 +91,34 @@ func _init():
 		g._input(ev)
 		await frames(2)
 	check(g.state == "play" and g.p.weapons[0] == popts[2] and int(g.p.weapons[0].lv) == 3, "the pad picks and forges")
+	# now and then a fusion with two mechanics, for a smaller bonus
+	g.p.weapons = [{id = "pistol", el = "tox", el2 = "", lv = 1}, {id = "blade", el = "", el2 = "", lv = 0}]
+	var twins = 0
+	for i in 80:
+		for o in Forge.options(g):
+			if o.traits.size() == 2:
+				twins += 1
+				check(o.traits[0] != o.traits[1] and o.pow <= D.WMOD.twin_pow[1] and o.fname.begins_with("TWIN"), "a twin has two different mechanics: " + str(o.traits))
+			check(o.traits.size() <= 2, "never more than two")
+	check(twins > 5 and twins < 60, "twins are uncommon: %d of 80" % twins)
+	# the fourth choice: keep both, take materials, once per forge
+	g.p.gold = 100
+	var ore = Meta.mat("ore")
+	var sc0 = int(Meta.S.scrap)
+	var altar = {kind = "fuse", pos = g.p.pos}
+	g.interact(altar)
+	await frames(8)
+	g.jp[KEY_4] = true
+	await frames(3)
+	check(g.state == "play" and g.p.weapons[1] != null and g.p.gold == 100, "salvage keeps both weapons and the gold")
+	check(Meta.mat("ore") == ore + D.WMOD.salvage_mat and int(Meta.S.scrap) == sc0 + D.WMOD.salvage_scrap, "and gives materials")
+	g.interact(altar)
+	await frames(8)
+	g.jp[KEY_4] = true
+	await frames(3)
+	check(Meta.mat("ore") == ore + D.WMOD.salvage_mat, "only once per forge")
+	if g.state == "forge":
+		Forge.close(g)
 	# empty command still gives something stronger
 	g.p.weapons = [{id = "bow", el = "fire", el2 = "", lv = 0}, {id = "coil", el = "bolt", el2 = "", lv = 0}]
 	var r = Forge.build(g, "", [])

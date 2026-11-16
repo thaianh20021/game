@@ -118,6 +118,10 @@ const HAND = {
 		"b": {5: "...rrrokkorrrrokkorrr..."},
 		"l": {0: ".yy..................yy.", 5: "...rrrowyorrrrowyorrr...", 10: ".....RkkkkkkkkkkkkR.....", 11: ".....RkyoyoyoyoyokR....."},
 	},
+	"loom_b": {
+		"b": {9: "yYykGk.bwCkwwkCwb.kGkyYy"},
+		"l": {3: "...kGkcC..C..C..Cc.kGk..", 8: "yy.kGk.bwCwwwwCwb.kGk.yy", 9: "yYykGk.bwCwyywCwb.kGkyYy", 10: "yy.kGk.bwCwwwwCwb.kGk.yy"},
+	},
 	"sentinel_b": {
 		"b": {10: "....gGGkmmmmmmmmkGGg...."},
 		"l": {3: "....C...cCwwwwCc...C....", 4: "...CwC.cCwwwwwwCc.CwC...", 9: "....gGGkkmYYYYmkkGGg....", 10: "....gGGkmYwwwwYmkGGg....", 11: "....gGGkkmYYYYmkkGGg....", 15: ".pPp....bBwwwwBb....yYy."},

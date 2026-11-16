@@ -135,6 +135,9 @@ static func options(g) -> Array:
 		if mech[i] == "charge" and D.WEAPONS[ids[i]].type == "beam":
 			mech[i] = mech[3]
 			mech[3] = "charge"
+	# now and then one fusion carries two mechanics, at a lower damage bonus
+	var twin = rng.randf() < D.WMOD.twin
+	var ti = rng.randi() % 3
 	var out = []
 	for i in 3:
 		var base: String = ids[i]
@@ -147,7 +150,31 @@ static func options(g) -> Array:
 			"pow": snappedf(rng.randf_range(1.3, 1.6), 0.01),
 			"fname": PREFIX[rng.randi() % PREFIX.size()] + " " + D.WEAPONS[base].name,
 		})
+		if twin and i == ti:
+			var m2: String = mech[3] if not (mech[3] == "charge" and D.WEAPONS[base].type == "beam") else mech[4]
+			out[i].traits.append(m2)
+			out[i].pow = snappedf(rng.randf_range(D.WMOD.twin_pow[0], D.WMOD.twin_pow[1]), 0.01)
+			out[i].fname = "TWIN " + D.WEAPONS[base].name
 	return out
+
+const SALVAGE = Rect2(110, 222, 260, 13)
+
+# Fourth choice: keep both weapons and take materials instead. Once per forge.
+static func salvage(g) -> void:
+	var f = g.forge
+	var p = g.p
+	if f.it != null and f.it.get("salv", false):
+		Sfx.play("deny")
+		return
+	if f.it != null:
+		f.it.salv = true
+	for k in ["ore", "ess", "fib"]:
+		g.Meta.add_mat(k, D.WMOD.salvage_mat)
+	g.Meta.S.scrap = int(g.Meta.S.scrap) + D.WMOD.salvage_scrap
+	close(g)
+	g.label(p.pos + Vector2(0, -24), "+%d ORE ESSENCE FIBER  +%d SCRAP" % [D.WMOD.salvage_mat, D.WMOD.salvage_scrap], Color("ffd24a"))
+	Sfx.play("pick")
+	g.burst(p.pos + Vector2(0, -8), 12, Color("c9b27a"), 80.0, 0.5)
 
 static func card_rect(i: int) -> Rect2:
 	return Rect2(240.0 - CARD_W * 1.5 - 4.0 + i * (CARD_W + 4.0), 52, CARD_W, 168)
@@ -186,6 +213,12 @@ static func update(g) -> void:
 					JOY_BUTTON_DPAD_RIGHT:
 						f.sel = (f.sel + 1) % 3
 						Sfx.play("ui")
+					JOY_BUTTON_DPAD_DOWN:
+						f.sel = 3
+						Sfx.play("ui")
+					JOY_BUTTON_DPAD_UP:
+						f.sel = 0 if f.sel == 3 else f.sel
+						Sfx.play("ui")
 					JOY_BUTTON_A, JOY_BUTTON_START:
 						confirm(g, f.sel)
 						return
@@ -203,14 +236,24 @@ static func update(g) -> void:
 			if g.jpk("m1"):
 				confirm(g, i)
 				return
-	for i in 3:
+	if SALVAGE.has_point(m):
+		if not g.tin.on:
+			f.sel = 3
+		if g.jpk("m1"):
+			confirm(g, 3)
+			return
+	for i in 4:
 		if g.jpk(KEY_1 + i):
 			confirm(g, i)
 			return
+	if g.jpk(KEY_DOWN) or g.jpk(KEY_S):
+		f.sel = 3
+	elif (g.jpk(KEY_UP) or g.jpk(KEY_W)) and f.sel == 3:
+		f.sel = 0
 	if g.jpk(KEY_LEFT) or g.jpk(KEY_A):
-		f.sel = (f.sel + 2) % 3
+		f.sel = (f.sel + 2) % 3 if f.sel < 3 else 0
 	elif g.jpk(KEY_RIGHT) or g.jpk(KEY_D):
-		f.sel = (f.sel + 1) % 3
+		f.sel = (f.sel + 1) % 3 if f.sel < 3 else 2
 	if g.jpk(KEY_ESCAPE):
 		close(g)
 	elif g.jpk(KEY_ENTER) or g.jpk(KEY_KP_ENTER) or g.jpk(KEY_SPACE):
@@ -255,6 +298,9 @@ static func confirm(g, i: int = 0) -> void:
 	var f = g.forge
 	g.bind(g.players[mini(int(f.idx), g.players.size() - 1)])
 	var p = g.p
+	if i == 3:
+		salvage(g)
+		return
 	if p.weapons[1] == null or p.gold < COST:
 		close(g)
 		return
@@ -293,12 +339,17 @@ static func draw(g, ci: CanvasItem, Hud) -> void:
 		ci.draw_texture_rect(t, Rect2((r.position + Vector2(r.size.x / 2.0, 14) - t.get_size() * sc / 2.0).round(), t.get_size() * sc), false)
 		Px.text(ci, r.position + Vector2(4, 4), str(i + 1), Color("ffd24a") if on else Color("6b6779"))
 		var mech: String = w.traits[0]
-		Px.ctext(ci, r.position + Vector2(r.size.x / 2.0, 28), Arms.TRAIT_NAME[mech], Color("ffd24a"))
+		Px.ctext(ci, r.position + Vector2(r.size.x / 2.0, 28), " + ".join(w.traits.map(func(t): return Arms.TRAIT_NAME[t])), Color("ffd24a") if w.traits.size() == 1 else Color("ff9ee0"))
+		g.Counter.draw_fit(g, ci, Vector2(r.position.x + r.size.x / 2.0, r.end.y - 10.0), w.traits)
 		var y = r.position.y + 38.0
 		for l in g.Ext.wcard(g, w, g.p.weapons[g.p.wi], 24):
-			if y > r.end.y - 8.0:
+			if y > r.end.y - 18.0:
 				break
 			Px.text(ci, Vector2(r.position.x + 4, y), l[0], l[1])
 			y += 9.0
-	var how = "TAP A CARD TO FORGE IT" if g.tin.on else ("D-PAD TO CHOOSE, A TO FORGE, B TO LEAVE" if g.p1_pad else "1 2 3 OR CLICK TO FORGE, ESC TO LEAVE")
-	Px.ctext(ci, Vector2(240, 228), how, Color("6b6779"))
+	var how = "TAP A CARD TO FORGE IT" if g.tin.on else ("D-PAD TO CHOOSE (DOWN: SALVAGE), A TO FORGE, B TO LEAVE" if g.p1_pad else "1 2 3 OR CLICK TO FORGE, 4 TO SALVAGE, ESC TO LEAVE")
+	var son = f.sel == 3
+	var taken = f.it != null and f.it.get("salv", false)
+	Hud.panel(ci, SALVAGE, Color(0.12, 0.08, 0.2, 0.97) if son else Color(0.07, 0.05, 0.12, 0.95), Color("ffd24a") if son else Color("6b6779"))
+	Px.ctext(ci, SALVAGE.position + Vector2(SALVAGE.size.x / 2.0, 3), "4  SALVAGE: KEEP BOTH, TAKE MATERIALS" if not taken else "SALVAGE TAKEN AT THIS FORGE", Color("d9d4c7") if not taken else Color("6b6779"))
+	Px.ctext(ci, Vector2(240, 242), how, Color("6b6779"))

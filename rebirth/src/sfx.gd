@@ -74,6 +74,12 @@ const DEFS = {
 	"fx_bless": [0.40, 900.0, 1800.0, 2, 0.22, 0.05],
 	"fx_hex": [0.30, 260.0, 140.0, 0, 0.20, 0.35],
 	"fx_summon": [0.40, 420.0, 1400.0, 2, 0.26, 0.2],
+	# weapon mechanics (src/wmods.gd)
+	"gather": [0.07, 300.0, 420.0, 0, 0.14, 0.05],
+	"gshot": [0.34, 260.0, 55.0, 1, 0.55, 0.55],
+	"thud": [0.16, 95.0, 38.0, 2, 0.80, 0.35],
+	"chirp": [0.08, 1900.0, 2700.0, 2, 0.20, 0.0],
+	"rally": [0.06, 700.0, 1050.0, 0, 0.15, 0.0],
 }
 
 static func init(host: Node) -> void:
@@ -131,7 +137,10 @@ static func play(name: String, pitch: float = 1.0, db: float = 0.0) -> void:
 	a.volume_db = db - 7.0 + linear_to_db(vol_sfx)
 	a.play()
 
-# track: 0..2 biomes, 3 boss, 4 title
+# track: 0..2 biomes, 3 boss, 4 title, 5 the fourth biome
+static func biome_track(bi: int) -> int:
+	return bi if bi < 3 else 5
+
 static func play_music(track: int) -> void:
 	if track == cur_track or music == null:
 		return
@@ -143,11 +152,13 @@ static func play_music(track: int) -> void:
 
 static func gen_music(track: int) -> AudioStreamWAV:
 	var R = 11025.0
-	var bpm = [92.0, 104.0, 98.0, 138.0, 78.0][track]
-	var root = [45, 43, 47, 45, 50][track]
+	var bpm = [92.0, 104.0, 98.0, 138.0, 78.0, 112.0][track]
+	var root = [45, 43, 47, 45, 50, 44][track]
 	var prog = [[0, 3], [-4, 4], [3, 4], [-2, 4]]
 	if track == 3:
 		prog = [[0, 3], [0, 3], [1, 4], [-2, 4]]
+	if track == 5:
+		prog = [[0, 3], [-5, 4], [-2, 4], [-7, 3]]
 	if track == 2:
 		prog = [[0, 3], [5, 3], [-4, 4], [-2, 4]]
 	var brh = [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0]
