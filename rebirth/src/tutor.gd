@@ -55,7 +55,7 @@ static func finish(g, skipped: bool) -> void:
 		Meta.S["tut"] = true
 		if not skipped:
 			Meta.S.gems += 10
-			g.banner = {text = "LESSON LEARNED", sub = "+10 GEMS. THE GATE IS AT THE TOP OF THE HEARTH.", t = 4.0}
+			g.banner = {text = "LESSON LEARNED", sub = "+10 GEMS. NEXT: TRAINING GROUNDS, IN THE PAUSE MENU.", t = 4.0}
 		Meta.save()
 	Sfx.play("chest" if not skipped else "ui")
 

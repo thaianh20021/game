@@ -301,6 +301,8 @@ static func rows(g, kind: String) -> Array:
 				fn = func():
 					g.set_state("play")
 					g.Tutor.start(g)})
+			rs.append({name = "TRAINING GROUNDS", desc = "SIX ROOMS THAT TEACH CHARGING, RELEASES, WARDS, MIRRORS AND BOSSES", cost = 0, state = "owned", tag = "START",
+				fn = func(): g.Drill.start(g)})
 		return rs
 	if Hub.KINDS.has(kind):
 		return Hub.rows(g, kind)
