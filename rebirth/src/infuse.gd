@@ -27,6 +27,12 @@ const RULE = {
 	"bullet": ["HORN CHARGE", "THE RELEASE IS A VOLLEY, THEN YOU FIRE FASTER FOR A WHILE."],
 }
 
+# Rarity of the weapon in hand: 0 common, 1 rare, 2 epic, 3 legend.
+static func tier(p: Dictionary) -> int:
+	return int(D.WEAPONS[p.weapons[p.wi].id].rar)
+
+const TIER_TEXT = ["", "RARE: ARMED LASTS LONGER", "EPIC: ARMING KEEPS SOME MANA, THE RELEASE ADDS YOUR WEAPON'S ELEMENT", "LEGEND: AFTER THE RELEASE YOU CAN DASH AGAIN, UNTOUCHABLE FOR A MOMENT"]
+
 static func wtype(p: Dictionary) -> String:
 	return D.WEAPONS[p.weapons[p.wi].id].type
 
@@ -122,14 +128,15 @@ static func arm(g) -> void:
 		return
 	var need = D.SAT.cast * D.SAT.base / maxf(1.0, float(p.men))
 	p.inf_pow = 0.7 + 0.3 * clampf(p.sat[i] / need, 0.3, D.SAT.cast_max)
+	var keep = 0.0
 	if p.st.get("inf_thrift", false):
-		p.sat[i] *= 0.5
-		p.spent[i] = p.sat[i] < D.SAT.back
-	else:
-		p.sat[i] = 0.0
-		p.spent[i] = true
+		keep = 0.5
+	if tier(p) >= 2:
+		keep = maxf(keep, D.INF.epic_keep)
+	p.sat[i] *= keep
+	p.spent[i] = p.sat[i] < D.SAT.back
 	g.mana_total(p)
-	p.inf_arm = D.INF.arm * float(p.st.get("inf_armx", 1.0))
+	p.inf_arm = D.INF.arm * float(p.st.get("inf_armx", 1.0)) * (D.INF.rare_arm if tier(p) >= 1 else 1.0)
 	g.label(p.pos + Vector2(0, -30), "ARMED", Color("ffd24a"), true)
 	g.rings.append({pos = g.pcenter(), r = 22.0, t = 0.0, col = Color("ffd24a")})
 	Sfx.play("arm")
@@ -170,6 +177,9 @@ static func release(g) -> void:
 	var layers = layers_of(rel)
 	var sh = shape(rel)
 	var wi = p.weapons[p.wi]
+	if tier(p) >= 2 and D.EL_COL.has(wi.el) and wi.el != "" and wi.el != "prism":
+		# an epic or better weapon adds its own element as a last layer
+		layers.append({key = "", col = D.EL_COL[wi.el], k = 1, own = wi.el})
 	var kind = "fan"
 	match D.WEAPONS[wi.id].type:
 		"melee": kind = "ring"
@@ -242,6 +252,11 @@ static func release(g) -> void:
 	g.cam_kick(dir * (2.0 + 1.5 * n))
 	Sfx.play("boom", 1.3 - 0.1 * n, -2.0)
 	g.charge_res(0.3 * n)
+	if tier(p) >= 3:
+		# a legend: dash again at once, untouchable for a moment
+		p.dash_cd = 0.0
+		p.inv = maxf(p.inv, D.INF.legend_inv)
+		g.rings.append({pos = pc, r = 30.0, t = 0.0, col = D.RAR_COL[3]})
 	# what comes back
 	if p.st.get("inf_keep", false):
 		give(g, p, last)
@@ -256,8 +271,8 @@ static func release(g) -> void:
 # One layer of a release: its damage, both aspects of its reaction, and its picture.
 static func layer(g, p: Dictionary, l: Dictionary, i: int, n: int, kind: String, base: float, pc: Vector2, dir: Vector2, wide: float, sh: String) -> void:
 	var pure = sh == "pure"
-	var els: Array = Array(l.key.split("+")) if l.key != "" else []
-	var dmg: float = base * (1.0 + D.INF.same * (l.k - 1))
+	var els: Array = Array(l.key.split("+")) if l.key != "" else ([l.own] if l.has("own") else [])
+	var dmg: float = base * (1.0 + D.INF.same * (l.k - 1)) * (0.6 if l.has("own") else 1.0)
 	var hit = []
 	var reach = 26.0
 	var ang = dir.angle()

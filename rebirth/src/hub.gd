@@ -125,7 +125,7 @@ static func rows(g, kind: String) -> Array:
 				var id: String = found[k]
 				found.remove_at(k)
 				var w = D.WEAPONS[id]
-				out.append({name = w.name, desc = "NEXT RUN: CARRY IT AS YOUR SECOND WEAPON", cost = [12, 30, 60][w.rar], icon = "w_%s_" % w.spr,
+				out.append({name = w.name, desc = "NEXT RUN: CARRY IT AS YOUR SECOND WEAPON", cost = [12, 30, 60, 120][w.rar], icon = "w_%s_" % w.spr,
 					state = "on" if str(Meta.S.boons.get("weapon", "")) == id else "buy",
 					fn = func(): Meta.S.boons["weapon"] = id})
 			out.append({name = "THE RACK CHANGES AFTER EVERY RUN", desc = "ONLY ONE WEAPON CAN BE PACKED AT A TIME", cost = 0, state = "locked", tag = "", fn = func(): pass})

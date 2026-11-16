@@ -76,6 +76,11 @@ You do not shoot foes down; you build weather, and you forge with words.
 - The screen is drawn at its own resolution (`window/stretch/mode` is `canvas_items`, scale still
   integer): pixels stay square and sharp, the zoomed world no longer has uneven pixels, and the
   light dither keeps the size of a game pixel (`px` in the post shader).
+- Weapon rarity decides what arming gives (`D.INF` rare_arm, epic_keep, legend_inv; `Inf.tier`):
+  rare, armed lasts 50% longer; epic, arming keeps a quarter of the pool and the release adds a
+  layer of the weapon's own element; legend, the dash is ready again at once after the release
+  and you are untouchable for 1 s. Four legendary weapons (Skyfall Tusk, Aurora Lens, Choir of
+  Horns, Comet Drum) turn up more often on deeper floors. The weapon card lists the tiers.
 - Training Grounds (`src/drill.gd`): from the pause menu or Settings in the Hearth. One floor of
   six fight rooms in a row, each a scripted lesson: charge and release (the hint follows what you
   have in hand), pure and trinity, wards, the perfect release, the mirror, boss armor and seal.

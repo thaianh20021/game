@@ -11,6 +11,10 @@ const Sfx = preload("res://src/sfx.gd")
 const Px = preload("res://src/font.gd")
 
 const SEED = 4242
+const BASICS = [
+	"WASD WALKS, THE MOUSE AIMS, LMB FIRES. YOUR WEAPON PAINTS AN ELEMENT ON FOES. 1 2 3 PICK ONE OF YOUR THREE ELEMENTS. SPACE DASHES THROUGH SHOTS. WALK INTO THE NEXT ROOM.",
+	"THE LEFT STICK WALKS. HOLD FIRE: YOUR WEAPON PAINTS AN ELEMENT ON FOES. THE BIG ELEMENT BUTTON PICKS THE NEXT ONE. DASH GOES THROUGH SHOTS. WALK INTO THE NEXT ROOM.",
+]
 const GIVE_UP = 75.0
 # id, title, keyboard text, touch text
 const ROOMS = [
@@ -36,6 +40,10 @@ static func active(g) -> bool:
 	return not g.drill.is_empty() and not g.in_lobby
 
 static func start(g) -> void:
+	# started once by itself; leaving early does not bring it back
+	if not Meta.S.get("tut", false):
+		Meta.S["tut"] = true
+		Meta.save()
 	g.drill = {i = 0, room = -1, t = 0.0, done = false}
 	g.start_run(SEED, false)
 	g.banner = {text = "TRAINING GROUNDS", sub = "SIX ROOMS, SIX LESSONS. NOBODY DIES HERE.", t = 3.5}
@@ -187,7 +195,7 @@ static func text(g, l: Array) -> String:
 		return l[3] if g.tin.on else g.Pad.hint(g, l[2])
 	var p = g.p
 	if p.get("inf", []).is_empty():
-		return "PAINT ONE FOE WITH TWO DIFFERENT ELEMENTS: THE REACTION CHARGES YOUR WEAPON."
+		return "PAINT ONE FOE WITH ONE ELEMENT, SWITCH, PAINT IT WITH ANOTHER: THE REACTION CHARGES YOUR WEAPON."
 	if float(p.get("inf_arm", 0.0)) <= 0.0:
 		return "CHARGED. HOLD THE ELEMENT BUTTON, THEN LET GO: THAT ARMS THE WEAPON." if g.tin.on else g.Pad.hint(g, "CHARGED. HOLD 1 2 3 (OR TAB), THEN LET GO: THAT ARMS THE WEAPON.")
 	return "ARMED! DASH AT THE FOES: THE CHARGE BURSTS OUT." if g.tin.on else g.Pad.hint(g, "ARMED! DASH (SPACE) AT THE FOES: THE CHARGE BURSTS OUT.")
@@ -196,6 +204,16 @@ static func draw(g, ci: CanvasItem, hud) -> void:
 	if not active(g) or g.state != "play":
 		return
 	var l = lesson(g)
+	if g.lock == null and g.drill.i == 0 and g.banner.t <= 0.0:
+		# the start room: the basics, before the first lesson
+		var bl: Array = hud.wrap_text(BASICS[1] if g.tin.on else g.Pad.hint(g, BASICS[0]), 50)
+		var br = Rect2(86, 60, 308, 24.0 + bl.size() * 9.0)
+		hud.panel(ci, br, Color(0.05, 0.03, 0.1, 0.92), Color("5cd3f2"))
+		Px.text(ci, br.position + Vector2(6, 5), "0/%d" % ROOMS.size(), Color("6b6779"))
+		Px.ctext(ci, Vector2(240, br.position.y + 5), "THE BASICS", Color("5cd3f2"))
+		for k in bl.size():
+			Px.ctext(ci, Vector2(240, br.position.y + 17 + k * 9), bl[k], Color("f1ead8"))
+		return
 	if l.is_empty() or g.lock == null or g.banner.t > 0.0:
 		if g.lock == null and g.drill.i >= ROOMS.size():
 			hud.panel(ci, Rect2(150, 60, 180, 16), Color(0.05, 0.03, 0.1, 0.9), Color("a6e84e"))

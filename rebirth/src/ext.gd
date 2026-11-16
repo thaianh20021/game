@@ -75,6 +75,9 @@ static func wcard(g, wi: Dictionary, other = null) -> Array:
 	for tr in [wi.get("trait", "")] + wi.get("traits", []):
 		if tr != "":
 			out.append([Arms.TRAIT_NAME[tr] + ": " + Arms.TRAIT_DESC[tr], Color("ffd24a")])
+	for t in range(1, int(def.rar) + 1):
+		for l in g.Hud.wrap_text("ARMED " + g.Inf.TIER_TEXT[t], 30):
+			out.append([l, D.RAR_COL[t]])
 	var rule: Array = g.Inf.RULE.get(s.type, [])
 	if not rule.is_empty():
 		for l in g.Hud.wrap_text("CHARGE: " + rule[1], 30):

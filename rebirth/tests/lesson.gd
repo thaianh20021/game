@@ -32,7 +32,13 @@ func _init():
 	check(not Tutor.active(g), "tests do not get the lesson unasked")
 	g.sim.tutor = true
 	g.goto_lobby()
-	check(Tutor.active(g) and g.tut.i == 0, "a new save starts the lesson")
+	check(not Tutor.active(g) and g.Drill.active(g) and Meta.S.get("tut", false), "a new save goes straight into the Training Grounds")
+	g.end_run(false)
+	await frames(3)
+	check(g.in_lobby and not g.Drill.active(g), "leaving it early does not bring it back")
+	Meta.S["tut"] = false
+	Tutor.start(g)
+	check(Tutor.active(g) and g.tut.i == 0, "the Hearth lesson can still be played")
 	var d = Tutor.dummy(g)
 	check(d != null and g.p.pos.distance_to(d.pos) < 80.0, "it starts beside the dummy")
 	await frames(3)

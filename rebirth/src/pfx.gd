@@ -126,8 +126,8 @@ static func frost(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 				continue
 			var wd: float = rg[3]
 			var n = d.orthogonal()
-			ci.draw_colored_polygon(PackedVector2Array([base - n * wd, base + d * h, base + n * wd, base - d * h * 0.3]), c("frost", 4, fade))
-			ci.draw_colored_polygon(PackedVector2Array([base - n * wd, base + d * h, base - d * h * 0.3]), c("frost", 6, fade))
+			shape(ci, [base - n * wd, base + d * h, base + n * wd, base - d * h * 0.3], c("frost", 4, fade))
+			shape(ci, [base - n * wd, base + d * h, base - d * h * 0.3], c("frost", 6, fade))
 			dot(ci, base + d * h, c("frost", 7, fade))
 
 # Chain lightning: the bolt hops from point to point; the links re-strike every other frame.
@@ -258,8 +258,8 @@ static func hit(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 		var n = d.orthogonal() * (2.8 - 1.6 * w) / 2.0
 		var tip = p + d * d0
 		var fat = p + d * (d0 + l)
-		ci.draw_colored_polygon(PackedVector2Array([tip - d, fat + n * 1.5 + d, fat - n * 1.5 + d]), c("hit", 3))
-		ci.draw_colored_polygon(PackedVector2Array([tip, fat + n, fat - n]), Color.WHITE if w < 0.5 else c("hit", 6))
+		shape(ci, [tip - d, fat + n * 1.5 + d, fat - n * 1.5 + d], c("hit", 3))
+		shape(ci, [tip, fat + n, fat - n], Color.WHITE if w < 0.5 else c("hit", 6))
 
 # Fire ring: a white flash, then flames race outward in a ring and burn down behind it.
 static func fire(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
@@ -286,8 +286,8 @@ static func fire(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 		var base = p + d * front
 		var nrm = d.orthogonal()
 		var tip = base + d * h * 0.4 + Vector2(0, -h)
-		ci.draw_colored_polygon(PackedVector2Array([base - nrm * 3.0, tip, base + nrm * 3.0]), c("fire", 3 if w > 0.6 else 4, fade))
-		ci.draw_colored_polygon(PackedVector2Array([base - nrm * 1.5, base.lerp(tip, 0.65), base + nrm * 1.5]), c("fire", 6 if w < 0.5 else 5, fade))
+		shape(ci, [base - nrm * 3.0, tip, base + nrm * 3.0], c("fire", 3 if w > 0.6 else 4, fade))
+		shape(ci, [base - nrm * 1.5, base.lerp(tip, 0.65), base + nrm * 1.5], c("fire", 6 if w < 0.5 else 5, fade))
 		if w < 0.35:
 			dot(ci, base.lerp(tip, 0.3), c("fire", 8, fade))
 	# sparks
@@ -346,7 +346,7 @@ static func leaf(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 			flip = 0.3 if flip >= 0.0 else -0.3
 		var d = Vector2.from_angle(turn)
 		var n = d.orthogonal() * 2.0 * flip
-		ci.draw_colored_polygon(PackedVector2Array([at - d * 3.5, at + n, at + d * 3.5, at - n]), c("leaf", 3 if flip < 0.0 else 4, fade))
+		shape(ci, [at - d * 3.5, at + n, at + d * 3.5, at - n], c("leaf", 3 if flip < 0.0 else 4, fade))
 		ci.draw_line(at - d * 2.5, at + d * 2.5, c("leaf", 5, fade * 0.8), 1.0)
 
 # Black hole: banded rings turn round a black disc; debris spirals in, stretches and is swallowed.
@@ -389,3 +389,11 @@ static func radiance(g, ci: CanvasItem, q: Dictionary, u: float) -> void:
 		ci.draw_line(at - Vector2(2, 0), at + Vector2(3, 0), c("radiance", 3, a), 1.0)
 		ci.draw_line(at - Vector2(0, 2), at + Vector2(0, 3), c("radiance", 3, a), 1.0)
 		dot(ci, at, c("radiance", 4, a))
+
+# Three or four points as one flat shape. draw_primitive never triangulates, so a shape squashed
+# thin for a frame does not raise an error the way draw_colored_polygon does.
+static func shape(ci: CanvasItem, pts: Array, col: Color) -> void:
+	var cs = PackedColorArray()
+	for i in pts.size():
+		cs.append(col)
+	ci.draw_primitive(PackedVector2Array(pts), cs, PackedVector2Array())
