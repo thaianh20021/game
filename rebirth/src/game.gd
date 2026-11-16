@@ -446,7 +446,9 @@ func goto_lobby() -> void:
 	set_state("play")
 	tut = {}
 	if Tutor.wanted(self):
-		Tutor.start(self)
+		# a new save goes straight into the Training Grounds (owner, 2026-11-16); the Hearth lesson
+		# at the dummy is only replayed from Settings
+		Drill.start(self)
 
 func start_talk(who: String, then: String = "") -> void:
 	talk = {who = who, name = Talk.WHO[who].name, spr = Talk.WHO[who].spr, lines = Talk.lines(self, who), i = 0, t = 0.0, then = then}
@@ -1170,7 +1172,7 @@ func random_weapon() -> Dictionary:
 	for id in D.WEAPONS:
 		if D.WEAPONS[id].get("bp", false):
 			continue
-		var wt = [5.0, 2.5 + floor_i * 0.5, 0.8 + floor_i * 0.5][D.WEAPONS[id].rar]
+		var wt = [5.0, 2.5 + floor_i * 0.5, 0.8 + floor_i * 0.5, 0.1 + floor_i * 0.25][D.WEAPONS[id].rar]
 		ids.append(id)
 		wts.append(wt)
 		total += wt
@@ -2696,7 +2698,7 @@ func hurt_enemy(e: Dictionary, dmg: float, el: String = "", kb: Vector2 = Vector
 	var resist = el != "" and e.el == el
 	if resist:
 		mult *= 0.5
-	if el != "" and e.el != "" and D.WEAK[e.el] == el:
+	if el != "" and e.el != "" and D.WEAK.get(e.el, "") == el:
 		mult *= 1.5
 		if e.weak_t <= 0.0:
 			e.weak_t = 1.2

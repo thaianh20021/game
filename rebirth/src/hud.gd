@@ -421,8 +421,9 @@ static func draw_play(g, ci: CanvasItem) -> void:
 		if b.el != "":
 			Px.text(ci, Vector2(bx, 30), "RESISTS", DIM)
 			big(ci, Art.T["ic_" + b.el], Vector2(bx + 44, 28), 1.0)
-			Px.text(ci, Vector2(bx + bw - 40, 30), "WEAK", GOLD)
-			big(ci, Art.T["ic_" + D.WEAK[b.el]], Vector2(bx + bw - 12, 28), 1.0)
+			if D.WEAK.has(b.el):
+				Px.text(ci, Vector2(bx + bw - 40, 30), "WEAK", GOLD)
+				big(ci, Art.T["ic_" + D.WEAK[b.el]], Vector2(bx + bw - 12, 28), 1.0)
 
 	if g.banner.t > 0.0 and g.state == "play":
 		var a = clampf(g.banner.t * 2.0, 0.0, 1.0)

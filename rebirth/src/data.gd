@@ -60,6 +60,11 @@ const INF = {passive = 0.3, max = 3, life = 8.0, fade = 1.5, dmg = 20.0, per_flo
 	# the weapon decides how it charges: a melee weapon gets a second charge from a reaction within "near"
 	# pixels; beams and chains hold charges "beam_life" times longer; a lobbed weapon releases at the aim
 	# point, up to "lob_range" away; the others fire "rush" seconds faster per charge after a release
+	# what the rarity of the weapon in hand adds to arming it, each tier keeping the ones below:
+	# rare: armed lasts "rare_arm" longer; epic: arming keeps "epic_keep" of the pool and the release
+	# adds a layer of the weapon's own element; legend: the dash is ready again at once and you are
+	# untouchable for "legend_inv" seconds after the release
+	rare_arm = 1.5, epic_keep = 0.25, legend_inv = 1.0,
 	near = 56.0, beam_life = 2.0, lob_range = 150.0, lob_wait = 0.3, rush = 0.5,
 	# a dash only releases an ARMED weapon: gather on the element key (D.SAT.charge seconds) and let go; that
 	# empties the element's pool and arms the weapon for "arm" seconds (owner, 2026-11-15: a bare dash was spammable)
@@ -200,7 +205,7 @@ static var REACT = {
 	"wood+x": ["HEARTWOOD", Color("d58b95")],
 }
 
-static var RAR_COL = [Color("d9d4c7"), Color("6fb7ff"), Color("ffb84a")]
+static var RAR_COL = [Color("d9d4c7"), Color("6fb7ff"), Color("ffb84a"), Color("ff5ad8")]
 
 const WEAPONS = {
 	"pistol": {name = "SPARK HORN", spr = "pistol", type = "bullet", dmg = 4.0, cd = 0.28, cost = 0.0, speed = 270.0, spread = 0.04, rar = 0},
@@ -234,6 +239,11 @@ const WEAPONS = {
 	"greatblade": {name = "SLAB", spr = "greatblade", type = "melee", dmg = 16.0, cd = 0.55, cost = 1.0, range = 38.0, arc = 3.0, rar = 1},
 	"beam": {name = "PRISM LENS", spr = "lance", type = "beam", dmg = 1.5, cd = 0.06, cost = 0.5, range = 140.0, rar = 2},
 	"rail": {name = "OBELISK", spr = "railgun", type = "bullet", dmg = 20.0, cd = 0.85, cost = 4.0, speed = 560.0, pierce = 5, r = 3, kind = "arrow", rar = 2},
+	# legendary: found deeper, and they arm with everything (see D.INF.TIER)
+	"skyfall": {name = "SKYFALL TUSK", spr = "axe", type = "melee", dmg = 17.0, cd = 0.5, cost = 0.0, range = 40.0, arc = 3.2, slam = 30.0, rar = 3},
+	"aurora": {name = "AURORA LENS", spr = "lance", type = "beam", dmg = 3.0, cd = 0.06, cost = 0.5, range = 200.0, rar = 3},
+	"choir": {name = "CHOIR OF HORNS", spr = "pistol", type = "bullet", dmg = 6.0, cd = 0.34, cost = 1.5, speed = 300.0, n = 5, fan = 0.6, rar = 3},
+	"comet": {name = "COMET DRUM", spr = "mortar", type = "lob", dmg = 22.0, cd = 0.8, cost = 3.0, range = 170.0, aoe = 46.0, puddle = true, rar = 3},
 	"nova": {name = "STAR CHIME", spr = "starstaff", type = "bullet", dmg = 4.0, cd = 0.6, cost = 4.0, speed = 190.0, n = 10, fan = 5.6, pierce = 1, rar = 2},
 }
 

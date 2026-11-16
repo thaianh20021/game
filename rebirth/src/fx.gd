@@ -245,10 +245,10 @@ static func mark(g, ci: CanvasItem, el: String, at: Vector2, nrm: Vector2, k: fl
 	match el:
 		"fire":
 			var tip = at + nrm * s * (1.1 + 0.3 * flick) + perp * flick * 2.0
-			ci.draw_colored_polygon(PackedVector2Array([at - perp * 3.0, tip, at + perp * 3.0]), c)
-			ci.draw_colored_polygon(PackedVector2Array([at - perp * 1.5, at + nrm * s * 0.6, at + perp * 1.5]), Color(1.0, 0.9, 0.4, fade))
+			shape(ci, [at - perp * 3.0, tip, at + perp * 3.0], c)
+			shape(ci, [at - perp * 1.5, at + nrm * s * 0.6, at + perp * 1.5], Color(1.0, 0.9, 0.4, fade))
 		"ice":
-			ci.draw_colored_polygon(PackedVector2Array([at - perp * 1.5, at + nrm * s * 1.5, at + perp * 1.5]), c)
+			shape(ci, [at - perp * 1.5, at + nrm * s * 1.5, at + perp * 1.5], c)
 			ci.draw_line(at, at + nrm * s * 1.3, white, 1.0)
 			ci.draw_line(at + nrm * s * 0.5 - perp * 3.0, at + nrm * s * 0.5 + perp * 3.0, white, 1.0)
 		"bolt":
@@ -287,7 +287,7 @@ static func mark(g, ci: CanvasItem, el: String, at: Vector2, nrm: Vector2, k: fl
 			ci.draw_circle(at + nrm * s * (0.6 + k) + perp * 2.0 * flick, 1.0, white)
 		"leaf":
 			var cc = at + nrm * s * k + perp * flick * 2.0
-			ci.draw_colored_polygon(PackedVector2Array([cc - nrm * 4.0, cc + perp * 2.0, cc + nrm * 4.0, cc - perp * 2.0]), c)
+			shape(ci, [cc - nrm * 4.0, cc + perp * 2.0, cc + nrm * 4.0, cc - perp * 2.0], c)
 			ci.draw_line(cc - nrm * 3.0, cc + nrm * 3.0, Color(1, 1, 1, 0.6 * fade), 1.0)
 		"wood":
 			ci.draw_line(at, at + nrm * s * 1.2, c, 2.0)
@@ -305,3 +305,11 @@ static func mark(g, ci: CanvasItem, el: String, at: Vector2, nrm: Vector2, k: fl
 			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		_:
 			ci.draw_circle(at + nrm * s * k, 2.0, c)
+
+# Three or four points as one flat shape. draw_primitive never triangulates, so a shape squashed
+# thin for a frame does not raise an error the way draw_colored_polygon does.
+static func shape(ci: CanvasItem, pts: Array, col: Color) -> void:
+	var cs = PackedColorArray()
+	for i in pts.size():
+		cs.append(col)
+	ci.draw_primitive(PackedVector2Array(pts), cs, PackedVector2Array())

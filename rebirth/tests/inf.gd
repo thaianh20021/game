@@ -325,6 +325,62 @@ func _init():
 	check(g.Sfx.S.has("arm"), "a sound for arming")
 	g.p.relics = []
 	g.calc_stats()
+	# ---- rarity: what each tier adds to an armed weapon ----
+	g.p.relics = []
+	g.p.buffs = []
+	g.calc_stats()
+	g.enemies.clear()
+	g.fields.clear()
+	g.infx.clear()
+	var tiers = {0: "blade", 1: "", 2: "", 3: "skyfall"}
+	for id in D.WEAPONS:
+		var rr = int(D.WEAPONS[id].rar)
+		if tiers[rr] == "" and D.WEAPONS[id].type == "melee":
+			tiers[rr] = id
+	for id in D.WEAPONS:
+		var rr = int(D.WEAPONS[id].rar)
+		if tiers[rr] == "":
+			tiers[rr] = id
+	for t in 4:
+		g.p.weapons[g.p.wi] = {id = tiers[t], el = "fire", el2 = "", lv = 0}
+		g.p.sat = [1.0, 1.0, 1.0]
+		g.p.spent = [false, false, false]
+		g.p.inf = [{key = "bolt+ice", col = Color.WHITE}]
+		Inf.arm(g)
+		check(absf(g.p.inf_arm - D.INF.arm * (D.INF.rare_arm if t >= 1 else 1.0)) < 0.01, "tier %d: armed for %.1f s" % [t, g.p.inf_arm])
+		check((g.p.sat[g.p.eli] > 0.2) == (t >= 2), "tier %d: arming keeps mana only from epic up: %.2f" % [t, g.p.sat[g.p.eli]])
+		g.p.erase("inf_arm")
+	g.p.weapons[g.p.wi] = {id = "skyfall", el = "fire", el2 = "", lv = 0}
+	g.p.pos = c + Vector2(-60, 0)
+	foe(c)
+	g.infx.clear()
+	g.p.inf = [{key = "bolt+ice", col = Color.WHITE}]
+	await dash(Vector2.RIGHT)
+	var most2 = g.infx.size()
+	for k in 10:
+		await frames(1)
+		most2 = maxi(most2, g.infx.size())
+	check(most2 == 2 and g.infx.any(func(q): return q.a == "fire"), "a legend adds its own element as a layer: %d" % most2)
+	g.p.inf = [{key = "bolt+ice", col = Color.WHITE}]
+	g.p.pos = c + Vector2(-60, 0)
+	g.p.dash_cd = 0.0
+	g.sim[KEY_D] = true
+	for n in 12:
+		g.p.inf_arm = 2.0
+		g.jp[KEY_SPACE] = true
+		await frames(1)
+		if g.p.dash_t > 0.0:
+			break
+	for k in 8:
+		await frames(1)
+		if not g.p.has("inf_rel"):
+			break
+	g.sim.erase(KEY_D)
+	check(g.p.dash_cd <= 0.01 and g.p.inv > 0.5, "a legend lets you dash again, untouchable: cd %.2f inv %.2f" % [g.p.dash_cd, g.p.inv])
+	var card = g.Ext.wcard(g, {id = "skyfall", el = "fire", el2 = "", lv = 0})
+	check(card.filter(func(l): return l[0].begins_with("ARMED")).size() >= 3, "the card tells what each tier adds")
+	check(D.RAR_COL.size() == 4 and D.WEAPONS.values().filter(func(w): return w.rar == 3).size() >= 4, "four legendary weapons")
+	g.enemies.clear()
 	# the dummy is never cut
 	var d = g.spawn_enemy("dummy", c + Vector2(0, -50))
 	var dh = d.hp
