@@ -241,6 +241,7 @@ public static class D {
 			case "ky": return "KỲ NGỘ";
 			case "boss": return "TỬ CHIẾN";
 			case "next": return "LÊN ĐƯỜNG";
+			case "end": return "HẠ SƠN";
 		}
 		return k;
 	}
@@ -255,6 +256,7 @@ public static class D {
 			case "ky": return "Gặp cao nhân ẩn thế";
 			case "boss": return "Trùm cuối chương";
 			case "next": return "Sang chương kế";
+			case "end": return "Kết thúc chuyến đi";
 		}
 		return "";
 	}
