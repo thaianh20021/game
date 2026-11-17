@@ -25,7 +25,7 @@ public class Foe {
 	public float animT;
 }
 public class Ghost { public SpriteRenderer sr; public float life, max; }
-public class Shot { public Vector2 pos, vel; public float dmg, r = 9, life = 3; public bool mine, pool; public int el = -1, lvl, pierce; public List<Foe> hit; }
+public class Shot { public Vector2 pos, vel; public float dmg, r = 9, life = 3; public bool mine, pool; public int el = -1, lvl, pierce, bounce; public List<Foe> hit; }
 public class Wave { public Vector2 pos; public float r, spd, dmg, max; public bool hit; public Color col = new Color(0.07f, 0.06f, 0.06f); }
 public class Blast { public Vector2 pos; public float r, t, wind, dmg; }
 public class Pool { public Vector2 pos; public float r, t, tick; }
@@ -43,15 +43,18 @@ public class MetaSave {
 	public List<string> upIds = new List<string>();
 	public List<int> upLv = new List<int>();
 	public List<string> unl = new List<string> { "kiem" };
+	public List<string> skIds = new List<string> { "kiemvu" };
+	public List<int> skLv = new List<int> { 1 };
+	public string tk = "kiemvu";
 }
 
 public struct Inp {
 	public Vector2 mv, aim;
-	public bool atk, parry, dash, skill, use, up, down, left, right, ok, back;
+	public bool atk, parry, dash, skill, thr, recall, tk, use, up, down, left, right, ok, back;
 }
 
 public partial class Game : MonoBehaviour {
-	public const float AW = 1920, AH = 1288, VIEW_H = 640;
+	public const float AW = 1920, AH = 1288, VIEW_H = 860;
 	public static Rect PR = new Rect(390, 130, 1150, 720);
 	// the open floor of each chapter's painting
 	static readonly Rect[] CH_PR = { new Rect(390, 130, 1150, 720), new Rect(330, 260, 1310, 760), new Rect(410, 400, 1110, 560) };
@@ -160,6 +163,8 @@ public partial class Game : MonoBehaviour {
 		try { if (File.Exists(savePath)) meta = JsonUtility.FromJson<MetaSave>(File.ReadAllText(savePath)); } catch (Exception) { meta = new MetaSave(); }
 		if (meta == null) meta = new MetaSave();
 		if (!meta.unl.Contains("kiem")) meta.unl.Add("kiem");
+		if (meta.skIds == null || meta.skIds.Count == 0) { meta.skIds = new List<string> { "kiemvu" }; meta.skLv = new List<int> { 1 }; }
+		if (string.IsNullOrEmpty(meta.tk)) meta.tk = "kiemvu";
 	}
 	void SaveMeta() { try { File.WriteAllText(savePath, JsonUtility.ToJson(meta)); } catch (Exception) { } }
 	int Up(string id) { int i = meta.upIds.IndexOf(id); return i < 0 ? 0 : meta.upLv[i]; }
@@ -176,6 +181,8 @@ public partial class Game : MonoBehaviour {
 		dmgMul = 1 + Up("dmg") * 0.05f;
 		qiMul = 1 + Up("qi") * 0.12f + Lv("qi") * 0.35f;
 		dashMax = 1 + Lv("dash");
+		int sm = 4 + Lv("kiem") + (weapon != null && weapon.mech == "sword" ? 2 : 0);
+		swordsHeld += sm - swordMax; swordMax = sm;
 		pwin = 0.2f * (1 + Lv("calm") * 0.3f);
 		crit = Lv("crit") * 0.12f;
 		coinMul = 1 + Lv("coin") * 0.4f;
@@ -194,10 +201,13 @@ public partial class Game : MonoBehaviour {
 		i.mv = new Vector2((Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) ? 1 : 0) - (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1 : 0),
 			(Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) ? 1 : 0) - (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) ? 1 : 0));
 		i.atk = Input.GetMouseButton(0) || Input.GetKey(KeyCode.J);
-		i.parry = Input.GetMouseButton(1) || Input.GetKey(KeyCode.K) || Input.GetKey(KeyCode.LeftShift);
+		i.parry = Input.GetKey(KeyCode.K) || Input.GetKey(KeyCode.LeftShift);
+		i.thr = Input.GetMouseButton(1) || Input.GetKey(KeyCode.I);
+		i.recall = Input.GetKey(KeyCode.R) || Input.GetMouseButton(2) || Input.GetKey(KeyCode.O);
 		i.dash = Input.GetKey(KeyCode.Space);
 		i.skill = Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.L);
-		i.use = Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.F);
+		i.use = Input.GetKey(KeyCode.E);
+		i.tk = Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.JoystickButton9);
 		i.ok = Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.E);
 		i.back = Input.GetKey(KeyCode.Escape);
 		// gamepad (Xbox layout): left stick move, right stick aim, X attack, A dash, LB/RB guard, Y skill, B use
@@ -208,7 +218,8 @@ public partial class Game : MonoBehaviour {
 			if (ls.magnitude > 0.3f && i.mv == Vector2.zero) i.mv = ls;
 			i.atk |= Input.GetKey(KeyCode.JoystickButton2);
 			i.dash |= Input.GetKey(KeyCode.JoystickButton0);
-			i.parry |= Input.GetKey(KeyCode.JoystickButton4) || Input.GetKey(KeyCode.JoystickButton5);
+			i.parry |= Input.GetKey(KeyCode.JoystickButton4);
+			i.thr |= Input.GetKey(KeyCode.JoystickButton5);
 			i.skill |= Input.GetKey(KeyCode.JoystickButton3);
 			i.use |= Input.GetKey(KeyCode.JoystickButton1);
 			i.ok |= Input.GetKey(KeyCode.JoystickButton0);
@@ -247,10 +258,11 @@ public partial class Game : MonoBehaviour {
 				if (dt > 0) Sim(dt);
 				break;
 			}
-			case "title": Menu(4, TitleAct); break;
+			case "title": Menu(5, TitleAct); break;
+			case "skills": SkillsTick(); break;
 			case "weapon": Menu(D.WEAPONS.Length, WeaponAct, true); if (P(inp.back, prev.back)) state = "title"; break;
-			case "meta": Menu(D.META.Length, MetaAct); if (P(inp.back, prev.back)) { state = "title"; menuI = 1; } break;
-			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 2; } break;
+			case "meta": Menu(D.META.Length, MetaAct); if (P(inp.back, prev.back)) { state = "title"; menuI = 2; } break;
+			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 3; } break;
 			case "pick": Menu(offers.Count, PickAct, true); break;
 			case "event": Menu(3, EventAct); break;
 			case "pause": Menu(2, PauseAct); if (P(inp.back, prev.back)) state = "play"; break;
@@ -272,8 +284,9 @@ public partial class Game : MonoBehaviour {
 	void TitleAct(int i) {
 		sfx.Play("pick", 0.7f);
 		if (i == 0) { state = "weapon"; menuI = Mathf.Max(0, Array.FindIndex(D.WEAPONS, w => w.id == weaponId)); }
-		else if (i == 1) { state = "meta"; menuI = 0; }
-		else if (i == 2) state = "help";
+		else if (i == 1) { state = "skills"; skCol = Mathf.Max(0, Array.FindIndex(D.SKILLS, k => k.id == meta.tk)); skRow = 0; }
+		else if (i == 2) { state = "meta"; menuI = 0; }
+		else if (i == 3) state = "help";
 		else Application.Quit();
 	}
 	void WeaponAct(int i) {
@@ -307,10 +320,16 @@ public partial class Game : MonoBehaviour {
 		Recalc();
 		hp = maxHp;
 		meta.runs++;
-		stains.Clear();
-		EnterRoom("bikip");
+		ClearRoom();
+		BuildWorld();
+		swordsHeld = swordMax;
+		ppos = new Vector2(CX, segs[0].r.yMin + 70);
+		camPos = ppos;
+		act = ""; guard = false; whirlT = 0; inv = 0.5f; tkCd = 0;
+		dashes = dashMax;
+		cleared = true; wave = 0; waves = 0; roomKind = "fight"; pickT = 0; pickKind = "";
 		state = "play";
-		Banner(D.CH_NAME[0], "Dùng chuột trái đánh · chuột phải đỡ · SPACE khinh công");
+		Banner(D.CH_NAME[0], "Chuột trái đánh · chuột phải phi kiếm · R thu kiếm · SHIFT đỡ · SPACE lướt · F tuyệt kỹ");
 	}
 
 	void Banner(string a, string b = "") { banner = a; bannerSub = b; bannerT = 3.2f; }
@@ -324,64 +343,9 @@ public partial class Game : MonoBehaviour {
 		parts.Clear(); slashes.Clear(); texts.Clear(); doors.Clear(); stains.Clear();
 		foreach (var g in ghosts) if (g.sr != null) Destroy(g.sr.gameObject);
 		ghosts.Clear();
+		ClearStage();
 	}
 
-	void EnterRoom(string kind) {
-		ClearRoom();
-		roomKind = kind;
-		cleared = false; wave = 0; roomT = 0; pickT = 0; pickKind = "";
-		SetBg(ch);
-		PR = CH_PR[ch];
-		ppos = new Vector2(PR.center.x, PR.yMin + 80);
-		act = ""; guard = false; whirlT = 0; inv = 0.5f;
-		dashes = dashMax;
-		var r = new System.Random(seed + ch * 100 + step * 7);
-		int np = kind == "boss" || kind == "shop" || kind == "tra" || kind == "ky" ? 0 : 2 + r.Next(3);
-		for (int i = 0; i < np; i++) {
-			string n = D.CH_PROPS[ch][r.Next(D.CH_PROPS[ch].Length)];
-			Vector2 p = Vector2.zero;
-			for (int tries = 0; tries < 20; tries++) {
-				p = new Vector2(PR.xMin + 90 + (float)r.NextDouble() * (PR.width - 180), PR.yMin + 190 + (float)r.NextDouble() * (PR.height - 380));
-				bool ok = Mathf.Abs(p.x - PR.center.x) > 170 || Mathf.Abs(p.y - PR.center.y) > 150;
-				foreach (var o in props) if ((o.pos - p).magnitude < 220) ok = false;
-				if (ok) break;
-			}
-			float h = n == "bamboo" || n == "pine" ? 190 : (n == "jar" ? 80 : 120);
-			var pr = new Prop { pos = p, r = n == "bamboo" ? 30 : (n == "jar" ? 30 : 46), sr = NewSpr(n, h) };
-			props.Add(pr);
-		}
-		if (kind == "boss") {
-			var b = Spawn("boss" + (ch + 1), new Vector2(PR.center.x, PR.yMax - 190), false);
-			b.spawn = 1.3f;
-			Banner(b.d.name, D.CH_NAME[ch]);
-			sfx.Play("gong");
-			sfx.Battle(true);
-		} else if (kind == "shop" || kind == "tra" || kind == "ky") {
-			cleared = true;
-			Vector2 c = PR.center + new Vector2(0, 110);
-			string npc = kind == "shop" ? "merchant" : (kind == "tra" ? "tea" : "hermit");
-			var nsr = NewSpr(npc, kind == "tra" ? 95 : 130);
-			items.Add(new Item { pos = c, kind = "npc", label = "", sr = nsr });
-			if (kind == "shop") {
-				AddItem(c + new Vector2(-240, -130), "heal", "KIM SANG DƯỢC\nHồi 40 sinh lực", 35, "jar", null);
-				AddItem(c + new Vector2(-80, -160), "dan", "LINH ĐAN\n+15 sinh lực tối đa", 60, "jar", null);
-				var o = MakeOffers(1);
-				if (o.Count > 0) AddItem(c + new Vector2(80, -160), "boon", o[0].b.name + " · CẤP " + o[0].lvl + "\n" + D.Desc(o[0].b, o[0].lvl), 70, "chest", o[0].b);
-				AddItem(c + new Vector2(240, -130), "luyen", "LUYỆN KHÍ\nNâng cấp một chiêu đã học", 80, "shrine", null);
-			} else if (kind == "tra") {
-				AddItem(c + new Vector2(0, -120), "tea", "THƯỞNG TRÀ\nHồi 40% sinh lực", 0, null, null);
-			} else {
-				AddItem(c + new Vector2(0, -120), "ky", "BÁI KIẾN CAO NHÂN", 0, null, null);
-			}
-			MakeDoors();
-			sfx.Battle(false);
-			Banner(D.RewardName(kind), D.RewardHint(kind));
-		} else {
-			waves = 2 + (step >= 2 ? 1 : 0);
-			spawnT = 0.9f;
-			sfx.Battle(true);
-		}
-	}
 
 	void AddItem(Vector2 p, string kind, string label, int cost, string spr, Boon b) {
 		items.Add(new Item { pos = p, kind = kind, label = label, cost = cost, boon = b, sr = spr == null ? null : NewSpr(spr, kind == "luyen" ? 100 : 70) });
@@ -389,16 +353,18 @@ public partial class Game : MonoBehaviour {
 
 	void SpawnWave() {
 		wave++;
-		float budget = 2.6f + ch * 1.3f + step * 0.7f + meta.kiep * 0.6f + wave * 0.4f;
+		// many weak foes rather than a few strong ones
+		float budget = (2.6f + ch * 1.3f + step * 0.7f + meta.kiep * 0.6f + wave * 0.4f) * 2.1f;
+		float sy0 = PR.yMin + 70, sy1 = PR.yMax - 70;
 		var pool = D.POOLS[ch];
 		int n = 0;
-		while (budget > 0.4f && n < 7) {
+		while (budget > 0.4f && n < 14) {
 			var d = D.Foe(pool[rng.Next(pool.Length)]);
 			if (d.cost > budget + 0.6f) { if (n > 0 && Rnd() < 0.5f) break; d = D.Foe(pool[0]); }
-			bool elite = Rnd() < 0.08f + ch * 0.05f && budget > d.cost * 2;
+			bool elite = Rnd() < 0.1f + ch * 0.06f && budget > d.cost * 2;
 			Vector2 p = Vector2.zero;
 			for (int tries = 0; tries < 15; tries++) {
-				p = new Vector2(Rnd(PR.xMin + 60, PR.xMax - 60), Rnd(PR.yMin + 60, PR.yMax - 60));
+				p = new Vector2(Rnd(PR.xMin + 60, PR.xMax - 60), Rnd(sy0, sy1));
 				if ((p - ppos).magnitude > 330) break;
 			}
 			Spawn(d.id, p, elite);
@@ -412,10 +378,10 @@ public partial class Game : MonoBehaviour {
 		var d = D.Foe(id);
 		float kiep = 1 + meta.kiep * 0.2f;
 		var f = new Foe { d = d, pos = Confine(p, d.r), elite = elite, spawn = 0.75f, cd = Rnd(0.3f, 1.2f) };
-		f.maxHp = d.hp * (d.boss ? 1 : D.CH_HP[ch]) * kiep * (elite ? 2.3f : 1);
+		f.maxHp = d.hp * (d.boss ? 1.35f : D.CH_HP[ch] * 0.7f) * kiep * (elite ? 2.3f : 1);
 		f.hp = f.maxHp;
 		f.posMax = d.pos * (elite ? 1.6f : 1) * (d.boss ? 1 : 1 + ch * 0.25f);
-		f.dmgMul = (d.boss ? 1 : D.CH_DMG[ch]) * (1 + meta.kiep * 0.12f) * (elite ? 1.3f : 1);
+		f.dmgMul = 1.25f * (d.boss ? 1 : D.CH_DMG[ch]) * (1 + meta.kiep * 0.12f) * (elite ? 1.3f : 1);
 		f.scale = elite ? 1.22f : 1;
 		f.mcd = new float[d.moves.Length];
 		f.used = new bool[d.moves.Length];
@@ -431,56 +397,8 @@ public partial class Game : MonoBehaviour {
 		return f;
 	}
 
-	void RoomCleared() {
-		cleared = true;
-		rooms++;
-		sfx.Battle(false);
-		sfx.Play("gong", 0.7f);
-		shots.RemoveAll(s => !s.mine);
-		Heal(Up("heal") * 3);
-		slow = 0.5f;
-		if (roomKind == "boss") {
-			bossKills++;
-			Heal(maxHp * 0.3f);
-			AddCoins(60);
-			if (ch == 0 && !meta.unl.Contains("thuong")) { meta.unl.Add("thuong"); Toast("MỞ KHÓA: PHÁ QUÂN THƯƠNG"); }
-			if (ch == 1 && !meta.unl.Contains("phien")) { meta.unl.Add("phien"); Toast("MỞ KHÓA: THIẾT PHIẾN"); }
-			SaveMeta();
-			pickKind = "bikip"; pickBonus = 1; pickT = 1.4f;
-			Banner("ĐẠI THẮNG", "Trùm đã ngã");
-		} else if (roomKind == "bikip" || roomKind == "luyen") { pickKind = roomKind; pickBonus = 0; pickT = 0.9f; }
-		else if (roomKind == "dan") { bonusHp += 15; Recalc(); Heal(25); Toast("LINH ĐAN: +15 sinh lực tối đa"); }
-		else if (roomKind == "ngan") { int c = 45 + ch * 15 + rng.Next(20); AddCoins(c); Toast("NHẶT ĐƯỢC TÚI NGÂN LƯỢNG"); }
-		MakeDoors();
-	}
 
-	void MakeDoors() {
-		doors.Clear();
-		var kinds = new List<string>();
-		if (roomKind == "boss") kinds.Add(ch >= 2 ? "end" : "next");
-		else if (step >= 4) kinds.Add("boss");
-		else if (step == 3) { kinds.Add("shop"); kinds.Add("tra"); }
-		else {
-			string[] pool = { "bikip", "bikip", "bikip", "luyen", "dan", "ngan" };
-			string a = pool[rng.Next(pool.Length)], b = a;
-			while (b == a) b = pool[rng.Next(pool.Length)];
-			if (boons.Count == 0) { if (a == "luyen") a = "bikip"; if (b == "luyen") b = "ngan"; if (a == b) b = "dan"; }
-			if (step >= 1 && Rnd() < 0.3f) b = "ky";
-			kinds.Add(a); kinds.Add(b);
-		}
-		for (int i = 0; i < kinds.Count; i++) {
-			float x = PR.center.x + (i - (kinds.Count - 1) * 0.5f) * 420;
-			doors.Add(new Door { pos = new Vector2(x, PR.yMax - 10), kind = kinds[i] });
-		}
-	}
 
-	void UseDoor(Door d) {
-		sfx.Play("drum");
-		if (d.kind == "end") { Win(); return; }
-		if (d.kind == "next") { ch++; step = 0; Banner(D.CH_NAME[ch]); EnterRoom("bikip"); return; }
-		step++;
-		EnterRoom(d.kind);
-	}
 
 	void Heal(float v) {
 		if (v <= 0 || hp <= 0) return;
@@ -632,42 +550,15 @@ public partial class Game : MonoBehaviour {
 		runTime += dt;
 		roomT += dt;
 		UpPlayer(dt);
+		UpSwords(dt);
+		UpSkills(dt);
 		UpFoes(dt);
 		UpShots(dt);
 		UpFx(dt);
-		// room logic
-		if (!cleared) {
-			bool any = false;
-			foreach (var f in foes) if (!f.dead) any = true;
-			if (roomKind == "boss") {
-				bool bossAlive = false;
-				foreach (var f in foes) if (!f.dead && f.d.boss) bossAlive = true;
-				if (!bossAlive) { foreach (var f in foes) if (!f.dead) Kill(f); RoomCleared(); }
-			} else if (!any) {
-				if (wave < waves) { spawnT -= dt; if (spawnT <= 0) { SpawnWave(); spawnT = 0.8f; } }
-				else RoomCleared();
-			}
-		} else {
-			if (pickKind != "" && pickT > 0) { pickT -= dt; if (pickT <= 0) { string k = pickKind; pickKind = ""; OpenPick(k, pickBonus); } }
-			if (P(inp.use, prev.use) && pickT <= 0) {
-				foreach (var d in doors) if ((d.pos - ppos).magnitude < 120) { UseDoor(d); return; }
-				foreach (var it in items) if (!it.gone && it.kind != "npc" && (it.pos - ppos).magnitude < 90) { UseItem(it); break; }
-			}
-		}
+		UpWorld(dt);
 		if (hp <= 0 && state == "play") Die();
 	}
 
-	public Vector2 Confine(Vector2 p, float r) {
-		p.x = Mathf.Clamp(p.x, PR.xMin + r, PR.xMax - r);
-		p.y = Mathf.Clamp(p.y, PR.yMin + r * 0.5f, PR.yMax - r * 0.5f);
-		foreach (var pr in props) {
-			Vector2 d = p - pr.pos;
-			d.y *= 1.6f;   // props block an ellipse wider than deep
-			float m = d.magnitude, need = pr.r + r;
-			if (m < need && m > 0.01f) { Vector2 push = d / m * (need - m); push.y /= 1.6f; p += push; }
-		}
-		return p;
-	}
 
 	void UpPlayer(float dt) {
 		inv -= dt; pflash -= dt; acd -= dt; pcd -= dt; comboT -= dt; hurtFx -= dt;
@@ -703,7 +594,7 @@ public partial class Game : MonoBehaviour {
 				break;
 			case "atk": {
 				var s = weapon.combo[ci];
-				at += dt;
+				at += dt * (1 + frenzy * 0.07f);
 				if (at < s.dur * 0.5f) ppos += adir * s.lunge * (1 - at / s.dur) * dt * 2;
 				if (!hitDone && at >= s.dur * 0.3f) { hitDone = true; Strike(s); }
 				if (at >= s.dur) {
@@ -723,12 +614,17 @@ public partial class Game : MonoBehaviour {
 				} else if (at >= 0.28f) act = "";
 				break;
 			default:
+				if (weapon.mech == "charge") {
+					buf = 0;
+					if (inp.atk && !guard && acd <= 0) chargeT = Mathf.Min(1.1f, chargeT + dt);
+					else if (chargeT > 0) FireBow();
+				}
 				if (buf > 0 && acd <= 0 && !guard) {
 					act = "atk"; at = 0; hitDone = false; adir = aimDir;
 					face = adir.x >= 0 ? 1 : -1;
 					break;
 				}
-				Vector2 v = inp.mv * 370 * (guard ? 0.45f : 1);
+				Vector2 v = inp.mv * 370 * (guard ? 0.45f : 1) * (chargeT > 0 ? 0.6f : 1) * (1 + frenzy * 0.02f);
 				ppos += v * dt;
 				moving = v.sqrMagnitude > 100;
 				if (moving) {
@@ -778,7 +674,11 @@ public partial class Game : MonoBehaviour {
 		sfx.Play("skill");
 		shake = Mathf.Max(shake, 6);
 		Text(ppos + new Vector2(0, 150), weapon.skillName, D.PAPER, 24);
-		if (weapon.skill == "fan") {
+		if (weapon.skill == "quake") {
+			Burst(ppos, 350, 60 * mult, el, lv, true);
+			foreach (var f in foes) if (!f.dead && (f.pos - ppos).magnitude < 350) AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 1));
+			shake = 16;
+		} else if (weapon.skill == "fan") {
 			for (int i = 0; i < 7; i++) {
 				float a = Mathf.Atan2(adir.y, adir.x) + (i - 3) * 0.15f;
 				shots.Add(new Shot { pos = ppos + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 1050, dmg = 22 * mult, mine = true, el = el, lvl = lv, pierce = 3, r = 14, life = 0.9f, hit = new List<Foe>() });
@@ -807,7 +707,7 @@ public partial class Game : MonoBehaviour {
 		if (s.t == "shot") {
 			for (int i = 0; i < s.n; i++) {
 				float a = Mathf.Atan2(adir.y, adir.x) + (s.n == 1 ? 0 : Mathf.Lerp(-s.spread, s.spread, i / (float)(s.n - 1)));
-				shots.Add(new Shot { pos = o + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * s.spd, dmg = s.dmg * mult, mine = true, el = el, lvl = lv, pierce = 1, r = 12, life = 0.62f, hit = new List<Foe>() });
+				shots.Add(new Shot { pos = o + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * s.spd, dmg = s.dmg * mult, mine = true, el = el, lvl = lv, pierce = 1, bounce = weapon.mech == "bounce" ? 2 : 0, r = 12, life = 0.62f, hit = new List<Foe>() });
 			}
 			return;
 		}
@@ -817,7 +717,12 @@ public partial class Game : MonoBehaviour {
 		foreach (var f in foes) {
 			if (f.dead || f.spawn > 0) continue;
 			bool h = arc ? ArcHit(o, adir, s.r, s.w, f.pos, f.d.r * f.scale) : LineHit(o, adir, s.len, s.wid, f.pos, f.d.r * f.scale);
-			if (h) { HurtFoe(f, s.dmg * mult, el, lv, 1, adir); any = true; }
+			if (!h) continue;
+			float fm = 1;
+			// the spear rewards hitting with the last third of its reach
+			if (weapon.mech == "tip" && (f.pos - o).magnitude > (arc ? s.r : s.len) * 0.6f) { fm = 1.6f; Text(f.pos + new Vector2(0, f.d.h + 34), "MŨI THƯƠNG", new Color(1f, 0.9f, 0.5f), 15); }
+			HurtFoe(f, s.dmg * mult * fm, el, lv, weapon.mech == "heavy" ? 2.2f : 1, adir);
+			any = true;
 		}
 		// blades cut arrows out of the air
 		foreach (var sh in shots) {
@@ -825,6 +730,8 @@ public partial class Game : MonoBehaviour {
 			bool h = arc ? ArcHit(o, adir, s.r, s.w, sh.pos - new Vector2(0, 50), 10) : LineHit(o, adir, s.len, s.wid, sh.pos - new Vector2(0, 50), 10);
 			if (h) { sh.life = 0; Puff(sh.pos, D.INK, 4, 120); }
 		}
+		if (any && weapon.mech == "frenzy") { frenzy = Mathf.Min(10, frenzy + 1); frenzyT = 2.5f; }
+		if (last && weapon.mech == "heavy") { Burst(o + adir * 110, 200, 20 * mult, el, lv, false); shake = Mathf.Max(shake, 10); }
 		if (any) { stop = Mathf.Max(stop, last ? 0.07f : 0.035f); shake = Mathf.Max(shake, last ? 7 : 3); }
 	}
 

@@ -32,8 +32,14 @@ public class AtkStep {
 }
 
 public class WeaponDef {
-	public string id, name, desc, skill, skillName, skillDesc;
+	public string id, name, desc, skill, skillName, skillDesc, mech = "", unlock = "";
 	public AtkStep[] combo;
+}
+
+public class SkillDef {
+	public string id, name, desc;
+	public float cd;
+	public string[] node, nodeDesc;
 }
 
 public class Boon {
@@ -86,26 +92,60 @@ public static class D {
 	}
 
 	public static readonly WeaponDef[] WEAPONS = {
-		new WeaponDef { id = "kiem", name = "THANH PHONG KIẾM", desc = "Kiếm nhanh, ba đòn liên hoàn.\nCân bằng công thủ.",
+		new WeaponDef { id = "kiem", name = "THANH PHONG KIẾM", mech = "sword", desc = "Kiếm nhanh, ba đòn liên hoàn.\nKIẾM TÂM: mang thêm 2 phi kiếm.",
 			skill = "fan", skillName = "LẠC DIỆP PHI KIẾM", skillDesc = "Phóng bảy luồng kiếm khí hình quạt.",
 			combo = new[] {
 				new AtkStep { t = "arc", r = 135, w = 2.0f, dmg = 14, dur = 0.24f, lunge = 170 },
 				new AtkStep { t = "arc", r = 135, w = 2.0f, dmg = 15, dur = 0.24f, lunge = 170 },
 				new AtkStep { t = "arc", r = 160, w = 2.9f, dmg = 25, dur = 0.36f, lunge = 260 } } },
-		new WeaponDef { id = "thuong", name = "PHÁ QUÂN THƯƠNG", desc = "Thương dài, đâm xuyên hàng địch.\nĐòn ba quét trọn một vòng.",
+		new WeaponDef { id = "thuong", name = "PHÁ QUÂN THƯƠNG", mech = "tip", unlock = "Hạ trùm chương I", desc = "Thương dài, đâm xuyên hàng địch.\nMŨI THƯƠNG: trúng ở cuối tầm gây +60% sát thương.",
 			skill = "charge", skillName = "XUYÊN VÂN THƯƠNG", skillDesc = "Lao thẳng xuyên qua mọi kẻ địch.",
 			combo = new[] {
 				new AtkStep { t = "line", len = 235, wid = 54, dmg = 17, dur = 0.30f, lunge = 130 },
 				new AtkStep { t = "line", len = 250, wid = 54, dmg = 18, dur = 0.30f, lunge = 130 },
 				new AtkStep { t = "arc", r = 185, w = 6.3f, dmg = 24, dur = 0.42f, lunge = 60 } } },
-		new WeaponDef { id = "phien", name = "THIẾT PHIẾN", desc = "Quạt sắt phóng ám khí tầm xa.\nYếu khi bị áp sát.",
+		new WeaponDef { id = "phien", name = "THIẾT PHIẾN", mech = "bounce", unlock = "Hạ trùm chương II", desc = "Quạt sắt phóng ám khí tầm xa.\nLIÊN CHÂU: ám khí nảy sang 2 địch kế bên.",
 			skill = "whirl", skillName = "HỒI PHONG PHIẾN", skillDesc = "Dựng lốc xoáy hút và chém địch quanh mình.",
 			combo = new[] {
 				new AtkStep { t = "shot", n = 1, dmg = 11, dur = 0.22f, lunge = 0, spd = 950 },
 				new AtkStep { t = "shot", n = 2, spread = 0.16f, dmg = 9, dur = 0.22f, lunge = 0, spd = 950 },
 				new AtkStep { t = "shot", n = 5, spread = 0.55f, dmg = 9, dur = 0.36f, lunge = -120, spd = 880 } } },
+		new WeaponDef { id = "dao", name = "SONG NGUYỆT ĐAO", mech = "frenzy", unlock = "Hạ trùm chương I", desc = "Song đao bốn nhát cực nhanh, tầm ngắn.\nCUỒNG ĐAO: mỗi lần chém trúng tăng 7% tốc độ đánh (tối đa 10 tầng), ngừng đánh 2,5 giây là mất.",
+			skill = "whirl", skillName = "LOẠN NGUYỆT TRẢM", skillDesc = "Xoay đao thành lốc, hút và chém địch quanh mình.",
+			combo = new[] {
+				new AtkStep { t = "arc", r = 112, w = 2.3f, dmg = 8, dur = 0.17f, lunge = 150 },
+				new AtkStep { t = "arc", r = 112, w = 2.3f, dmg = 8, dur = 0.17f, lunge = 150 },
+				new AtkStep { t = "arc", r = 112, w = 2.3f, dmg = 9, dur = 0.17f, lunge = 150 },
+				new AtkStep { t = "arc", r = 130, w = 3.4f, dmg = 15, dur = 0.26f, lunge = 220 } } },
+		new WeaponDef { id = "chuy", name = "TRẤN SƠN CHÙY", mech = "heavy", unlock = "Hạ trùm chương II", desc = "Chùy nặng, chậm, quét rất rộng.\nBẤT ĐỘNG: phá THẾ gấp 2,2 lần, đang vung thì chịu ít hơn 40% sát thương, đòn ba nện ra chấn động.",
+			skill = "quake", skillName = "ĐỊA LIỆT", skillDesc = "Nện đất: nổ rộng quanh mình và đánh sập THẾ.",
+			combo = new[] {
+				new AtkStep { t = "arc", r = 170, w = 2.7f, dmg = 27, dur = 0.5f, lunge = 120 },
+				new AtkStep { t = "arc", r = 170, w = 2.7f, dmg = 29, dur = 0.5f, lunge = 120 },
+				new AtkStep { t = "arc", r = 205, w = 6.3f, dmg = 46, dur = 0.7f, lunge = 60 } } },
+		new WeaponDef { id = "cung", name = "LẠC NHẠN CUNG", mech = "charge", unlock = "Hạ trùm chương III", desc = "Cung dài: GIỮ chuột để giương, THẢ để bắn.\nMÃN CUNG: giương đủ thì tên xuyên mọi địch và mạnh gấp bảy.",
+			skill = "fan", skillName = "TÁN TIỄN", skillDesc = "Bắn bảy mũi tên hình quạt, mỗi mũi xuyên ba địch.",
+			combo = new[] { new AtkStep { t = "shot", n = 1, dmg = 10, dur = 0.2f, lunge = 0, spd = 1200 } } },
 	};
 	public static WeaponDef Weapon(string id) { foreach (var w in WEAPONS) if (w.id == id) return w; return WEAPONS[0]; }
+
+
+	public static readonly int[] SK_COST = { 15, 20, 35, 60 };
+	public static readonly SkillDef[] SKILLS = {
+		new SkillDef { id = "kiemvu", name = "THIÊN KIẾM VŨ", cd = 18, desc = "Gọi mười bốn thanh kiếm từ trời rơi xuống quanh điểm ngắm, mỗi thanh nổ một vòng.",
+			node = new[] { "KIẾM HẢI", "KIẾM TRẬN", "CỰ KIẾM GIÁNG THẾ" },
+			nodeDesc = new[] { "Số kiếm gấp đôi: hai mươi tám thanh.", "Vùng rơi rộng gấp rưỡi và hút mọi địch vào tâm trận.", "Kết thúc bằng một cự kiếm 150 sát thương, PHÁ THẾ mọi thứ nó chạm." } },
+		new SkillDef { id = "chi", name = "PHÁ VÂN CHỈ", cd = 12, desc = "Một tia chỉ lực xuyên suốt màn hình, 70 sát thương và phá THẾ gấp ba.",
+			node = new[] { "XUYÊN TÂM", "TAM CHỈ LIÊN HOÀN", "ĐIỂM HUYỆT" },
+			nodeDesc = new[] { "Sát thương gấp đôi và gây RÁCH 6 giây.", "Bắn ba tia hình quạt cùng lúc.", "Địch trúng chỉ bị PHÁ THẾ ngay (trùm: đầy nửa thanh)." } },
+		new SkillDef { id = "chung", name = "KIM CHUNG TRÁO", cd = 22, desc = "Chuông vàng hộ thể: bất khả xâm phạm 2,5 giây và chấn lùi địch quanh mình.",
+			node = new[] { "PHẢN CHẤN", "CHUNG MINH", "CHUNG VỠ" },
+			nodeDesc = new[] { "Kéo dài 4 giây và phản mọi ám khí chạm vào chuông.", "Khi chuông còn, mỗi nửa giây chấn động một lần (THỔ).", "Hết giờ chuông vỡ: nổ rất rộng 120 sát thương và hồi 15 sinh lực." } },
+		new SkillDef { id = "anh", name = "TÀN ẢNH TRẢM", cd = 16, desc = "Hóa tàn ảnh chém lần lượt năm địch gần nhất, mỗi nhát 35 sát thương.",
+			node = new[] { "THẬP ẢNH", "ẢNH ẤN", "ĐOẠT MỆNH" },
+			nodeDesc = new[] { "Chém tới mười mục tiêu.", "Mỗi nhát in thêm hành của KHINH CÔNG: tự nổ TƯƠNG SINH / TƯƠNG KHẮC.", "Địch thường dưới 25% máu chết ngay; mỗi mạng giảm 2 giây hồi chiêu." } },
+	};
+	public static SkillDef Skill(string id) { foreach (var k in SKILLS) if (k.id == id) return k; return SKILLS[0]; }
 
 	static Step Arc(float wind, float r, float w, float dmg, float lunge = 0, float rec = 0.3f) { return new Step { t = "arc", wind = wind, r = r, w = w, dmg = dmg, lunge = lunge, rec = rec }; }
 	static Step Line(float wind, float len, float wid, float dmg, bool dash = false, float rec = 0.35f) { return new Step { t = "line", wind = wind, len = len, wid = wid, dmg = dmg, dash = dash, rec = rec }; }
@@ -204,6 +244,8 @@ public static class D {
 		B("calm", -1, "pas", "TĨNH TÂM", "Khoảng đỡ chuẩn dài thêm {30}%."),
 		B("ripo", -1, "pas", "HẬU PHÁT CHẾ NHÂN", "Sau khi đỡ chuẩn, đòn kế +{100}% sát thương."),
 		B("fin", -1, "pas", "LIÊN HOÀN", "Đòn kết liên hoàn +{40}% sát thương."),
+		B("kiem", -1, "pas", "THIÊN KIẾM HẠP", "Mang thêm {1} phi kiếm."),
+		B("hoi", -1, "pas", "HỒI KIẾM QUYẾT", "Phi kiếm thu về gây thêm {40}% sát thương."),
 	};
 	public static Boon BoonById(string id) { foreach (var b in BOONS) if (b.id == id) return b; return null; }
 

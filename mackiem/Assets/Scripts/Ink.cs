@@ -28,7 +28,7 @@ public class Ink {
 		mesh.SetVertices(v);
 		mesh.SetColors(c);
 		mesh.SetTriangles(t, 0);
-		mesh.bounds = new Bounds(new Vector3(1000, 600, 0), new Vector3(6000, 6000, 10));
+		mesh.bounds = new Bounds(new Vector3(2000, 2000, 0), new Vector3(30000, 30000, 10));
 	}
 
 	int V(Vector2 p, Color col) { v.Add(new Vector3(p.x, p.y, 0)); c.Add(col); return v.Count - 1; }

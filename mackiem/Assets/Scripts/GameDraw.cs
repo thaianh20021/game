@@ -25,7 +25,7 @@ public partial class Game {
 		inkShader = Resources.Load<Shader>("InkSprite");
 		if (inkShader == null) inkShader = Shader.Find("Sprites/Default");
 		ground = new Ink("ground", -50);
-		fxInk = new Ink("fx", 6000);
+		fxInk = new Ink("fx", 30000);
 		bgSr = new GameObject("bg").AddComponent<SpriteRenderer>();
 		bgSr.sortingOrder = -100;
 		titleSr = new GameObject("title").AddComponent<SpriteRenderer>();
@@ -110,17 +110,10 @@ public partial class Game {
 		return sr;
 	}
 
-	void SetBg(int chapter) {
-		bgSr.sprite = Spr("bg" + (chapter + 1));
-		if (bgSr.sprite == null) return;
-		float k = AW * 0.01f / bgSr.sprite.bounds.size.x;
-		bgSr.transform.localScale = new Vector3(k, k, 1);
-		bgSr.transform.position = new Vector3(AW * 0.005f, AH * 0.005f, 0);
-	}
 
 	void Place(SpriteRenderer sr, Vector2 p, float z = 0) {
 		sr.transform.position = new Vector3(p.x * 0.01f, (p.y + z) * 0.01f, 0);
-		sr.sortingOrder = 3000 - (int)p.y;
+		sr.sortingOrder = 22000 - (int)p.y;
 	}
 
 	bool InWorld() { return state == "play" || state == "pick" || state == "event" || state == "pause" || state == "dead" || state == "win"; }
@@ -128,7 +121,7 @@ public partial class Game {
 	void Render(float rdt) {
 		bool world = InWorld();
 		float hh = VIEW_H / 2, hw = hh * cam.aspect;
-		bgSr.enabled = world;
+		bgSr.enabled = false;
 		titleSr.enabled = !world;
 		heroSr.enabled = world && state != "dead";
 		ground.Clear(); fxInk.Clear();
@@ -146,8 +139,8 @@ public partial class Game {
 		// camera
 		Vector2 target = ppos + aimDir * 40 + new Vector2(0, 50);
 		camPos = Vector2.Lerp(camPos, target, 1 - Mathf.Exp(-7 * rdt));
-		camPos.x = hw * 2 >= AW ? AW / 2 : Mathf.Clamp(camPos.x, hw, AW - hw);
-		camPos.y = Mathf.Clamp(camPos.y, hh, AH - hh);
+		camPos.x = hw * 2 >= VR.width ? VR.center.x : Mathf.Clamp(camPos.x, VR.xMin + hw, VR.xMax - hw);
+		camPos.y = hh * 2 >= VR.height ? VR.center.y : Mathf.Clamp(camPos.y, VR.yMin + hh, VR.yMax - hh);
 		Vector2 sh = Random.insideUnitCircle * shake;
 		cam.transform.position = new Vector3((camPos.x + sh.x) * 0.01f, (camPos.y + sh.y) * 0.01f, -10);
 
@@ -323,6 +316,7 @@ public partial class Game {
 				fxInk.Circle(s.pos, s.r - 1, s.pool ? new Color(0.45f, 0.75f, 0.3f) : new Color(0.92f, 0.3f, 0.2f), 12);
 			}
 		}
+		DrawStage();
 		foreach (var p in parts) {
 			float u = p.life / p.max;
 			fxInk.Circle(p.pos, p.r * (0.4f + 0.6f * u), new Color(p.col.r, p.col.g, p.col.b, p.col.a * Mathf.Min(1, u * 2)), 8);
@@ -388,12 +382,14 @@ public partial class Game {
 		}
 		switch (state) {
 			case "title": GuiTitle(); return;
+			case "skills": GuiSkills(); return;
 			case "weapon": GuiWeapon(); return;
 			case "meta": GuiMeta(); return;
 			case "help": GuiHelp(); return;
 		}
 		GuiWorld();
 		GuiHud();
+		GuiSkillHud();
 		if (state == "pick") GuiPick();
 		else if (state == "event") GuiEvent();
 		else if (state == "pause") GuiPause();
@@ -405,9 +401,9 @@ public partial class Game {
 		Lab(new Rect(70, 70, 700, 110), "MẶC KIẾM LỤC", 86, ink, TextAnchor.MiddleLeft, true, false);
 		Seal(new Rect(768, 92, 56, 56), "MẶC", D.RED, 17);
 		Lab(new Rect(76, 176, 700, 34), "một kiếm · một nón lá · ngũ hành trong tay", 22, new Color(0.2f, 0.18f, 0.17f), TextAnchor.MiddleLeft, true, false);
-		string[] m = { "KHỞI HÀNH", "TU LUYỆN", "CÁCH CHƠI", "THOÁT" };
+		string[] m = { "KHỞI HÀNH", "TUYỆT KỸ", "TU LUYỆN", "CÁCH CHƠI", "THOÁT" };
 		for (int i = 0; i < m.Length; i++) {
-			var r = new Rect(76, 270 + i * 62, 320, 52);
+			var r = new Rect(76, 256 + i * 58, 320, 50);
 			bool sel = menuI == i;
 			if (sel) { Box(new Rect(r.x - 14, r.y + 8, 6, 36), D.RED); Box(new Rect(r.x - 4, r.y + 46, 250, 3), new Color(0.07f, 0.06f, 0.06f, 0.6f)); }
 			Lab(r, m[i], sel ? 36 : 30, sel ? D.RED : ink, TextAnchor.MiddleLeft, true, false);
@@ -422,10 +418,11 @@ public partial class Game {
 		Dim(0.55f);
 		Lab(new Rect(0, 40, GW, 60), "CHỌN BINH KHÍ", 44, D.PAPER, TextAnchor.MiddleCenter, true);
 		float w = 330, gap = 30, x0 = (GW - (w * 3 + gap * 2)) / 2;
-		for (int i = 0; i < D.WEAPONS.Length; i++) {
+		int w0 = Mathf.Clamp(menuI - 1, 0, D.WEAPONS.Length - 3);
+		for (int i = w0; i < w0 + 3; i++) {
 			var wd = D.WEAPONS[i];
 			bool unl = meta.unl.Contains(wd.id), sel = menuI == i;
-			var r = new Rect(x0 + i * (w + gap), sel ? 140 : 155, w, 420);
+			var r = new Rect(x0 + (i - w0) * (w + gap), sel ? 140 : 155, w, 420);
 			Panel(r, sel);
 			Lab(new Rect(r.x, r.y + 24, w, 44), wd.name, 28, unl ? D.INK : new Color(0.4f, 0.38f, 0.36f), TextAnchor.MiddleCenter, true, false);
 			Box(new Rect(r.x + 40, r.y + 76, w - 80, 2), D.RED);
@@ -435,11 +432,11 @@ public partial class Game {
 				Lab(new Rect(r.x + 16, r.y + 240, w - 32, 36), wd.skillName, 22, D.INK, TextAnchor.MiddleCenter, true, false);
 				Lab(new Rect(r.x + 24, r.y + 280, w - 48, 80), wd.skillDesc, 17, new Color(0.2f, 0.18f, 0.17f), TextAnchor.UpperCenter, false, false);
 			} else {
-				Lab(new Rect(r.x + 24, r.y + 150, w - 48, 120), i == 1 ? "CHƯA MỞ\n\nHạ trùm chương I để mở khóa" : "CHƯA MỞ\n\nHạ trùm chương II để mở khóa", 19, new Color(0.35f, 0.33f, 0.3f), TextAnchor.UpperCenter, false, false);
+				Lab(new Rect(r.x + 24, r.y + 150, w - 48, 120), "CHƯA MỞ\n\n" + wd.unlock, 19, new Color(0.35f, 0.33f, 0.3f), TextAnchor.UpperCenter, false, false);
 			}
 			if (Hit(r, i)) WeaponAct(i);
 		}
-		Lab(new Rect(0, GH - 80, GW, 30), "A / D chọn   ·   ENTER xuất phát   ·   ESC quay lại", 18, D.PAPER);
+		Lab(new Rect(0, GH - 80, GW, 30), "A / D chọn (6 binh khí)   ·   ENTER xuất phát   ·   ESC quay lại", 18, D.PAPER);
 	}
 
 	void GuiMeta() {
@@ -467,16 +464,17 @@ public partial class Game {
 		var r = new Rect((GW - 900) / 2, 50, 900, 620);
 		Panel(r);
 		Lab(new Rect(r.x, r.y + 16, r.width, 50), "CÁCH CHƠI", 36, D.INK, TextAnchor.MiddleCenter, true, false);
-		string a = "WASD  di chuyển          CHUỘT TRÁI  đánh (giữ để liên hoàn)\nCHUỘT PHẢI / SHIFT  đỡ đòn          SPACE  khinh công (né xuyên đòn)\nQ  tuyệt chiêu (tốn 50 nội lực)          E  vào cửa, mua, trò chuyện          ESC  tạm dừng";
+		string a = "WASD  di chuyển          CHUỘT TRÁI  đánh (giữ để liên hoàn)\nSHIFT  đỡ đòn          SPACE  khinh công (né xuyên đòn)          CHUỘT PHẢI  phóng phi kiếm          R  thu kiếm\nQ  tuyệt chiêu của binh khí (50 nội lực)          F  TUYỆT KỸ (hồi chiêu)          E  vào cửa, mua, trò chuyện          ESC  tạm dừng";
 		Lab(new Rect(r.x + 40, r.y + 76, r.width - 80, 96), a, 18, D.INK, TextAnchor.UpperLeft, false, false);
 		string b = "ĐỠ CHUẨN: bấm đỡ ngay trước khi đòn chạm. Không mất máu, đánh bật THẾ của địch, phản ám khí về chủ.\n" +
 			"THẾ: thanh vàng trên đầu địch. Đầy thanh là PHÁ THẾ: địch choáng và nhận thêm 60% sát thương.\n" +
-			"VÙNG ĐỎ TRÒN (nện đất, kiếm vũ) không đỡ được: phải khinh công né.\n\n" +
+			"VÙNG ĐỎ TRÒN (nện đất, kiếm vũ) không đỡ được: phải khinh công né.\n" +
+			"PHI KIẾM: cắm vào địch hoặc mặt đất; thu về thì chém mọi thứ trên đường bay. Lúc đi mang hành của ĐÒN ĐÁNH, lúc về mang hành của TUYỆT CHIÊU.\n\n" +
 			"NGŨ HÀNH: bí kíp gắn một hành vào đòn đánh, khinh công, đỡ đòn hoặc tuyệt chiêu. Trúng địch sẽ để lại ẤN của hành đó.\n" +
 			"Đánh tiếp bằng một hành KHÁC lên địch đang mang ẤN:\n" +
 			"   ·  TƯƠNG SINH (Kim-Thủy, Thủy-Mộc, Mộc-Hỏa, Hỏa-Thổ, Thổ-Kim): nổ lan ra chung quanh, hồi nội lực.\n" +
 			"   ·  TƯƠNG KHẮC (các cặp còn lại): đánh sập THẾ, làm địch khựng.\n\n" +
-			"Mỗi chương có bốn ải, một trạm dừng và một trùm. Ngã xuống thì mất chiêu thức, nhưng NGỘ TÍNH còn lại để TU LUYỆN.";
+			"Ba chương nối liền nhau: mỗi chương bốn ải, một trạm dừng và một trùm; cứ đi lên là tới. Ngã xuống thì mất chiêu thức, nhưng NGỘ TÍNH còn lại để TU LUYỆN.";
 		Lab(new Rect(r.x + 40, r.y + 180, r.width - 80, 400), b, 17, new Color(0.15f, 0.13f, 0.12f), TextAnchor.UpperLeft, false, false);
 		Lab(new Rect(r.x, r.yMax - 44, r.width, 30), "ENTER / ESC quay lại", 16, D.RED, TextAnchor.MiddleCenter, false, false);
 	}
@@ -496,7 +494,7 @@ public partial class Game {
 			if (near) {
 				Lab(new Rect(g.x - 200, g.y + 10, 400, 26), D.RewardHint(d.kind), 16, D.PAPER);
 				Vector2 e = W2G(d.pos + new Vector2(0, -40));
-				Lab(new Rect(e.x - 100, e.y - 14, 200, 28), "[E] BƯỚC VÀO", 18, new Color(1f, 0.9f, 0.5f));
+				Lab(new Rect(e.x - 100, e.y - 14, 200, 28), d.kind == "end" ? "[E] HẠ SƠN" : "[E] NHẬN", 18, new Color(1f, 0.9f, 0.5f));
 			}
 		}
 		foreach (var it in items) {
@@ -536,9 +534,14 @@ public partial class Game {
 			Box(new Rect(26 + i * 30, 82, 24, 12), D.INK);
 			Box(new Rect(28 + i * 30, 84, 20, 8), i < dashes ? D.PAPER : new Color(0.3f, 0.28f, 0.26f));
 		}
-		Lab(new Rect(28, 100, 300, 26), coins + " lượng", 18, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleLeft);
+		for (int i = 0; i < swordMax; i++) {
+			Box(new Rect(27 + i * 13, 100, 8, 20), D.INK);
+			Box(new Rect(29 + i * 13, 102, 4, 16), i < swordsHeld ? new Color(0.93f, 0.95f, 0.97f) : new Color(0.3f, 0.28f, 0.26f));
+		}
+		if (swordsHeld == 0) Lab(new Rect(34 + swordMax * 13, 97, 200, 26), "[R] THU KIẾM", 15, new Color(1f, 0.9f, 0.5f, 0.7f + 0.3f * Mathf.Sin(T * 6)), TextAnchor.MiddleLeft);
+		Lab(new Rect(28, 124, 300, 26), coins + " lượng", 18, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleLeft);
 		// chapter
-		string where = D.CH_NAME[ch] + "   ·   " + (roomKind == "boss" ? "TRÙM" : "ẢI " + Mathf.Min(step + 1, 5) + "/5");
+		string where = D.CH_NAME[ch] + "   ·   " + (roomKind == "boss" ? "TRÙM" : (SegAt(ppos.y).kind == "rest" ? "TRẠM DỪNG" : "ẢI " + Mathf.Min(step + 1, 4) + "/4"));
 		Lab(new Rect(GW - 520, 18, 496, 30), where, 18, D.PAPER, TextAnchor.MiddleRight, true);
 		if (!cleared && roomKind != "boss" && waves > 0) Lab(new Rect(GW - 520, 46, 496, 24), "ĐỢT " + Mathf.Max(1, wave) + "/" + waves, 15, D.PAPER, TextAnchor.MiddleRight);
 		if (meta.kiep > 0) Lab(new Rect(GW - 520, 68, 496, 22), "KIẾP NẠN " + meta.kiep, 14, new Color(0.9f, 0.5f, 0.4f), TextAnchor.MiddleRight);
@@ -583,9 +586,11 @@ public partial class Game {
 			Lab(new Rect(0, 152, GW, 60), banner, 44, new Color(0.91f, 0.86f, 0.75f, a), TextAnchor.MiddleCenter, true);
 			Lab(new Rect(0, 208, GW, 30), bannerSub, 17, new Color(0.91f, 0.86f, 0.75f, a));
 		}
+		if (fight == null && doors.Count == 0 && pickT <= 0 && bannerT <= 0 && state == "play" && SegAt(ppos.y).kind != "rest" && SegAt(ppos.y + 160).state == 0)
+			Lab(new Rect(0, 110, GW, 30), "TIẾN LÊN ▲", 20, new Color(1f, 0.9f, 0.5f, 0.6f + 0.4f * Mathf.Sin(T * 5)), TextAnchor.MiddleCenter, true);
 		if (toastT > 0) Lab(new Rect(0, GH - 150, GW, 34), toast, 20, new Color(1f, 0.9f, 0.55f, Mathf.Clamp01(toastT)), TextAnchor.MiddleCenter, true);
 		if (cleared && doors.Count > 0 && state == "play" && pickT <= 0 && roomKind != "shop" && roomKind != "tra" && roomKind != "ky" && bannerT <= 0)
-			Lab(new Rect(0, 110, GW, 30), "ẢI ĐÃ QUANG · chọn một cửa phía trên", 17, new Color(0.91f, 0.86f, 0.75f, 0.7f + 0.3f * Mathf.Sin(T * 4)));
+			Lab(new Rect(0, 110, GW, 30), "ẢI ĐÃ QUANG · nhận một trong hai phần thưởng phía trên", 17, new Color(0.91f, 0.86f, 0.75f, 0.7f + 0.3f * Mathf.Sin(T * 4)));
 	}
 
 	void GuiPick() {

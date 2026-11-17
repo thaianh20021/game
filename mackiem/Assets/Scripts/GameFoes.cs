@@ -51,7 +51,8 @@ public partial class Game {
 			float sp = f.d.spd * (f.slow > 0 ? 0.55f : 1) * (f.elite ? 1.1f : 1);
 			if (f.mv != null) { RunStep(f, dt, dir); f.pos = Confine(f.pos, f.d.r); continue; }
 			// choose a move
-			if (f.cd <= 0) {
+			// only a few foes wind up at once, so a crowd stays readable
+			if (f.cd <= 0 && (f.d.boss || Busy() < 4 + ch)) {
 				int pick = -1, seen = 0;
 				float hpF = f.hp / f.maxHp;
 				for (int m = 0; m < f.d.moves.Length; m++) {
@@ -193,6 +194,7 @@ public partial class Game {
 	// returns true when the hit landed on the body
 	bool HitPlayer(float dmg, Foe src, bool parryable, Vector2 from) {
 		if (inv > 0 || act == "dash" || state != "play") return false;
+		if (act == "atk" && weapon.mech == "heavy") dmg *= 0.6f;   // the mace does not flinch
 		if (parryable && guard) {
 			if (gt <= pwin) { Parried(src); return false; }
 			dmg *= 0.3f;
@@ -349,6 +351,12 @@ public partial class Game {
 					if ((f.pos - g).magnitude < f.d.r * f.scale + s.r + 8) {
 						s.hit.Add(f);
 						HurtFoe(f, s.dmg, s.el, s.lvl, 1, s.vel.normalized);
+						if (s.bounce > 0) {
+							// the fan's darts skip on to the nearest foe not yet hit
+							Foe nb = null;
+							foreach (var o in foes) if (!o.dead && o.spawn <= 0 && !s.hit.Contains(o) && (o.pos - g).magnitude < 400 && (nb == null || (o.pos - g).sqrMagnitude < (nb.pos - g).sqrMagnitude)) nb = o;
+							if (nb != null) { s.bounce--; s.vel = (nb.pos - g).normalized * s.vel.magnitude; s.life = Mathf.Max(s.life, 0.45f); break; }
+						}
 						s.pierce--;
 						if (s.pierce < 0) { gone = true; break; }
 					}
@@ -444,6 +452,9 @@ public partial class Game {
 			i.mv = bd > want ? to.normalized : (bd < want * 0.6f ? -to.normalized : new Vector2(-to.y, to.x).normalized * 0.5f);
 			i.atk = bd < want + 90;
 			i.skill = qi >= 50 && pulse;
+			i.thr = pulse && bd > 140 && bd < 700;
+			i.tk = pulse && bd < 500;
+			if (weapon.mech == "charge") { i.atk = ((int)(T * 1.2f)) % 2 == 0; i.mv = bd < 300 ? -to.normalized : Vector2.zero; }
 			bool threat = false;
 			foreach (var f in foes) if (!f.dead && f.mv != null && !f.resolved && f.stT > f.mv.steps[f.si].wind - 0.14f && (f.pos - ppos).magnitude < 320) threat = true;
 			i.parry = threat;
@@ -454,6 +465,7 @@ public partial class Game {
 			bool found = false;
 			foreach (var it in items) if (!it.gone && it.kind != "npc" && coins >= it.cost && it.kind != "luyen") { target = it.pos; found = true; break; }
 			if (!found && doors.Count > 0) target = doors[(int)(seed & 1) % doors.Count].pos;
+			else if (!found) target = new Vector2(SegAt(ppos.y + 260).r.center.x + Mathf.Sin(T * 1.7f) * 150, ppos.y + 260);
 			Vector2 to = target - ppos;
 			i.mv = to.magnitude > 40 ? to.normalized : Vector2.zero;
 			i.aim = target;

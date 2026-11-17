@@ -11,27 +11,38 @@ Không liên quan tới `duvang/` hay `rebirth/` ở thư mục cha.
 | Phím | Việc |
 | --- | --- |
 | WASD | di chuyển |
-| Chuột trái (giữ) / J | đánh liên hoàn |
-| Chuột phải / Shift / K | đỡ đòn; bấm sát lúc đòn chạm là ĐỠ CHUẨN |
+| Chuột trái (giữ) / J | đánh liên hoàn (cung: giữ để giương, thả để bắn) |
+| Chuột phải / I | phóng phi kiếm; hết kiếm thì bấm lần nữa để thu |
+| R / chuột giữa / O | thu phi kiếm về (chém mọi thứ trên đường bay) |
+| Shift / K | đỡ đòn; bấm sát lúc đòn chạm là ĐỠ CHUẨN |
 | Space | khinh công (né xuyên đòn) |
-| Q / L | tuyệt chiêu (50 nội lực) |
-| E / F | vào cửa, mua, trò chuyện |
+| Q / L | tuyệt chiêu của binh khí (50 nội lực) |
+| F | TUYỆT KỸ đang dùng (hồi chiêu) |
+| E | nhận thưởng, mua, trò chuyện |
 | Esc | tạm dừng |
 
-Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đánh, A khinh công, LB/RB đỡ, Y tuyệt chiêu, B dùng.
+Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đánh, A khinh công, LB đỡ, RB phi kiếm, Y tuyệt chiêu, B dùng.
 
 ## Thiết kế
 
 - **Đỡ và THẾ**: mọi địch có thanh THẾ. Đòn đánh và nhất là đỡ chuẩn làm đầy thanh; đầy là PHÁ THẾ (choáng, nhận +60% sát thương). Vùng đỏ tròn không đỡ được, phải né.
 - **Ngũ hành**: bí kíp gắn một hành vào bốn ô (đòn đánh, khinh công, đỡ đòn, tuyệt chiêu). Trúng địch để lại ẤN; đánh tiếp bằng hành khác thì
   TƯƠNG SINH (Kim-Thủy, Thủy-Mộc, Mộc-Hỏa, Hỏa-Thổ, Thổ-Kim: nổ lan, hồi nội lực) hoặc TƯƠNG KHẮC (các cặp còn lại: sập THẾ).
-- **Chuyến đi**: 3 chương (Trúc Lâm, Cổ Tự, Tuyết Đỉnh), mỗi chương 4 ải chọn cửa theo phần thưởng, 1 trạm dừng (thương nhân hoặc trà quán), 1 trùm.
-- **Tu luyện**: NGỘ TÍNH kiếm được mỗi chuyến mua nâng cấp vĩnh viễn. Hạ trùm chương I và II mở thương và quạt. Thắng thì KIẾP NẠN tăng.
+- **Thế giới liền mạch**: cả chuyến đi là một bản đồ đi từ dưới lên, không chuyển phòng (`GameStage.BuildWorld`, chỉ phụ thuộc `seed`).
+  Mỗi chương: 4 bãi chiến (bước vào là bị phong ấn hai đầu, 2 đến 4 đợt phục kích), 1 trạm dừng (thương nhân và trà quán), rồi đấu trường trùm là bức tranh của chương đặt thẳng vào bản đồ.
+  Dọn xong một bãi thì hai phần thưởng hiện ở đầu trên: nhận một cái là phong ấn mở.
+- **Phi kiếm**: 4 thanh (kiếm: 6). Phóng ra cắm vào địch hoặc đất, thu về chém dọc đường. Lúc đi mang hành của ĐÒN ĐÁNH, lúc về mang hành của TUYỆT CHIÊU, nên một lần phóng-thu tự gây phản ứng.
+- **Đông và nhanh**: nhiều địch yếu thay vì ít địch trâu; tối đa 4 + số chương kẻ cùng lấy đà một lúc để đám đông vẫn đọc được.
+- **6 binh khí, mỗi cái một cơ chế** (`WeaponDef.mech`): kiếm (thêm phi kiếm), thương (mũi thương +60%), quạt (ám khí nảy), song đao (cuồng đao tăng tốc), chùy (bất động, phá thế), cung (giương rồi thả).
+- **4 tuyệt kỹ có cây nâng cấp** (`D.SKILLS`, `GameSkill.cs`, mục TUYỆT KỸ ở màn hình chính): Thiên Kiếm Vũ, Phá Vân Chỉ, Kim Chung Tráo, Tàn Ảnh Trảm; mỗi chiêu 3 tầng mua vĩnh viễn bằng NGỘ TÍNH.
+- **Tu luyện**: NGỘ TÍNH kiếm được mỗi chuyến mua nâng cấp vĩnh viễn. Hạ trùm mở dần 5 binh khí còn lại. Thắng thì KIẾP NẠN tăng.
 
 ## Tệp
 
 - `Assets/Scripts/Data.cs`: toàn bộ số liệu (binh khí, địch, trùm, bí kíp, tu luyện).
-- `Assets/Scripts/Game.cs`: khởi động, điều khiển, người chơi, ải và chuyến đi.
+- `Assets/Scripts/Game.cs`: khởi động, điều khiển, người chơi, chuyến đi.
+- `Assets/Scripts/GameStage.cs`: dựng thế giới, tường (`Confine`), bãi chiến và phần thưởng, phi kiếm.
+- `Assets/Scripts/GameSkill.cs`: tuyệt kỹ, cây nâng cấp, cung và cuồng đao.
 - `Assets/Scripts/GameFoes.cs`: địch, trùm, phản ứng ngũ hành, đạn, bot tự chơi.
 - `Assets/Scripts/GameDraw.cs`: sprite, nét mực, HUD và menu (IMGUI).
 - `Assets/Scripts/Ink.cs`: lưới vẽ tức thời (vùng báo đòn, vệt kiếm, giọt mực). `Sfx.cs`: âm thanh và nhạc tổng hợp lúc khởi động.
@@ -65,4 +76,4 @@ Dòng `BOT END ...` trong `gen/run.log` cho biết bot dừng ở đâu.
 
 ## Chưa làm
 
-Cân bằng chưa qua tay người chơi thật; thương và quạt dùng chung bộ khung cầm kiếm; NPC và đạo cụ vẫn là hình tĩnh; chưa có điều khiển cảm ứng; chữ chỉ có tiếng Việt.
+Cân bằng chưa qua tay người chơi thật (độ khó vừa được đẩy lên mạnh, chưa ai thử); bot chỉ thử kiếm, chưa thử 5 binh khí kia, 3 tuyệt kỹ sau và màn hình TUYỆT KỸ; mọi binh khí dùng chung bộ khung cầm kiếm; NPC và đạo cụ vẫn là hình tĩnh; chưa có điều khiển cảm ứng; chữ chỉ có tiếng Việt.
