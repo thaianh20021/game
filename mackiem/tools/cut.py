@@ -3,6 +3,7 @@
 #   default: the first figure sets the scale for the whole sheet
 #   each:    every figure is scaled to that height (icons, props)
 #   med:     the median figure height becomes that height (animation sheets)
+#   scale=f: fixed scale factor instead (H is then ignored)
 #   anim:    frames of one character: centre on the upper body (it stays put while legs move)
 #            and keep each row's common ground line, so jumps stay in the air
 import sys, numpy as np
@@ -13,14 +14,20 @@ each, med, anim = 'each' in sys.argv, 'med' in sys.argv, 'anim' in sys.argv
 flips = []
 for a in sys.argv:
     if a.startswith('flip='): flips = [int(x) for x in a[5:].split(',')]
-im = np.asarray(Image.open(src).convert('RGB')).astype(np.float32) / 255.0
+raw = Image.open(src)
+src_a = np.asarray(raw.convert('RGBA')).astype(np.float32)[..., 3] / 255.0
+cutout = np.concatenate([src_a[:6].ravel(), src_a[-6:].ravel()]).mean() < 0.1   # the sheet already has a transparent background
+im = np.asarray(raw.convert('RGB')).astype(np.float32) / 255.0
 r, g, b = im[..., 0], im[..., 1], im[..., 2]
 # the background colour is whatever the border is painted with
 edge = np.concatenate([im[:6].reshape(-1, 3), im[-6:].reshape(-1, 3), im[:, :6].reshape(-1, 3), im[:, -6:].reshape(-1, 3)])
 bg = np.median(edge, axis=0)
 dist = np.sqrt(((im - bg) ** 2).sum(-1))
 m = np.minimum(r, b) - g
-if bg.min() > 0.8:
+if cutout:
+    alpha = np.where(src_a > 0.35, src_a, 0)
+    m = np.zeros_like(m)
+elif bg.min() > 0.8:
     # white sheet: only the white that is connected to the border is background (outlines keep the inside)
     near = dist < 0.16
     lb, _ = ndi.label(near)
@@ -63,6 +70,8 @@ heights = [c[1].shape[0] for c in cuts]
 base = {}
 for c in cuts: base[c[3]] = max(base.get(c[3], 0), c[2])
 scale = H / (np.median(heights) if med else heights[0])
+for a_ in sys.argv:
+    if a_.startswith('scale='): scale = float(a_[6:])   # fixed scale: several sheets of one character stay the same size
 outs = []
 for idx, (c, a, bottom, rw) in enumerate(cuts):
     if each: scale = H / a.shape[0]

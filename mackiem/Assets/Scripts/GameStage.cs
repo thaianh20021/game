@@ -309,7 +309,7 @@ public partial class Game {
 			if (s.host != null && !s.host.dead) { s.hit.Add(s.host); s.vel = (ppos - s.host.pos).normalized; SwordHit(s, s.host, true); }
 			s.host = null;
 		}
-		if (any) sfx.Play("dash", 0.6f, 1.5f);
+		if (any) { sfx.Play("dash", 0.6f, 1.5f); recallT = 0.25f; }
 	}
 
 	void SwordHit(FSword s, Foe f, bool back) {
@@ -356,6 +356,7 @@ public partial class Game {
 				float m = to.magnitude;
 				if (m < 46 + 2300 * dt) {
 					swords.RemoveAt(i);
+					catchT = 0.14f; recallT = 0;
 					swordsHeld = Mathf.Min(swordMax, swordsHeld + 1);
 					qi = Mathf.Min(100, qi + 1.5f * qiMul);
 					continue;

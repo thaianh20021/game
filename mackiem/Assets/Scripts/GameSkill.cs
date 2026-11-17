@@ -9,6 +9,7 @@ public partial class Game {
 	readonly List<PBlast> pblasts = new List<PBlast>();
 	float tkCd, bellT, bellTick, kvT, chargeT, frenzy, frenzyT, chainT;
 	int chain;
+	float skidT, recallT, catchT, castT;   // short pose timers for the hero's frames
 	int bellL;
 	Vector2 kvPos;
 	int skCol, skRow;
@@ -21,6 +22,7 @@ public partial class Game {
 		int L = SkLv(sd.id);
 		if (L <= 0) return;
 		tkCd = sd.cd;
+		castT = 0.42f;
 		int el = SlotEl("atk"), lv = SlotLv("atk");
 		Text(ppos + new Vector2(0, 170), sd.name, new Color(1f, 0.9f, 0.55f), 28);
 		sfx.Play("skill"); sfx.Play("gong", 0.5f, 1.4f);
@@ -87,6 +89,7 @@ public partial class Game {
 		frenzyT -= dt;
 		if (frenzyT <= 0) frenzy = 0;
 		chainT -= dt;
+		skidT -= dt; recallT -= dt; catchT -= dt; castT -= dt;
 		if (chainT <= 0) chain = 0;
 		if (P(inp.tk, prev.tk) && tkCd <= 0 && act != "dash") CastTK();
 		for (int i = pblasts.Count - 1; i >= 0; i--) {

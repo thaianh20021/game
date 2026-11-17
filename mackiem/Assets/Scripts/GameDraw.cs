@@ -7,8 +7,7 @@ public partial class Game {
 	readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
 	Ink ground, fxInk;
 	SpriteRenderer bgSr, titleSr, heroSr;
-	Sprite[] hRun, hAtk;
-	Sprite hIdle, hGuard, hHurt, hDash, hSpin;
+	Sprite[] hRun, hAtk, hIdleF, hAct;
 	bool heroAnim;
 	readonly Dictionary<string, Sprite[]> frameSets = new Dictionary<string, Sprite[]>();
 	float heroK = 1;
@@ -35,8 +34,8 @@ public partial class Game {
 		heroSr.gameObject.name = "hero";
 		heroK = heroSr.transform.localScale.x;
 		hRun = Frames("hero_run"); hAtk = Frames("hero_atk");
-		hIdle = Spr("hero_idle_0"); hGuard = Spr("hero_guard"); hHurt = Spr("hero_hurt"); hDash = Spr("hero_dashb"); hSpin = Spr("hero_spin");
-		heroAnim = hRun.Length >= 4 && hAtk.Length >= 6 && hIdle != null && hGuard != null && hHurt != null && hDash != null && hSpin != null;
+		hIdleF = Frames("hero_idle"); hAct = Frames("hero_act");
+		heroAnim = hRun.Length >= 8 && hAtk.Length >= 12 && hIdleF.Length >= 4 && hAct.Length >= 12;
 		if (heroAnim) heroK = 1;   // frames are drawn at twice the logic size and imported at 200 px per unit
 		fTitle = Font.CreateDynamicFontFromOSFont(new[] { "Palatino Linotype", "Georgia", "Times New Roman", "Noto Serif", "serif" }, 40);
 		fBody = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Tahoma", "Roboto", "Noto Sans", "Arial" }, 20);
@@ -65,21 +64,30 @@ public partial class Game {
 	// the frame of the hero for what he is doing right now
 	Sprite HeroPose() {
 		if (!heroAnim) return Spr(act == "dash" ? "hero_dash" : (act == "atk" || act == "skill" || whirlT > 0 ? "hero_slash" : (moving ? "hero_run" : "hero_idle")));
-		if (act == "dash") return hDash;
-		if (act == "skill" || whirlT > 0) return weapon.skill == "charge" ? hAtk[5] : hSpin;
+		if (state == "dead") return hAct[3];
+		if (act == "dash") return at < 0.035f ? hAct[4] : hAct[5];
+		if (castT > 0) return castT > 0.26f ? hAct[10] : hAct[11];
+		if (act == "skill") return weapon.skill == "charge" ? hAtk[10] : (at < 0.1f ? hAct[10] : hAct[11]);
+		if (whirlT > 0) return hAtk[9];
 		if (act == "atk") {
 			var s = weapon.combo[ci];
 			float u = at / s.dur;
-			int k = u < 0.22f ? 0 : (u < 0.55f ? 1 : 2);
-			if (s.t == "line") return k == 0 ? hAtk[ci % 2 == 0 ? 0 : 3] : hAtk[5];
-			if (s.w > 2.5f || ci == weapon.combo.Length - 1) return k == 0 ? hAtk[0] : (k == 1 ? hSpin : hAtk[2]);
-			if (ci % 2 == 1) return k == 0 ? hAtk[3] : hAtk[4];
-			return hAtk[k];
+			int k = u < 0.2f ? 0 : (u < 0.48f ? 1 : (u < 0.82f ? 2 : 3));
+			if (s.t == "shot") return k == 0 ? hAct[4] : hAct[7];
+			bool last = ci == weapon.combo.Length - 1 && weapon.combo.Length > 1;
+			if (s.t == "line") return k == 0 ? hAtk[0] : (k == 3 ? hAtk[11] : hAtk[10]);
+			return hAtk[(last || s.w > 3 ? 8 : (ci % 2) * 4) + k];
 		}
-		if (hurtFx > 0.22f) return hHurt;
-		if (guard) return hGuard;
+		if (hurtFx > 0.22f) return hAct[2];
+		if (guard) return pflash > 0 ? hAct[1] : hAct[0];
+		if (thrCd > 0.02f) return hAct[7];
+		if (catchT > 0) return hAct[9];
+		if (recallT > 0) return hAct[8];
+		if (chargeT > 0) return hAct[10];
+		if (skidT > 0) return hAct[6];
 		if (moving) return hRun[(int)(moveAmt * 15) % hRun.Length];
-		return hIdle;
+		int b = (int)(T * 3.2f) % 6;   // breathe in and out: 0 1 2 3 2 1
+		return hIdleF[b < 4 ? b : 6 - b];
 	}
 
 	// an ink afterimage of a sprite, left behind by fast moves
@@ -123,7 +131,7 @@ public partial class Game {
 		float hh = VIEW_H / 2, hw = hh * cam.aspect;
 		bgSr.enabled = false;
 		titleSr.enabled = !world;
-		heroSr.enabled = world && state != "dead";
+		heroSr.enabled = world && (state != "dead" || heroAnim);
 		ground.Clear(); fxInk.Clear();
 		if (!world) {
 			cam.transform.position = new Vector3(0, 0, -10);

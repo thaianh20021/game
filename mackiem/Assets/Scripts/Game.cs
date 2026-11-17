@@ -604,7 +604,7 @@ public partial class Game : MonoBehaviour {
 				if (ghostT <= 0) { ghostT = 0.028f; AddGhost(heroSr, ppos, new Color(0.07f, 0.06f, 0.08f, 0.55f), 0.22f); }
 				if (Rnd() < 0.8f) parts.Add(new Part { pos = ppos + new Vector2(0, 50) + RndDir() * 20, vel = -ddir * 60, r = Rnd(8, 18), life = 0.3f, max = 0.3f, col = new Color(0.07f, 0.06f, 0.06f, 0.5f) });
 				if (ddir.x != 0) face = ddir.x > 0 ? 1 : -1;
-				if (at >= 0.17f) { act = ""; DashBurst(); }
+				if (at >= 0.17f) { act = ""; DashBurst(); skidT = 0.13f; }
 				break;
 			case "atk": {
 				var s = weapon.combo[ci];

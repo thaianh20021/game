@@ -34,6 +34,8 @@ Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đán
 - **Phi kiếm**: 4 thanh (kiếm: 6). Phóng ra cắm vào địch hoặc đất, thu về chém dọc đường. Lúc đi mang hành của ĐÒN ĐÁNH, lúc về mang hành của TUYỆT CHIÊU, nên một lần phóng-thu tự gây phản ứng.
 - **Đông và nhanh**: nhiều địch yếu thay vì ít địch trâu; tối đa 4 + số chương kẻ cùng lấy đà một lúc để đám đông vẫn đọc được.
 - **6 binh khí, mỗi cái một cơ chế** (`WeaponDef.mech`): kiếm (thêm phi kiếm), thương (mũi thương +60%), quạt (ám khí nảy), song đao (cuồng đao tăng tốc), chùy (bất động, phá thế), cung (giương rồi thả).
+- **4 môn phái** (`D.SECTS`, chọn sau binh khí): Vân Kiếm Tông, Thiết Y Môn, Huyết Nguyệt Đường, Ngũ Hành Cốc; mỗi phái đổi cách chơi.
+- **Tinh anh có thuộc tính** (`Foe.afx`): BẠO LIỆT nổ khi chết, THẦN TỐC, THIẾT GIÁP (phải phá thế). **LIÊN TRẢM**: chuỗi hạ địch, mỗi mốc 10 hồi máu và nội lực.
 - **4 tuyệt kỹ có cây nâng cấp** (`D.SKILLS`, `GameSkill.cs`, mục TUYỆT KỸ ở màn hình chính): Thiên Kiếm Vũ, Phá Vân Chỉ, Kim Chung Tráo, Tàn Ảnh Trảm; mỗi chiêu 3 tầng mua vĩnh viễn bằng NGỘ TÍNH.
 - **Tu luyện**: NGỘ TÍNH kiếm được mỗi chuyến mua nâng cấp vĩnh viễn. Hạ trùm mở dần 5 binh khí còn lại. Thắng thì KIẾP NẠN tăng.
 
@@ -54,11 +56,16 @@ Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đán
 
 ## Hoạt ảnh
 
-- Tên tệp quyết định tất cả: `hero_run_0..7`, `hero_atk_0..5`, `hero_idle_0`, `hero_guard`, `hero_hurt`, `hero_dashb`, `hero_spin`;
+- Tên tệp quyết định tất cả. Nhân vật chính có 36 khung do `tools/hero2.sh` vẽ: `hero_run_0..7`, `hero_idle_0..3` (thở), `hero_atk_0..11` (ba nhát, mỗi nhát lấy đà/chém/dứt đòn/thu thế), `hero_act_0..11` (thủ, chịu đòn, trúng đòn, quỵ, nhún, lướt, phanh, phóng kiếm, gọi kiếm, bắt kiếm, vận công, xuất chiêu);
   địch: `<id>_walk_0..3`, `<id>_wind`, `<id>_hit`. Thiếu bộ khung thì game tự dùng hình đơn cũ (`<id>.png`) và lắc lư bằng code.
 - Khung hình cắt ở kích thước gấp đôi (200 px một đơn vị) nên vẽ đúng cỡ gốc, không co giãn theo từng khung.
 - `Game.HeroPose()` chọn khung cho nhân vật chính; đoạn vẽ địch trong `GameDraw.Render` chọn khung cho địch. Bóng mờ khi lướt là `AddGhost`.
 - Gemini vẽ đúng nền hồng; các model GPT image chỉ chịu nền trắng (và đôi lúc vẫn ra nền tối, khi đó phải vẽ lại).
+
+## Unity MCP
+
+Mở project trong Unity Editor là `Assets/Editor/McpBoot.cs` tự bật cầu nối MCP (stdio). Server nằm ở `C:/Users/ADMIN/.mcp-unity`, cấu hình ở `.mcp.json` gốc repo.
+Qua MCP có thể vào Play, chạy mã trong Editor, đọc Console và build (`manage_build`).
 
 ## Build và thử
 
