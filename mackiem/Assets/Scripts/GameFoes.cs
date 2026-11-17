@@ -13,6 +13,7 @@ public partial class Game {
 				continue;
 			}
 			f.flash -= dt;
+			f.moving = false;
 			if (f.spawn > 0) { f.spawn -= dt; continue; }
 			// statuses
 			f.bleed -= dt; f.slow -= dt; f.markT -= dt;
@@ -88,6 +89,8 @@ public partial class Game {
 				if (d.sqrMagnitude < need * need && d.sqrMagnitude > 0.01f) want += d.normalized * 0.9f;
 			}
 			f.pos += Vector2.ClampMagnitude(want, 1) * sp * dt;
+			f.moving = want.sqrMagnitude > 0.04f;
+			if (f.moving) f.animT += dt * sp / 150f;
 			f.pos = Confine(f.pos, f.d.r);
 		}
 	}
@@ -101,6 +104,7 @@ public partial class Game {
 		f.aimPos = ppos;
 		if (s.t == "blink") {
 			Puff(f.pos, D.INK, 12, 200);
+			AddGhost(f.sr, f.pos, new Color(0.07f, 0.06f, 0.08f, 0.6f), 0.35f);
 			Vector2 side = RndDir();
 			f.pos = Confine(ppos + side * 230, f.d.r);
 			Puff(f.pos, D.INK, 12, 200);
@@ -147,7 +151,11 @@ public partial class Game {
 				slashes.Add(new Slash { pos = f.pos + new Vector2(0, 45), dir = f.aim, line = true, len = s.len, wid = s.wid, col = D.RED });
 				sfx.Play("slash", 0.45f, 0.7f);
 				if (LineHit(f.pos, f.aim, s.len, s.wid, ppos, 18)) HitPlayer(dmg, f, true, f.pos);
-				if (s.dash && !f.dead && f.broken <= 0) f.pos = Confine(f.pos + f.aim * (s.len - 50), f.d.r);
+				if (s.dash && !f.dead && f.broken <= 0) {
+					Vector2 end = Confine(f.pos + f.aim * (s.len - 50), f.d.r);
+					for (int gi = 0; gi < 5; gi++) AddGhost(f.sr, Vector2.Lerp(f.pos, end, gi / 5f), new Color(0.07f, 0.06f, 0.08f, 0.2f + gi * 0.08f), 0.2f + gi * 0.05f);
+					f.pos = end;
+				}
 				break;
 			case "shoot":
 				for (int i = 0; i < s.n; i++) {
@@ -404,6 +412,10 @@ public partial class Game {
 		for (int i = slashes.Count - 1; i >= 0; i--) { slashes[i].t += dt; if (slashes[i].t > 0.26f) slashes.RemoveAt(i); }
 		for (int i = texts.Count - 1; i >= 0; i--) { texts[i].t += dt; texts[i].pos.y += 50 * dt; if (texts[i].t > 0.9f) texts.RemoveAt(i); }
 		shake = Mathf.Max(0, shake - 40 * dt);
+		for (int i = ghosts.Count - 1; i >= 0; i--) {
+			ghosts[i].life -= dt;
+			if (ghosts[i].life <= 0) { Destroy(ghosts[i].sr.gameObject); ghosts.RemoveAt(i); }
+		}
 	}
 
 	// --- test bot: plays the game by itself (used with -bot on the command line)

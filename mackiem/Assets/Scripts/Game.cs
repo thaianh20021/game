@@ -18,7 +18,13 @@ public class Foe {
 	public float[] mcd;
 	public bool[] used;
 	public SpriteRenderer sr;
+	// frame animation (null when the foe only has its single picture)
+	public Sprite[] walk;
+	public Sprite wind, hit;
+	public bool moving;
+	public float animT;
 }
+public class Ghost { public SpriteRenderer sr; public float life, max; }
 public class Shot { public Vector2 pos, vel; public float dmg, r = 9, life = 3; public bool mine, pool; public int el = -1, lvl, pierce; public List<Foe> hit; }
 public class Wave { public Vector2 pos; public float r, spd, dmg, max; public bool hit; public Color col = new Color(0.07f, 0.06f, 0.06f); }
 public class Blast { public Vector2 pos; public float r, t, wind, dmg; }
@@ -113,7 +119,9 @@ public partial class Game : MonoBehaviour {
 	List<Item> items = new List<Item>();
 	List<Prop> props = new List<Prop>();
 	List<Vector3> stains = new List<Vector3>();   // x, y, radius
-	float stop, slow, shake;
+	float stop, slow, shake, ghostT;
+	int lastStep;
+	List<Ghost> ghosts = new List<Ghost>();
 
 	void Awake() {
 		var args = Environment.GetCommandLineArgs();
@@ -314,6 +322,8 @@ public partial class Game : MonoBehaviour {
 		foreach (var pr in props) if (pr.sr != null) Destroy(pr.sr.gameObject);
 		foes.Clear(); items.Clear(); props.Clear(); shots.Clear(); wavesFx.Clear(); blasts.Clear(); pools.Clear();
 		parts.Clear(); slashes.Clear(); texts.Clear(); doors.Clear(); stains.Clear();
+		foreach (var g in ghosts) if (g.sr != null) Destroy(g.sr.gameObject);
+		ghosts.Clear();
 	}
 
 	void EnterRoom(string kind) {
@@ -410,6 +420,12 @@ public partial class Game : MonoBehaviour {
 		f.mcd = new float[d.moves.Length];
 		f.used = new bool[d.moves.Length];
 		f.sr = NewSpr(d.id, d.h * f.scale);
+		var wf = Frames(d.id + "_walk");
+		if (wf.Length > 0) {
+			f.walk = wf; f.wind = Spr(d.id + "_wind"); f.hit = Spr(d.id + "_hit");
+			f.sr.sprite = wf[0];
+			f.sr.transform.localScale = Vector3.one * f.scale;
+		}
 		foes.Add(f);
 		Puff(f.pos, D.INK, 14, 180);
 		return f;
@@ -678,7 +694,9 @@ public partial class Game : MonoBehaviour {
 		switch (act) {
 			case "dash":
 				at += dt;
-				ppos += ddir * 1180 * dt;
+				ppos += ddir * 1250 * dt;
+				ghostT -= dt;
+				if (ghostT <= 0) { ghostT = 0.028f; AddGhost(heroSr, ppos, new Color(0.07f, 0.06f, 0.08f, 0.55f), 0.22f); }
 				if (Rnd() < 0.8f) parts.Add(new Part { pos = ppos + new Vector2(0, 50) + RndDir() * 20, vel = -ddir * 60, r = Rnd(8, 18), life = 0.3f, max = 0.3f, col = new Color(0.07f, 0.06f, 0.06f, 0.5f) });
 				if (ddir.x != 0) face = ddir.x > 0 ? 1 : -1;
 				if (at >= 0.17f) { act = ""; DashBurst(); }
@@ -698,6 +716,7 @@ public partial class Game : MonoBehaviour {
 				at += dt;
 				if (weapon.skill == "charge") {
 					ppos += adir * 2300 * dt;
+					AddGhost(heroSr, ppos, new Color(0.07f, 0.06f, 0.08f, 0.6f), 0.3f);
 					inv = Mathf.Max(inv, 0.1f);
 					parts.Add(new Part { pos = ppos + new Vector2(0, 50), vel = Vector2.zero, r = 22, life = 0.3f, max = 0.3f, col = new Color(0.07f, 0.06f, 0.06f, 0.5f) });
 					if (at >= 0.2f) act = "";
@@ -709,10 +728,16 @@ public partial class Game : MonoBehaviour {
 					face = adir.x >= 0 ? 1 : -1;
 					break;
 				}
-				Vector2 v = inp.mv * 335 * (guard ? 0.45f : 1);
+				Vector2 v = inp.mv * 370 * (guard ? 0.45f : 1);
 				ppos += v * dt;
 				moving = v.sqrMagnitude > 100;
-				if (moving) moveAmt += dt;
+				if (moving) {
+					moveAmt += dt * (guard ? 0.5f : 1);
+					// a puff of dust each time a foot lands (frames 0 and 4 of the run cycle)
+					int fr = (int)(moveAmt * 15) % 8;
+					if (fr != lastStep && (fr == 0 || fr == 4)) parts.Add(new Part { pos = ppos + new Vector2(-face * 14, 4), vel = new Vector2(-face * 40, 30), r = Rnd(7, 11), life = 0.32f, max = 0.32f, col = new Color(0.07f, 0.06f, 0.06f, 0.22f) });
+					lastStep = fr;
+				}
 				if (guard || !moving) face = aimDir.x >= 0 ? 1 : -1;
 				else if (Mathf.Abs(v.x) > 10) face = v.x > 0 ? 1 : -1;
 				break;

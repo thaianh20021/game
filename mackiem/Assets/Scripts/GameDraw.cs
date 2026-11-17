@@ -7,6 +7,10 @@ public partial class Game {
 	readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
 	Ink ground, fxInk;
 	SpriteRenderer bgSr, titleSr, heroSr;
+	Sprite[] hRun, hAtk;
+	Sprite hIdle, hGuard, hHurt, hDash, hSpin;
+	bool heroAnim;
+	readonly Dictionary<string, Sprite[]> frameSets = new Dictionary<string, Sprite[]>();
 	float heroK = 1;
 	Font fTitle, fBody;
 	Texture2D white;
@@ -30,6 +34,10 @@ public partial class Game {
 		heroSr = NewSpr("hero_idle", 125);
 		heroSr.gameObject.name = "hero";
 		heroK = heroSr.transform.localScale.x;
+		hRun = Frames("hero_run"); hAtk = Frames("hero_atk");
+		hIdle = Spr("hero_idle_0"); hGuard = Spr("hero_guard"); hHurt = Spr("hero_hurt"); hDash = Spr("hero_dashb"); hSpin = Spr("hero_spin");
+		heroAnim = hRun.Length >= 4 && hAtk.Length >= 6 && hIdle != null && hGuard != null && hHurt != null && hDash != null && hSpin != null;
+		if (heroAnim) heroK = 1;   // frames are drawn at twice the logic size and imported at 200 px per unit
 		fTitle = Font.CreateDynamicFontFromOSFont(new[] { "Palatino Linotype", "Georgia", "Times New Roman", "Noto Serif", "serif" }, 40);
 		fBody = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Tahoma", "Roboto", "Noto Sans", "Arial" }, 20);
 		white = new Texture2D(1, 1);
@@ -41,6 +49,54 @@ public partial class Game {
 		Sprite s;
 		if (!sprites.TryGetValue(n, out s)) { s = Resources.Load<Sprite>("Art/" + n); sprites[n] = s; }
 		return s;
+	}
+
+	// name_0, name_1, ... until one is missing
+	Sprite[] Frames(string prefix) {
+		Sprite[] f;
+		if (frameSets.TryGetValue(prefix, out f)) return f;
+		var l = new List<Sprite>();
+		for (int i = 0; i < 16; i++) { var s = Resources.Load<Sprite>("Art/" + prefix + "_" + i); if (s == null) break; l.Add(s); }
+		f = l.ToArray();
+		frameSets[prefix] = f;
+		return f;
+	}
+
+	// the frame of the hero for what he is doing right now
+	Sprite HeroPose() {
+		if (!heroAnim) return Spr(act == "dash" ? "hero_dash" : (act == "atk" || act == "skill" || whirlT > 0 ? "hero_slash" : (moving ? "hero_run" : "hero_idle")));
+		if (act == "dash") return hDash;
+		if (act == "skill" || whirlT > 0) return weapon.skill == "charge" ? hAtk[5] : hSpin;
+		if (act == "atk") {
+			var s = weapon.combo[ci];
+			float u = at / s.dur;
+			int k = u < 0.22f ? 0 : (u < 0.55f ? 1 : 2);
+			if (s.t == "line") return k == 0 ? hAtk[ci % 2 == 0 ? 0 : 3] : hAtk[5];
+			if (s.w > 2.5f || ci == weapon.combo.Length - 1) return k == 0 ? hAtk[0] : (k == 1 ? hSpin : hAtk[2]);
+			if (ci % 2 == 1) return k == 0 ? hAtk[3] : hAtk[4];
+			return hAtk[k];
+		}
+		if (hurtFx > 0.22f) return hHurt;
+		if (guard) return hGuard;
+		if (moving) return hRun[(int)(moveAmt * 15) % hRun.Length];
+		return hIdle;
+	}
+
+	// an ink afterimage of a sprite, left behind by fast moves
+	void AddGhost(SpriteRenderer src, Vector2 at, Color c, float life) {
+		if (src == null || src.sprite == null || ghosts.Count > 60) return;
+		var go = new GameObject("ghost");
+		var sr = go.AddComponent<SpriteRenderer>();
+		sr.sprite = src.sprite; sr.flipX = src.flipX;
+		sr.material = new Material(inkShader);
+		sr.material.SetFloat("_Flash", 1);
+		sr.material.SetColor("_FlashColor", c);
+		sr.color = new Color(1, 1, 1, c.a);
+		go.transform.localScale = src.transform.localScale;
+		go.transform.rotation = src.transform.rotation;
+		Place(sr, at);
+		sr.sortingOrder -= 1;
+		ghosts.Add(new Ghost { sr = sr, life = life, max = life });
 	}
 
 	// a standing sprite `h` logic pixels tall, feet at its position
@@ -96,17 +152,19 @@ public partial class Game {
 		cam.transform.position = new Vector3((camPos.x + sh.x) * 0.01f, (camPos.y + sh.y) * 0.01f, -10);
 
 		// --- hero
-		string pose = act == "dash" ? "hero_dash" : (act == "atk" || act == "skill" || whirlT > 0 ? "hero_slash" : (moving ? "hero_run" : "hero_idle"));
-		var hs = Spr(pose);
+		var hs = HeroPose();
 		if (hs != null) heroSr.sprite = hs;
 		heroSr.flipX = face < 0;
-		float bob = moving && act == "" ? Mathf.Abs(Mathf.Sin(moveAmt * 13)) * 9 : 0;
+		float bob = moving && act == "" && !heroAnim ? Mathf.Abs(Mathf.Sin(moveAmt * 13)) * 9 : 0;
+		foreach (var g in ghosts) { var gc = g.sr.color; gc.a = g.life / g.max * 0.6f; g.sr.color = gc; }
 		float breathe = 1 + Mathf.Sin(T * 2.6f) * 0.012f;
 		Place(heroSr, ppos, bob);
-		heroSr.transform.localScale = new Vector3(heroK, heroK * breathe, 1);
+		float stretch = act == "dash" ? 1.12f : 1;
+		if (act != "" || moving) breathe = 1;
+		heroSr.transform.localScale = new Vector3(heroK * stretch, heroK * breathe / stretch, 1);
 		float lean = 0;
-		if (act == "atk") lean = -face * 7 * Mathf.Sin(Mathf.Clamp01(at / weapon.combo[ci].dur) * Mathf.PI);
-		else if (moving) lean = -face * 3;
+		if (act == "atk") lean = -face * (heroAnim ? 3 : 7) * Mathf.Sin(Mathf.Clamp01(at / weapon.combo[ci].dur) * Mathf.PI);
+		else if (moving && !heroAnim) lean = -face * 3;
 		if (whirlT > 0) heroSr.flipX = ((int)(T * 12)) % 2 == 0;
 		heroSr.transform.rotation = Quaternion.Euler(0, 0, lean);
 		heroSr.color = new Color(1, 1, 1, inv > 0 && pflash <= 0 && act != "dash" && ((int)(T * 20)) % 2 == 0 ? 0.55f : 1);
@@ -196,7 +254,14 @@ public partial class Game {
 			ground.Ellipse(f.pos, f.d.r * f.scale * 1.15f, f.d.r * f.scale * 0.42f, new Color(0, 0, 0, f.dead ? 0.1f : 0.3f));
 			if (f.elite && !f.dead) ground.Ring(f.pos, f.d.r * 1.5f, 4, new Color(0.78f, 0.18f, 0.12f, 0.6f + 0.2f * Mathf.Sin(T * 6)), 24);
 			if (f.sr == null) continue;
-			float k = f.d.h * f.scale / (f.sr.sprite != null ? f.sr.sprite.bounds.size.y * 100f : f.d.h);
+			float walkBob = 0;
+			if (f.walk != null) {
+				Sprite fs = f.walk[0];
+				if (f.mv != null && f.mv.steps[f.si].t != "wait" && f.mv.steps[f.si].t != "blink") fs = f.resolved ? (f.hit != null ? f.hit : fs) : (f.wind != null ? f.wind : fs);
+				else if (f.moving) fs = f.walk[(int)(f.animT * 7) % f.walk.Length];
+				f.sr.sprite = fs;
+			} else if (f.moving) walkBob = Mathf.Abs(Mathf.Sin(f.animT * 9)) * 7;
+			float k = f.walk != null ? f.scale : f.d.h * f.scale / (f.sr.sprite != null ? f.sr.sprite.bounds.size.y * 100f : f.d.h);
 			float sx = 1, sy = 1 + Mathf.Sin(T * 2.4f + f.pos.x) * 0.012f, rot = 0, flash = 0, alpha = 1;
 			Color fc = Color.white;
 			bool right = ppos.x >= f.pos.x;
@@ -210,7 +275,8 @@ public partial class Game {
 			if (f.broken > 0) { rot = 14 + Mathf.Sin(T * 12) * 4; flash = 0.25f; fc = new Color(1f, 0.9f, 0.5f); }
 			if (f.flash > 0) { flash = 0.6f; fc = Color.white; }
 			if (f.dead) { alpha = 1 - f.deadT / 0.45f; flash = 0.9f; fc = D.INK; sy *= 1 - f.deadT; sx *= 1 + f.deadT * 0.6f; }
-			Place(f.sr, f.pos, f.z);
+			if (f.walk == null && f.moving && rot == 0) rot = Mathf.Sin(f.animT * 9) * 4;
+			Place(f.sr, f.pos, f.z + walkBob);
 			f.sr.flipX = !right;
 			f.sr.transform.localScale = new Vector3(k * sx, k * sy, 1);
 			f.sr.transform.rotation = Quaternion.Euler(0, 0, rot);
