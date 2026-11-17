@@ -1,0 +1,10 @@
+Library/
+Temp/
+Logs/
+Obj/
+Build/
+UserSettings/
+*.csproj
+*.sln
+gen/out_*
+gen/req_*
