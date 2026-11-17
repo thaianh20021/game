@@ -26,6 +26,11 @@ if bg.min() > 0.8:
     lb, _ = ndi.label(near)
     ids = np.unique(np.concatenate([lb[0], lb[-1], lb[:, 0], lb[:, -1]]))
     outside = np.isin(lb, ids[ids > 0])
+    # small pockets of pure white shut in by an arm or a weapon are paper too (large ones are white cloth: kept)
+    lb2, n2 = ndi.label((dist < 0.06) & ~outside)
+    if n2:
+        sz = ndi.sum(np.ones_like(lb2), lb2, range(1, n2 + 1))
+        outside |= np.isin(lb2, 1 + np.where((sz > 30) & (sz < 3000))[0])
     alpha = ndi.gaussian_filter((~outside).astype(np.float32), 0.7)
     alpha = np.where(outside, np.minimum(alpha, 0.0), alpha)
     m = np.zeros_like(m)

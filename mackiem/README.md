@@ -37,7 +37,17 @@ Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đán
 - `Assets/Scripts/Ink.cs`: lưới vẽ tức thời (vùng báo đòn, vệt kiếm, giọt mực). `Sfx.cs`: âm thanh và nhạc tổng hợp lúc khởi động.
 - `Assets/Editor/Builder.cs`: thiết lập project, build, và quy tắc nhập ảnh trong `Resources/Art`.
 - `Assets/Resources/Art/`: sprite đã cắt. `gen/raw_*.png`: tranh gốc do model ảnh vẽ.
-- `tools/art.sh`, `tools/gen.sh`: gọi model ảnh (khóa lấy từ biến môi trường `MK_KEYS`, không lưu vào tệp). `tools/cut.py`: cắt tranh nền hồng thành sprite.
+- `tools/art.sh`, `tools/gen.sh`: gọi model ảnh (khóa lấy từ biến môi trường `MK_KEYS`, không lưu vào tệp). `tools/cut.py`: cắt tranh nền hồng hoặc nền trắng thành sprite.
+- `tools/anim.sh`: tấm khung hình chuyển động (nhân vật chính: chạy 8 khung, chém 6 khung, thủ/trúng đòn/lướt/xoay; mỗi địch: 4 khung đi, lấy đà, ra đòn).
+  `tools/animfix.sh` vẽ lại những tấm thiếu hoặc bị nền tối; `tools/cutfoes.sh` cắt tất cả tấm của địch.
+
+## Hoạt ảnh
+
+- Tên tệp quyết định tất cả: `hero_run_0..7`, `hero_atk_0..5`, `hero_idle_0`, `hero_guard`, `hero_hurt`, `hero_dashb`, `hero_spin`;
+  địch: `<id>_walk_0..3`, `<id>_wind`, `<id>_hit`. Thiếu bộ khung thì game tự dùng hình đơn cũ (`<id>.png`) và lắc lư bằng code.
+- Khung hình cắt ở kích thước gấp đôi (200 px một đơn vị) nên vẽ đúng cỡ gốc, không co giãn theo từng khung.
+- `Game.HeroPose()` chọn khung cho nhân vật chính; đoạn vẽ địch trong `GameDraw.Render` chọn khung cho địch. Bóng mờ khi lướt là `AddGhost`.
+- Gemini vẽ đúng nền hồng; các model GPT image chỉ chịu nền trắng (và đôi lúc vẫn ra nền tối, khi đó phải vẽ lại).
 
 ## Build và thử
 
@@ -55,4 +65,4 @@ Dòng `BOT END ...` trong `gen/run.log` cho biết bot dừng ở đâu.
 
 ## Chưa làm
 
-Cân bằng chưa qua tay người chơi thật; thương và quạt dùng chung hình cầm kiếm; chưa có điều khiển cảm ứng; chữ chỉ có tiếng Việt.
+Cân bằng chưa qua tay người chơi thật; thương và quạt dùng chung bộ khung cầm kiếm; NPC và đạo cụ vẫn là hình tĩnh; chưa có điều khiển cảm ứng; chữ chỉ có tiếng Việt.

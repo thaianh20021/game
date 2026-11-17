@@ -8,3 +8,4 @@ UserSettings/
 *.sln
 gen/out_*
 gen/req_*
+gen/*.log
