@@ -36,7 +36,8 @@ public partial class Game {
 		hRun = Frames("hero_run"); hAtk = Frames("hero_atk");
 		hIdleF = Frames("hero_idle"); hAct = Frames("hero_act");
 		heroAnim = hRun.Length >= 8 && hAtk.Length >= 12 && hIdleF.Length >= 4 && hAct.Length >= 12;
-		if (heroAnim) heroK = 1;   // frames are drawn at twice the logic size and imported at 200 px per unit
+		if (heroAnim) heroK = 1;
+		InitRig();   // frames are drawn at twice the logic size and imported at 200 px per unit
 		fTitle = Font.CreateDynamicFontFromOSFont(new[] { "Palatino Linotype", "Georgia", "Times New Roman", "Noto Serif", "serif" }, 40);
 		fBody = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Tahoma", "Roboto", "Noto Sans", "Arial" }, 20);
 		white = new Texture2D(1, 1);
@@ -116,9 +117,18 @@ public partial class Game {
 		}
 		if (hurtFx > 0.22f) return hAct[2];
 		if (guard) return pflash > 0 ? hAct[1] : hAct[0];
-		if (thrCd > 0.02f) return hAct[7];
-		if (catchT > 0) return hAct[9];
-		if (recallT > 0) return hAct[8];
+		var th = Frames("hero_throw");
+		if (th.Length >= 12) {
+			// throw: step and cock (0-1), whip (2), release (3), follow through (4); call (8-9), catch (10-11)
+			if (throwT > 0) { float u = 1 - throwT / 0.2f; return th[u < 0.25f ? 1 : (u < 0.5f ? 2 : (u < 0.75f ? 3 : 4))]; }
+			if (thrCd > -0.12f && swords.Count > 0 && recallT <= 0 && catchT <= 0 && !moving) return th[thrCd > -0.05f ? 4 : 5];
+			if (catchT > 0) return th[catchT > 0.07f ? 10 : 11];
+			if (recallT > 0) return th[recallT > 0.12f ? 8 : 9];
+		} else {
+			if (thrCd > 0.02f) return hAct[7];
+			if (catchT > 0) return hAct[9];
+			if (recallT > 0) return hAct[8];
+		}
 		if (chargeT > 0) return hAct[10];
 		if (skidT > 0) return hAct[6];
 		if (moving) return hRun[(int)(moveAmt * 15) % hRun.Length];
@@ -207,6 +217,7 @@ public partial class Game {
 		heroSr.color = new Color(1, 1, 1, inv > 0 && pflash <= 0 && act != "dash" && ((int)(T * 20)) % 2 == 0 ? 0.55f : 1);
 		heroSr.material.SetFloat("_Flash", pflash > 0 ? 0.8f : (guard && gt <= pwin ? 0.35f : 0));
 		heroSr.material.SetColor("_FlashColor", pflash > 0 ? new Color(1f, 0.3f, 0.25f) : new Color(1f, 0.92f, 0.6f));
+		RenderRig(rdt, bob);
 
 		// --- ground layer
 		for (int i = 0; i < stains.Count; i++) ground.Blot(new Vector2(stains[i].x, stains[i].y), stains[i].z, new Color(0.07f, 0.06f, 0.06f, 0.32f), i * 31 + 5);
@@ -706,8 +717,8 @@ public partial class Game {
 	void GuiPause() {
 		Dim(0.6f);
 		Lab(new Rect(0, 200, GW, 70), "TẠM DỪNG", 52, D.PAPER, TextAnchor.MiddleCenter, true);
-		string[] o = { "TIẾP TỤC", "BỎ CHUYẾN ĐI" };
-		for (int i = 0; i < 2; i++) {
+		string[] o = { "TIẾP TỤC", "BỎ CHUYẾN ĐI", "HÌNH NHÂN VẬT: " + (meta.rig ? "GHÉP XƯƠNG" : "KHUNG VẼ") };
+		for (int i = 0; i < 3; i++) {
 			var b = new Rect((GW - 360) / 2, 320 + i * 70, 360, 54);
 			Lab(b, o[i], menuI == i ? 32 : 26, menuI == i ? new Color(1f, 0.85f, 0.5f) : D.PAPER, TextAnchor.MiddleCenter, true);
 			if (Hit(b, i)) PauseAct(i);

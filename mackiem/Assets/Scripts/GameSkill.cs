@@ -89,7 +89,7 @@ public partial class Game {
 		frenzyT -= dt;
 		if (frenzyT <= 0) frenzy = 0;
 		chainT -= dt;
-		skidT -= dt; recallT -= dt; catchT -= dt; castT -= dt;
+		skidT -= dt; recallT -= dt; catchT -= dt; castT -= dt; throwT -= dt;
 		if (chainT <= 0) chain = 0;
 		if (P(inp.tk, prev.tk) && tkCd <= 0 && act != "dash") CastTK();
 		for (int i = pblasts.Count - 1; i >= 0; i--) {

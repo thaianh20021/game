@@ -48,6 +48,7 @@ public class MetaSave {
 	public List<int> skLv = new List<int> { 1 };
 	public string tk = "kiemvu";
 	public string sect = "kiem";
+	public bool rig = true;
 }
 
 public struct Inp {
@@ -270,7 +271,7 @@ public partial class Game : MonoBehaviour {
 			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 3; } break;
 			case "pick": Menu(offers.Count, PickAct, true); break;
 			case "event": Menu(3, EventAct); break;
-			case "pause": Menu(2, PauseAct); if (P(inp.back, prev.back)) state = "play"; break;
+			case "pause": Menu(3, PauseAct); if (P(inp.back, prev.back)) state = "play"; break;
 			case "dead":
 			case "win": if (T - endT > 1.2f && P(inp.ok, prev.ok)) { state = "title"; menuI = 0; ClearRoom(); sfx.Battle(false); } break;
 		}
@@ -316,6 +317,7 @@ public partial class Game : MonoBehaviour {
 		sfx.Play("pick");
 	}
 	void PauseAct(int i) {
+		if (i == 2) { meta.rig = !meta.rig; SaveMeta(); sfx.Play("ui"); return; }
 		if (i == 0) state = "play";
 		else { state = "title"; menuI = 0; ClearRoom(); sfx.Battle(false); }
 	}
@@ -338,6 +340,7 @@ public partial class Game : MonoBehaviour {
 		ppos = new Vector2(CX, segs[0].r.yMin + 70);
 		camPos = ppos;
 		act = ""; guard = false; whirlT = 0; inv = 0.5f; tkCd = 0;
+		if (rigOk) ResetRig();
 		ci = 0; comboT = 0; buf = 0; acd = 0;   // a combo left over from the last run may not exist on this weapon
 		dashes = dashMax;
 		cleared = true; wave = 0; waves = 0; roomKind = "fight"; pickT = 0; pickKind = "";

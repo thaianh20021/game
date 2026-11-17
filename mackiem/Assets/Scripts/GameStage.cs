@@ -341,6 +341,7 @@ public partial class Game {
 
 	// --- flying swords: thrown one at a time, they stay in what they hit until called home
 	void ThrowSword() {
+		throwT = 0.2f;
 		swordsHeld--;
 		thrCd = 0.13f;
 		swords.Add(new FSword { pos = ppos + new Vector2(0, 55), vel = aimDir * 1700 });

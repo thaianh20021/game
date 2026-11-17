@@ -62,6 +62,16 @@ Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đán
 - `Game.HeroPose()` chọn khung cho nhân vật chính; đoạn vẽ địch trong `GameDraw.Render` chọn khung cho địch. Bóng mờ khi lướt là `AddGhost`.
 - Gemini vẽ đúng nền hồng; các model GPT image chỉ chịu nền trắng (và đôi lúc vẫn ra nền tối, khi đó phải vẽ lại).
 
+## Nhân vật ghép xương
+
+Với kiếm, nhân vật chính là con rối ghép từ bộ phận (`GameRig.cs`): đầu, thân, vạt áo, hai cánh tay hai đoạn, hai chân hai đoạn và thanh kiếm,
+mỗi bộ phận xoay quanh khớp, tư thế được nội suy mượt giữa các trạng thái (đứng thở, chạy, ba nhát chém, ném kiếm, gọi và bắt kiếm, thủ, trúng đòn, lướt, vận công).
+Khăn đỏ là dải vải mô phỏng vật lý; vạt áo đung đưa có độ trễ.
+- `tools/parts.sh` vẽ tấm bộ phận (model vẽ lỗ chốt ở mỗi khớp), `tools/parts.py` cắt từng mảnh, lấy lỗ chốt làm điểm xoay, ghi `Assets/Resources/rig.json`.
+- Tư thế là bảng góc trong `GameRig.RigTarget` / `SLASH` (độ, ngược chiều kim đồng hồ; tay buông thõng là 0, +90 là chỉ thẳng về trước).
+- ESC → `HÌNH NHÂN VẬT` đổi giữa GHÉP XƯƠNG và KHUNG VẼ. Các vũ khí khác vẫn dùng khung vẽ.
+- Hoạt ảnh ném riêng (`hero_throw_0..11`, `tools/parts.sh throw`): lấy đà, vung, buông, dứt đòn; gọi kiếm và bắt kiếm; dùng ở chế độ khung vẽ.
+
 ## Unity MCP
 
 Mở project trong Unity Editor là `Assets/Editor/McpBoot.cs` tự bật cầu nối MCP (stdio). Server nằm ở `C:/Users/ADMIN/.mcp-unity`, cấu hình ở `.mcp.json` gốc repo.
