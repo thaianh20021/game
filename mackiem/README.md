@@ -69,7 +69,7 @@ mỗi bộ phận xoay quanh khớp, tư thế được nội suy mượt giữa
 Khăn đỏ là dải vải mô phỏng vật lý; vạt áo đung đưa có độ trễ.
 - `tools/parts.sh` vẽ tấm bộ phận (model vẽ lỗ chốt ở mỗi khớp), `tools/parts.py` cắt từng mảnh, lấy lỗ chốt làm điểm xoay, ghi `Assets/Resources/rig.json`.
 - Tư thế là bảng góc trong `GameRig.RigTarget` / `SLASH` (độ, ngược chiều kim đồng hồ; tay buông thõng là 0, +90 là chỉ thẳng về trước).
-- ESC → `HÌNH NHÂN VẬT` đổi giữa GHÉP XƯƠNG và KHUNG VẼ. Các vũ khí khác vẫn dùng khung vẽ.
+- Mặc định là KHUNG VẼ: chủ game thấy bản ghép xương bị rời rạc (2026-11-17). ESC → `HÌNH NHÂN VẬT` bật GHÉP XƯƠNG để thử; có cho cả 6 vũ khí (`tools/parts.sh weapons`, `rigw.json`).
 - Hoạt ảnh ném riêng (`hero_throw_0..11`, `tools/parts.sh throw`): lấy đà, vung, buông, dứt đòn; gọi kiếm và bắt kiếm; dùng ở chế độ khung vẽ.
 
 ## Unity MCP

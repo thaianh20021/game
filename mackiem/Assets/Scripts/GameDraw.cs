@@ -717,7 +717,7 @@ public partial class Game {
 	void GuiPause() {
 		Dim(0.6f);
 		Lab(new Rect(0, 200, GW, 70), "TẠM DỪNG", 52, D.PAPER, TextAnchor.MiddleCenter, true);
-		string[] o = { "TIẾP TỤC", "BỎ CHUYẾN ĐI", "HÌNH NHÂN VẬT: " + (meta.rig ? "GHÉP XƯƠNG" : "KHUNG VẼ") };
+		string[] o = { "TIẾP TỤC", "BỎ CHUYẾN ĐI", "HÌNH NHÂN VẬT: " + (meta.rigOn ? "GHÉP XƯƠNG" : "KHUNG VẼ") };
 		for (int i = 0; i < 3; i++) {
 			var b = new Rect((GW - 360) / 2, 320 + i * 70, 360, 54);
 			Lab(b, o[i], menuI == i ? 32 : 26, menuI == i ? new Color(1f, 0.85f, 0.5f) : D.PAPER, TextAnchor.MiddleCenter, true);

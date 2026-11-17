@@ -48,7 +48,7 @@ public class MetaSave {
 	public List<int> skLv = new List<int> { 1 };
 	public string tk = "kiemvu";
 	public string sect = "kiem";
-	public bool rig = true;
+	public bool rigOn = false;   // the cut-out puppet looked disjointed: drawn frames are the default
 }
 
 public struct Inp {
@@ -317,7 +317,7 @@ public partial class Game : MonoBehaviour {
 		sfx.Play("pick");
 	}
 	void PauseAct(int i) {
-		if (i == 2) { meta.rig = !meta.rig; SaveMeta(); sfx.Play("ui"); return; }
+		if (i == 2) { meta.rigOn = !meta.rigOn; SaveMeta(); sfx.Play("ui"); return; }
 		if (i == 0) state = "play";
 		else { state = "title"; menuI = 0; ClearRoom(); sfx.Battle(false); }
 	}
