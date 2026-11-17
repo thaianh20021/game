@@ -7,7 +7,8 @@ public class PBlast { public Vector2 pos; public float t, wind, r, dmg; public b
 
 public partial class Game {
 	readonly List<PBlast> pblasts = new List<PBlast>();
-	float tkCd, bellT, bellTick, kvT, chargeT, frenzy, frenzyT;
+	float tkCd, bellT, bellTick, kvT, chargeT, frenzy, frenzyT, chainT;
+	int chain;
 	int bellL;
 	Vector2 kvPos;
 	int skCol, skRow;
@@ -85,6 +86,8 @@ public partial class Game {
 		tkCd -= dt;
 		frenzyT -= dt;
 		if (frenzyT <= 0) frenzy = 0;
+		chainT -= dt;
+		if (chainT <= 0) chain = 0;
 		if (P(inp.tk, prev.tk) && tkCd <= 0 && act != "dash") CastTK();
 		for (int i = pblasts.Count - 1; i >= 0; i--) {
 			var b = pblasts[i];
@@ -170,7 +173,36 @@ public partial class Game {
 		float u = tkCd <= 0 ? 1 : 1 - Mathf.Clamp01(tkCd / sd.cd);
 		Box(new Rect(x, y, w * u, 28), tkCd <= 0 ? new Color(0.7f, 0.5f, 0.15f) : new Color(0.35f, 0.3f, 0.26f));
 		Lab(new Rect(x, y, w, 28), "[F] " + sd.name + (tkCd > 0 ? "  " + Mathf.CeilToInt(tkCd) : ""), 15, tkCd <= 0 ? Color.white : new Color(0.8f, 0.78f, 0.72f));
+		if (chain >= 3) Lab(new Rect(GW - 330, 250, 300, 44), "LIÊN TRẢM ×" + chain, 24 + Mathf.Min(14, chain / 3), new Color(1f, 0.6f, 0.3f, Mathf.Clamp01(chainT)), TextAnchor.MiddleRight, true);
+		Lab(new Rect(GW - 520, 90, 496, 22), D.Sect(meta.sect).name, 14, D.PAPER, TextAnchor.MiddleRight);
 		if (frenzy > 0) Lab(new Rect(x, y - 30, w, 24), "CUỒNG ĐAO ×" + (int)frenzy, 16, new Color(1f, 0.6f, 0.3f));
+	}
+
+	void GuiSect() {
+		Dim(0.6f);
+		Lab(new Rect(0, 40, GW, 60), "CHỌN MÔN PHÁI", 44, D.PAPER, TextAnchor.MiddleCenter, true);
+		int n = D.SECTS.Length;
+		float w = Mathf.Min(290, (GW - 60) / n - 16), gap = 16, x0 = (GW - (w * n + gap * (n - 1))) / 2;
+		for (int i = 0; i < n; i++) {
+			var sd = D.SECTS[i];
+			bool sel = menuI == i;
+			var r = new Rect(x0 + i * (w + gap), sel ? 140 : 155, w, 400);
+			Panel(r, sel);
+			Lab(new Rect(r.x, r.y + 24, w, 44), sd.name, 21, D.INK, TextAnchor.MiddleCenter, true, false);
+			Box(new Rect(r.x + 40, r.y + 74, w - 80, 2), D.RED);
+			Lab(new Rect(r.x + 20, r.y + 84, w - 40, 60), "“" + sd.motto + "”", 15, new Color(0.3f, 0.27f, 0.25f), TextAnchor.MiddleCenter, true, false);
+			Lab(new Rect(r.x + 22, r.y + 160, w - 44, 220), sd.desc, 17, D.INK, TextAnchor.UpperCenter, false, false);
+			if (Hit(r, i)) SectAct(i);
+		}
+		Lab(new Rect(0, GH - 80, GW, 30), "A / D chọn   ·   ENTER xuất phát   ·   ESC quay lại", 18, D.PAPER);
+	}
+
+	void GuiElites() {
+		foreach (var f in foes) {
+			if (!f.elite || f.dead || f.spawn > 0) continue;
+			Vector2 g = W2G(f.pos + new Vector2(0, f.z + f.d.h * f.scale + 46));
+			Lab(new Rect(g.x - 120, g.y - 12, 240, 24), "TINH ANH · " + D.AfxName(f.afx), 13, new Color(1f, 0.45f, 0.35f));
+		}
 	}
 
 	// --- the skill tree screen (title menu)

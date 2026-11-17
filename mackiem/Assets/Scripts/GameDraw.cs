@@ -383,11 +383,13 @@ public partial class Game {
 		switch (state) {
 			case "title": GuiTitle(); return;
 			case "skills": GuiSkills(); return;
+			case "sect": GuiSect(); return;
 			case "weapon": GuiWeapon(); return;
 			case "meta": GuiMeta(); return;
 			case "help": GuiHelp(); return;
 		}
 		GuiWorld();
+		if (state == "play") GuiElites();
 		GuiHud();
 		GuiSkillHud();
 		if (state == "pick") GuiPick();

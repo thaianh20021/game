@@ -14,6 +14,7 @@ public class Foe {
 	public Move mv;
 	public int si, mark = -1;
 	public bool resolved, dead, elite;
+	public string afx = "";
 	public float markT, bleed, poison, poisonD, slow, burn, burnD, dotT, deadT;
 	public float[] mcd;
 	public bool[] used;
@@ -46,6 +47,7 @@ public class MetaSave {
 	public List<string> skIds = new List<string> { "kiemvu" };
 	public List<int> skLv = new List<int> { 1 };
 	public string tk = "kiemvu";
+	public string sect = "kiem";
 }
 
 public struct Inp {
@@ -165,6 +167,7 @@ public partial class Game : MonoBehaviour {
 		if (!meta.unl.Contains("kiem")) meta.unl.Add("kiem");
 		if (meta.skIds == null || meta.skIds.Count == 0) { meta.skIds = new List<string> { "kiemvu" }; meta.skLv = new List<int> { 1 }; }
 		if (string.IsNullOrEmpty(meta.tk)) meta.tk = "kiemvu";
+		if (string.IsNullOrEmpty(meta.sect)) meta.sect = "kiem";
 	}
 	void SaveMeta() { try { File.WriteAllText(savePath, JsonUtility.ToJson(meta)); } catch (Exception) { } }
 	int Up(string id) { int i = meta.upIds.IndexOf(id); return i < 0 ? 0 : meta.upLv[i]; }
@@ -177,13 +180,13 @@ public partial class Game : MonoBehaviour {
 	Vector2 RndDir() { float a = Rnd(0, Mathf.PI * 2); return new Vector2(Mathf.Cos(a), Mathf.Sin(a)); }
 
 	void Recalc() {
-		maxHp = 100 + Up("hp") * 12 + Lv("hp") * 25 + bonusHp;
+		maxHp = 100 + Up("hp") * 12 + Lv("hp") * 25 + bonusHp + (meta.sect == "thiet" ? 30 : 0);
 		dmgMul = 1 + Up("dmg") * 0.05f;
 		qiMul = 1 + Up("qi") * 0.12f + Lv("qi") * 0.35f;
 		dashMax = 1 + Lv("dash");
-		int sm = 4 + Lv("kiem") + (weapon != null && weapon.mech == "sword" ? 2 : 0);
+		int sm = 4 + Lv("kiem") + (weapon != null && weapon.mech == "sword" ? 2 : 0) + (meta.sect == "kiem" ? 2 : 0);
 		swordsHeld += sm - swordMax; swordMax = sm;
-		pwin = 0.2f * (1 + Lv("calm") * 0.3f);
+		pwin = 0.2f * (1 + Lv("calm") * 0.3f) * (meta.sect == "thiet" ? 1.6f : 1);
 		crit = Lv("crit") * 0.12f;
 		coinMul = 1 + Lv("coin") * 0.4f;
 		hp = Mathf.Min(hp, maxHp);
@@ -260,6 +263,7 @@ public partial class Game : MonoBehaviour {
 			}
 			case "title": Menu(5, TitleAct); break;
 			case "skills": SkillsTick(); break;
+			case "sect": Menu(D.SECTS.Length, SectAct, true); if (P(inp.back, prev.back)) state = "weapon"; break;
 			case "weapon": Menu(D.WEAPONS.Length, WeaponAct, true); if (P(inp.back, prev.back)) state = "title"; break;
 			case "meta": Menu(D.META.Length, MetaAct); if (P(inp.back, prev.back)) { state = "title"; menuI = 2; } break;
 			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 3; } break;
@@ -292,6 +296,12 @@ public partial class Game : MonoBehaviour {
 	void WeaponAct(int i) {
 		if (!meta.unl.Contains(D.WEAPONS[i].id)) { sfx.Play("block", 0.6f); return; }
 		weaponId = D.WEAPONS[i].id;
+		state = "sect";
+		menuI = Mathf.Max(0, Array.FindIndex(D.SECTS, k => k.id == meta.sect));
+	}
+	void SectAct(int i) {
+		meta.sect = D.SECTS[i].id;
+		SaveMeta();
 		StartRun();
 	}
 	void MetaAct(int i) {
@@ -326,8 +336,11 @@ public partial class Game : MonoBehaviour {
 		ppos = new Vector2(CX, segs[0].r.yMin + 70);
 		camPos = ppos;
 		act = ""; guard = false; whirlT = 0; inv = 0.5f; tkCd = 0;
+		ci = 0; comboT = 0; buf = 0; acd = 0;   // a combo left over from the last run may not exist on this weapon
 		dashes = dashMax;
 		cleared = true; wave = 0; waves = 0; roomKind = "fight"; pickT = 0; pickKind = "";
+		chain = 0;
+		if (meta.sect == "hanh") Learn(D.BoonById("a" + rng.Next(5)), 1);
 		state = "play";
 		Banner(D.CH_NAME[0], "Chuột trái đánh · chuột phải phi kiếm · R thu kiếm · SHIFT đỡ · SPACE lướt · F tuyệt kỹ");
 	}
@@ -383,6 +396,7 @@ public partial class Game : MonoBehaviour {
 		f.posMax = d.pos * (elite ? 1.6f : 1) * (d.boss ? 1 : 1 + ch * 0.25f);
 		f.dmgMul = 1.25f * (d.boss ? 1 : D.CH_DMG[ch]) * (1 + meta.kiep * 0.12f) * (elite ? 1.3f : 1);
 		f.scale = elite ? 1.22f : 1;
+		if (elite) f.afx = new[] { "bao", "toc", "giap" }[rng.Next(3)];
 		f.mcd = new float[d.moves.Length];
 		f.used = new bool[d.moves.Length];
 		f.sr = NewSpr(d.id, d.h * f.scale);

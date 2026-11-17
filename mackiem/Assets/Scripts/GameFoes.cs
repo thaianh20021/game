@@ -48,7 +48,7 @@ public partial class Game {
 			Vector2 to = ppos - f.pos;
 			float dist = to.magnitude;
 			Vector2 dir = dist > 0.01f ? to / dist : Vector2.right;
-			float sp = f.d.spd * (f.slow > 0 ? 0.55f : 1) * (f.elite ? 1.1f : 1);
+			float sp = f.d.spd * (f.slow > 0 ? 0.55f : 1) * (f.elite ? 1.1f : 1) * (f.afx == "toc" ? 1.45f : 1);
 			if (f.mv != null) { RunStep(f, dt, dir); f.pos = Confine(f.pos, f.d.r); continue; }
 			// choose a move
 			// only a few foes wind up at once, so a crowd stays readable
@@ -224,6 +224,7 @@ public partial class Game {
 		qi = Mathf.Min(100, qi + 15 * qiMul);
 		inv = Mathf.Max(inv, 0.3f);
 		riposte = Lv("ripo") > 0;
+		if (meta.sect == "thiet") Heal(4);
 		Text(ppos + new Vector2(0, 150), "PHẢN!", new Color(1f, 0.9f, 0.5f), 30);
 		for (int i = 0; i < 10; i++) {
 			float l = Rnd(0.15f, 0.35f);
@@ -256,6 +257,8 @@ public partial class Game {
 		if (f.dead || f.spawn > 0) return;
 		bool isCrit = crit > 0 && Rnd() < crit;
 		if (isCrit) dmg *= 2;
+		if (meta.sect == "cuong") dmg *= 1 + 0.6f * (1 - Mathf.Clamp01(hp / maxHp));
+		if (f.afx == "giap" && f.broken <= 0) dmg *= 0.45f;   // armoured elites must be broken first
 		if (f.broken > 0) dmg *= 1.6f + Lv("break") * 0.4f;
 		if (f.bleed > 0) dmg *= 1.25f;
 		float pos = dmg * posMul;
@@ -285,14 +288,14 @@ public partial class Game {
 			case D.THO: if (!f.d.boss && f.broken <= 0 && f.mv == null) f.stun = Mathf.Max(f.stun, 0.2f); break;
 		}
 		if (!react) return;
-		if (f.mark < 0 || f.mark == el) { f.mark = el; f.markT = 6; return; }
+		if (f.mark < 0 || f.mark == el) { f.mark = el; f.markT = meta.sect == "hanh" ? 12 : 6; return; }
 		int rel = D.Relation(f.mark, el);
 		int old = f.mark;
 		f.mark = -1;
 		if (rel == 1) {
 			// tuong sinh: the two phases feed each other and burst
 			Text(f.pos + new Vector2(0, f.d.h + 60), "TƯƠNG SINH", Color.Lerp(D.EL_COL[old], D.EL_COL[el], 0.5f), 26);
-			float dmg = (26 + 12 * lvl) * dmgMul * (1 + Lv("sinh") * 0.5f);
+			float dmg = (26 + 12 * lvl) * dmgMul * (1 + Lv("sinh") * 0.5f) * (meta.sect == "hanh" ? 1.5f : 1);
 			qi = Mathf.Min(100, qi + 8 * qiMul);
 			Heal(Lv("sinh") * 3);
 			Burst(f.pos, 165, dmg, el, lvl, false);
@@ -300,7 +303,7 @@ public partial class Game {
 		} else {
 			// tuong khac: one phase overcomes the other and shatters the stance
 			Text(f.pos + new Vector2(0, f.d.h + 60), "TƯƠNG KHẮC", D.EL_COL[el], 26);
-			AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 0.6f));
+			AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 0.6f) * (meta.sect == "hanh" ? 1.5f : 1));
 			if (!f.d.boss && f.broken <= 0) { f.stun = Mathf.Max(f.stun, 0.6f); f.mv = null; f.z = 0; }
 			wavesFx.Add(new Wave { pos = f.pos, r = 10, spd = 500, dmg = 0, max = 110, hit = true });
 			sfx.Play("clang", 0.6f, 0.7f);
@@ -333,7 +336,11 @@ public partial class Game {
 		if (stains.Count < 60) stains.Add(new Vector3(f.pos.x, f.pos.y, f.d.r * 1.6f));
 		int c = f.d.boss ? 0 : (f.elite ? 12 : 2 + rng.Next(4));
 		if (c > 0) { coins += Mathf.RoundToInt(c * coinMul); }
-		Heal(Lv("leech") * 2);
+		Heal(Lv("leech") * 2 + (meta.sect == "cuong" ? 1 : 0));
+		if (f.afx == "bao") blasts.Add(new Blast { pos = f.pos, r = 190, wind = 0.9f, dmg = 20 * f.dmgMul });
+		// a streak of quick kills pays out every tenth
+		chain++; chainT = 3.2f;
+		if (chain % 10 == 0) { Heal(2); qi = Mathf.Min(100, qi + 12); Text(ppos + new Vector2(0, 190), "LIÊN TRẢM ×" + chain, new Color(1f, 0.6f, 0.3f), 30); }
 		if (f.d.boss) { stop = 0.25f; slow = 1.2f; shake = 18; sfx.Play("gong"); }
 		else sfx.Play("hit", 0.7f, 0.6f);
 	}

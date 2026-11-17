@@ -36,6 +36,8 @@ public class WeaponDef {
 	public AtkStep[] combo;
 }
 
+public class SectDef { public string id, name, motto, desc; }
+
 public class SkillDef {
 	public string id, name, desc;
 	public float cd;
@@ -129,6 +131,15 @@ public static class D {
 	};
 	public static WeaponDef Weapon(string id) { foreach (var w in WEAPONS) if (w.id == id) return w; return WEAPONS[0]; }
 
+
+	public static readonly SectDef[] SECTS = {
+		new SectDef { id = "kiem", name = "VÂN KIẾM TÔNG", motto = "Kiếm rời tay, tâm chưa rời kiếm.", desc = "Thêm 2 phi kiếm.\nPhi kiếm tự bay về sau 2 giây.\nPhi kiếm gây thêm 30% sát thương." },
+		new SectDef { id = "thiet", name = "THIẾT Y MÔN", motto = "Đứng vững thì đòn nào cũng là cơ hội.", desc = "+30 sinh lực tối đa.\nKhoảng ĐỠ CHUẨN dài thêm 60%.\nMỗi lần đỡ chuẩn hồi 4 sinh lực." },
+		new SectDef { id = "cuong", name = "HUYẾT NGUYỆT ĐƯỜNG", motto = "Máu chảy càng nhiều, đao càng sắc.", desc = "Mất càng nhiều máu đánh càng đau: tối đa +60% sát thương.\nHạ một địch hồi 1 sinh lực." },
+		new SectDef { id = "hanh", name = "NGŨ HÀNH CỐC", motto = "Vạn vật sinh khắc, ta chỉ mượn tay.", desc = "Khởi hành với một bí kíp ĐÒN ĐÁNH ngẫu nhiên.\nẤN ngũ hành tồn tại lâu gấp đôi.\nTƯƠNG SINH và TƯƠNG KHẮC mạnh hơn 50%." },
+	};
+	public static SectDef Sect(string id) { foreach (var k in SECTS) if (k.id == id) return k; return SECTS[0]; }
+	public static string AfxName(string a) { return a == "bao" ? "BẠO LIỆT" : (a == "toc" ? "THẦN TỐC" : (a == "giap" ? "THIẾT GIÁP" : "")); }
 
 	public static readonly int[] SK_COST = { 15, 20, 35, 60 };
 	public static readonly SkillDef[] SKILLS = {

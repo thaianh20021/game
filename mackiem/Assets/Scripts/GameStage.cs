@@ -316,7 +316,7 @@ public partial class Game {
 		int el = SlotEl("atk"), lv = SlotLv("atk");
 		// going out a sword carries the element of the attack, coming home that of the ultimate: one throw can react
 		if (back && SlotEl("skill") >= 0) { el = SlotEl("skill"); lv = SlotLv("skill"); }
-		float dmg = (back ? 15 * (1 + Lv("hoi") * 0.4f) : 8) * dmgMul;
+		float dmg = (back ? 15 * (1 + Lv("hoi") * 0.4f) : 8) * dmgMul * (meta.sect == "kiem" ? 1.3f : 1);
 		HurtFoe(f, dmg, el, lv, back ? 1.4f : 0.8f, s.vel.sqrMagnitude > 0.01f ? s.vel.normalized : Vector2.up);
 	}
 
@@ -346,7 +346,11 @@ public partial class Game {
 					if (s.host.dead) s.host = null;
 					else s.pos = s.host.pos + s.off + new Vector2(0, 55 + s.host.z);
 				}
-				if (s.t > 8) { s.st = 2; s.hit.Clear(); s.host = null; }
+				if (s.t > (meta.sect == "kiem" ? 2f : 8f)) {
+					s.st = 2; s.hit.Clear();
+					if (s.host != null && !s.host.dead) { s.hit.Add(s.host); s.vel = (ppos - s.host.pos).normalized; SwordHit(s, s.host, true); }
+					s.host = null;
+				}
 			} else {
 				Vector2 to = ppos + up - s.pos;
 				float m = to.magnitude;
@@ -391,6 +395,12 @@ public partial class Game {
 			if (Mathf.Abs(p.center.y - camPos.y) > p.height / 2 + 700) continue;
 			ground.Rect(CX - 3000, p.yMin, p.xMin - (CX - 3000), p.height, black);
 			ground.Rect(p.xMax, p.yMin, CX + 3000 - p.xMax, p.height, black);
+			// ink mist over the joins between the painting and the tiled ground
+			for (int k = 0; k < 2; k++) {
+				float ey = k == 0 ? p.yMin : p.yMax;
+				ground.Quad(new Vector2(p.xMin, ey), new Vector2(p.xMax, ey), new Vector2(p.xMax, ey + 170), new Vector2(p.xMin, ey + 170), black, clear);
+				ground.Quad(new Vector2(p.xMin, ey), new Vector2(p.xMax, ey), new Vector2(p.xMax, ey - 170), new Vector2(p.xMin, ey - 170), black, clear);
+			}
 		}
 		if (segs.Count > 0) ground.Rect(CX - 3000, segs[0].r.yMin - 900, 6000, 860, dark);
 		if (fight != null) {
