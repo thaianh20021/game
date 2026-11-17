@@ -83,4 +83,4 @@ Dòng `BOT END ...` trong `gen/run.log` cho biết bot dừng ở đâu.
 
 ## Chưa làm
 
-Cân bằng chưa qua tay người chơi thật (độ khó vừa được đẩy lên mạnh, chưa ai thử); bot chỉ thử kiếm, chưa thử 5 binh khí kia, 3 tuyệt kỹ sau và màn hình TUYỆT KỸ; mọi binh khí dùng chung bộ khung cầm kiếm; NPC và đạo cụ vẫn là hình tĩnh; chưa có điều khiển cảm ứng; chữ chỉ có tiếng Việt.
+Cân bằng chưa qua tay người chơi thật (độ khó vừa được đẩy lên mạnh, chưa ai thử); bot chỉ thử kiếm, chưa thử 5 binh khí kia, 3 tuyệt kỹ sau và màn hình TUYỆT KỸ; mọi binh khí dùng chung bộ khung cầm kiếm; mọi địch và trùm đã có khung đi/lấy đà/ra đòn, NPC và đạo cụ vẫn là hình tĩnh; chưa có điều khiển cảm ứng; chữ chỉ có tiếng Việt.
