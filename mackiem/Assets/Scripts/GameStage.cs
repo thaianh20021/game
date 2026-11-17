@@ -54,6 +54,53 @@ public partial class Game {
 		props.Add(new Prop { pos = p, r = n == "bamboo" || n == "jar" ? 30 : 46, sr = NewSpr(n, h) });
 	}
 
+	// scenery answers a blade: jars break and spill coins, plants shake and shed leaves
+	void HitProp(int i) {
+		var pr = props[i];
+		string n = pr.sr.gameObject.name;
+		pr.shake = 0.35f;
+		if (n == "jar") {
+			int c = Mathf.RoundToInt((2 + rng.Next(4)) * coinMul);
+			coins += c;
+			Text(pr.pos + new Vector2(0, 90), "+" + c + " lượng", new Color(1f, 0.85f, 0.4f), 17);
+			Puff(pr.pos, new Color(0.45f, 0.36f, 0.28f), 12, 280);
+			sfx.Play("hit", 0.6f, 0.7f); sfx.Play("coin", 0.5f);
+			Destroy(pr.sr.gameObject);
+			props.RemoveAt(i);
+		} else if (n == "bamboo" || n == "pine") {
+			Color leaf = n == "bamboo" ? new Color(0.4f, 0.55f, 0.3f) : new Color(0.85f, 0.9f, 0.95f);
+			for (int k = 0; k < 6; k++) parts.Add(new Part { pos = pr.pos + new Vector2(Rnd(-40, 40), Rnd(90, 180)), vel = new Vector2(Rnd(-90, 90), Rnd(20, 90)), r = Rnd(3, 6), life = 0.9f, max = 0.9f, col = leaf, grav = 240 });
+			sfx.Play("slash", 0.25f, 1.6f);
+		} else sfx.Play("block", 0.25f, 1.3f);
+	}
+
+	// wind in the plants, flame in the lanterns, smoke from the shrines
+	void DrawLife(float rdt) {
+		foreach (var pr in props) {
+			string n = pr.sr.gameObject.name;
+			float rot = 0;
+			if (n == "bamboo" || n == "pine") rot = Mathf.Sin(T * 1.4f + pr.pos.x * 0.013f) * 1.8f + Mathf.Sin(T * 3.1f + pr.pos.y * 0.02f) * 0.6f;
+			if (pr.shake > 0) { pr.shake -= rdt; rot += Mathf.Sin(T * 55) * pr.shake * 16; }
+			pr.sr.transform.rotation = Quaternion.Euler(0, 0, rot);
+			if (Mathf.Abs(pr.pos.y - camPos.y) > 700) continue;
+			if (n == "lantern") {
+				float f = 0.75f + 0.15f * Mathf.Sin(T * 9 + pr.pos.x) + 0.1f * Mathf.Sin(T * 23);
+				ground.Ellipse(pr.pos, 120, 60, new Color(1f, 0.75f, 0.35f, 0.10f * f));
+				fxInk.Circle(pr.pos + new Vector2(0, 76), 13 * f, new Color(1f, 0.7f, 0.3f, 0.35f), 12);
+				fxInk.Circle(pr.pos + new Vector2(0, 76), 6 * f, new Color(1f, 0.92f, 0.65f, 0.8f), 10);
+			} else if (n == "shrine" && Random.value < rdt * 5)
+				parts.Add(new Part { pos = pr.pos + new Vector2(Random.Range(-6f, 6f), 20), vel = new Vector2(Random.Range(-14f, 14f), 55), r = Random.Range(5f, 9f), life = 1.6f, max = 1.6f, col = new Color(0.8f, 0.8f, 0.8f, 0.25f), grav = -25 });
+		}
+		foreach (var d in deco) {
+			if (d == null) continue;
+			string n = d.gameObject.name;
+			if (n != "bamboo" && n != "pine") continue;
+			Vector3 p = d.transform.position;
+			if (Mathf.Abs(p.y * 100 - camPos.y) > 800) continue;
+			d.transform.rotation = Quaternion.Euler(0, 0, Mathf.Sin(T * 1.2f + p.x * 1.3f) * 2.2f + Mathf.Sin(T * 2.7f + p.y * 2f) * 0.7f);
+		}
+	}
+
 	void Deco(string[] set, System.Random r, Vector2 p) {
 		string n = set[r.Next(set.Length)];
 		float h = n == "bamboo" || n == "pine" ? 200 + r.Next(70) : (n == "pillar" ? 150 : 130);

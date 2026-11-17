@@ -71,7 +71,9 @@ base = {}
 for c in cuts: base[c[3]] = max(base.get(c[3], 0), c[2])
 scale = H / (np.median(heights) if med else heights[0])
 for a_ in sys.argv:
-    if a_.startswith('scale='): scale = float(a_[6:])   # fixed scale: several sheets of one character stay the same size
+    if a_.startswith('scale='): scale = float(a_[6:])
+    if a_.startswith('ref='):   # ref=8,9:250 -> the median height of frames 8 and 9 becomes 250 px
+        scale = float(a_[4:].split(':')[1]) / np.median([heights[int(i)] for i in a_[4:].split(':')[0].split(',')])   # fixed scale: several sheets of one character stay the same size
 outs = []
 for idx, (c, a, bottom, rw) in enumerate(cuts):
     if each: scale = H / a.shape[0]

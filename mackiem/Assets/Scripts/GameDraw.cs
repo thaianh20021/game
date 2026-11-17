@@ -62,8 +62,44 @@ public partial class Game {
 	}
 
 	// the frame of the hero for what he is doing right now
+	// the hero's frames when he holds something other than the sword: hero_<weapon>_run/idle/atk/act
+	Sprite[][] WSet() {
+		string k = "hero_" + weapon.id;
+		var run = Frames(k + "_run");
+		if (run.Length < 8) return null;
+		var idle = Frames(k + "_idle"); var atk = Frames(k + "_atk"); var ac = Frames(k + "_act");
+		if (idle.Length < 4 || atk.Length < 8 || ac.Length < 4) return null;
+		return new[] { run, idle, atk, ac };
+	}
+
+	Sprite PoseW(Sprite[][] w) {
+		Sprite[] run = w[0], idle = w[1], atk = w[2], ac = w[3];   // ac: guard, hurt, dash, gather
+		if (state == "dead") return ac[1];
+		if (act == "dash") return ac[2];
+		if (castT > 0) return ac[3];
+		if (act == "skill") return weapon.skill == "charge" ? atk[2] : ac[3];
+		if (whirlT > 0) return atk[5];
+		if (act == "atk") {
+			var s = weapon.combo[ci];
+			float u = at / s.dur;
+			int k = u < 0.2f ? 0 : (u < 0.48f ? 1 : (u < 0.82f ? 2 : 3));
+			bool last = (ci == weapon.combo.Length - 1 && weapon.combo.Length > 1) || s.w > 3;
+			return atk[(last ? 4 : 0) + k];
+		}
+		if (hurtFx > 0.22f) return ac[1];
+		if (guard) return ac[0];
+		if (chargeT > 0) return atk[chargeT < 0.5f ? 1 : 2];
+		if (weapon.mech == "charge" && acd > 0) return atk[3];
+		if (thrCd > 0.02f || catchT > 0) return atk[2];
+		if (moving) return run[(int)(moveAmt * 15) % 8];
+		int b = (int)(T * 3.2f) % 6;
+		return idle[b < 4 ? b : 6 - b];
+	}
+
 	Sprite HeroPose() {
 		if (!heroAnim) return Spr(act == "dash" ? "hero_dash" : (act == "atk" || act == "skill" || whirlT > 0 ? "hero_slash" : (moving ? "hero_run" : "hero_idle")));
+		var ws = WSet();
+		if (ws != null) return PoseW(ws);
 		if (state == "dead") return hAct[3];
 		if (act == "dash") return at < 0.035f ? hAct[4] : hAct[5];
 		if (castT > 0) return castT > 0.26f ? hAct[10] : hAct[11];
@@ -199,8 +235,15 @@ public partial class Game {
 				ground.Ellipse(it.pos, 46, 18, new Color(0.91f, 0.86f, 0.75f, near ? 0.8f : 0.4f));
 				ground.Ring(it.pos, 0, 0, D.INK);
 			} else ground.Ellipse(it.pos, 50, 16, new Color(0, 0, 0, 0.25f));
-			if (it.sr != null) Place(it.sr, it.pos);
+			if (it.sr != null) {
+				if (it.kind == "npc") {
+					var nf = Frames(it.sr.gameObject.name + "_idle");
+					if (nf.Length > 0) { it.sr.sprite = nf[(int)(T * 2.5f + it.pos.x) % nf.Length]; it.sr.transform.localScale = Vector3.one; }
+					Place(it.sr, it.pos);
+				} else Place(it.sr, it.pos, 3 + Mathf.Sin(T * 2.5f + it.pos.x) * 3);
+			}
 		}
+		DrawLife(rdt);
 		foreach (var pr in props) { ground.Ellipse(pr.pos, pr.r * 1.3f, pr.r * 0.5f, new Color(0, 0, 0, 0.28f)); Place(pr.sr, pr.pos); }
 		foreach (var b in blasts) {
 			float u = Mathf.Clamp01(b.t / b.wind);

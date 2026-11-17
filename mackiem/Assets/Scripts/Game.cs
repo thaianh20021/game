@@ -35,7 +35,7 @@ public class Slash { public Vector2 pos, dir; public float r, w, t, len, wid; pu
 public class FText { public Vector2 pos; public string s; public Color col; public float t; public int size; }
 public class Door { public Vector2 pos; public string kind; }
 public class Item { public Vector2 pos; public string kind, label; public int cost; public Boon boon; public bool gone; public SpriteRenderer sr; }
-public class Prop { public Vector2 pos; public float r; public SpriteRenderer sr; }
+public class Prop { public Vector2 pos; public float r, shake; public SpriteRenderer sr; }
 public class Offer { public Boon b; public int lvl; public bool replace; }
 
 [Serializable]
@@ -71,7 +71,7 @@ public partial class Game : MonoBehaviour {
 	public float T;
 	public bool bot, cheat;
 	int speed = 1;
-	string shotDir, savePath;
+	string shotDir, savePath, botWeapon;
 	float botEnd = 0;
 	MetaSave meta = new MetaSave();
 	Inp inp, prev;
@@ -133,6 +133,7 @@ public partial class Game : MonoBehaviour {
 		for (int i = 0; i < args.Length; i++) {
 			if (args[i] == "-bot") bot = true;
 			if (args[i] == "-cheat") cheat = true;
+			if (args[i] == "-weapon" && i + 1 < args.Length) botWeapon = args[i + 1];
 			if (args[i] == "-speed" && i + 1 < args.Length) speed = int.Parse(args[i + 1]);
 			if (args[i] == "-shots" && i + 1 < args.Length) shotDir = args[i + 1];
 			if (args[i] == "-end" && i + 1 < args.Length) botEnd = float.Parse(args[i + 1]);
@@ -294,6 +295,7 @@ public partial class Game : MonoBehaviour {
 		else Application.Quit();
 	}
 	void WeaponAct(int i) {
+		if (bot && botWeapon != null) { i = Mathf.Max(0, Array.FindIndex(D.WEAPONS, w => w.id == botWeapon)); if (!meta.unl.Contains(botWeapon)) meta.unl.Add(botWeapon); }
 		if (!meta.unl.Contains(D.WEAPONS[i].id)) { sfx.Play("block", 0.6f); return; }
 		weaponId = D.WEAPONS[i].id;
 		state = "sect";
@@ -737,6 +739,10 @@ public partial class Game : MonoBehaviour {
 			if (weapon.mech == "tip" && (f.pos - o).magnitude > (arc ? s.r : s.len) * 0.6f) { fm = 1.6f; Text(f.pos + new Vector2(0, f.d.h + 34), "MŨI THƯƠNG", new Color(1f, 0.9f, 0.5f), 15); }
 			HurtFoe(f, s.dmg * mult * fm, el, lv, weapon.mech == "heavy" ? 2.2f : 1, adir);
 			any = true;
+		}
+		for (int pi = props.Count - 1; pi >= 0; pi--) {
+			var pr = props[pi];
+			if (arc ? ArcHit(o, adir, s.r, s.w, pr.pos, pr.r) : LineHit(o, adir, s.len, s.wid, pr.pos, pr.r)) HitProp(pi);
 		}
 		// blades cut arrows out of the air
 		foreach (var sh in shots) {
