@@ -1,0 +1,35 @@
+Bạn là biên kịch cho game hành động roguelike võ hiệp góc nhìn từ trên xuống "Mặc Kiếm Lục" (tranh thủy mặc). Nội dung phải là SÁNG TÁC GỐC, không dùng nhân vật, tên hay tình tiết của tiểu thuyết/game có sẵn. Chữ trong game là tiếng Việt có dấu.
+
+Bối cảnh hiện có: nhân vật chính là đệ tử cuối cùng của Mặc Kiếm Môn đã bị thiêu rụi; mỗi chuyến đi qua ba chương (I Trúc Lâm, trùm HẮC HỔ TRẠI CHỦ; II Cổ Tự, trùm VÔ MINH THIỀN SƯ; III Tuyết Đỉnh, trùm BẠCH PHÁT KIẾM THÁNH). Người chơi chết nhiều lần và đi lại nhiều chuyến (roguelike), nên câu chuyện phải được kể DẦN qua nhiều chuyến. NPC: thương nhân, trà sư, cao nhân ẩn thế. 9 mảnh ký ức đã viết (giữ nguyên, câu chuyện mới phải khớp):
+MEM_TITLE = {
+		"TRANG ĐẦU", "ĐỆ TỬ NGOẠI MÔN", "NÉT KHỞI BÚT",
+		"BẠN CỜ", "LỬA TRONG THƯ PHÒNG", "CHỖ TÂM DỪNG",
+		"BỨC HỌA CHÍNH ĐIỆN", "NGƯỜI ĐỐT NÚI", "TRANG ĐỂ TRỐNG",
+	};
+	public static readonly string[] MEM = {
+		"Đêm Mặc Kiếm Môn cháy, ta thấy một gã khoác da hổ ôm đi trang đầu của bộ kiếm phổ. Mực trên trang ấy còn ướt.",
+		"Hắc Hổ vốn là đệ tử ngoại môn. Sư phụ đuổi hắn xuống núi vì hắn học kiếm chỉ để cướp. Hắn chưa từng quên ngày đó.",
+		"Trang giấy hắn giữ chỉ có một nét mực, đậm ở đầu và nhạt dần. Đó là nét khởi đầu của mọi chiêu trong Mặc Kiếm Lục.",
+		"Lão thiền sư mù từng là bạn cờ của sư phụ. Mười năm, mỗi mùa xuân, hai người đánh đúng một ván rồi chia tay.",
+		"Lão nói lửa không do người ngoài mang tới. Nó bắt đầu trong thư phòng, nơi chỉ sư phụ có chìa khóa.",
+		"Trang thứ hai viết: kiếm không ở trong tay, kiếm ở chỗ tâm dừng lại. Ai chưa dừng được thì kiếm chỉ là sắt.",
+		"Mái tóc bạc ấy ta đã thấy trong bức họa treo ở chính điện. Người trong tranh trẻ hơn, nhưng cách cầm kiếm thì không đổi.",
+		"Kiếm Thánh là sư phụ. Người tự tay đốt môn phái để giấu kiếm phổ khỏi thiên hạ, rồi đợi xem ai đủ sức đi hết ba ngọn núi.",
+		"Trang cuối để trống. Người bảo: phần còn lại ngươi tự viết, bằng mực của chính mình.",
+	};
+}
+
+
+
+Hãy viết một TUYẾN CỐT TRUYỆN rõ ràng, trả về DUY NHẤT một JSON hợp lệ (không markdown) với cấu trúc:
+{
+ "prologue": ["3 đến 5 câu ngắn hiện ở lần chơi đầu tiên"],
+ "run_intro": ["8 câu mở đầu chuyến đi khác nhau, mỗi câu 1 dòng, dùng xoay vòng; câu sau sâu hơn câu trước"],
+ "chapters": [ { "name": "...", "intro": "2 câu khi bước vào chương", "boss_intro": ["3 câu trùm nói trước trận, câu thứ 2 và 3 chỉ dùng khi người chơi đã hạ trùm này 1 và 2 lần"], "boss_defeat": ["3 câu khi trùm ngã, theo cùng thứ tự"] } x3 ],
+ "npc": { "merchant": ["9 câu, 3 câu mỗi chương"], "tea": ["9 câu"], "hermit": ["9 câu"] },
+ "death": ["6 câu ngắn khi người chơi gục ngã"],
+ "ending_normal": ["4 câu khi thắng mà chưa đủ 9 ký ức"],
+ "ending_true": ["6 câu khi thắng sau khi đã mở đủ 9 ký ức: người chơi đối mặt sự thật về sư phụ"],
+ "milestones": [ {"runs": 1, "text": "..."}, {"runs": 3, "text": "..."}, {"runs": 6, "text": "..."}, {"runs": 10, "text": "..."} ]
+}
+Mỗi câu tối đa 120 ký tự. Giọng văn cổ phong, kiệm lời.

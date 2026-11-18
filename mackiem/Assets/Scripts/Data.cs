@@ -45,7 +45,7 @@ public class SkillDef {
 }
 
 public class Boon {
-	public string id, name, desc, slot;   // slot: atk, dash, parry, skill, pas
+	public string id, name, desc, slot, sect = "";   // slot: atk, dash, parry, skill, pas
 	public int el = -1;
 }
 
@@ -122,10 +122,10 @@ public static class D {
 		new WeaponDef { id = "chuy", name = "TRẤN SƠN CHÙY", mech = "heavy", unlock = "Hạ trùm chương II", desc = "Chùy nặng, chậm, quét rất rộng.\nBẤT ĐỘNG: phá THẾ gấp 2,2 lần, đang vung thì chịu ít hơn 40% sát thương, đòn ba nện ra chấn động.",
 			skill = "quake", skillName = "ĐỊA LIỆT", skillDesc = "Nện đất: nổ rộng quanh mình và đánh sập THẾ.",
 			combo = new[] {
-				new AtkStep { t = "arc", r = 170, w = 2.7f, dmg = 27, dur = 0.5f, lunge = 120 },
-				new AtkStep { t = "arc", r = 170, w = 2.7f, dmg = 29, dur = 0.5f, lunge = 120 },
+				new AtkStep { t = "arc", r = 170, w = 2.7f, dmg = 24, dur = 0.4f, lunge = 120 },
+				new AtkStep { t = "arc", r = 170, w = 2.7f, dmg = 26, dur = 0.4f, lunge = 120 },
 				new AtkStep { t = "arc", r = 205, w = 6.3f, dmg = 46, dur = 0.7f, lunge = 60 } } },
-		new WeaponDef { id = "cung", name = "LẠC NHẠN CUNG", mech = "charge", unlock = "Hạ trùm chương III", desc = "Cung dài: GIỮ chuột để giương, THẢ để bắn.\nMÃN CUNG: giương đủ thì tên xuyên mọi địch và mạnh gấp bảy.",
+		new WeaponDef { id = "cung", name = "LẠC NHẠN CUNG", mech = "charge", unlock = "Hạ trùm chương III", desc = "Cung dài: GIỮ chuột để giương, THẢ để bắn.\nMÃN CUNG: giương đủ thì tên xuyên mọi địch (mỗi địch xuyên qua giảm 25%).",
 			skill = "fan", skillName = "TÁN TIỄN", skillDesc = "Bắn bảy mũi tên hình quạt, mỗi mũi xuyên ba địch.",
 			combo = new[] { new AtkStep { t = "shot", n = 1, dmg = 10, dur = 0.2f, lunge = 0, spd = 1200 } } },
 	};
@@ -221,6 +221,7 @@ public static class D {
 	public static readonly float[] CH_DMG = { 1f, 1.25f, 1.5f };
 	public static readonly string[][] CH_PROPS = { new[] { "boulder", "bamboo", "lantern" }, new[] { "pillar", "lantern", "jar", "shrine" }, new[] { "pine", "boulder", "pillar" } };
 
+	static Boon BS(string sect, string id, string name, string desc) { return new Boon { id = id, el = -1, slot = "pas", name = name, desc = desc, sect = sect }; }
 	static Boon B(string id, int el, string slot, string name, string desc) { return new Boon { id = id, el = el, slot = slot, name = name, desc = desc }; }
 	public static readonly Boon[] BOONS = {
 		B("a0", 0, "atk", "KIM PHONG TRẢM", "Đòn đánh mang KIM khí: +{15}% sát thương, gây RÁCH."),
@@ -247,7 +248,7 @@ public static class D {
 		B("qi", -1, "pas", "NGƯNG KHÍ QUYẾT", "Nội lực thu được +{35}%."),
 		B("dash", -1, "pas", "YẾN TỬ PHI", "Thêm {1} lần khinh công liên tiếp."),
 		B("sinh", -1, "pas", "TƯƠNG SINH QUYẾT", "TƯƠNG SINH nổ mạnh hơn {50}% và hồi {3} sinh lực."),
-		B("khac", -1, "pas", "TƯƠNG KHẮC QUYẾT", "TƯƠNG KHẮC gây thêm {35} sát thương."),
+		B("khac", -1, "pas", "TƯƠNG KHẮC QUYẾT", "TƯƠNG KHẮC gây thêm {15} sát thương."),
 		B("break", -1, "pas", "PHÁ THẾ TÂM PHÁP", "Sát thương lên địch bị PHÁ THẾ +{40}%."),
 		B("leech", -1, "pas", "DƯỠNG HUYẾT CÔNG", "Hạ một địch hồi {2} sinh lực."),
 		B("coin", -1, "pas", "TỤ BẢO THUẬT", "Ngân lượng nhặt được +{40}%."),
@@ -255,6 +256,19 @@ public static class D {
 		B("calm", -1, "pas", "TĨNH TÂM", "Khoảng đỡ chuẩn dài thêm {30}%."),
 		B("ripo", -1, "pas", "HẬU PHÁT CHẾ NHÂN", "Sau khi đỡ chuẩn, đòn kế +{100}% sát thương."),
 		B("fin", -1, "pas", "LIÊN HOÀN", "Đòn kết liên hoàn +{40}% sát thương."),
+		// sect manuals (designed with Gemini): only offered to their own sect, twice as often
+		BS("kiem", "k_phan", "HOÀN KIẾM CHẤN CẢNH", "Đỡ chuẩn gọi mọi phi kiếm về; mỗi thanh rút khỏi địch gây {15} THẾ."),
+		BS("kiem", "k_truy", "ĐOẠT HỒN TRUY KIẾM", "Hạ địch đang bị kiếm găm: kiếm tự bay sang địch gần nhất, hồi {4} nội lực."),
+		BS("kiem", "k_no", "BẠT KIẾM KINH LÔI", "Thu phi kiếm đang găm thì nổ quanh mục tiêu, {18} sát thương."),
+		BS("thiet", "t_huyet", "HUYẾT DƯ BỘC PHÁT", "Hồi sinh lực vượt mức tối đa thành xung kích, gây {4} lần lượng dư."),
+		BS("thiet", "t_tinh", "TĨNH THỦ HOÁN KHÍ", "Mỗi lần đỡ chuẩn giảm {2} giây hồi TUYỆT KỸ, thu {6} nội lực."),
+		BS("thiet", "t_xuyen", "CÁCH KHÔNG PHẢN THẾ", "Đỡ chuẩn dội {20} THẾ vào kẻ ra đòn; làm nó PHÁ THẾ thì hồi {5} sinh lực."),
+		BS("cuong", "c_hien", "KHƯỚC DƯỢC THÍCH HUYẾT", "Dưới nửa sinh lực, hồi máu biến thành sóng máu gây {5} lần lượng hồi."),
+		BS("cuong", "c_lien", "LIÊN TRẢM CUỒNG TRIỀU", "Đòn trúng khi đang LIÊN TRẢM tạo xung chấn: {4} sát thương mỗi mạng trong chuỗi (tối đa 15)."),
+		BS("cuong", "c_tuyet", "TUYỆT CẢNH HỒI KHÍ", "Từ 35% sinh lực trở xuống, mỗi đòn trúng thu {3} nội lực, giảm {1} giây hồi TUYỆT KỸ."),
+		BS("hanh", "h_luu", "LƯU CHUYỂN SINH KHẮC", "TƯƠNG SINH in ẤN của hành kế tiếp lên mọi địch trong {110} bước."),
+		BS("hanh", "h_dong", "CỘNG HƯỞNG ĐỒNG NGUYÊN", "Đánh trùng hành với ẤN trên địch: nổ cộng hưởng {12} sát thương, {15} THẾ."),
+		BS("hanh", "h_truyen", "ẤN TÀN LƯU CHUYỂN", "Hạ địch mang ẤN: ẤN chuyền sang {2} địch gần nhất, hồi {5} nội lực."),
 		B("kiem", -1, "pas", "THIÊN KIẾM HẠP", "Mang thêm {1} phi kiếm."),
 		B("hoi", -1, "pas", "HỒI KIẾM QUYẾT", "Phi kiếm thu về gây thêm {40}% sát thương."),
 	};
@@ -280,6 +294,7 @@ public static class D {
 		new MetaUp { id = "qi", name = "NỘI CÔNG", desc = "+12% nội lực thu được mỗi cấp", cost = new[] { 8, 14, 22 } },
 		new MetaUp { id = "heal", name = "HỒI XUÂN", desc = "Hồi 3 sinh lực sau mỗi ải, mỗi cấp", cost = new[] { 10, 18, 28 } },
 		new MetaUp { id = "coin", name = "HÀNH TRANG", desc = "+25 ngân lượng khi khởi hành, mỗi cấp", cost = new[] { 6, 12, 20 } },
+		new MetaUp { id = "reroll", name = "NGHỊCH MỆNH", desc = "Mỗi chuyến được đổi lại các lựa chọn bí kíp / bảo vật thêm 1 lần (phím R)", cost = new[] { 15, 30, 50 } },
 		new MetaUp { id = "revive", name = "BẤT TỬ PHÙ", desc = "Hồi sinh một lần mỗi chuyến với 40% sinh lực", cost = new[] { 60 } },
 	};
 
@@ -293,6 +308,7 @@ public static class D {
 			case "tra": return "TRÀ QUÁN";
 			case "ky": return "KỲ NGỘ";
 			case "bao": return "BẢO VẬT";
+			case "binh": return "BINH KHÍ";
 			case "boss": return "TỬ CHIẾN";
 			case "next": return "LÊN ĐƯỜNG";
 			case "end": return "HẠ SƠN";
@@ -309,6 +325,7 @@ public static class D {
 			case "tra": return "Nghỉ chân, hồi 40% sinh lực";
 			case "ky": return "Gặp cao nhân ẩn thế";
 			case "bao": return "Chọn 1 trong 3 bảo vật";
+			case "binh": return "Chọn 1 trong 2 vũ khí mới";
 			case "boss": return "Trùm cuối chương";
 			case "next": return "Sang chương kế";
 			case "end": return "Kết thúc chuyến đi";
@@ -325,6 +342,7 @@ public static class D {
 			case "tra": return new Color(0.40f, 0.62f, 0.62f);
 			case "ky": return new Color(0.45f, 0.50f, 0.85f);
 			case "bao": return new Color(0.55f, 0.32f, 0.7f);
+			case "binh": return new Color(0.75f, 0.5f, 0.2f);
 		}
 		return new Color(0.15f, 0.12f, 0.12f);
 	}

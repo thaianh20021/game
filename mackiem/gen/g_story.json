@@ -1,0 +1,137 @@
+{
+  "prologue": [
+    "Mặc Kiếm Môn cháy rụi trong một đêm mưa đen.",
+    "Ta tỉnh dậy giữa đống tro tàn, tay vẫn nắm chặt chuôi kiếm lạnh.",
+    "Sư phụ biệt tăm, kiếm phổ rách nát, chỉ còn ba ngọn núi trước mặt.",
+    "Một nét mực chưa khô dẫn lối ta bước vào giang hồ."
+  ],
+  "run_intro": [
+    "Sương sớm phủ kín bậc đá, chuyến đi bắt đầu.",
+    "Tro tàn dưới chân còn ấm, bóng người xưa chưa tan.",
+    "Vết kiếm cũ trên thân trúc nhắc ta đừng vội vung đao.",
+    "Kẻ giữ trang đầu liệu có biết ai châm ngòi lửa?",
+    "Mười năm một ván cờ, sao hôm nay cổ tự lại đóng cửa?",
+    "Lửa cháy từ thư phòng, nhưng chìa khóa lại nằm trong tay người.",
+    "Tuyết phủ đỉnh cao, bóng áo trắng kia quen đến lạ.",
+    "Đoạn đường này không tìm thù, chỉ tìm nét bút cuối cùng."
+  ],
+  "chapters": [
+    {
+      "name": "Trúc Lâm",
+      "intro": "Rừng trúc xào xạc tiếng gió lạnh. Sát khí lẩn khuất sau từng đốt tre.",
+      "boss_intro": [
+        "Tiểu sư đệ, đường núi này không dành cho kẻ bại trận!",
+        "Lại mò tới đây? Trang giấy này ngươi không giành nổi đâu.",
+        "Kiếm của ngươi nặng thêm rồi, nhưng vẫn thiếu một nét tàn nhẫn!"
+      ],
+      "boss_defeat": [
+        "Khụ... ta cướp trang đầu, cũng chỉ học được một nét mực...",
+        "Đêm đó ta thấy người trong thư phòng, không phải ngoại nhân...",
+        "Cầm lấy đi... sư phụ ngươi mới là kẻ đáng sợ nhất..."
+      ]
+    },
+    {
+      "name": "Cổ Tự",
+      "intro": "Chuông chùa tắt tiếng từ lâu. Mùi hương trầm quyện trong tro bụi.",
+      "boss_intro": [
+        "Thí chủ mang sát tâm lên núi, lão tăng đành ra tay cản bước.",
+        "Tâm còn động, kiếm còn lệch. Mời thí chủ thử lại.",
+        "Khá lắm, trong kiếm khí của thí chủ đã có dáng dấp cố nhân."
+      ],
+      "boss_defeat": [
+        "A Di Đà Phật... lửa từ thư phòng, ta chẳng nỡ nói sớm...",
+        "Mỗi năm một ván cờ, ván cuối ông ấy đã tự phá thế...",
+        "Kiếm ở chỗ tâm dừng. Đi tiếp đi, ông ấy đang đợi ngươi."
+      ]
+    },
+    {
+      "name": "Tuyết Đỉnh",
+      "intro": "Gió tuyết cắt da, mây mù cuộn dưới chân. Đỉnh núi chỉ còn một bóng người.",
+      "boss_intro": [
+        "Vượt qua hai ải, để ta xem kiếm của ngươi còn giữ được bản tâm?",
+        "Lại quay về đây sao? Nét kiếm lần trước vẫn còn sơ hở.",
+        "Mũi kiếm đã sạch tạp niệm. Hôm nay, hãy đánh hết sức đi."
+      ],
+      "boss_defeat": [
+        "Khá lắm... nhưng ngươi vẫn chưa đọc hết trang cuối...",
+        "Tuyết lạnh thế này, đừng để mực trong lòng ngươi đông cứng.",
+        "Ta thua rồi. Ngọn lửa năm xưa, nay có thể tắt thật rồi..."
+      ]
+    }
+  ],
+  "npc": {
+    "merchant": [
+      "Đao kiếm vô tình, giữ lấy chút lộ phí phòng thân.",
+      "Lão Hắc Hổ kia cướp hàng khắp vùng, mua thêm thuốc đi.",
+      "Nghe đồn đêm cháy núi, có kẻ vác theo giấy mực chạy xuống.",
+      "Chùa vắng người, nhưng đồ tốt thì vẫn còn giá.",
+      "Lão hòa thượng kia mù mắt, chớ coi thường tai nghe của lão.",
+      "Người ta bảo trận hỏa hoạn đó không có dấu chân kẻ lạ.",
+      "Lên tới tuyết đỉnh mà vẫn sống để mua hàng, hiếm đấy.",
+      "Mực này vẽ tranh không trôi, ngươi có cần không?",
+      "Bạch Phát Kiếm Thánh trên đỉnh kia, nhìn quen mắt lắm phải không?"
+    ],
+    "tea": [
+      "Uống chén trà nóng, lắng nhịp tim trước khi vào rừng.",
+      "Trà đắng lúc đầu, ngọt về sau, giống nét mực đầu tiên.",
+      "Kẻ bị đuổi khỏi sơn môn, uống trà cũng vội vã.",
+      "Nước suối cổ tự pha trà, tâm tĩnh tự khắc thấy đường.",
+      "Lão thiền sư xưa hay tới đây uống trà cùng một vị khách.",
+      "Người ta nói kiếm dừng ở tâm, trà cũng thế.",
+      "Giữa tuyết trắng, một chén trà ấm giữ lại chút nhân tính.",
+      "Người trên đỉnh xưa kia rất thích trà tuyết đỉnh.",
+      "Chén cuối này mời ngươi, uống xong hãy hạ bút."
+    ],
+    "hermit": [
+      "Đao pháp ngoại môn hung hãn, nhưng gốc rễ lại rỗng.",
+      "Một nét khởi bút đủ phân cao thấp, đừng học tham.",
+      "Kẻ giữ giấy chưa chắc hiểu ý người viết.",
+      "Thắng một ván cờ dễ, thắng bản thân khi cầm kiếm mới khó.",
+      "Chìa khóa thư phòng chỉ có một, lửa từ đâu mà ra?",
+      "Đánh tới đây rồi, ngươi đã biết dừng kiếm chưa?",
+      "Bức họa chính điện năm xưa, ngươi còn nhớ nét mặt người?",
+      "Đốt cả môn phái để giấu một cuốn sách, kẻ điên hay bậc thánh?",
+      "Trang cuối để trống, không phải vì viết dở."
+    ]
+  },
+  "death": [
+    "Mực nhòe trên tuyết, ngươi gục xuống trước khi kịp xuất chiêu.",
+    "Tro tàn lại gọi tên ngươi. Chuyến đi này chưa kết thúc.",
+    "Kiếm gãy, tâm loạn, đành làm lại từ chân núi.",
+    "Hơi thở tắt dần, nhưng trang giấy trong ngực vẫn còn nguyên.",
+    "Thất bại chỉ là nét mực hỏng. Hãy mài lại nghiên.",
+    "Màn đêm nuốt chửng bóng kiếm, hẹn ngày mai lên đường."
+  ],
+  "ending_normal": [
+    "Kiếm Thánh thu kiếm, xoay lưng nhìn về biển mây.",
+    "Ngươi qua được ba ngọn núi, nhưng lòng vẫn còn nhiều dấu hỏi.",
+    "Ta đứng giữa đỉnh tuyết, cảm thấy câu chuyện vẫn thiếu mảnh ghép.",
+    "Cầm kiếm xuống núi, ta biết mình sẽ còn quay lại."
+  ],
+  "ending_true": [
+    "Tuyết ngừng rơi. Lão nhân tóc bạc mỉm cười hạ thanh trường kiếm.",
+    "Chính tay người châm lửa thiêu rụi sơn môn để bảo vệ trang phổ.",
+    "Kẻ thù không ở dưới núi, thử thách lớn nhất là ta của hôm nay.",
+    "Sư phụ đưa cho ta trang giấy trắng cuối cùng của Mặc Kiếm Lục.",
+    "Chín mảnh ký ức khớp lại, mực trong nghiên bỗng hóa trong veo.",
+    "Ta nhấc kiếm lên, viết nét đầu tiên của riêng mình giữa nền tuyết."
+  ],
+  "milestones": [
+    {
+      "runs": 1,
+      "text": "Lần đầu gục ngã, mới biết đường lên đỉnh dài hơn tưởng tượng."
+    },
+    {
+      "runs": 3,
+      "text": "Ba lần đổ máu, thân thủ đã quen với nhịp gió rừng trúc."
+    },
+    {
+      "runs": 6,
+      "text": "Sáu chuyến lên xuống, những mảnh ký ức rời rạc dần nối liền."
+    },
+    {
+      "runs": 10,
+      "text": "Mười lần sinh tử, ngươi không còn là đệ tử non nớt năm xưa."
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+ "affixes": [
+  {"id":"el_kim","name":"KIM PHONG ẤN","desc":"Đòn đánh có {N}% cơ hội gây RÁCH.","n":[18,28,40],"hook":"on_hit_elem","el":0},
+  {"id":"el_moc","name":"ĐỘC ĐẰNG ẤN","desc":"Đòn đánh có {N}% cơ hội gây ĐỘC.","n":[18,28,40],"hook":"on_hit_elem","el":1},
+  {"id":"el_thuy","name":"HÀN BĂNG ẤN","desc":"Đòn đánh có {N}% cơ hội gây HÀN.","n":[18,28,40],"hook":"on_hit_elem","el":2},
+  {"id":"el_hoa","name":"LIỆT DIỄM ẤN","desc":"Đòn đánh có {N}% cơ hội gây THIÊU.","n":[18,28,40],"hook":"on_hit_elem","el":3},
+  {"id":"el_tho","name":"ĐỊA CHẤN ẤN","desc":"Đòn đánh có {N}% cơ hội gây CHẤN.","n":[18,28,40],"hook":"on_hit_elem","el":4},
+  {"id":"react_mul","name":"NGŨ HÀNH NỔ","desc":"Phản ứng TƯƠNG SINH và TƯƠNG KHẮC mạnh hơn {N}%.","n":[25,45,70],"hook":"element_react_mul","el":-1},
+  {"id":"parry_dmg","name":"PHẢN KÌNH LỰC","desc":"Đỡ chuẩn dội thêm {N} sát thương lên kẻ ra đòn.","n":[20,35,55],"hook":"on_parry_dmg","el":-1},
+  {"id":"dash_dmg","name":"ẢNH BỘ KÌNH","desc":"Khinh công lướt qua gây {N} sát thương.","n":[14,24,38],"hook":"on_dash_dmg","el":-1},
+  {"id":"sword_add","name":"NGỰ KIẾM HẠP","desc":"Mang thêm {N} phi kiếm bay theo.","n":[1,2,3],"hook":"sword_count","el":-1},
+  {"id":"kill_heal","name":"SÁT PHẠT DƯỠNG","desc":"Hạ mỗi kẻ địch hồi {N} sinh lực.","n":[1,2,3],"hook":"on_kill_heal","el":-1},
+  {"id":"kill_qi","name":"THU HỒN KHÍ","desc":"Hạ mỗi kẻ địch thu thêm {N} nội lực.","n":[4,7,11],"hook":"on_kill_qi","el":-1},
+  {"id":"atk_spd","name":"TẬT PHONG THỨC","desc":"Tốc độ đánh tăng {N}%.","n":[10,18,28],"hook":"atk_speed","el":-1},
+  {"id":"crit_pct","name":"ĐOẠN MẠCH Ý","desc":"Tỉ lệ chí mạng tăng {N}%.","n":[8,15,24],"hook":"crit_chance","el":-1},
+  {"id":"pos_mul","name":"TOÁI CỐT KÌNH","desc":"Sát thương phá THẾ tăng {N}%.","n":[20,35,55],"hook":"posture_mul","el":-1},
+  {"id":"rng_mul","name":"THÂN TRƯỜNG KÌNH","desc":"Tầm đánh vũ khí tăng {N}%.","n":[12,22,35],"hook":"range_mul","el":-1},
+  {"id":"low_hp","name":"TUYỆT CẢNH ĐAO","desc":"Khi dưới nửa máu, gây thêm {N}% sát thương.","n":[18,30,48],"hook":"low_hp_dmg","el":-1},
+  {"id":"combo_fin","name":"CHUNG CỤC THỨC","desc":"Đòn kết liên hoàn gây thêm {N}% sát thương.","n":[22,38,60],"hook":"combo_last_mul","el":-1},
+  {"id":"lifesteal","name":"HUYẾT ẨM KÌNH","desc":"Hút máu bằng {N}% sát thương gây ra.","n":[3,5,8],"hook":"lifesteal_pct","el":-1}
+ ],
+ "legendary": [
+  {
+   "weapon":"kiem",
+   "name":"VẠN KIẾM QUY TÔNG",
+   "desc":"Đòn kết liên hoàn phóng ra ba phi kiếm và kích nổ kiếm khí KIM phía trước.",
+   "mechanic":"Strike(step);\nif(last){\n for(int i=0;i<3;i++) ThrowSword();\n Burst(ppos+aimDir*95,115,24,0,1,true);\n}"
+  },
+  {
+   "weapon":"thuong",
+   "name":"THẦN LONG PHÁ TRẬN",
+   "desc":"Mỗi nhát thương phóng theo một luồng thương khí xuyên địch, đòn quét cuối gây chấn động THỔ.",
+   "mechanic":"Strike(step);\nshots.Add(new Shot{pos=ppos,dir=aimDir,spd=1150,dmg=16,pierce=3,el=0});\nif(last) Burst(ppos+aimDir*140,130,28,4,1,true);"
+  },
+  {
+   "weapon":"dao",
+   "name":"PHẦN THIÊN SONG SÁT",
+   "desc":"Mỗi nhát chém chẵn phóng lưỡi đao HỎA, nhát kết bùng nổ vòng lửa thiêu đốt xung quanh.",
+   "mechanic":"Strike(step);\nif(ci%2==1) shots.Add(new Shot{pos=ppos,dir=aimDir,spd=980,dmg=12,el=3});\nif(last) Burst(ppos,140,30,3,1,true);"
+  },
+  {
+   "weapon":"chuy",
+   "name":"BÀN CỔ KHAI THIÊN",
+   "desc":"Mỗi cú vung chùy tạo địa chấn THỔ, đòn ba đập nát THẾ mọi kẻ địch lân cận.",
+   "mechanic":"Strike(step);\nBurst(ppos+aimDir*100,last?195:110,last?40:16,4,2,true);\nif(last) foreach(var f in foes) if(Dist(f,ppos)<210) HurtFoe(f,20,4,1,2.5f,aimDir);"
+  },
+  {
+   "weapon":"phien",
+   "name":"HÀN PHONG TÁN HOA",
+   "desc":"Đòn quạt cuối tung thêm hai phi tiêu băng tỏa rộng và kích nổ vòng hàn khí THỦY.",
+   "mechanic":"Strike(step);\nif(last){\n for(int a=-1;a<=1;a+=2) shots.Add(new Shot{pos=ppos,dir=Rot(aimDir,a*0.24f),spd=980,dmg=14,el=2});\n Burst(ppos+aimDir*160,130,24,2,1,true);\n}"
+  },
+  {
+   "weapon":"cung",
+   "name":"HẬU NGHỆ LẠC NHẬT",
+   "desc":"Mỗi phát bắn chia thành ba mũi tên MỘC xuyên thấu và nổ độc tại điểm ngắm.",
+   "mechanic":"Strike(step);\nfor(int i=-1;i<=1;i++) shots.Add(new Shot{pos=ppos,dir=Rot(aimDir,i*0.14f),spd=1250,dmg=15,pierce=2,el=1});\nBurst(ppos+aimDir*220,115,22,1,1,true);"
+  }
+ ],
+ "weapon_names": {
+  "kiem": ["THANH HÀN KIẾM","XÍCH TIÊU KIẾM","VÔ ẢNH KIẾM","LƯU VÂN KIẾM","ĐOẠN THỦY KIẾM"],
+  "thuong": ["LONG NGÂM THƯƠNG","BẠC VŨ THƯƠNG","ĐOẠN HỒN THƯƠNG","LÔI ĐÌNH THƯƠNG","BÁCH CHIẾN THƯƠNG"],
+  "dao": ["HUYẾT SÁT ĐAO","SONG PHƯỢNG ĐAO","BẠCH HỔ ĐAO","TÀN PHONG ĐAO","TRẢM LÔI ĐAO"],
+  "chuy": ["LÔI CÔNG CHÙY","TOÁI THẠCH CHÙY","BÁ VƯƠNG CHÙY","PHÁ NHẠC CHÙY","HUYỀN THIẾT CHÙY"],
+  "phien": ["BẠCH NGỌC PHIẾN","THANH LOAN PHIẾN","ÁM HƯƠNG PHIẾN","LÃNH NGUYỆT PHIẾN","CUỒNG LAN PHIẾN"],
+  "cung": ["TRUY PHONG CUNG","XẠ NHẬT CUNG","BĂNG TÂM CUNG","LƯU TINH CUNG","THẦN TÝ CUNG"]
+ }
+}

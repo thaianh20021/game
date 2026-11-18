@@ -89,6 +89,7 @@ public partial class Game {
 		frenzyT -= dt;
 		if (frenzyT <= 0) frenzy = 0;
 		chainT -= dt;
+		shieldT -= dt;
 		skidT -= dt; recallT -= dt; catchT -= dt; castT -= dt; throwT -= dt;
 		if (chainT <= 0) chain = 0;
 		if (P(inp.tk, prev.tk) && tkCd <= 0 && act != "dash") CastTK();
@@ -117,7 +118,7 @@ public partial class Game {
 			inv = Mathf.Max(inv, 0.12f);
 			if (bellL >= 2) foreach (var s in shots) {
 				if (s.mine || (s.pos - new Vector2(0, 55) - ppos).magnitude > 115) continue;
-				s.mine = true; s.vel = -s.vel * 1.4f; s.dmg *= 3; s.life = 2; s.pool = false; s.hit = new List<Foe>();
+				s.mine = true; s.vel = -s.vel * 1.4f; s.dmg *= 1.5f; s.life = 2; s.pool = false; s.hit = new List<Foe>();
 			}
 			if (bellL >= 3) {
 				bellTick -= dt;
@@ -134,8 +135,9 @@ public partial class Game {
 		float mult = dmgMul * (1 + lv * 0.15f) * (riposte ? 1 + Lv("ripo") : 1);
 		riposte = false;
 		bool full = u >= 0.99f;
-		shots.Add(new Shot { pos = ppos + new Vector2(0, 55), vel = aimDir * (1200 + 700 * u), dmg = (10 + 62 * u * u) * mult * (full ? 1.3f : 1), mine = true, el = el, lvl = lv,
-			pierce = full ? 50 : (u > 0.5f ? 2 : 0), r = 11 + 7 * u, life = 0.9f, hit = new List<Foe>() });
+		shots.Add(new Shot { pos = ppos + new Vector2(0, 55), vel = aimDir * (1200 + 700 * u), dmg = (10 + 30 * u * u) * mult * (full ? 1.3f : 1), mine = true, el = el, lvl = lv,
+			pierce = full ? 50 : (u > 0.5f ? 2 : 0), r = 11 + 7 * u, life = 0.9f, hit = new List<Foe>(), wpn = true });
+		if (full) LegendBow();
 		face = aimDir.x >= 0 ? 1 : -1;
 		sfx.Play("shoot", 0.5f + 0.4f * u, 1.2f - 0.4f * u);
 		if (full) { shake = Mathf.Max(shake, 6); ppos = Confine(ppos - aimDir * 30, 22); }

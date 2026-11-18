@@ -27,7 +27,7 @@ public class Foe {
 	public float animT;
 }
 public class Ghost { public SpriteRenderer sr; public float life, max; }
-public class Shot { public Vector2 pos, vel; public float dmg, r = 9, life = 3; public bool mine, pool; public int el = -1, lvl, pierce, bounce; public List<Foe> hit; }
+public class Shot { public Vector2 pos, vel; public float dmg, r = 9, life = 3; public bool mine, pool; public int el = -1, lvl, pierce, bounce; public List<Foe> hit; public bool wpn; }
 public class Wave { public Vector2 pos; public float r, spd, dmg, max; public bool hit; public Color col = new Color(0.07f, 0.06f, 0.06f); }
 public class Blast { public Vector2 pos; public float r, t, wind, dmg; }
 public class Pool { public Vector2 pos; public float r, t, tick; }
@@ -35,7 +35,7 @@ public class Part { public Vector2 pos, vel; public float r, life, max, grav; pu
 public class Slash { public Vector2 pos, dir; public float r, w, t, len, wid; public bool line; public Color col; }
 public class FText { public Vector2 pos; public string s; public Color col; public float t; public int size; }
 public class Door { public Vector2 pos; public string kind; }
-public class Item { public Vector2 pos; public string kind, label; public int cost; public Boon boon; public bool gone; public SpriteRenderer sr; }
+public class Item { public Vector2 pos; public string kind, label; public int cost; public Boon boon; public bool gone; public SpriteRenderer sr; public WeaponItem wi; }
 public class Prop { public Vector2 pos; public float r, shake; public SpriteRenderer sr; }
 public class Offer { public Boon b; public int lvl; public bool replace; }
 
@@ -54,7 +54,8 @@ public class MetaSave {
 	public List<string> sects = new List<string> { "kiem" };
 	public List<string> relics = new List<string>(J.START);
 	public List<string> seen = new List<string>();
-	public List<int> mem = new List<int>();   // the cut-out puppet looked disjointed: drawn frames are the default
+	public List<int> mem = new List<int>();
+	public List<int> bk = new List<int> { 0, 0, 0 };   // times each boss was beaten   // the cut-out puppet looked disjointed: drawn frames are the default
 }
 
 public struct Inp {
@@ -164,6 +165,8 @@ public partial class Game : MonoBehaviour {
 		if (bot) sfx.volume = 0.0f;
 		InitDraw();
 		LoadMeta();
+		LoadLoot();
+		LoadStory();
 		weapon = D.Weapon(weaponId);
 		Recalc();
 	}
@@ -181,6 +184,8 @@ public partial class Game : MonoBehaviour {
 		if (meta.relics == null || meta.relics.Count == 0) meta.relics = new List<string>(J.START);
 		if (meta.seen == null) meta.seen = new List<string>();
 		if (meta.mem == null) meta.mem = new List<int>();
+		if (meta.bk == null) meta.bk = new List<int>();
+		while (meta.bk.Count < 3) meta.bk.Add(0);
 		meta.heatMax = Mathf.Max(meta.heatMax, meta.kiep);
 	}
 	void SaveMeta() { try { File.WriteAllText(savePath, JsonUtility.ToJson(meta)); } catch (Exception) { } }
@@ -196,12 +201,12 @@ public partial class Game : MonoBehaviour {
 	void Recalc() {
 		maxHp = 100 + Up("hp") * 12 + Lv("hp") * 25 + bonusHp + (meta.sect == "thiet" ? 30 : 0);
 		dmgMul = 1 + Up("dmg") * 0.05f;
-		qiMul = 1 + Up("qi") * 0.12f + Lv("qi") * 0.35f;
+		qiMul = (1 + Up("qi") * 0.12f + Lv("qi") * 0.35f) * (1 + Afx("qi_gain") / 100f);
 		dashMax = 1 + Lv("dash");
-		int sm = 4 + Lv("kiem") + (weapon != null && weapon.mech == "sword" ? 2 : 0) + (meta.sect == "kiem" ? 2 : 0) + (Has("thattinh") ? 2 : 0);
+		int sm = 4 + Lv("kiem") + (weapon != null && weapon.mech == "sword" ? 2 : 0) + (meta.sect == "kiem" ? 2 : 0) + (Has("thattinh") ? 2 : 0) + (int)Afx("sword_count");
 		swordsHeld += sm - swordMax; swordMax = sm;
-		pwin = 0.2f * (1 + Lv("calm") * 0.3f) * (meta.sect == "thiet" ? 1.6f : 1);
-		crit = Lv("crit") * 0.12f;
+		pwin = Mathf.Min(0.35f, 0.2f * (1 + Lv("calm") * 0.3f) * (meta.sect == "thiet" ? 1.6f : 1));   // capped: stacked windows made parrying free
+		crit = Lv("crit") * 0.12f + Afx("crit_chance") / 100f;
 		coinMul = 1 + Lv("coin") * 0.4f;
 		RelicRecalc();
 		hp = Mathf.Min(hp, maxHp);
@@ -277,7 +282,7 @@ public partial class Game : MonoBehaviour {
 				break;
 			}
 			case "title": Menu(7, TitleAct); break;
-			case "relic": Menu(relicOffers.Count, RelicAct, true); break;
+			case "relic": Menu(relicOffers.Count, RelicAct, true); if (P(inp.recall, prev.recall)) Reroll(); break;
 			case "heat": HeatTick(); break;
 			case "vault": VaultTick(); break;
 			case "memory": MemoryTick(); break;
@@ -286,8 +291,10 @@ public partial class Game : MonoBehaviour {
 			case "weapon": Menu(D.WEAPONS.Length, WeaponAct, true); if (P(inp.back, prev.back)) state = "title"; break;
 			case "meta": Menu(D.META.Length, MetaAct); if (P(inp.back, prev.back)) { state = "title"; menuI = 2; } break;
 			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 5; } break;
-			case "pick": Menu(offers.Count, PickAct, true); break;
+			case "pick": Menu(offers.Count, PickAct, true); if (P(inp.recall, prev.recall)) Reroll(); break;
 			case "event": Menu(3, EventAct); break;
+			case "wpick": Menu(wOffers.Count, WeaponPickAct, true); if (P(inp.back, prev.back)) WeaponPickAct(99); break;
+			case "story": StoryTick(rdt); break;
 			case "pause": Menu(3, PauseAct); if (P(inp.back, prev.back)) state = "play"; break;
 			case "dead":
 			case "win": if (T - endT > 1.2f && P(inp.ok, prev.ok)) { state = "title"; menuI = 0; ClearRoom(); sfx.Battle(false); } break;
@@ -308,7 +315,7 @@ public partial class Game : MonoBehaviour {
 
 	void TitleAct(int i) {
 		sfx.Play("pick", 0.7f);
-		if (i == 0) { state = "weapon"; menuI = Mathf.Max(0, Array.FindIndex(D.WEAPONS, w => w.id == weaponId)); }
+		if (i == 0) { weaponId = bot && botWeapon != null ? botWeapon : "kiem"; state = "sect"; menuI = Mathf.Max(0, Array.FindIndex(D.SECTS, k => k.id == meta.sect)); }
 		else if (i == 1) { state = "skills"; skCol = Mathf.Max(0, Array.FindIndex(D.SKILLS, k => k.id == meta.tk)); skRow = 0; }
 		else if (i == 2) { state = "meta"; menuI = 0; }
 		else if (i == 3) { state = "vault"; vaultI = 0; }
@@ -353,6 +360,7 @@ public partial class Game : MonoBehaviour {
 		reviveLeft = Up("revive") > 0;
 		boons.Clear(); slot.Clear();
 		honRun = 0;
+		rerolls = Up("reroll");
 		relics.Clear(); phoenixUsed = false; satky = 0; relicPending = false;
 		seed = rng.Next();
 		hp = 9999; qi = 0;
@@ -367,6 +375,8 @@ public partial class Game : MonoBehaviour {
 		act = ""; guard = false; whirlT = 0; inv = 0.5f; tkCd = 0;
 		if (rigOk) ResetRig();
 		ci = 0; comboT = 0; buf = 0; acd = 0;   // a combo left over from the last run may not exist on this weapon
+		wItem = new WeaponItem { id = weaponId, rar = 0, name = D.Weapon(weaponId).name };
+		Recalc();
 		dashes = dashMax;
 		cleared = true; wave = 0; waves = 0; roomKind = "fight"; pickT = 0; pickKind = "";
 		chain = 0;
@@ -451,6 +461,7 @@ public partial class Game : MonoBehaviour {
 	void Heal(float v) {
 		if (v <= 0 || hp <= 0) return;
 		v *= HealMul();
+		if (SectHeal(v)) return;
 		float before = hp;
 		hp = Mathf.Min(maxHp, hp + v);
 		if (hp - before >= 1) Text(ppos + new Vector2(0, 130), "+" + Mathf.RoundToInt(hp - before), new Color(0.5f, 0.9f, 0.5f), 22);
@@ -464,6 +475,7 @@ public partial class Game : MonoBehaviour {
 		foreach (var b in D.BOONS) {
 			int lv = Lv(b.id);
 			if (lv >= 3) continue;
+			if (b.sect != "" && b.sect != meta.sect) continue;
 			float w = 2;
 			if (b.slot != "pas") {
 				Boon cur;
@@ -473,6 +485,7 @@ public partial class Game : MonoBehaviour {
 			} else if (lv > 0) w = 1.5f;
 			// the first manuals of a run should put phases in the hands: reactions need two of them
 			if (b.slot == "pas" && slot.Count < 2) w = 0.35f;
+			if (b.sect != "") w *= 2;
 			cand.Add(b); wt.Add(w);
 		}
 		var res = new List<Offer>();
@@ -557,6 +570,7 @@ public partial class Game : MonoBehaviour {
 			foreach (var kv in boons) if (kv.Value < 3) any = true;
 			if (!any) { sfx.Play("block"); Toast("Chưa có chiêu nào để luyện"); return; }
 		}
+		if (it.kind == "weapon") { PickWeaponItem(it); return; }
 		coins -= it.cost;
 		it.gone = true;
 		if (it.sr != null) { Destroy(it.sr.gameObject); it.sr = null; }
@@ -599,6 +613,7 @@ public partial class Game : MonoBehaviour {
 		endT = T;
 		sfx.Battle(false);
 		sfx.Play("gong");
+		StoryEnd(win);
 	}
 
 	// --- simulation
@@ -652,7 +667,7 @@ public partial class Game : MonoBehaviour {
 				break;
 			case "atk": {
 				var s = weapon.combo[ci];
-				at += dt * (1 + frenzy * 0.07f);
+				at += dt * (1 + frenzy * 0.07f) * (1 + Afx("atk_speed") / 100f);
 				if (at < s.dur * 0.5f) ppos += adir * s.lunge * (1 - at / s.dur) * dt * 2;
 				if (!hitDone && at >= s.dur * 0.3f) { hitDone = true; Strike(s); }
 				if (at >= s.dur) {
@@ -716,6 +731,7 @@ public partial class Game : MonoBehaviour {
 	}
 
 	void DashBurst() {
+		if (Afx("on_dash_dmg") > 0) Burst(ppos, 110, Afx("on_dash_dmg") * dmgMul, -1, 0, false);
 		int el = SlotEl("dash");
 		if (el < 0) return;
 		Burst(ppos, 125, 16 * SlotLv("dash") * dmgMul, el, SlotLv("dash"), true);
@@ -754,42 +770,47 @@ public partial class Game : MonoBehaviour {
 	}
 
 	void Strike(AtkStep s) {
+		float rg = 1 + Afx("range_mul") / 100f;
 		int el = SlotEl("atk"), lv = SlotLv("atk");
 		float mult = dmgMul * (1 + lv * 0.15f);
 		bool last = ci == weapon.combo.Length - 1;
-		if (last) mult *= 1 + Lv("fin") * 0.4f;
+		if (last) mult *= (1 + Lv("fin") * 0.4f) * (1 + Afx("combo_last_mul") / 100f);
+		bool taiji = last && Has("thaicuc");
 		if (riposte) { mult *= 1 + Lv("ripo") * 1.0f; riposte = false; }
 		Color col = el >= 0 ? D.EL_COL[el] : D.INK;
 		Vector2 o = ppos;
 		sfx.Play("slash", 0.55f, last ? 0.85f : 1.1f);
+		LegendStrike(last);
 		if (s.t == "shot") {
 			for (int i = 0; i < s.n; i++) {
 				float a = Mathf.Atan2(adir.y, adir.x) + (s.n == 1 ? 0 : Mathf.Lerp(-s.spread, s.spread, i / (float)(s.n - 1)));
-				shots.Add(new Shot { pos = o + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * s.spd, dmg = s.dmg * mult, mine = true, el = el, lvl = lv, pierce = 1, bounce = weapon.mech == "bounce" ? 2 : 0, r = 12, life = 0.62f, hit = new List<Foe>() });
+				shots.Add(new Shot { pos = o + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * s.spd, dmg = s.dmg * mult, mine = true, el = el, lvl = lv, pierce = 1, wpn = true, bounce = weapon.mech == "bounce" ? (Legend() ? 5 : 2) : 0, r = 12, life = 0.62f, hit = new List<Foe>() });
 			}
 			return;
 		}
 		bool arc = s.t == "arc";
-		slashes.Add(new Slash { pos = o + new Vector2(0, 45), dir = adir, r = s.r, w = s.w, line = !arc, len = s.len, wid = s.wid, col = col });
+		slashes.Add(new Slash { pos = o + new Vector2(0, 45), dir = adir, r = s.r * rg, w = s.w, line = !arc, len = s.len * rg, wid = s.wid, col = col });
 		bool any = false;
 		foreach (var f in foes) {
 			if (f.dead || f.spawn > 0) continue;
-			bool h = arc ? ArcHit(o, adir, s.r, s.w, f.pos, f.d.r * f.scale) : LineHit(o, adir, s.len, s.wid, f.pos, f.d.r * f.scale);
+			bool h = arc ? ArcHit(o, adir, s.r * rg, s.w, f.pos, f.d.r * f.scale) : LineHit(o, adir, s.len * rg, s.wid, f.pos, f.d.r * f.scale);
 			if (!h) continue;
+			if (taiji) { int ke = f.mark >= 0 ? KhacOf(f.mark) : rng.Next(5); HurtFoe(f, 0.01f, ke, Mathf.Max(1, lv), 0, adir, true, false); }
 			float fm = 1;
 			// the spear rewards hitting with the last third of its reach
-			if (weapon.mech == "tip" && (f.pos - o).magnitude > (arc ? s.r : s.len) * 0.6f) { fm = 1.6f; Text(f.pos + new Vector2(0, f.d.h + 34), "MŨI THƯƠNG", new Color(1f, 0.9f, 0.5f), 15); }
+			if (weapon.mech == "tip" && (f.pos - o).magnitude > (arc ? s.r * rg : s.len * rg) * 0.6f) { fm = 1.6f; Text(f.pos + new Vector2(0, f.d.h + 34), "MŨI THƯƠNG", new Color(1f, 0.9f, 0.5f), 15); }
+			wHit = true;
 			HurtFoe(f, s.dmg * mult * fm, el, lv, weapon.mech == "heavy" ? 2.2f : 1, adir);
 			any = true;
 		}
 		for (int pi = props.Count - 1; pi >= 0; pi--) {
 			var pr = props[pi];
-			if (arc ? ArcHit(o, adir, s.r, s.w, pr.pos, pr.r) : LineHit(o, adir, s.len, s.wid, pr.pos, pr.r)) HitProp(pi);
+			if (arc ? ArcHit(o, adir, s.r * rg, s.w, pr.pos, pr.r) : LineHit(o, adir, s.len * rg, s.wid, pr.pos, pr.r)) HitProp(pi);
 		}
 		// blades cut arrows out of the air
 		foreach (var sh in shots) {
 			if (sh.mine || sh.life <= 0) continue;
-			bool h = arc ? ArcHit(o, adir, s.r, s.w, sh.pos - new Vector2(0, 50), 10) : LineHit(o, adir, s.len, s.wid, sh.pos - new Vector2(0, 50), 10);
+			bool h = arc ? ArcHit(o, adir, s.r * rg, s.w, sh.pos - new Vector2(0, 50), 10) : LineHit(o, adir, s.len * rg, s.wid, sh.pos - new Vector2(0, 50), 10);
 			if (h) { sh.life = 0; Puff(sh.pos, D.INK, 4, 120); }
 		}
 		if (any && weapon.mech == "frenzy") { frenzy = Mathf.Min(10, frenzy + 1); frenzyT = 2.5f; }

@@ -193,7 +193,7 @@ public partial class Game {
 		sr.sortingOrder = 22000 - (int)p.y;
 	}
 
-	bool InWorld() { return state == "play" || state == "pick" || state == "relic" || state == "event" || state == "pause" || state == "dead" || state == "win"; }
+	bool InWorld() { return state == "play" || state == "pick" || state == "relic" || state == "wpick" || state == "story" || state == "event" || state == "pause" || state == "dead" || state == "win"; }
 
 	void Render(float rdt) {
 		bool world = InWorld();
@@ -270,6 +270,7 @@ public partial class Game {
 				ground.Ellipse(it.pos, 46, 18, new Color(0.91f, 0.86f, 0.75f, near ? 0.8f : 0.4f));
 				ground.Ring(it.pos, 0, 0, D.INK);
 			} else ground.Ellipse(it.pos, 50, 16, new Color(0, 0, 0, 0.25f));
+			if (it.wi != null) { ground.Ring(it.pos, 54, 6, RAR_COL[it.wi.rar]); ground.Ellipse(it.pos, 60, 22, new Color(RAR_COL[it.wi.rar].r, RAR_COL[it.wi.rar].g, RAR_COL[it.wi.rar].b, 0.25f + 0.1f * Mathf.Sin(T * 4))); }
 			if (it.sr != null) {
 				if (it.kind == "npc") {
 					var nf = Frames(it.sr.gameObject.name + "_idle");
@@ -488,9 +489,12 @@ public partial class Game {
 		if (state == "play") GuiElites();
 		GuiHud();
 		GuiSkillHud();
+		GuiWeaponHud();
 		if (state == "pick") GuiPick();
 		else if (state == "event") GuiEvent();
 		else if (state == "relic") GuiRelic();
+		else if (state == "wpick") GuiWeaponPick();
+		else if (state == "story") GuiStory();
 		else if (state == "pause") GuiPause();
 		else if (state == "dead" || state == "win") GuiEnd();
 	}
@@ -590,12 +594,20 @@ public partial class Game {
 		foreach (var d in doors) {
 			Vector2 g = W2G(d.pos + new Vector2(0, 175));
 			bool near = (d.pos - ppos).magnitude < 120;
+			DrawIcon(GateIcon(d.kind), new Rect(g.x - 32, g.y - 84, 64, 60));
 			Lab(new Rect(g.x - 150, g.y - 20, 300, 34), D.RewardName(d.kind), near ? 24 : 20, near ? Color.white : D.PAPER, TextAnchor.MiddleCenter, true);
 			if (near) {
 				Lab(new Rect(g.x - 200, g.y + 10, 400, 26), D.RewardHint(d.kind), 16, D.PAPER);
 				Vector2 e = W2G(d.pos + new Vector2(0, -40));
 				Lab(new Rect(e.x - 100, e.y - 14, 200, 28), d.kind == "end" ? "[E] HẠ SƠN" : "[E] NHẬN", 18, new Color(1f, 0.9f, 0.5f));
 			}
+		}
+		foreach (var it in items) {
+			if (it.kind != "npc" || string.IsNullOrEmpty(it.label) || (it.pos - ppos).magnitude > 260) continue;
+			Vector2 sp = W2G(it.pos + new Vector2(0, 170));
+			var br = new Rect(sp.x - 200, sp.y - 54, 400, 50);
+			Panel(br);
+			Lab(new Rect(br.x + 10, br.y + 2, br.width - 20, br.height - 4), it.label, 15, D.INK, TextAnchor.MiddleCenter, true, false);
 		}
 		foreach (var it in items) {
 			if (it.gone || it.kind == "npc") continue;
@@ -697,7 +709,7 @@ public partial class Game {
 	void GuiPick() {
 		Dim(0.6f);
 		Lab(new Rect(0, 40, GW, 56), pickKind == "luyen" ? "LUYỆN KHÍ" : "LĨNH NGỘ BÍ KÍP", 42, D.PAPER, TextAnchor.MiddleCenter, true);
-		Lab(new Rect(0, 94, GW, 28), "A / D chọn   ·   ENTER nhận", 16, D.PAPER);
+		Lab(new Rect(0, 94, GW, 28), "A / D chọn   ·   ENTER nhận" + (rerolls > 0 ? "   ·   R đổi lựa chọn (" + rerolls + ")" : ""), 16, D.PAPER);
 		float w = 320, gap = 28, x0 = (GW - (w * offers.Count + gap * (offers.Count - 1))) / 2;
 		for (int i = 0; i < offers.Count; i++) {
 			var o = offers[i];
@@ -706,7 +718,9 @@ public partial class Game {
 			Panel(r, sel);
 			Color ec = o.b.el >= 0 ? D.EL_COL[o.b.el] * 0.85f : new Color(0.3f, 0.28f, 0.27f);
 			ec.a = 1;
-			Seal(new Rect(r.x + w / 2 - 38, r.y + 22, 76, 60), o.b.el >= 0 ? D.EL[o.b.el] : "TÂM", ec, 22);
+			var bic = BoonIcon(o.b);
+			if (bic != null) { DrawIcon(bic, new Rect(r.x + w / 2 - 56, r.y + 4, 112, 86)); if (o.b.el >= 0) Seal(new Rect(r.xMax - 58, r.y + 14, 44, 26), D.EL[o.b.el], ec, 13); }
+			else Seal(new Rect(r.x + w / 2 - 38, r.y + 22, 76, 60), o.b.el >= 0 ? D.EL[o.b.el] : "TÂM", ec, 22);
 			Lab(new Rect(r.x, r.y + 90, w, 24), D.SlotName(o.b.slot), 14, D.RED, TextAnchor.MiddleCenter, false, false);
 			Lab(new Rect(r.x + 10, r.y + 114, w - 20, 40), o.b.name, 25, D.INK, TextAnchor.MiddleCenter, true, false);
 			Lab(new Rect(r.x, r.y + 154, w, 24), "CẤP " + o.lvl + (Lv(o.b.id) > 0 ? "  (đang cấp " + Lv(o.b.id) + ")" : ""), 15, new Color(0.3f, 0.27f, 0.25f), TextAnchor.MiddleCenter, false, false);
@@ -767,10 +781,11 @@ public partial class Game {
 		float a = Mathf.Clamp01((T - endT) / 1.0f);
 		Dim(0.7f * a);
 		Lab(new Rect(0, 150, GW, 90), win ? "HẠ SƠN" : "KIẾM GÃY", 76, win ? new Color(1f, 0.88f, 0.55f, a) : new Color(0.85f, 0.25f, 0.18f, a), TextAnchor.MiddleCenter, true);
-		Lab(new Rect(0, 240, GW, 34), win ? "Ba ngọn núi đã ở lại sau lưng. Giang hồ thêm một cái tên." : "Mực chưa khô, đường còn dài. Mang NGỘ TÍNH về mà luyện tiếp.", 19, new Color(0.91f, 0.86f, 0.75f, a));
+		Lab(new Rect(0, 240, GW, 34), win ? "Ba ngọn núi đã ở lại sau lưng. Giang hồ thêm một cái tên." : (deathLine != "" ? deathLine : "Mực chưa khô, đường còn dài. Mang NGỘ TÍNH về mà luyện tiếp."), 19, new Color(0.91f, 0.86f, 0.75f, a));
 		string s = string.Format("Tới: {0}  ·  ải thứ {1}\nHạ {2} địch  ·  qua {3} ải  ·  {4} trùm\nThời gian {5}:{6:00}\n\n+{7} NGỘ TÍNH" + (honRun > 0 ? "   ·   +" + honRun + " KIẾM HỒN" : ""), D.CH_NAME[ch], Mathf.Min(step + 1, 6), kills, rooms, bossKills, (int)(runTime / 60), (int)(runTime % 60), earned);
 		Lab(new Rect(0, 300, GW, 190), s, 21, new Color(0.91f, 0.86f, 0.75f, a));
 		if (win && heatOpened) Lab(new Rect(0, 500, GW, 30), "MỞ " + J.HEAT[meta.heatMax].name + ": " + J.HEAT[meta.heatMax].desc, 17, new Color(0.9f, 0.5f, 0.4f, a));
+		if (milestoneLine != "") Lab(new Rect(0, 528, GW, 30), "“" + milestoneLine + "”", 18, new Color(0.75f, 0.85f, 1f, a), TextAnchor.MiddleCenter, true);
 		if (T - endT > 1.2f) Lab(new Rect(0, 560, GW, 30), "ENTER về sơn môn", 18, new Color(1f, 0.9f, 0.5f, 0.6f + 0.4f * Mathf.Sin(T * 4)));
 	}
 }

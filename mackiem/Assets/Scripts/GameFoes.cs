@@ -225,8 +225,15 @@ public partial class Game {
 		qi = Mathf.Min(100, qi + 15 * qiMul);
 		inv = Mathf.Max(inv, 0.3f);
 		riposte = Lv("ripo") > 0;
-		if (meta.sect == "thiet") Heal(4);
+		if (meta.sect == "thiet" && T - thietT > 1.5f) { thietT = T; Heal(4); }
 		RelicParry();
+		SectParry(src);
+		if (Afx("on_parry_dmg") > 0 && src != null && !src.dead) HurtFoe(src, Afx("on_parry_dmg") * dmgMul, -1, 0, 1.5f, (src.pos - ppos).normalized);
+		if (Has("tumau")) {
+			Vector2 at = src != null && !src.dead ? (src.pos - ppos).normalized : aimDir;
+			for (int k = 0; k < 2; k++) swords.Add(new FSword { pos = ppos + new Vector2(0, 55), vel = (Vector2)(Quaternion.Euler(0, 0, k * 14 - 7) * at) * 1700 });
+			RecallSwords();
+		}
 		Text(ppos + new Vector2(0, 150), "PHẢN!", new Color(1f, 0.9f, 0.5f), 30);
 		for (int i = 0; i < 10; i++) {
 			float l = Rnd(0.15f, 0.35f);
@@ -251,6 +258,15 @@ public partial class Game {
 			f.posv = f.posMax;
 			sfx.Play("gong", 0.8f, 1.5f);
 			Text(f.pos + new Vector2(0, f.d.h + 40), "PHÁ THẾ!", new Color(1f, 0.85f, 0.4f), 28);
+			if (Has("thienquan") && !spreading) {
+				spreading = true;
+				foreach (var o in new List<Foe>(foes)) {
+					if (o == f || o.dead || o.d.boss || (o.pos - f.pos).magnitude > 220) continue;
+					o.kb += (f.pos - o.pos).normalized * 320;
+					AddPosture(o, v * 0.8f);
+				}
+				spreading = false;
+			}
 			Puff(f.pos, D.PAPER, 12, 260);
 			stop = Mathf.Max(stop, 0.08f);
 		}
@@ -258,6 +274,9 @@ public partial class Game {
 
 	public void HurtFoe(Foe f, float dmg, int el, int lvl, float posMul, Vector2 dir, bool react = true, bool gain = true) {
 		if (f.dead || f.spawn > 0) return;
+		bool isW = wHit && wItem != null;
+		wHit = false;   // anything this hit sets off (bursts, reactions) is not a weapon hit
+		if (isW) dmg *= WeaponHitMul(f, ref posMul);
 		bool isCrit = crit > 0 && Rnd() < crit;
 		if (isCrit) dmg *= 2;
 		dmg *= DealMul();
@@ -278,8 +297,11 @@ public partial class Game {
 		sfx.Play("hit", 0.5f, isCrit ? 0.8f : 1f);
 		Text(f.pos + new Vector2(0, f.d.h * f.scale + 10), Mathf.CeilToInt(dmg).ToString(), isCrit ? new Color(1f, 0.8f, 0.2f) : Color.white, isCrit ? 26 : 18);
 		Puff(f.pos, D.INK, 3, 200);
+		if (el >= 0 && react) SectElement(f, el, lvl);
 		if (el >= 0) ApplyEl(f, el, Mathf.Max(1, lvl), react);
+		if (gain) SectHit(f);
 		if (Has("hoalinh") && el != D.HOA && Rnd() < 0.12f && !f.dead) { f.burn = 3; f.burnD = Mathf.Max(f.burnD, 12); }
+		if (isW) WeaponHitAfter(f, dmg);
 		if (f.hp <= 0) Kill(f);
 	}
 
@@ -295,25 +317,29 @@ public partial class Game {
 		if (!react) return;
 		if (f.mark < 0 || f.mark == el) { f.mark = el; f.markT = meta.sect == "hanh" ? 12 : 6; return; }
 		int rel = D.Relation(f.mark, el);
+		if (Has("nghichhanh")) rel = rel == 1 ? 2 : 1;   // NGHỊCH HÀNH ẤN turns the cycle inside out
 		int old = f.mark;
 		f.mark = -1;
 		if (rel == 1) {
 			// tuong sinh: the two phases feed each other and burst
 			Text(f.pos + new Vector2(0, f.d.h + 60), "TƯƠNG SINH", Color.Lerp(D.EL_COL[old], D.EL_COL[el], 0.5f), 26);
-			float dmg = (26 + 12 * lvl) * dmgMul * (1 + Lv("sinh") * 0.5f) * (meta.sect == "hanh" ? 1.5f : 1) * (Has("amduong") ? 1.35f : 1);
+			float dmg = (26 + 12 * lvl) * dmgMul * (1 + Lv("sinh") * 0.5f) * (meta.sect == "hanh" ? 1.5f : 1) * (Has("amduong") ? 1.35f : 1) * (1 + Afx("element_react_mul") / 100f);
 			qi = Mathf.Min(100, qi + 8 * qiMul);
 			Heal(Lv("sinh") * 3);
+			if (Has("nghichhanh")) dmg *= 1.4f;
 			Burst(f.pos, 165, dmg, el, lvl, false);
+			SinhExtra(f, el, lvl);
+			if (Lv("h_luu") > 0) foreach (var o in new List<Foe>(foes)) if (o != f && !o.dead && (o.pos - f.pos).magnitude < 110 * Lv("h_luu")) ApplyEl(o, (el + 1) % 5, 1, false);
 			sfx.Play("burst", 0.8f);
 		} else {
 			// tuong khac: one phase overcomes the other and shatters the stance
 			Text(f.pos + new Vector2(0, f.d.h + 60), "TƯƠNG KHẮC", D.EL_COL[el], 26);
-			AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 0.6f) * (meta.sect == "hanh" ? 1.5f : 1) * (Has("amduong") ? 1.35f : 1));
+			AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 0.6f) * (meta.sect == "hanh" ? 1.5f : 1) * (Has("amduong") ? 1.35f : 1) * (1 + Afx("element_react_mul") / 100f));
 			if (!f.d.boss && f.broken <= 0) { f.stun = Mathf.Max(f.stun, 0.6f); f.mv = null; f.z = 0; }
 			wavesFx.Add(new Wave { pos = f.pos, r = 10, spd = 500, dmg = 0, max = 110, hit = true });
 			sfx.Play("clang", 0.6f, 0.7f);
 			if (Lv("khac") > 0 && !f.dead) {
-				f.hp -= Lv("khac") * 35 * dmgMul;
+				f.hp -= Lv("khac") * 15 * dmgMul;
 				if (f.hp <= 0) Kill(f);
 			}
 		}
@@ -347,6 +373,11 @@ public partial class Game {
 		chain++; chainT = 3.2f;
 		if (chain % 10 == 0) { Heal(2); qi = Mathf.Min(100, qi + 12); Text(ppos + new Vector2(0, 190), "LIÊN TRẢM ×" + chain, new Color(1f, 0.6f, 0.3f), 30); }
 		RelicKill(f);
+		if (Afx("on_kill_heal") > 0) Heal(Afx("on_kill_heal"));
+		qi = Mathf.Min(100, qi + Afx("on_kill_qi"));
+		if (f.d.boss) DropWeapon(f.pos, 2);
+		else if (f.elite && Rnd() < 0.16f) DropWeapon(f.pos, 1);
+		SectKill(f);
 		if (f.d.boss) { stop = 0.25f; slow = 1.2f; shake = 18; sfx.Play("gong"); }
 		else sfx.Play("hit", 0.7f, 0.6f);
 	}
@@ -363,6 +394,7 @@ public partial class Game {
 					if (f.dead || f.spawn > 0 || s.hit.Contains(f)) continue;
 					if ((f.pos - g).magnitude < f.d.r * f.scale + s.r + 8) {
 						s.hit.Add(f);
+						wHit = s.wpn;
 						HurtFoe(f, s.dmg, s.el, s.lvl, 1, s.vel.normalized);
 						if (s.bounce > 0) {
 							// the fan's darts skip on to the nearest foe not yet hit
@@ -371,6 +403,7 @@ public partial class Game {
 							if (nb != null) { s.bounce--; s.vel = (nb.pos - g).normalized * s.vel.magnitude; s.life = Mathf.Max(s.life, 0.45f); break; }
 						}
 						s.pierce--;
+						if (s.pierce > 0) s.dmg *= 0.75f;
 						if (s.pierce < 0) { gone = true; break; }
 					}
 				}
@@ -476,7 +509,7 @@ public partial class Game {
 		} else if (cleared && pickT <= 0) {
 			Vector2 target = ppos;
 			bool found = false;
-			foreach (var it in items) if (!it.gone && it.kind != "npc" && coins >= it.cost && it.kind != "luyen") { target = it.pos; found = true; break; }
+			foreach (var it in items) if (!it.gone && it.kind != "npc" && coins >= it.cost && it.kind != "luyen" && (it.wi == null || it.wi.rar > wItem.rar)) { target = it.pos; found = true; break; }
 			if (!found && doors.Count > 0) target = doors[(int)(seed & 1) % doors.Count].pos;
 			else if (!found) target = new Vector2(SegAt(ppos.y + 260).r.center.x + Mathf.Sin(T * 1.7f) * 150, ppos.y + 260);
 			Vector2 to = target - ppos;

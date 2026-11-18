@@ -28,6 +28,12 @@ public static class J {
 		R("lieudiep", 1, "LIỄU DIỆP TIÊU", "Khinh công xuyên qua địch, chém 14 sát thương."),
 		R("amduong", 1, "ÂM DƯƠNG BÀN", "TƯƠNG SINH và TƯƠNG KHẮC mạnh hơn 35%."),
 		R("cuongbao", 1, "CUỒNG BẠO ĐAN", "Gây thêm 25% sát thương, nhận thêm 15%."),
+		// from the design review with Gemini: relics that change how a build plays, not just its numbers
+		R("nghichhanh", 1, "NGHỊCH HÀNH ẤN", "Đảo ngũ hành: cặp khắc nhau nổ TƯƠNG SINH (+40%), cặp sinh nhau gây TƯƠNG KHẮC."),
+		R("tumau", 1, "TỬ MẪU KIẾM HẠP", "Đỡ chuẩn phóng 2 phi kiếm vào kẻ đánh và gọi mọi phi kiếm về; kiếm về mạnh hơn 50%."),
+		R("thienquan", 1, "THIÊN QUÂN XÍCH", "Địch bị PHÁ THẾ truyền 80% THẾ sang địch quanh nó và kéo chúng lại gần."),
+		R("thaicuc", 1, "THÁI CỰC NGỌC BỘI", "Nhát cuối liên hoàn tự mang hành KHẮC với ẤN trên địch."),
+		R("thoathe", 0, "THỔ THẦN GIÁP", "TƯƠNG SINH kết thúc bằng THỔ cho một lớp giáp chặn 1 đòn."),
 	};
 	// open from the first run; the rest are bought in the BẢO KHỐ
 	public static readonly string[] START = { "huyetngoc", "phonghai", "kimcang", "phongan", "thattinh", "dandien", "toaithach", "hoalinh" };
@@ -76,12 +82,49 @@ public partial class Game {
 	int heatI;                // cursor on the heat screen
 	int vaultI, memI;
 	readonly HashSet<Foe> dashHit = new HashSet<Foe>();
+	int rerolls;
+	bool spreading;
+	float thietT = -9, shieldT;
+
+	static int KhacOf(int el) {
+		for (int k = 0; k < 5; k++) if (k != el && D.Relation(el, k) == 2) return k;
+		return (el + 2) % 5;
+	}
+
+	// what the finishing element of a TƯƠNG SINH adds to the burst
+	void SinhExtra(Foe f, int el, int lvl) {
+		switch (el) {
+			case D.KIM:   // three blades of sword energy fly out of the burst
+				for (int k = 0; k < 3; k++) {
+					float a = Rnd(0, Mathf.PI * 2);
+					shots.Add(new Shot { pos = f.pos + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 900, dmg = 18 * dmgMul, mine = true, pierce = 3, r = 12, life = 0.6f, hit = new List<Foe>() });
+				}
+				break;
+			case D.MOC: Heal(3); break;   // the burst draws life
+			case D.THUY: tkCd = Mathf.Max(0, tkCd - 1.5f); qi = Mathf.Min(100, qi + 15); break;
+			case D.HOA: pblasts.Add(new PBlast { pos = f.pos, wind = 0.6f, r = 110, dmg = 45 * dmgMul }); break;   // a pillar of fire a moment later
+			case D.THO:
+				if (Has("thoathe") || lvl >= 2) { shieldT = 4; Text(ppos + new Vector2(0, 160), "THỔ GIÁP", D.EL_COL[D.THO], 20); }
+				break;
+		}
+	}
+
+	void Reroll() {
+		if (rerolls <= 0) { sfx.Play("block", 0.5f); return; }
+		rerolls--;
+		if (state == "relic") OpenRelic();
+		else OpenPick(pickKind, pickBonus);
+		Toast("NGHỊCH MỆNH: còn " + rerolls + " lần đổi");
+	}
 
 	bool Has(string id) { return relics.Contains(id); }
 	bool HeatAt(int n) { return meta.kiep >= n; }
 
 	// --- effects that other files call
-	float HurtTakenMul() { return (Has("kimcang") ? 0.85f : 1) * (Has("cuongbao") ? 1.15f : 1); }
+	float HurtTakenMul() {
+		if (shieldT > 0) { shieldT = 0; Text(ppos + new Vector2(0, 150), "CHẶN", D.EL_COL[D.THO], 22); return 0; }
+		return (Has("kimcang") ? 0.85f : 1) * (Has("cuongbao") ? 1.15f : 1);
+	}
 	float HealMul() { return HeatAt(9) ? 0.5f : 1; }
 	float PriceMul() { return HeatAt(5) ? 1.5f : 1; }
 	float DealMul() { return (Has("cuongbao") ? 1.25f : 1) * (1 + satky); }
@@ -155,14 +198,16 @@ public partial class Game {
 	void GuiRelic() {
 		Dim(0.6f);
 		Lab(new Rect(0, 40, GW, 56), "CHỌN BẢO VẬT", 42, D.PAPER, TextAnchor.MiddleCenter, true);
-		Lab(new Rect(0, 94, GW, 28), "A / D chọn   ·   ENTER nhận", 16, D.PAPER);
+		Lab(new Rect(0, 94, GW, 28), "A / D chọn   ·   ENTER nhận" + (rerolls > 0 ? "   ·   R đổi lựa chọn (" + rerolls + ")" : ""), 16, D.PAPER);
 		float w = 300, gap = 28, x0 = (GW - (w * relicOffers.Count + gap * (relicOffers.Count - 1))) / 2;
 		for (int i = 0; i < relicOffers.Count; i++) {
 			var r = relicOffers[i];
 			bool sel = menuI == i;
 			var rc = new Rect(x0 + i * (w + gap), sel ? 150 : 166, w, 360);
 			Panel(rc, sel);
-			Seal(new Rect(rc.x + w / 2 - 40, rc.y + 26, 80, 62), r.name.Substring(0, r.name.IndexOf(' ') > 0 ? r.name.IndexOf(' ') : r.name.Length), r.rare > 0 ? new Color(0.55f, 0.32f, 0.7f) : new Color(0.62f, 0.45f, 0.2f), 18);
+			var ric = Spr("icon_" + r.id);
+			if (ric != null) DrawIcon(ric, new Rect(rc.x + w / 2 - 46, rc.y + 14, 92, 80));
+			else Seal(new Rect(rc.x + w / 2 - 40, rc.y + 26, 80, 62), r.name.Substring(0, 1), r.rare > 0 ? new Color(0.55f, 0.32f, 0.7f) : new Color(0.62f, 0.45f, 0.2f), 18);
 			Lab(new Rect(rc.x, rc.y + 96, w, 26), r.rare > 0 ? "QUÝ" : "THƯỜNG", 14, D.RED, TextAnchor.MiddleCenter, false, false);
 			Lab(new Rect(rc.x + 10, rc.y + 122, w - 20, 40), r.name, 24, D.INK, TextAnchor.MiddleCenter, true, false);
 			Box(new Rect(rc.x + 40, rc.y + 170, w - 80, 2), new Color(0.07f, 0.06f, 0.06f, 0.4f));
@@ -175,7 +220,10 @@ public partial class Game {
 		for (int i = 0; i < relics.Count; i++) {
 			var r = J.Get(relics[i]);
 			var rc = new Rect(28 + (i % 8) * 34, 154 + (i / 8) * 34, 30, 30);
-			Seal(rc, r.name.Substring(0, 1), r.rare > 0 ? new Color(0.55f, 0.32f, 0.7f) : new Color(0.62f, 0.45f, 0.2f), 14);
+			var hic = Spr("icon_" + r.id);
+			Box(rc, new Color(0.07f, 0.06f, 0.06f, 0.55f));
+			if (hic != null) DrawIcon(hic, new Rect(rc.x + 1, rc.y + 1, rc.width - 2, rc.height - 2));
+			else Seal(rc, r.name.Substring(0, 1), r.rare > 0 ? new Color(0.55f, 0.32f, 0.7f) : new Color(0.62f, 0.45f, 0.2f), 14);
 		}
 	}
 
@@ -226,8 +274,8 @@ public partial class Game {
 		int n = J.RELICS.Length;
 		if (P(inp.left, prev.left)) { vaultI = (vaultI + n - 1) % n; sfx.Play("ui", 0.5f); }
 		if (P(inp.right, prev.right)) { vaultI = (vaultI + 1) % n; sfx.Play("ui", 0.5f); }
-		if (P(inp.up, prev.up)) { vaultI = (vaultI + n - 4) % n; sfx.Play("ui", 0.5f); }
-		if (P(inp.down, prev.down)) { vaultI = (vaultI + 4) % n; sfx.Play("ui", 0.5f); }
+		if (P(inp.up, prev.up)) { vaultI = (vaultI + n - 5) % n; sfx.Play("ui", 0.5f); }
+		if (P(inp.down, prev.down)) { vaultI = (vaultI + 5) % n; sfx.Play("ui", 0.5f); }
 		if (P(inp.ok, prev.ok) && T - stateT > 0.3f) VaultAct(vaultI);
 		if (P(inp.back, prev.back)) { state = "title"; menuI = 3; }
 	}
@@ -246,15 +294,16 @@ public partial class Game {
 		Dim(0.62f);
 		Lab(new Rect(0, 22, GW, 54), "BẢO KHỐ", 42, D.PAPER, TextAnchor.MiddleCenter, true);
 		Lab(new Rect(0, 72, GW, 26), "NGỘ TÍNH: " + meta.ngo + "   ·   mở một bảo vật vào kho: " + J.RELIC_COST + " NGỘ", 18, new Color(1f, 0.85f, 0.5f));
-		float w = 250, h = 120, gap = 14, x0 = (GW - (w * 4 + gap * 3)) / 2;
+		float w = 220, h = 106, gap = 10, x0 = (GW - (w * 5 + gap * 4)) / 2;
 		for (int i = 0; i < J.RELICS.Length; i++) {
 			var r = J.RELICS[i];
 			bool open = meta.relics.Contains(r.id), sel = vaultI == i;
-			var rc = new Rect(x0 + (i % 4) * (w + gap), 112 + (i / 4) * (h + gap), w, h);
+			var rc = new Rect(x0 + (i % 5) * (w + gap), 108 + (i / 5) * (h + gap), w, h);
 			Panel(rc, sel);
 			if (!open) Box(rc, new Color(0.07f, 0.06f, 0.06f, 0.3f));
-			Lab(new Rect(rc.x + 8, rc.y + 8, w - 16, 28), r.name, 18, open ? D.INK : new Color(0.35f, 0.33f, 0.31f), TextAnchor.MiddleCenter, true, false);
-			Lab(new Rect(rc.x + 12, rc.y + 38, w - 24, 56), r.desc, 13, open ? D.INK : new Color(0.3f, 0.28f, 0.27f), TextAnchor.UpperCenter, false, false);
+			DrawIcon(Spr("icon_" + r.id), new Rect(rc.x + 6, rc.y + 6, 34, 34));
+			Lab(new Rect(rc.x + 40, rc.y + 8, w - 46, 28), r.name, 16, open ? D.INK : new Color(0.35f, 0.33f, 0.31f), TextAnchor.MiddleCenter, true, false);
+			Lab(new Rect(rc.x + 10, rc.y + 34, w - 20, 50), r.desc, 12, open ? D.INK : new Color(0.3f, 0.28f, 0.27f), TextAnchor.UpperCenter, false, false);
 			Lab(new Rect(rc.x, rc.y + h - 26, w, 22), open ? (meta.seen.Contains(r.id) ? "ĐÃ DÙNG" : "TRONG KHO") : "MỞ: " + J.RELIC_COST + " NGỘ", 13, open ? new Color(0.3f, 0.5f, 0.3f) : D.RED, TextAnchor.MiddleCenter, false, false);
 			if (Hit(rc, i)) VaultAct(i);
 		}
@@ -298,5 +347,96 @@ public partial class Game {
 		Box(new Rect(page.x + 120, page.y + 76, page.width - 240, 2), D.RED);
 		Lab(new Rect(page.x + 50, page.y + 100, page.width - 100, 340), o ? J.MEM[memI] : "Hạ " + D.Foe("boss" + (memI / 3 + 1)).name + " để đọc trang này.", 21, D.INK, TextAnchor.UpperLeft, true, false);
 		Lab(new Rect(0, GH - 40, GW, 28), "W / S chọn   ·   ESC quay lại", 16, D.PAPER);
+	}
+
+	// --- sect manuals (see Data.cs, "sect manuals")
+	bool inParry, inSectBurst;
+	float lienT;
+
+	// a heal can become a blast instead (HUYẾT NGUYỆT) or spill over into one (THIẾT Y); true = the heal was used up
+	bool SectHeal(float v) {
+		if (inSectBurst) return false;
+		if (Lv("c_hien") > 0 && hp < maxHp * 0.5f) {
+			inSectBurst = true;
+			Burst(ppos, 145, v * 5 * Lv("c_hien"), -1, 1, false);
+			inSectBurst = false;
+			return true;
+		}
+		float over = hp + v - maxHp;
+		if (Lv("t_huyet") > 0 && over > 0.5f) {
+			inSectBurst = true;
+			Burst(ppos, 150, over * 4 * Lv("t_huyet"), -1, 1, false);
+			inSectBurst = false;
+		}
+		return false;
+	}
+
+	void SectParry(Foe src) {
+		if (Lv("t_tinh") > 0) { tkCd = Mathf.Max(0, tkCd - 2 * Lv("t_tinh")); qi = Mathf.Min(100, qi + 6 * Lv("t_tinh")); }
+		if (Lv("t_xuyen") > 0 && src != null && !src.dead) {
+			bool was = src.broken > 0;
+			AddPosture(src, 20 * Lv("t_xuyen"));
+			if (!was && src.broken > 0) Heal(5 * Lv("t_xuyen"));
+		}
+		if (Lv("k_phan") > 0) { inParry = true; RecallSwords(); inParry = false; }
+	}
+
+	void SectKill(Foe f) {
+		if (Lv("k_truy") > 0) {
+			foreach (var s in swords) {
+				if (s.st != 1 || s.host != f) continue;
+				Foe next = null;
+				foreach (var o in foes) if (!o.dead && o != f && o.spawn <= 0 && (next == null || (o.pos - f.pos).sqrMagnitude < (next.pos - f.pos).sqrMagnitude)) next = o;
+				s.host = null;
+				if (next == null) continue;
+				s.st = 0; s.t = 0; s.hit.Clear();
+				s.vel = (next.pos - f.pos).normalized * 1700;
+				qi = Mathf.Min(100, qi + 4 * Lv("k_truy"));
+			}
+		}
+		if (Lv("h_truyen") > 0 && f.mark >= 0) {
+			var near = new List<Foe>();
+			foreach (var o in foes) if (!o.dead && o != f) near.Add(o);
+			near.Sort((a, b) => (a.pos - f.pos).sqrMagnitude.CompareTo((b.pos - f.pos).sqrMagnitude));
+			for (int k = 0; k < near.Count && k < 2 * Lv("h_truyen"); k++) ApplyEl(near[k], f.mark, 1, true);
+			qi = Mathf.Min(100, qi + 5 * Lv("h_truyen"));
+		}
+	}
+
+	// before the element lands: hitting a mark with the same element resonates
+	void SectElement(Foe f, int el, int lvl) {
+		if (Lv("h_dong") <= 0 || f.mark != el || inSectBurst) return;
+		inSectBurst = true;
+		Burst(f.pos, 90, 12 * Lv("h_dong") * dmgMul, -1, lvl, false);
+		AddPosture(f, 15 * Lv("h_dong"));
+		inSectBurst = false;
+	}
+
+	// after a direct hit (not splash): kill-streak shockwaves and last-stand inner force
+	void SectHit(Foe f) {
+		if (Lv("c_lien") > 0 && chain > 0 && !inSectBurst && T - lienT > 0.35f) {
+			lienT = T;
+			int c = Mathf.Min(chain, 15);
+			inSectBurst = true;
+			Burst(f.pos, 80 + c * 8, 4 * c * Lv("c_lien") * dmgMul, -1, 1, false);
+			inSectBurst = false;
+		}
+		if (Lv("c_tuyet") > 0 && hp <= maxHp * 0.35f) { qi = Mathf.Min(100, qi + 3 * Lv("c_tuyet")); tkCd = Mathf.Max(0, tkCd - 1 * Lv("c_tuyet")); }
+	}
+
+	// --- icons drawn with Gemini (tools/icons.sh); manuals of the sects share one
+	Sprite BoonIcon(Boon b) { return b.sect != "" ? Spr("icon_sect") : Spr("icon_" + b.id); }
+
+	Sprite GateIcon(string kind) {
+		switch (kind) {
+			case "bikip": return Spr("icon_bikip");
+			case "luyen": return Spr("icon_lantern");
+			case "dan": return Spr("icon_hp");
+			case "ngan": return Spr("icon_ngan");
+			case "bao": return Spr("icon_thaicuc");
+			case "binh": return WeaponIcon("kiem");
+			case "ky": return Spr("icon_tra");
+		}
+		return null;
 	}
 }

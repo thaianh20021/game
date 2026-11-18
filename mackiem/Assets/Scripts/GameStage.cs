@@ -245,21 +245,21 @@ public partial class Game {
 		if (s.kind == "boss") {
 			var b = Spawn("boss" + (s.ch + 1), new Vector2(s.r.center.x, s.r.yMax - 190), false);
 			b.spawn = 1.3f;
-			Banner(b.d.name, D.CH_NAME[s.ch]);
+			Banner(b.d.name, StoryBossIntro(s.ch));
 			sfx.Play("gong");
 		} else sfx.Play("drum");
 	}
 
 	void Populate(Seg s) {
 		Vector2 c = new Vector2(s.r.center.x - 260, s.r.center.y + 110);
-		items.Add(new Item { pos = c, kind = "npc", label = "", sr = NewSpr("merchant", 130) });
+		items.Add(new Item { pos = c, kind = "npc", label = StoryNpc("merchant"), sr = NewSpr("merchant", 130) });
 		AddItem(c + new Vector2(-200, -150), "heal", "KIM SANG DƯỢC\nHồi 40 sinh lực", Mathf.RoundToInt(35 * PriceMul()), "jar", null);
 		AddItem(c + new Vector2(-65, -185), "dan", "LINH ĐAN\n+15 sinh lực tối đa", Mathf.RoundToInt(60 * PriceMul()), "jar", null);
 		var o = MakeOffers(1);
 		if (o.Count > 0) AddItem(c + new Vector2(70, -185), "boon", o[0].b.name + " · CẤP " + o[0].lvl + "\n" + D.Desc(o[0].b, o[0].lvl), Mathf.RoundToInt(70 * PriceMul()), "chest", o[0].b);
 		AddItem(c + new Vector2(205, -150), "luyen", "LUYỆN KHÍ\nNâng cấp một chiêu đã học", Mathf.RoundToInt(80 * PriceMul()), "shrine", null);
 		Vector2 t = new Vector2(s.r.center.x + 330, s.r.center.y + 110);
-		items.Add(new Item { pos = t, kind = "npc", label = "", sr = NewSpr("tea", 95) });
+		items.Add(new Item { pos = t, kind = "npc", label = StoryNpc("tea"), sr = NewSpr("tea", 95) });
 		AddItem(t + new Vector2(0, -120), "tea", "THƯỞNG TRÀ\nHồi 40% sinh lực", 0, null, null);
 		Banner("TRẠM DỪNG", "Thương nhân và trà quán trước cửa ải cuối");
 	}
@@ -280,7 +280,7 @@ public partial class Game {
 		}
 		var s = SegAt(ppos.y);
 		PR = s.r;
-		if (s.ch != ch) { ch = s.ch; Banner(D.CH_NAME[ch], "Đường còn dài"); sfx.Play("gong", 0.6f); }
+		if (s.ch != ch) { ch = s.ch; Banner(D.CH_NAME[ch], StoryChapterIntro(ch)); sfx.Play("gong", 0.6f); }
 		if (s.state == 0) {
 			if (s.kind == "rest") { s.state = 2; Populate(s); }
 			else if (ppos.y > s.r.yMin + 150 && pickT <= 0) { StartFight(s); return; }
@@ -317,13 +317,13 @@ public partial class Game {
 			foreach (var id in unl) if (!meta.unl.Contains(id)) { meta.unl.Add(id); Toast("MỞ KHÓA: " + D.Weapon(id).name); }
 			SaveMeta();
 			pickKind = "bikip"; pickBonus = 1; pickT = 1.4f;
-			Banner("ĐẠI THẮNG", "Trùm đã ngã");
+			Banner("ĐẠI THẮNG", StoryBossDefeat(s.ch));
 			if (s.ch >= 2) doors.Add(new Door { pos = new Vector2(s.r.center.x, s.r.yMax - 10), kind = "end" });
 			else yHi = worldTop;
 			return;
 		}
 		// two offerings at the far end: take one and the seal opens
-		string[] pool = { "bikip", "bikip", "bikip", "luyen", "dan", "ngan", "bao" };
+		string[] pool = { "bikip", "bikip", "bikip", "luyen", "dan", "ngan", "bao", "binh", "binh" };
 		string a = pool[rng.Next(pool.Length)], b = a;
 		while (b == a) b = pool[rng.Next(pool.Length)];
 		if (boons.Count == 0) { a = "bikip"; if (b == "luyen" || b == "bikip") b = "ngan"; }
@@ -341,6 +341,7 @@ public partial class Game {
 		switch (k) {
 			case "bikip": case "luyen": OpenPick(k, 0); break;
 			case "bao": OpenRelic(); break;
+			case "binh": OpenWeaponChoice(2, 0); break;
 			case "dan": bonusHp += 15; Recalc(); Heal(25); Toast("LINH ĐAN: +15 sinh lực tối đa"); break;
 			case "ngan": AddCoins(45 + ch * 15 + rng.Next(20)); Toast("NHẬN MỘT TÚI NGÂN LƯỢNG"); break;
 			case "ky": state = "event"; menuI = 0; sfx.Play("pick"); break;
@@ -359,6 +360,8 @@ public partial class Game {
 
 	void RecallSwords() {
 		bool any = false;
+		if (Lv("k_no") > 0) foreach (var s in swords) if (s.st == 1 && s.host != null && !s.host.dead) Burst(s.host.pos, 95, 18 * Lv("k_no") * dmgMul, -1, 1, false);
+		if (Lv("k_phan") > 0 && inParry) foreach (var s in swords) if (s.st == 1 && s.host != null && !s.host.dead) AddPosture(s.host, 15 * Lv("k_phan"));
 		foreach (var s in swords) {
 			if (s.st != 1) continue;
 			s.st = 2; s.hit.Clear(); any = true;
@@ -372,7 +375,7 @@ public partial class Game {
 		int el = SlotEl("atk"), lv = SlotLv("atk");
 		// going out a sword carries the element of the attack, coming home that of the ultimate: one throw can react
 		if (back && SlotEl("skill") >= 0) { el = SlotEl("skill"); lv = SlotLv("skill"); }
-		float dmg = (back ? 15 * (1 + Lv("hoi") * 0.4f) : 8) * dmgMul * (meta.sect == "kiem" ? 1.3f : 1);
+		float dmg = (back ? 15 * (1 + Lv("hoi") * 0.4f) * (Has("tumau") ? 1.5f : 1) : 8) * dmgMul * (meta.sect == "kiem" ? 1.3f : 1);
 		HurtFoe(f, dmg, el, lv, back ? 1.4f : 0.8f, s.vel.sqrMagnitude > 0.01f ? s.vel.normalized : Vector2.up);
 	}
 

@@ -62,13 +62,34 @@ Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đán
 - `Game.HeroPose()` chọn khung cho nhân vật chính; đoạn vẽ địch trong `GameDraw.Render` chọn khung cho địch. Bóng mờ khi lướt là `AddGhost`.
 - Gemini vẽ đúng nền hồng; các model GPT image chỉ chịu nền trắng (và đôi lúc vẫn ra nền tối, khi đó phải vẽ lại).
 
+## Vũ khí rơi và độ hiếm (`GameLoot.cs`, dữ liệu `Assets/Resources/loot.json`)
+
+- Không chọn vũ khí trước chuyến nữa: luôn khởi hành với THANH PHONG KIẾM thường. Vũ khí mới đến từ cửa thưởng BINH KHÍ (chọn 1 trong 2), tinh anh (16%) và mỗi trùm (bậc QUÝ trở lên). Nhặt vũ khí trên đất thì vũ khí đang cầm nằm lại chỗ đó.
+- Bốn bậc: THƯỜNG, HIẾM (+10% sát thương, 1 thuộc tính), QUÝ (+20%, 2), TRUYỀN THUYẾT (+30%, 2, và cơ chế riêng của loại vũ khí). Chương sau và kiếp nạn cao rơi đồ tốt hơn.
+- 18 thuộc tính (`hook` trong loot.json) và 6 cơ chế truyền thuyết do Gemini thiết kế; hiệu ứng nằm ở `Afx()`, `WeaponHitMul`, `WeaponHitAfter`, `LegendStrike`, `LegendBow`.
+
+## Cốt truyện (`GameStory.cs`, lời thoại `Assets/Resources/story.json`)
+
+Mở đầu ở chuyến đầu tiên; mỗi chuyến sau mở bằng một câu sâu hơn; mỗi chương một lời dẫn; trùm nói khác nhau theo số lần đã bị hạ (`meta.bk`);
+thương nhân, trà sư nói theo chương; câu khi gục ngã; mốc 1/3/6/10 chuyến; hai cái kết (thật sự khi đủ 9 KÝ ỨC). Lời do Gemini viết, khớp với 9 mảnh ký ức.
+
+## Biểu tượng
+
+`tools/icons.sh` (model ảnh Gemini) vẽ 5 tấm biểu tượng, `tools/cuticons.sh` cắt thành `icon_<id>`: 21 bảo vật, bí kíp theo hành và ô, bí kíp tâm pháp, phần thưởng.
+Hiện trên thẻ chọn bí kíp, bảo vật, bảo khố, thanh bảo vật ở HUD và trên các cửa thưởng.
+
+## Làm cùng Gemini
+
+`tools/ask.py <tệp lời nhắc> [model]` gửi câu hỏi tới router (mặc định `ag/gemini-4-hydrogen-medium`; `-xhigh` thường tiêu hết token vào suy nghĩ mà không trả lời).
+Đã dùng để: soi thiết kế tiến trình (`gen/gemini_design.md`), thiết kế 12 bí kíp môn phái, bảng vũ khí theo độ hiếm, tuyến cốt truyện.
+
 ## Tiến trình (`GameJourney.cs`, dữ liệu trong lớp `J`)
 
 - **BẢO VẬT**: 16 món, giữ đến hết chuyến. Nhận từ cửa thưởng BẢO VẬT, sau mỗi trùm (sau bí kíp) và đôi khi từ tinh anh. 8 món có sẵn, 8 món mở trong BẢO KHỐ (25 NGỘ TÍNH mỗi món).
 - **KIẾP NẠN**: chọn tầng 0 đến 9 trước mỗi chuyến (sau môn phái). Mỗi tầng giữ luật các tầng trước, thêm 15% NGỘ TÍNH. Thắng ở tầng cao nhất đã mở thì mở tầng kế.
 - **KIẾM HỒN**: rơi khi hạ trùm (1, 2, 3, cộng thêm theo kiếp nạn); mở ba môn phái còn lại (2, 3, 4).
 - **KÝ ỨC**: 9 mảnh truyện, mỗi lần hạ một trùm mở một mảnh của trùm đó. Đọc ở màn hình chính.
-- Màn hình chính: KHỞI HÀNH (binh khí → môn phái → kiếp nạn), TUYỆT KỸ, TU LUYỆN, BẢO KHỐ, KÝ ỨC, CÁCH CHƠI.
+- Màn hình chính: KHỞI HÀNH (môn phái → kiếp nạn), TUYỆT KỸ, TU LUYỆN, BẢO KHỐ, KÝ ỨC, CÁCH CHƠI.
 
 ## Khung chuyển tiếp và phản ứng
 

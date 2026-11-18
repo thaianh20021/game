@@ -1,0 +1,341 @@
+You design content for an ORIGINAL wuxia top-down action roguelike (ink-wash art, Vietnamese text). Four sects exist (Data.cs D.SECTS): kiem (Vân Kiếm Tông: flying swords), thiet (Thiết Y Môn: parry/defence), cuong (Huyết Nguyệt Đường: low-HP berserk), hanh (Ngũ Hành Cốc: five-element reactions). Boons (bí kíp) are in D.BOONS with fields id, el, slot ("pas" for passive), name, desc where {N} in desc is the per-level number (levels 1..3).
+
+Task: write exactly 12 NEW sect-exclusive passive boons, 3 per sect, that change HOW the sect plays (not +x% stats). For each give:
+- a C# line in this exact form: B("<id>", -1, "pas", "<NAME IN VIETNAMESE CAPITALS>", "<Vietnamese description with {N} per level>"),
+- the sect id,
+- the exact game hook it needs, described as pseudo-code against these existing functions/fields: HurtFoe(f,dmg,el,lvl,posMul,dir), Burst(pos,r,dmg,el,lvl,react), AddPosture(f,v), Parried(src), Kill(f), ThrowSword(), RecallSwords(), swords (list with st 0 flying 1 stuck 2 returning, host), hp, maxHp, qi, chain (kill streak), f.mark (element mark), ApplyEl(f,el,lvl,react), tkCd, Heal(v), Lv(id) = level of a boon.
+Keep each hook under 6 lines. Names must be original (do not use names of moves from existing novels or games). Answer in Vietnamese.
+
+=== Data.cs ===
+using System.Collections.Generic;
+using UnityEngine;
+
+// All tunable content: elements, weapons, foes, bosses, manuals (bi kip), meta upgrades.
+// Distances are in logic pixels (100 px = 1 Unity unit), times in seconds.
+
+public class Step {
+	public string t;            // arc, line, slam, shoot, radial, ring, rain, blink, summon, wait
+	public float wind = 0.5f, rec = 0.3f, r = 120, w = 1.8f, dmg = 10, lunge, len = 200, wid = 46, spd = 500, spread;
+	public int n = 1;
+	public bool dash, leap, pool;
+	public string id;
+}
+
+public class Move {
+	public float rng = 150, min, cd = 2, hpBelow = 1.01f;
+	public bool once;
+	public Step[] steps;
+}
+
+public class FoeDef {
+	public string id, name;
+	public float hp, pos, spd, r = 26, h = 125, keep, cost = 1;
+	public bool guard, boss;
+	public Move[] moves;
+}
+
+public class AtkStep {
+	public string t;            // arc, line, shot
+	public float r = 120, w = 1.9f, dmg = 12, dur = 0.28f, lunge = 150, len = 200, wid = 46, spd = 900, spread;
+	public int n = 1;
+}
+
+public class WeaponDef {
+	public string id, name, desc, skill, skillName, skillDesc, mech = "", unlock = "";
+	public AtkStep[] combo;
+}
+
+public class SectDef { public string id, name, motto, desc; }
+
+public class SkillDef {
+	public string id, name, desc;
+	public float cd;
+	public string[] node, nodeDesc;
+}
+
+public class Boon {
+	public string id, name, desc, slot;   // slot: atk, dash, parry, skill, pas
+	public int el = -1;
+}
+
+public class MetaUp {
+	public string id, name, desc;
+	public int[] cost;
+}
+
+public static class D {
+	public const int KIM = 0, MOC = 1, THUY = 2, HOA = 3, THO = 4;
+	public static readonly string[] EL = { "KIM", "MỘC", "THỦY", "HỎA", "THỔ" };
+	public static readonly string[] EL_STATUS = { "RÁCH", "ĐỘC", "HÀN", "THIÊU", "CHẤN" };
+	public static readonly string[] EL_TEXT = {
+		"RÁCH: địch nhận thêm 25% sát thương",
+		"ĐỘC: rút máu dần theo thời gian",
+		"HÀN: địch chậm đi 45%",
+		"THIÊU: bỏng mạnh trong 3 giây",
+		"CHẤN: phá THẾ gấp đôi, khựng địch"
+	};
+	public static readonly Color[] EL_COL = {
+		new Color(0.90f, 0.80f, 0.50f), new Color(0.38f, 0.66f, 0.36f), new Color(0.33f, 0.58f, 0.82f),
+		new Color(0.86f, 0.28f, 0.17f), new Color(0.66f, 0.48f, 0.26f)
+	};
+	public static readonly Color INK = new Color(0.07f, 0.06f, 0.06f);
+	public static readonly Color PAPER = new Color(0.91f, 0.86f, 0.75f);
+	public static readonly Color RED = new Color(0.78f, 0.18f, 0.12f);
+
+	// 0 same, 1 tuong sinh (feeds), 2 tuong khac (overcomes)
+	public static int Relation(int a, int b) {
+		if (a == b) return 0;
+		int lo = Mathf.Min(a, b), hi = Mathf.Max(a, b);
+		// sinh pairs: Kim-Thuy, Thuy-Moc, Moc-Hoa, Hoa-Tho, Tho-Kim
+		if ((lo == 0 && hi == 2) || (lo == 1 && hi == 2) || (lo == 1 && hi == 3) || (lo == 3 && hi == 4) || (lo == 0 && hi == 4)) return 1;
+		return 2;
+	}
+
+	public static readonly string[] SLOT_NAME_KEYS = { "atk", "dash", "parry", "skill", "pas" };
+	public static string SlotName(string s) {
+		switch (s) {
+			case "atk": return "ĐÒN ĐÁNH";
+			case "dash": return "KHINH CÔNG";
+			case "parry": return "ĐỠ ĐÒN";
+			case "skill": return "TUYỆT CHIÊU";
+		}
+		return "TÂM PHÁP";
+	}
+
+	public static readonly WeaponDef[] WEAPONS = {
+		new WeaponDef { id = "kiem", name = "THANH PHONG KIẾM", mech = "sword", desc = "Kiếm nhanh, ba đòn liên hoàn.\nKIẾM TÂM: mang thêm 2 phi kiếm.",
+			skill = "fan", skillName = "LẠC DIỆP PHI KIẾM", skillDesc = "Phóng bảy luồng kiếm khí hình quạt.",
+			combo = new[] {
+				new AtkStep { t = "arc", r = 135, w = 2.0f, dmg = 14, dur = 0.24f, lunge = 170 },
+				new AtkStep { t = "arc", r = 135, w = 2.0f, dmg = 15, dur = 0.24f, lunge = 170 },
+				new AtkStep { t = "arc", r = 160, w = 2.9f, dmg = 25, dur = 0.36f, lunge = 260 } } },
+		new WeaponDef { id = "thuong", name = "PHÁ QUÂN THƯƠNG", mech = "tip", unlock = "Hạ trùm chương I", desc = "Thương dài, đâm xuyên hàng địch.\nMŨI THƯƠNG: trúng ở cuối tầm gây +60% sát thương.",
+			skill = "charge", skillName = "XUYÊN VÂN THƯƠNG", skillDesc = "Lao thẳng xuyên qua mọi kẻ địch.",
+			combo = new[] {
+				new AtkStep { t = "line", len = 235, wid = 54, dmg = 17, dur = 0.30f, lunge = 130 },
+				new AtkStep { t = "line", len = 250, wid = 54, dmg = 18, dur = 0.30f, lunge = 130 },
+				new AtkStep { t = "arc", r = 185, w = 6.3f, dmg = 24, dur = 0.42f, lunge = 60 } } },
+		new WeaponDef { id = "phien", name = "THIẾT PHIẾN", mech = "bounce", unlock = "Hạ trùm chương II", desc = "Quạt sắt phóng ám khí tầm xa.\nLIÊN CHÂU: ám khí nảy sang 2 địch kế bên.",
+			skill = "whirl", skillName = "HỒI PHONG PHIẾN", skillDesc = "Dựng lốc xoáy hút và chém địch quanh mình.",
+			combo = new[] {
+				new AtkStep { t = "shot", n = 1, dmg = 11, dur = 0.22f, lunge = 0, spd = 950 },
+				new AtkStep { t = "shot", n = 2, spread = 0.16f, dmg = 9, dur = 0.22f, lunge = 0, spd = 950 },
+				new AtkStep { t = "shot", n = 5, spread = 0.55f, dmg = 9, dur = 0.36f, lunge = -120, spd = 880 } } },
+		new WeaponDef { id = "dao", name = "SONG NGUYỆT ĐAO", mech = "frenzy", unlock = "Hạ trùm chương I", desc = "Song đao bốn nhát cực nhanh, tầm ngắn.\nCUỒNG ĐAO: mỗi lần chém trúng tăng 7% tốc độ đánh (tối đa 10 tầng), ngừng đánh 2,5 giây là mất.",
+			skill = "whirl", skillName = "LOẠN NGUYỆT TRẢM", skillDesc = "Xoay đao thành lốc, hút và chém địch quanh mình.",
+			combo = new[] {
+				new AtkStep { t = "arc", r = 112, w = 2.3f, dmg = 8, dur = 0.17f, lunge = 150 },
+				new AtkStep { t = "arc", r = 112, w = 2.3f, dmg = 8, dur = 0.17f, lunge = 150 },
+				new AtkStep { t = "arc", r = 112, w = 2.3f, dmg = 9, dur = 0.17f, lunge = 150 },
+				new AtkStep { t = "arc", r = 130, w = 3.4f, dmg = 15, dur = 0.26f, lunge = 220 } } },
+		new WeaponDef { id = "chuy", name = "TRẤN SƠN CHÙY", mech = "heavy", unlock = "Hạ trùm chương II", desc = "Chùy nặng, chậm, quét rất rộng.\nBẤT ĐỘNG: phá THẾ gấp 2,2 lần, đang vung thì chịu ít hơn 40% sát thương, đòn ba nện ra chấn động.",
+			skill = "quake", skillName = "ĐỊA LIỆT", skillDesc = "Nện đất: nổ rộng quanh mình và đánh sập THẾ.",
+			combo = new[] {
+				new AtkStep { t = "arc", r = 170, w = 2.7f, dmg = 24, dur = 0.4f, lunge = 120 },
+				new AtkStep { t = "arc", r = 170, w = 2.7f, dmg = 26, dur = 0.4f, lunge = 120 },
+				new AtkStep { t = "arc", r = 205, w = 6.3f, dmg = 46, dur = 0.7f, lunge = 60 } } },
+		new WeaponDef { id = "cung", name = "LẠC NHẠN CUNG", mech = "charge", unlock = "Hạ trùm chương III", desc = "Cung dài: GIỮ chuột để giương, THẢ để bắn.\nMÃN CUNG: giương đủ thì tên xuyên mọi địch (mỗi địch xuyên qua giảm 25%).",
+			skill = "fan", skillName = "TÁN TIỄN", skillDesc = "Bắn bảy mũi tên hình quạt, mỗi mũi xuyên ba địch.",
+			combo = new[] { new AtkStep { t = "shot", n = 1, dmg = 10, dur = 0.2f, lunge = 0, spd = 1200 } } },
+	};
+	public static WeaponDef Weapon(string id) { foreach (var w in WEAPONS) if (w.id == id) return w; return WEAPONS[0]; }
+
+
+	public static readonly SectDef[] SECTS = {
+		new SectDef { id = "kiem", name = "VÂN KIẾM TÔNG", motto = "Kiếm rời tay, tâm chưa rời kiếm.", desc = "Thêm 2 phi kiếm.\nPhi kiếm tự bay về sau 2 giây.\nPhi kiếm gây thêm 30% sát thương." },
+		new SectDef { id = "thiet", name = "THIẾT Y MÔN", motto = "Đứng vững thì đòn nào cũng là cơ hội.", desc = "+30 sinh lực tối đa.\nKhoảng ĐỠ CHUẨN dài thêm 60%.\nMỗi lần đỡ chuẩn hồi 4 sinh lực." },
+		new SectDef { id = "cuong", name = "HUYẾT NGUYỆT ĐƯỜNG", motto = "Máu chảy càng nhiều, đao càng sắc.", desc = "Mất càng nhiều máu đánh càng đau: tối đa +60% sát thương.\nHạ một địch hồi 1 sinh lực." },
+		new SectDef { id = "hanh", name = "NGŨ HÀNH CỐC", motto = "Vạn vật sinh khắc, ta chỉ mượn tay.", desc = "Khởi hành với một bí kíp ĐÒN ĐÁNH ngẫu nhiên.\nẤN ngũ hành tồn tại lâu gấp đôi.\nTƯƠNG SINH và TƯƠNG KHẮC mạnh hơn 50%." },
+	};
+	public static SectDef Sect(string id) { foreach (var k in SECTS) if (k.id == id) return k; return SECTS[0]; }
+	public static string AfxName(string a) { return a == "bao" ? "BẠO LIỆT" : (a == "toc" ? "THẦN TỐC" : (a == "giap" ? "THIẾT GIÁP" : "")); }
+
+	public static readonly int[] SK_COST = { 15, 20, 35, 60 };
+	public static readonly SkillDef[] SKILLS = {
+		new SkillDef { id = "kiemvu", name = "THIÊN KIẾM VŨ", cd = 18, desc = "Gọi mười bốn thanh kiếm từ trời rơi xuống quanh điểm ngắm, mỗi thanh nổ một vòng.",
+			node = new[] { "KIẾM HẢI", "KIẾM TRẬN", "CỰ KIẾM GIÁNG THẾ" },
+			nodeDesc = new[] { "Số kiếm gấp đôi: hai mươi tám thanh.", "Vùng rơi rộng gấp rưỡi và hút mọi địch vào tâm trận.", "Kết thúc bằng một cự kiếm 150 sát thương, PHÁ THẾ mọi thứ nó chạm." } },
+		new SkillDef { id = "chi", name = "PHÁ VÂN CHỈ", cd = 12, desc = "Một tia chỉ lực xuyên suốt màn hình, 70 sát thương và phá THẾ gấp ba.",
+			node = new[] { "XUYÊN TÂM", "TAM CHỈ LIÊN HOÀN", "ĐIỂM HUYỆT" },
+			nodeDesc = new[] { "Sát thương gấp đôi và gây RÁCH 6 giây.", "Bắn ba tia hình quạt cùng lúc.", "Địch trúng chỉ bị PHÁ THẾ ngay (trùm: đầy nửa thanh)." } },
+		new SkillDef { id = "chung", name = "KIM CHUNG TRÁO", cd = 22, desc = "Chuông vàng hộ thể: bất khả xâm phạm 2,5 giây và chấn lùi địch quanh mình.",
+			node = new[] { "PHẢN CHẤN", "CHUNG MINH", "CHUNG VỠ" },
+			nodeDesc = new[] { "Kéo dài 4 giây và phản mọi ám khí chạm vào chuông.", "Khi chuông còn, mỗi nửa giây chấn động một lần (THỔ).", "Hết giờ chuông vỡ: nổ rất rộng 120 sát thương và hồi 15 sinh lực." } },
+		new SkillDef { id = "anh", name = "TÀN ẢNH TRẢM", cd = 16, desc = "Hóa tàn ảnh chém lần lượt năm địch gần nhất, mỗi nhát 35 sát thương.",
+			node = new[] { "THẬP ẢNH", "ẢNH ẤN", "ĐOẠT MỆNH" },
+			nodeDesc = new[] { "Chém tới mười mục tiêu.", "Mỗi nhát in thêm hành của KHINH CÔNG: tự nổ TƯƠNG SINH / TƯƠNG KHẮC.", "Địch thường dưới 25% máu chết ngay; mỗi mạng giảm 2 giây hồi chiêu." } },
+	};
+	public static SkillDef Skill(string id) { foreach (var k in SKILLS) if (k.id == id) return k; return SKILLS[0]; }
+
+	static Step Arc(float wind, float r, float w, float dmg, float lunge = 0, float rec = 0.3f) { return new Step { t = "arc", wind = wind, r = r, w = w, dmg = dmg, lunge = lunge, rec = rec }; }
+	static Step Line(float wind, float len, float wid, float dmg, bool dash = false, float rec = 0.35f) { return new Step { t = "line", wind = wind, len = len, wid = wid, dmg = dmg, dash = dash, rec = rec }; }
+	static Step Wait(float d) { return new Step { t = "wait", wind = d, rec = 0 }; }
+	static Step Blink() { return new Step { t = "blink", wind = 0.12f, rec = 0 }; }
+
+	public static readonly FoeDef[] FOES = {
+		new FoeDef { id = "bandit", name = "SƠN TẶC", hp = 44, pos = 40, spd = 150, cost = 1,
+			moves = new[] { new Move { rng = 125, cd = 1.7f, steps = new[] { Arc(0.5f, 125, 1.9f, 11, 210) } } } },
+		new FoeDef { id = "archer", name = "CUNG THỦ", hp = 30, pos = 30, spd = 130, keep = 430, cost = 1.2f,
+			moves = new[] { new Move { rng = 680, cd = 2.5f, steps = new[] { new Step { t = "shoot", wind = 0.75f, n = 1, spd = 600, dmg = 10 } } } } },
+		new FoeDef { id = "spear", name = "THƯƠNG BINH", hp = 52, pos = 55, spd = 135, h = 137, cost = 1.5f,
+			moves = new[] { new Move { rng = 280, cd = 2.3f, steps = new[] { Line(0.7f, 310, 46, 15, true) } } } },
+		new FoeDef { id = "assassin", name = "THÍCH KHÁCH", hp = 30, pos = 26, spd = 235, h = 120, cost = 1.8f,
+			moves = new[] {
+				new Move { rng = 460, min = 170, cd = 3.2f, steps = new[] { Blink(), Arc(0.36f, 110, 2.0f, 13, 160) } },
+				new Move { rng = 115, cd = 1.3f, steps = new[] { Arc(0.32f, 105, 1.9f, 9, 140) } } } },
+		new FoeDef { id = "brute", name = "LỰC SĨ", hp = 125, pos = 120, spd = 95, r = 38, h = 165, cost = 3,
+			moves = new[] { new Move { rng = 175, cd = 2.9f, steps = new[] { new Step { t = "slam", wind = 0.95f, r = 175, dmg = 22, rec = 0.6f } } } } },
+		new FoeDef { id = "monk", name = "PHÁ GIỚI TĂNG", hp = 92, pos = 150, spd = 120, h = 137, cost = 2.5f,
+			moves = new[] { new Move { rng = 150, cd = 2.5f, steps = new[] { Arc(0.6f, 155, 6.3f, 14, 0, 0.1f), Arc(0.38f, 155, 6.3f, 14, 0, 0.45f) } } } },
+		new FoeDef { id = "poison", name = "ĐỘC NƯƠNG", hp = 46, pos = 36, spd = 120, h = 148, keep = 370, cost = 1.8f,
+			moves = new[] { new Move { rng = 580, cd = 3.1f, steps = new[] { new Step { t = "shoot", wind = 0.65f, n = 3, spread = 0.38f, spd = 430, dmg = 8, pool = true } } } } },
+		new FoeDef { id = "shield", name = "THUẪN BINH", hp = 72, pos = 95, spd = 112, h = 113, guard = true, cost = 2,
+			moves = new[] { new Move { rng = 120, cd = 1.9f, steps = new[] { Line(0.5f, 150, 42, 12) } } } },
+
+		new FoeDef { id = "boss1", name = "HẮC HỔ TRẠI CHỦ", boss = true, hp = 640, pos = 260, spd = 150, r = 46, h = 200,
+			moves = new[] {
+				new Move { rng = 200, cd = 2.6f, steps = new[] { Arc(0.55f, 180, 2.3f, 16, 260, 0.12f), Arc(0.32f, 180, 2.3f, 16, 260, 0.12f), Arc(0.5f, 205, 3.2f, 22, 320, 0.6f) } },
+				new Move { rng = 760, min = 240, cd = 5.5f, steps = new[] { new Step { t = "slam", wind = 0.9f, r = 205, dmg = 24, leap = true, rec = 0.15f }, new Step { t = "ring", wind = 0.05f, spd = 430, dmg = 12, r = 620, rec = 0.7f } } },
+				new Move { rng = 720, min = 200, cd = 4.5f, steps = new[] { new Step { t = "shoot", wind = 0.6f, n = 5, spread = 0.7f, spd = 520, dmg = 11, rec = 0.5f } } },
+				new Move { rng = 2000, cd = 99, hpBelow = 0.5f, once = true, steps = new[] { new Step { t = "summon", wind = 0.8f, id = "bandit", n = 3, rec = 0.4f } } } } },
+		new FoeDef { id = "boss2", name = "VÔ MINH THIỀN SƯ", boss = true, hp = 860, pos = 340, spd = 112, r = 44, h = 185,
+			moves = new[] {
+				new Move { rng = 2000, cd = 6.5f, steps = new[] {
+					new Step { t = "ring", wind = 0.7f, spd = 400, dmg = 13, r = 760, rec = 0.1f }, new Step { t = "ring", wind = 0.55f, spd = 400, dmg = 13, r = 760, rec = 0.1f },
+					new Step { t = "ring", wind = 0.55f, spd = 400, dmg = 13, r = 760, rec = 0.7f } } },
+				new Move { rng = 2000, min = 180, cd = 5.5f, steps = new[] {
+					new Step { t = "radial", wind = 0.6f, n = 14, spd = 330, dmg = 10, rec = 0.1f }, new Step { t = "radial", wind = 0.5f, n = 14, spd = 330, dmg = 10, rec = 0.1f },
+					new Step { t = "radial", wind = 0.5f, n = 14, spd = 330, dmg = 10, rec = 0.6f } } },
+				new Move { rng = 620, min = 220, cd = 4.2f, steps = new[] { Line(0.8f, 540, 70, 22, true, 0.7f) } },
+				new Move { rng = 190, cd = 2.8f, steps = new[] { Arc(0.6f, 195, 6.3f, 17, 0, 0.5f) } },
+				new Move { rng = 2000, cd = 99, hpBelow = 0.5f, once = true, steps = new[] { new Step { t = "summon", wind = 0.8f, id = "monk", n = 2, rec = 0.4f } } } } },
+		new FoeDef { id = "boss3", name = "BẠCH PHÁT KIẾM THÁNH", boss = true, hp = 1020, pos = 380, spd = 195, r = 42, h = 195,
+			moves = new[] {
+				new Move { rng = 2000, cd = 5.2f, steps = new[] { Blink(), Line(0.42f, 430, 56, 18, true, 0.08f), Blink(), Line(0.36f, 430, 56, 18, true, 0.08f), Blink(), Line(0.36f, 430, 56, 20, true, 0.7f) } },
+				new Move { rng = 2000, cd = 7, steps = new[] { new Step { t = "rain", wind = 0.5f, n = 9, r = 95, dmg = 16, rec = 1.0f } } },
+				new Move { rng = 2000, min = 160, cd = 4.6f, steps = new[] {
+					new Step { t = "radial", wind = 0.5f, n = 8, spd = 470, dmg = 12, rec = 0.05f }, new Step { t = "radial", wind = 0.35f, n = 8, spd = 470, dmg = 12, rec = 0.05f },
+					new Step { t = "radial", wind = 0.35f, n = 8, spd = 470, dmg = 12, rec = 0.5f } } },
+				new Move { rng = 190, cd = 2.0f, steps = new[] { Arc(0.38f, 175, 2.4f, 15, 240, 0.08f), Arc(0.26f, 175, 2.4f, 15, 240, 0.08f), Arc(0.26f, 175, 2.4f, 15, 240, 0.08f), Arc(0.45f, 200, 6.3f, 20, 0, 0.6f) } } } },
+	};
+	public static FoeDef Foe(string id) { foreach (var f in FOES) if (f.id == id) return f; return FOES[0]; }
+
+	public static readonly string[][] POOLS = {
+		new[] { "bandit", "bandit", "archer", "spear", "brute" },
+		new[] { "bandit", "archer", "spear", "monk", "shield", "poison", "assassin" },
+		new[] { "spear", "monk", "shield", "poison", "assassin", "assassin", "brute", "archer" },
+	};
+	public static readonly string[] CH_NAME = { "CHƯƠNG I · TRÚC LÂM", "CHƯƠNG II · CỔ TỰ", "CHƯƠNG III · TUYẾT ĐỈNH" };
+	public static readonly float[] CH_HP = { 1f, 1.45f, 2.0f };
+	public static readonly float[] CH_DMG = { 1f, 1.25f, 1.5f };
+	public static readonly string[][] CH_PROPS = { new[] { "boulder", "bamboo", "lantern" }, new[] { "pillar", "lantern", "jar", "shrine" }, new[] { "pine", "boulder", "pillar" } };
+
+	static Boon B(string id, int el, string slot, string name, string desc) { return new Boon { id = id, el = el, slot = slot, name = name, desc = desc }; }
+	public static readonly Boon[] BOONS = {
+		B("a0", 0, "atk", "KIM PHONG TRẢM", "Đòn đánh mang KIM khí: +{15}% sát thương, gây RÁCH."),
+		B("a1", 1, "atk", "THANH ĐẰNG KIẾM", "Đòn đánh mang MỘC khí: +{15}% sát thương, gây ĐỘC."),
+		B("a2", 2, "atk", "HÀN THỦY KIẾM", "Đòn đánh mang THỦY khí: +{15}% sát thương, gây HÀN."),
+		B("a3", 3, "atk", "LIỆT DIỄM TRẢM", "Đòn đánh mang HỎA khí: +{15}% sát thương, gây THIÊU."),
+		B("a4", 4, "atk", "BÀN THẠCH KÌNH", "Đòn đánh mang THỔ khí: +{15}% sát thương, gây CHẤN."),
+		B("d0", 0, "dash", "LƯU KIM BỘ", "Khinh công tỏa KIM khí ở hai đầu, gây {16} sát thương."),
+		B("d1", 1, "dash", "LẠC DIỆP BỘ", "Khinh công tỏa MỘC khí ở hai đầu, gây {16} sát thương."),
+		B("d2", 2, "dash", "ĐẠP LÃNG BỘ", "Khinh công tỏa THỦY khí ở hai đầu, gây {16} sát thương."),
+		B("d3", 3, "dash", "HỎA VÂN BỘ", "Khinh công tỏa HỎA khí ở hai đầu, gây {16} sát thương."),
+		B("d4", 4, "dash", "ĐỊA CHẤN BỘ", "Khinh công tỏa THỔ khí ở hai đầu, gây {16} sát thương."),
+		B("p0", 0, "parry", "KIM CHUNG PHẢN", "Đỡ chuẩn bung vòng KIM khí, gây {26} sát thương."),
+		B("p1", 1, "parry", "HỒI XUÂN THỦ", "Đỡ chuẩn bung vòng MỘC khí, gây {26} sát thương."),
+		B("p2", 2, "parry", "BĂNG KÍNH", "Đỡ chuẩn bung vòng THỦY khí, gây {26} sát thương."),
+		B("p3", 3, "parry", "PHẦN THIÊN PHẢN", "Đỡ chuẩn bung vòng HỎA khí, gây {26} sát thương."),
+		B("p4", 4, "parry", "THÁI SƠN THỦ", "Đỡ chuẩn bung vòng THỔ khí, gây {26} sát thương."),
+		B("s0", 0, "skill", "CANH KIM CHÂN KHÍ", "Tuyệt chiêu mang KIM khí, +{30}% sát thương."),
+		B("s1", 1, "skill", "ẤT MỘC CHÂN KHÍ", "Tuyệt chiêu mang MỘC khí, +{30}% sát thương."),
+		B("s2", 2, "skill", "NHÂM THỦY CHÂN KHÍ", "Tuyệt chiêu mang THỦY khí, +{30}% sát thương."),
+		B("s3", 3, "skill", "BÍNH HỎA CHÂN KHÍ", "Tuyệt chiêu mang HỎA khí, +{30}% sát thương."),
+		B("s4", 4, "skill", "MẬU THỔ CHÂN KHÍ", "Tuyệt chiêu mang THỔ khí, +{30}% sát thương."),
+		B("hp", -1, "pas", "THIẾT BỐ SAM", "+{25} sinh lực tối đa."),
+		B("qi", -1, "pas", "NGƯNG KHÍ QUYẾT", "Nội lực thu được +{35}%."),
+		B("dash", -1, "pas", "YẾN TỬ PHI", "Thêm {1} lần khinh công liên tiếp."),
+		B("sinh", -1, "pas", "TƯƠNG SINH QUYẾT", "TƯƠNG SINH nổ mạnh hơn {50}% và hồi {3} sinh lực."),
+		B("khac", -1, "pas", "TƯƠNG KHẮC QUYẾT", "TƯƠNG KHẮC gây thêm {15} sát thương."),
+		B("break", -1, "pas", "PHÁ THẾ TÂM PHÁP", "Sát thương lên địch bị PHÁ THẾ +{40}%."),
+		B("leech", -1, "pas", "DƯỠNG HUYẾT CÔNG", "Hạ một địch hồi {2} sinh lực."),
+		B("coin", -1, "pas", "TỤ BẢO THUẬT", "Ngân lượng nhặt được +{40}%."),
+		B("crit", -1, "pas", "CUỒNG KIẾM Ý", "{12}% cơ hội chí mạng (gấp đôi sát thương)."),
+		B("calm", -1, "pas", "TĨNH TÂM", "Khoảng đỡ chuẩn dài thêm {30}%."),
+		B("ripo", -1, "pas", "HẬU PHÁT CHẾ NHÂN", "Sau khi đỡ chuẩn, đòn kế +{100}% sát thương."),
+		B("fin", -1, "pas", "LIÊN HOÀN", "Đòn kết liên hoàn +{40}% sát thương."),
+		B("kiem", -1, "pas", "THIÊN KIẾM HẠP", "Mang thêm {1} phi kiếm."),
+		B("hoi", -1, "pas", "HỒI KIẾM QUYẾT", "Phi kiếm thu về gây thêm {40}% sát thương."),
+	};
+	public static Boon BoonById(string id) { foreach (var b in BOONS) if (b.id == id) return b; return null; }
+
+	// "{15}" in a description is a per-level number: it is multiplied by the level shown
+	public static string Desc(Boon b, int lvl) {
+		var s = new System.Text.StringBuilder();
+		string d = b.desc;
+		for (int i = 0; i < d.Length; i++) {
+			if (d[i] == '{') {
+				int j = d.IndexOf('}', i);
+				s.Append((int.Parse(d.Substring(i + 1, j - i - 1)) * lvl).ToString());
+				i = j;
+			} else s.Append(d[i]);
+		}
+		return s.ToString();
+	}
+
+	public static readonly MetaUp[] META = {
+		new MetaUp { id = "hp", name = "THỂ PHÁCH", desc = "+12 sinh lực mỗi cấp", cost = new[] { 8, 14, 22, 32, 45 } },
+		new MetaUp { id = "dmg", name = "KIẾM Ý", desc = "+5% sát thương mỗi cấp", cost = new[] { 10, 16, 24, 34, 48 } },
+		new MetaUp { id = "qi", name = "NỘI CÔNG", desc = "+12% nội lực thu được mỗi cấp", cost = new[] { 8, 14, 22 } },
+		new MetaUp { id = "heal", name = "HỒI XUÂN", desc = "Hồi 3 sinh lực sau mỗi ải, mỗi cấp", cost = new[] { 10, 18, 28 } },
+		new MetaUp { id = "coin", name = "HÀNH TRANG", desc = "+25 ngân lượng khi khởi hành, mỗi cấp", cost = new[] { 6, 12, 20 } },
+		new MetaUp { id = "reroll", name = "NGHỊCH MỆNH", desc = "Mỗi chuyến được đổi lại các lựa chọn bí kíp / bảo vật thêm 1 lần (phím R)", cost = new[] { 15, 30, 50 } },
+		new MetaUp { id = "revive", name = "BẤT TỬ PHÙ", desc = "Hồi sinh một lần mỗi chuyến với 40% sinh lực", cost = new[] { 60 } },
+	};
+
+	public static string RewardName(string k) {
+		switch (k) {
+			case "bikip": return "BÍ KÍP";
+			case "luyen": return "LUYỆN KHÍ";
+			case "dan": return "LINH ĐAN";
+			case "ngan": return "NGÂN LƯỢNG";
+			case "shop": return "THƯƠNG NHÂN";
+			case "tra": return "TRÀ QUÁN";
+			case "ky": return "KỲ NGỘ";
+			case "bao": return "BẢO VẬT";
+			case "boss": return "TỬ CHIẾN";
+			case "next": return "LÊN ĐƯỜNG";
+			case "end": return "HẠ SƠN";
+		}
+		return k;
+	}
+	public static string RewardHint(string k) {
+		switch (k) {
+			case "bikip": return "Chọn 1 trong 3 chiêu thức";
+			case "luyen": return "Nâng cấp một chiêu đã học";
+			case "dan": return "+15 sinh lực tối đa, hồi 25";
+			case "ngan": return "Một túi ngân lượng";
+			case "shop": return "Mua thuốc và bí kíp";
+			case "tra": return "Nghỉ chân, hồi 40% sinh lực";
+			case "ky": return "Gặp cao nhân ẩn thế";
+			case "bao": return "Chọn 1 trong 3 bảo vật";
+			case "boss": return "Trùm cuối chương";
+			case "next": return "Sang chương kế";
+			case "end": return "Kết thúc chuyến đi";
+		}
+		return "";
+	}
+	public static Color RewardCol(string k) {
+		switch (k) {
+			case "bikip": return new Color(0.80f, 0.25f, 0.18f);
+			case "luyen": return new Color(0.55f, 0.35f, 0.75f);
+			case "dan": return new Color(0.35f, 0.65f, 0.40f);
+			case "ngan": return new Color(0.85f, 0.70f, 0.30f);
+			case "shop": return new Color(0.75f, 0.55f, 0.30f);
+			case "tra": return new Color(0.40f, 0.62f, 0.62f);
+			case "ky": return new Color(0.45f, 0.50f, 0.85f);
+			case "bao": return new Color(0.55f, 0.32f, 0.7f);
+		}
+		return new Color(0.15f, 0.12f, 0.12f);
+	}
+}

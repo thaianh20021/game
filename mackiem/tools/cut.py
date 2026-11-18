@@ -44,6 +44,7 @@ elif bg.min() > 0.8:
 else:
     alpha = np.clip((dist - 0.10) / 0.16, 0, 1)
     alpha = np.where((m > 0.22) & (dist < 0.42), 0, alpha)   # brighter or duller patches of the same pink
+    alpha = np.where((m > 0.3) & (r > 0.85) & (b > 0.85), 0, alpha)   # pale pink cells some models draw behind each icon
 solid = alpha > 0.5
 lab, n = ndi.label(ndi.binary_dilation(solid, iterations=5))
 sizes = ndi.sum(solid, lab, range(1, n + 1))
@@ -54,7 +55,20 @@ tall = max(s[0].stop - s[0].start for _, s in figs)
 def row(f):
     s = f[1]
     return round(((s[0].start + s[0].stop) / 2) / (tall * 0.6))
-figs.sort(key=lambda f: (row(f), f[1][1].start))
+# rows: sort by vertical centre and start a new row wherever the gap is larger than half a figure
+figs.sort(key=lambda f: (f[1][0].start + f[1][0].stop) / 2)
+rows_, cur, last_c = [], [], None
+for f in figs:
+    c_ = (f[1][0].start + f[1][0].stop) / 2
+    if last_c is not None and c_ - last_c > tall * 0.5:
+        rows_.append(cur); cur = []
+    cur.append(f); last_c = c_
+rows_.append(cur)
+figs = [f for rw_ in rows_ for f in sorted(rw_, key=lambda f: f[1][1].start)]
+def row(f):
+    for k, rw_ in enumerate(rows_):
+        if f in rw_: return k
+    return 0
 if len(figs) != len(names):
     print('ERROR: found', len(figs), 'figures, expected', len(names)); sys.exit(1)
 k = np.clip(m, 0, 1) * 0.9 * (ndi.binary_dilation(~solid, iterations=3))
