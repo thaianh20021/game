@@ -66,7 +66,7 @@ public partial class Game {
 					var mv = f.d.moves[pick];
 					f.used[pick] = true;
 					float rage = f.d.boss && hpF < 0.5f ? 0.7f : 1;
-					f.mcd[pick] = mv.cd * rage * Rnd(0.9f, 1.2f);
+					f.mcd[pick] = mv.cd * rage * Rnd(0.9f, 1.2f) * (HeatAt(7) ? 0.8f : 1);
 					f.mv = mv; f.si = 0;
 					StartStep(f);
 					continue;
@@ -209,6 +209,7 @@ public partial class Game {
 			hurtFx = 0.4f;
 			Puff(ppos, D.RED, 8, 220);
 		}
+		dmg *= HurtTakenMul();
 		hp -= dmg;
 		inv = 0.55f;
 		pflash = 0.15f;
@@ -225,6 +226,7 @@ public partial class Game {
 		inv = Mathf.Max(inv, 0.3f);
 		riposte = Lv("ripo") > 0;
 		if (meta.sect == "thiet") Heal(4);
+		RelicParry();
 		Text(ppos + new Vector2(0, 150), "PHẢN!", new Color(1f, 0.9f, 0.5f), 30);
 		for (int i = 0; i < 10; i++) {
 			float l = Rnd(0.15f, 0.35f);
@@ -240,6 +242,7 @@ public partial class Game {
 
 	void AddPosture(Foe f, float v) {
 		if (f.dead || f.broken > 0) return;
+		if (Has("toaithach")) v *= 1.3f;
 		f.posv += v;
 		f.posT = 2.2f;
 		if (f.posv >= f.posMax) {
@@ -257,6 +260,7 @@ public partial class Game {
 		if (f.dead || f.spawn > 0) return;
 		bool isCrit = crit > 0 && Rnd() < crit;
 		if (isCrit) dmg *= 2;
+		dmg *= DealMul();
 		if (meta.sect == "cuong") dmg *= 1 + 0.6f * (1 - Mathf.Clamp01(hp / maxHp));
 		if (f.afx == "giap" && f.broken <= 0) dmg *= 0.45f;   // armoured elites must be broken first
 		if (f.broken > 0) dmg *= 1.6f + Lv("break") * 0.4f;
@@ -275,6 +279,7 @@ public partial class Game {
 		Text(f.pos + new Vector2(0, f.d.h * f.scale + 10), Mathf.CeilToInt(dmg).ToString(), isCrit ? new Color(1f, 0.8f, 0.2f) : Color.white, isCrit ? 26 : 18);
 		Puff(f.pos, D.INK, 3, 200);
 		if (el >= 0) ApplyEl(f, el, Mathf.Max(1, lvl), react);
+		if (Has("hoalinh") && el != D.HOA && Rnd() < 0.12f && !f.dead) { f.burn = 3; f.burnD = Mathf.Max(f.burnD, 12); }
 		if (f.hp <= 0) Kill(f);
 	}
 
@@ -295,7 +300,7 @@ public partial class Game {
 		if (rel == 1) {
 			// tuong sinh: the two phases feed each other and burst
 			Text(f.pos + new Vector2(0, f.d.h + 60), "TƯƠNG SINH", Color.Lerp(D.EL_COL[old], D.EL_COL[el], 0.5f), 26);
-			float dmg = (26 + 12 * lvl) * dmgMul * (1 + Lv("sinh") * 0.5f) * (meta.sect == "hanh" ? 1.5f : 1);
+			float dmg = (26 + 12 * lvl) * dmgMul * (1 + Lv("sinh") * 0.5f) * (meta.sect == "hanh" ? 1.5f : 1) * (Has("amduong") ? 1.35f : 1);
 			qi = Mathf.Min(100, qi + 8 * qiMul);
 			Heal(Lv("sinh") * 3);
 			Burst(f.pos, 165, dmg, el, lvl, false);
@@ -303,7 +308,7 @@ public partial class Game {
 		} else {
 			// tuong khac: one phase overcomes the other and shatters the stance
 			Text(f.pos + new Vector2(0, f.d.h + 60), "TƯƠNG KHẮC", D.EL_COL[el], 26);
-			AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 0.6f) * (meta.sect == "hanh" ? 1.5f : 1));
+			AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 0.6f) * (meta.sect == "hanh" ? 1.5f : 1) * (Has("amduong") ? 1.35f : 1));
 			if (!f.d.boss && f.broken <= 0) { f.stun = Mathf.Max(f.stun, 0.6f); f.mv = null; f.z = 0; }
 			wavesFx.Add(new Wave { pos = f.pos, r = 10, spd = 500, dmg = 0, max = 110, hit = true });
 			sfx.Play("clang", 0.6f, 0.7f);
@@ -341,6 +346,7 @@ public partial class Game {
 		// a streak of quick kills pays out every tenth
 		chain++; chainT = 3.2f;
 		if (chain % 10 == 0) { Heal(2); qi = Mathf.Min(100, qi + 12); Text(ppos + new Vector2(0, 190), "LIÊN TRẢM ×" + chain, new Color(1f, 0.6f, 0.3f), 30); }
+		RelicKill(f);
 		if (f.d.boss) { stop = 0.25f; slow = 1.2f; shake = 18; sfx.Play("gong"); }
 		else sfx.Play("hit", 0.7f, 0.6f);
 	}
@@ -493,7 +499,7 @@ public partial class Game {
 			ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(shotDir, string.Format("s{0:00}_{1}_{2}_{3}.png", botShotN, state, ch, roomKind)));
 		}
 		if ((botEnd > 0 && Time.realtimeSinceStartup > botEnd) || ((state == "win" || state == "dead") && T - endT > 4)) {
-			Debug.Log(string.Format("BOT END state={0} ch={1} step={2} rooms={3} kills={4} boons={5} hp={6}", state, ch, step, rooms, kills, boons.Count, hp));
+			Debug.Log(string.Format("BOT END state={0} ch={1} step={2} rooms={3} kills={4} boons={5} hp={6} relics={7} hon={8} mem={9} heatMax={10}", state, ch, step, rooms, kills, boons.Count, hp, string.Join("+", relics), meta.hon, meta.mem.Count, meta.heatMax));
 			Application.Quit();
 		}
 	}

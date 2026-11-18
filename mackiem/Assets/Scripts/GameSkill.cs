@@ -21,7 +21,7 @@ public partial class Game {
 		var sd = D.Skill(meta.tk);
 		int L = SkLv(sd.id);
 		if (L <= 0) return;
-		tkCd = sd.cd;
+		tkCd = sd.cd * (Has("ngoctuy") ? 0.7f : 1);
 		castT = 0.42f;
 		int el = SlotEl("atk"), lv = SlotLv("atk");
 		Text(ppos + new Vector2(0, 170), sd.name, new Color(1f, 0.9f, 0.55f), 28);
@@ -184,6 +184,7 @@ public partial class Game {
 	void GuiSect() {
 		Dim(0.6f);
 		Lab(new Rect(0, 40, GW, 60), "CHỌN MÔN PHÁI", 44, D.PAPER, TextAnchor.MiddleCenter, true);
+		Lab(new Rect(0, 96, GW, 26), "KIẾM HỒN: " + meta.hon + "   ·   rơi ra khi hạ trùm", 17, new Color(0.75f, 0.85f, 1f));
 		int n = D.SECTS.Length;
 		float w = Mathf.Min(290, (GW - 60) / n - 16), gap = 16, x0 = (GW - (w * n + gap * (n - 1))) / 2;
 		for (int i = 0; i < n; i++) {
@@ -195,9 +196,13 @@ public partial class Game {
 			Box(new Rect(r.x + 40, r.y + 74, w - 80, 2), D.RED);
 			Lab(new Rect(r.x + 20, r.y + 84, w - 40, 60), "“" + sd.motto + "”", 15, new Color(0.3f, 0.27f, 0.25f), TextAnchor.MiddleCenter, true, false);
 			Lab(new Rect(r.x + 22, r.y + 160, w - 44, 220), sd.desc, 17, D.INK, TextAnchor.UpperCenter, false, false);
+			if (!SectOpen(i)) {
+				Box(r, new Color(0.07f, 0.06f, 0.06f, 0.45f));
+				Lab(new Rect(r.x, r.yMax - 70, w, 50), "KHÓA · " + J.SECT_COST[i] + " KIẾM HỒN\nENTER để mở", 17, meta.hon >= J.SECT_COST[i] ? new Color(1f, 0.85f, 0.5f) : D.PAPER, TextAnchor.MiddleCenter, true);
+			}
 			if (Hit(r, i)) SectAct(i);
 		}
-		Lab(new Rect(0, GH - 80, GW, 30), "A / D chọn   ·   ENTER xuất phát   ·   ESC quay lại", 18, D.PAPER);
+		Lab(new Rect(0, GH - 80, GW, 30), "A / D chọn   ·   ENTER chọn (hoặc mở khóa)   ·   ESC quay lại", 18, D.PAPER);
 	}
 
 	void GuiElites() {

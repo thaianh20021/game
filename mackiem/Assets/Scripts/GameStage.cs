@@ -231,6 +231,8 @@ public partial class Game {
 
 	void StartFight(Seg s) {
 		fight = s; s.state = 1;
+		satky = 0;
+		if (Has("dandien")) qi = Mathf.Max(qi, 50);
 		step = s.step;
 		roomKind = s.kind == "boss" ? "boss" : "fight";
 		PR = s.r;
@@ -251,11 +253,11 @@ public partial class Game {
 	void Populate(Seg s) {
 		Vector2 c = new Vector2(s.r.center.x - 260, s.r.center.y + 110);
 		items.Add(new Item { pos = c, kind = "npc", label = "", sr = NewSpr("merchant", 130) });
-		AddItem(c + new Vector2(-200, -150), "heal", "KIM SANG DƯỢC\nHồi 40 sinh lực", 35, "jar", null);
-		AddItem(c + new Vector2(-65, -185), "dan", "LINH ĐAN\n+15 sinh lực tối đa", 60, "jar", null);
+		AddItem(c + new Vector2(-200, -150), "heal", "KIM SANG DƯỢC\nHồi 40 sinh lực", Mathf.RoundToInt(35 * PriceMul()), "jar", null);
+		AddItem(c + new Vector2(-65, -185), "dan", "LINH ĐAN\n+15 sinh lực tối đa", Mathf.RoundToInt(60 * PriceMul()), "jar", null);
 		var o = MakeOffers(1);
-		if (o.Count > 0) AddItem(c + new Vector2(70, -185), "boon", o[0].b.name + " · CẤP " + o[0].lvl + "\n" + D.Desc(o[0].b, o[0].lvl), 70, "chest", o[0].b);
-		AddItem(c + new Vector2(205, -150), "luyen", "LUYỆN KHÍ\nNâng cấp một chiêu đã học", 80, "shrine", null);
+		if (o.Count > 0) AddItem(c + new Vector2(70, -185), "boon", o[0].b.name + " · CẤP " + o[0].lvl + "\n" + D.Desc(o[0].b, o[0].lvl), Mathf.RoundToInt(70 * PriceMul()), "chest", o[0].b);
+		AddItem(c + new Vector2(205, -150), "luyen", "LUYỆN KHÍ\nNâng cấp một chiêu đã học", Mathf.RoundToInt(80 * PriceMul()), "shrine", null);
 		Vector2 t = new Vector2(s.r.center.x + 330, s.r.center.y + 110);
 		items.Add(new Item { pos = t, kind = "npc", label = "", sr = NewSpr("tea", 95) });
 		AddItem(t + new Vector2(0, -120), "tea", "THƯỞNG TRÀ\nHồi 40% sinh lực", 0, null, null);
@@ -298,13 +300,18 @@ public partial class Game {
 		sfx.Battle(false);
 		sfx.Play("gong", 0.7f);
 		shots.RemoveAll(x => !x.mine);
-		Heal(Up("heal") * 3);
+		if (!HeatAt(4)) Heal(Up("heal") * 3);
 		slow = 0.5f;
 		yLo = segs[0].r.yMin; yHi = s.r.yMax;
 		doors.Clear();
 		if (s.kind == "boss") {
 			bossKills++;
-			Heal(maxHp * 0.3f);
+			int h = 1 + s.ch + meta.kiep / 3;
+			meta.hon += h; honRun += h;
+			UnlockMemory(s.ch);
+			relicPending = true;
+			Text(ppos + new Vector2(0, 210), "+" + h + " KIẾM HỒN", new Color(0.75f, 0.85f, 1f), 26);
+			if (!HeatAt(4)) Heal(maxHp * 0.3f);
 			AddCoins(60);
 			string[] unl = s.ch == 0 ? new[] { "thuong", "dao" } : (s.ch == 1 ? new[] { "phien", "chuy" } : new[] { "cung" });
 			foreach (var id in unl) if (!meta.unl.Contains(id)) { meta.unl.Add(id); Toast("MỞ KHÓA: " + D.Weapon(id).name); }
@@ -316,7 +323,7 @@ public partial class Game {
 			return;
 		}
 		// two offerings at the far end: take one and the seal opens
-		string[] pool = { "bikip", "bikip", "bikip", "luyen", "dan", "ngan" };
+		string[] pool = { "bikip", "bikip", "bikip", "luyen", "dan", "ngan", "bao" };
 		string a = pool[rng.Next(pool.Length)], b = a;
 		while (b == a) b = pool[rng.Next(pool.Length)];
 		if (boons.Count == 0) { a = "bikip"; if (b == "luyen" || b == "bikip") b = "ngan"; }
@@ -333,6 +340,7 @@ public partial class Game {
 		yHi = worldTop;
 		switch (k) {
 			case "bikip": case "luyen": OpenPick(k, 0); break;
+			case "bao": OpenRelic(); break;
 			case "dan": bonusHp += 15; Recalc(); Heal(25); Toast("LINH ĐAN: +15 sinh lực tối đa"); break;
 			case "ngan": AddCoins(45 + ch * 15 + rng.Next(20)); Toast("NHẬN MỘT TÚI NGÂN LƯỢNG"); break;
 			case "ky": state = "event"; menuI = 0; sfx.Play("pick"); break;

@@ -62,6 +62,14 @@ Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đán
 - `Game.HeroPose()` chọn khung cho nhân vật chính; đoạn vẽ địch trong `GameDraw.Render` chọn khung cho địch. Bóng mờ khi lướt là `AddGhost`.
 - Gemini vẽ đúng nền hồng; các model GPT image chỉ chịu nền trắng (và đôi lúc vẫn ra nền tối, khi đó phải vẽ lại).
 
+## Tiến trình (`GameJourney.cs`, dữ liệu trong lớp `J`)
+
+- **BẢO VẬT**: 16 món, giữ đến hết chuyến. Nhận từ cửa thưởng BẢO VẬT, sau mỗi trùm (sau bí kíp) và đôi khi từ tinh anh. 8 món có sẵn, 8 món mở trong BẢO KHỐ (25 NGỘ TÍNH mỗi món).
+- **KIẾP NẠN**: chọn tầng 0 đến 9 trước mỗi chuyến (sau môn phái). Mỗi tầng giữ luật các tầng trước, thêm 15% NGỘ TÍNH. Thắng ở tầng cao nhất đã mở thì mở tầng kế.
+- **KIẾM HỒN**: rơi khi hạ trùm (1, 2, 3, cộng thêm theo kiếp nạn); mở ba môn phái còn lại (2, 3, 4).
+- **KÝ ỨC**: 9 mảnh truyện, mỗi lần hạ một trùm mở một mảnh của trùm đó. Đọc ở màn hình chính.
+- Màn hình chính: KHỞI HÀNH (binh khí → môn phái → kiếp nạn), TUYỆT KỸ, TU LUYỆN, BẢO KHỐ, KÝ ỨC, CÁCH CHƠI.
+
 ## Khung chuyển tiếp và phản ứng
 
 - Nhân vật (kiếm): `hero_trans_0..11` từ `tools/more.sh hero`: bắt đầu chạy, phanh, quay người, thu kiếm sau nhát chém, đáp sau khi lướt, gượng dậy sau đòn. Chọn trong `GameDraw.TrackTransitions` / `HeroPose`.

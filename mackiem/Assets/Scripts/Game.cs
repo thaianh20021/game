@@ -49,7 +49,12 @@ public class MetaSave {
 	public List<int> skLv = new List<int> { 1 };
 	public string tk = "kiemvu";
 	public string sect = "kiem";
-	public bool rigOn = false;   // the cut-out puppet looked disjointed: drawn frames are the default
+	public bool rigOn = false;
+	public int hon, heatMax;   // KIẾM HỒN; highest KIẾP NẠN tier opened (kiep is the one chosen)
+	public List<string> sects = new List<string> { "kiem" };
+	public List<string> relics = new List<string>(J.START);
+	public List<string> seen = new List<string>();
+	public List<int> mem = new List<int>();   // the cut-out puppet looked disjointed: drawn frames are the default
 }
 
 public struct Inp {
@@ -171,6 +176,12 @@ public partial class Game : MonoBehaviour {
 		if (meta.skIds == null || meta.skIds.Count == 0) { meta.skIds = new List<string> { "kiemvu" }; meta.skLv = new List<int> { 1 }; }
 		if (string.IsNullOrEmpty(meta.tk)) meta.tk = "kiemvu";
 		if (string.IsNullOrEmpty(meta.sect)) meta.sect = "kiem";
+		if (meta.sects == null || meta.sects.Count == 0) meta.sects = new List<string> { "kiem" };
+		if (!meta.sects.Contains(meta.sect)) meta.sect = meta.sects[0];
+		if (meta.relics == null || meta.relics.Count == 0) meta.relics = new List<string>(J.START);
+		if (meta.seen == null) meta.seen = new List<string>();
+		if (meta.mem == null) meta.mem = new List<int>();
+		meta.heatMax = Mathf.Max(meta.heatMax, meta.kiep);
 	}
 	void SaveMeta() { try { File.WriteAllText(savePath, JsonUtility.ToJson(meta)); } catch (Exception) { } }
 	int Up(string id) { int i = meta.upIds.IndexOf(id); return i < 0 ? 0 : meta.upLv[i]; }
@@ -187,11 +198,12 @@ public partial class Game : MonoBehaviour {
 		dmgMul = 1 + Up("dmg") * 0.05f;
 		qiMul = 1 + Up("qi") * 0.12f + Lv("qi") * 0.35f;
 		dashMax = 1 + Lv("dash");
-		int sm = 4 + Lv("kiem") + (weapon != null && weapon.mech == "sword" ? 2 : 0) + (meta.sect == "kiem" ? 2 : 0);
+		int sm = 4 + Lv("kiem") + (weapon != null && weapon.mech == "sword" ? 2 : 0) + (meta.sect == "kiem" ? 2 : 0) + (Has("thattinh") ? 2 : 0);
 		swordsHeld += sm - swordMax; swordMax = sm;
 		pwin = 0.2f * (1 + Lv("calm") * 0.3f) * (meta.sect == "thiet" ? 1.6f : 1);
 		crit = Lv("crit") * 0.12f;
 		coinMul = 1 + Lv("coin") * 0.4f;
+		RelicRecalc();
 		hp = Mathf.Min(hp, maxHp);
 	}
 
@@ -264,12 +276,16 @@ public partial class Game : MonoBehaviour {
 				if (dt > 0) Sim(dt);
 				break;
 			}
-			case "title": Menu(5, TitleAct); break;
+			case "title": Menu(7, TitleAct); break;
+			case "relic": Menu(relicOffers.Count, RelicAct, true); break;
+			case "heat": HeatTick(); break;
+			case "vault": VaultTick(); break;
+			case "memory": MemoryTick(); break;
 			case "skills": SkillsTick(); break;
 			case "sect": Menu(D.SECTS.Length, SectAct, true); if (P(inp.back, prev.back)) state = "weapon"; break;
 			case "weapon": Menu(D.WEAPONS.Length, WeaponAct, true); if (P(inp.back, prev.back)) state = "title"; break;
 			case "meta": Menu(D.META.Length, MetaAct); if (P(inp.back, prev.back)) { state = "title"; menuI = 2; } break;
-			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 3; } break;
+			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 5; } break;
 			case "pick": Menu(offers.Count, PickAct, true); break;
 			case "event": Menu(3, EventAct); break;
 			case "pause": Menu(3, PauseAct); if (P(inp.back, prev.back)) state = "play"; break;
@@ -278,6 +294,8 @@ public partial class Game : MonoBehaviour {
 		}
 	}
 	float endT, stateT;
+	bool heatOpened;
+	int honRun;
 	string lastState = "";
 
 	void Menu(int n, Action<int> act, bool horiz = false) {
@@ -293,7 +311,9 @@ public partial class Game : MonoBehaviour {
 		if (i == 0) { state = "weapon"; menuI = Mathf.Max(0, Array.FindIndex(D.WEAPONS, w => w.id == weaponId)); }
 		else if (i == 1) { state = "skills"; skCol = Mathf.Max(0, Array.FindIndex(D.SKILLS, k => k.id == meta.tk)); skRow = 0; }
 		else if (i == 2) { state = "meta"; menuI = 0; }
-		else if (i == 3) state = "help";
+		else if (i == 3) { state = "vault"; vaultI = 0; }
+		else if (i == 4) { state = "memory"; memI = meta.mem.Count > 0 ? meta.mem[meta.mem.Count - 1] : 0; }
+		else if (i == 5) state = "help";
 		else Application.Quit();
 	}
 	void WeaponAct(int i) {
@@ -304,9 +324,11 @@ public partial class Game : MonoBehaviour {
 		menuI = Mathf.Max(0, Array.FindIndex(D.SECTS, k => k.id == meta.sect));
 	}
 	void SectAct(int i) {
+		if (!TryUnlockSect(i)) return;
 		meta.sect = D.SECTS[i].id;
 		SaveMeta();
-		StartRun();
+		state = "heat";
+		heatI = Mathf.Min(meta.kiep, meta.heatMax);
 	}
 	void MetaAct(int i) {
 		var m = D.META[i];
@@ -330,6 +352,8 @@ public partial class Game : MonoBehaviour {
 		coins = Up("coin") * 25;
 		reviveLeft = Up("revive") > 0;
 		boons.Clear(); slot.Clear();
+		honRun = 0;
+		relics.Clear(); phoenixUsed = false; satky = 0; relicPending = false;
 		seed = rng.Next();
 		hp = 9999; qi = 0;
 		Recalc();
@@ -373,14 +397,16 @@ public partial class Game : MonoBehaviour {
 	void SpawnWave() {
 		wave++;
 		// many weak foes rather than a few strong ones
-		float budget = (2.6f + ch * 1.3f + step * 0.7f + meta.kiep * 0.6f + wave * 0.4f) * 2.1f;
+		float budget = (2.6f + ch * 1.3f + step * 0.7f + meta.kiep * 0f + wave * 0.4f) * 2.1f;
+		bool forceElite = HeatAt(8);
 		float sy0 = PR.yMin + 70, sy1 = PR.yMax - 70;
 		var pool = D.POOLS[ch];
 		int n = 0;
 		while (budget > 0.4f && n < 14) {
 			var d = D.Foe(pool[rng.Next(pool.Length)]);
 			if (d.cost > budget + 0.6f) { if (n > 0 && Rnd() < 0.5f) break; d = D.Foe(pool[0]); }
-			bool elite = Rnd() < 0.1f + ch * 0.06f && budget > d.cost * 2;
+			bool elite = (forceElite || Rnd() < (0.1f + ch * 0.06f) * (HeatAt(2) ? 2 : 1)) && budget > d.cost * 2;
+			if (elite) forceElite = false;
 			Vector2 p = Vector2.zero;
 			for (int tries = 0; tries < 15; tries++) {
 				p = new Vector2(Rnd(PR.xMin + 60, PR.xMax - 60), Rnd(sy0, sy1));
@@ -395,12 +421,12 @@ public partial class Game : MonoBehaviour {
 
 	Foe Spawn(string id, Vector2 p, bool elite) {
 		var d = D.Foe(id);
-		float kiep = 1 + meta.kiep * 0.2f;
+		float kiep = d.boss ? (HeatAt(6) ? 1.3f : 1) : (HeatAt(1) ? 1.25f : 1);
 		var f = new Foe { d = d, pos = Confine(p, d.r), elite = elite, spawn = 0.75f, cd = Rnd(0.3f, 1.2f) };
 		f.maxHp = d.hp * (d.boss ? 1.35f : D.CH_HP[ch] * 0.7f) * kiep * (elite ? 2.3f : 1);
 		f.hp = f.maxHp;
 		f.posMax = d.pos * (elite ? 1.6f : 1) * (d.boss ? 1 : 1 + ch * 0.25f);
-		f.dmgMul = 1.25f * (d.boss ? 1 : D.CH_DMG[ch]) * (1 + meta.kiep * 0.12f) * (elite ? 1.3f : 1);
+		f.dmgMul = 1.25f * (d.boss ? 1 : D.CH_DMG[ch]) * (HeatAt(3) ? 1.15f : 1) * (elite ? 1.3f : 1);
 		f.scale = elite ? 1.22f : 1;
 		if (elite) f.afx = new[] { "bao", "toc", "giap" }[rng.Next(3)];
 		f.mcd = new float[d.moves.Length];
@@ -424,6 +450,7 @@ public partial class Game : MonoBehaviour {
 
 	void Heal(float v) {
 		if (v <= 0 || hp <= 0) return;
+		v *= HealMul();
 		float before = hp;
 		hp = Mathf.Min(maxHp, hp + v);
 		if (hp - before >= 1) Text(ppos + new Vector2(0, 130), "+" + Mathf.RoundToInt(hp - before), new Color(0.5f, 0.9f, 0.5f), 22);
@@ -484,6 +511,7 @@ public partial class Game : MonoBehaviour {
 		if (i < 0 || i >= offers.Count) return;
 		Learn(offers[i].b, offers[i].lvl);
 		state = "play";
+		if (relicPending) { relicPending = false; OpenRelic(); }
 		prev.atk = true; inp.atk = false; buf = 0;
 	}
 
@@ -536,6 +564,7 @@ public partial class Game : MonoBehaviour {
 			case "heal": Heal(40); sfx.Play("pick"); break;
 			case "dan": bonusHp += 15; Recalc(); Heal(15); sfx.Play("pick"); break;
 			case "boon": Learn(it.boon, Lv(it.boon.id) + 1); break;
+			case "relic": OpenRelic(); break;
 			case "luyen": OpenPick("luyen", 0); break;
 			case "tea": Heal(maxHp * 0.4f); sfx.Play("pick"); Toast("Trà ấm, lòng tĩnh."); break;
 			case "ky": state = "event"; menuI = 0; sfx.Play("pick"); break;
@@ -544,6 +573,7 @@ public partial class Game : MonoBehaviour {
 
 	void Die() {
 		if (cheat) { hp = maxHp; return; }
+		if (RelicRevive()) return;
 		if (reviveLeft) {
 			reviveLeft = false;
 			hp = maxHp * 0.4f; inv = 2f;
@@ -556,10 +586,14 @@ public partial class Game : MonoBehaviour {
 	void Win() { EndRun(true); }
 
 	void EndRun(bool win) {
-		earned = rooms * 2 + bossKills * 10 + (win ? 25 : 0);
+		earned = Mathf.RoundToInt((rooms * 2 + bossKills * 10 + (win ? 25 : 0)) * (1 + meta.kiep * J.HEAT_PAY));
+		heatOpened = false;
 		meta.ngo += earned;
 		meta.best = Mathf.Max(meta.best, ch * 6 + step + (win ? 6 : 0));
-		if (win) { meta.wins++; meta.kiep = Mathf.Min(meta.kiep + 1, 9); }
+		if (win) {
+			meta.wins++;
+			if (meta.kiep >= meta.heatMax && meta.heatMax < J.HEAT.Length - 1) { meta.heatMax++; heatOpened = true; }
+		}
 		SaveMeta();
 		state = win ? "win" : "dead";
 		endT = T;
@@ -598,6 +632,7 @@ public partial class Game : MonoBehaviour {
 			if (dashes == dashMax) dashCd = 0.75f;
 			dashes--;
 			act = "dash"; at = 0; guard = false;
+			dashHit.Clear();
 			inv = Mathf.Max(inv, 0.3f);
 			sfx.Play("dash", 0.7f);
 			DashBurst();
@@ -609,6 +644,7 @@ public partial class Game : MonoBehaviour {
 				at += dt;
 				ppos += ddir * 1250 * dt;
 				ghostT -= dt;
+				RelicDash();
 				if (ghostT <= 0) { ghostT = 0.028f; AddGhost(heroSr, ppos, new Color(0.07f, 0.06f, 0.08f, 0.55f), 0.22f); }
 				if (Rnd() < 0.8f) parts.Add(new Part { pos = ppos + new Vector2(0, 50) + RndDir() * 20, vel = -ddir * 60, r = Rnd(8, 18), life = 0.3f, max = 0.3f, col = new Color(0.07f, 0.06f, 0.06f, 0.5f) });
 				if (ddir.x != 0) face = ddir.x > 0 ? 1 : -1;
@@ -646,7 +682,7 @@ public partial class Game : MonoBehaviour {
 					face = adir.x >= 0 ? 1 : -1;
 					break;
 				}
-				Vector2 v = inp.mv * 370 * (guard ? 0.45f : 1) * (chargeT > 0 ? 0.6f : 1) * (1 + frenzy * 0.02f);
+				Vector2 v = inp.mv * 370 * (guard ? 0.45f : 1) * (chargeT > 0 ? 0.6f : 1) * (1 + frenzy * 0.02f) * (Has("phonghai") ? 1.15f : 1);
 				ppos += v * dt;
 				moving = v.sqrMagnitude > 100;
 				if (moving) {

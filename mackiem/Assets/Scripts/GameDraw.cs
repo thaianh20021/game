@@ -193,7 +193,7 @@ public partial class Game {
 		sr.sortingOrder = 22000 - (int)p.y;
 	}
 
-	bool InWorld() { return state == "play" || state == "pick" || state == "event" || state == "pause" || state == "dead" || state == "win"; }
+	bool InWorld() { return state == "play" || state == "pick" || state == "relic" || state == "event" || state == "pause" || state == "dead" || state == "win"; }
 
 	void Render(float rdt) {
 		bool world = InWorld();
@@ -477,6 +477,9 @@ public partial class Game {
 			case "title": GuiTitle(); return;
 			case "skills": GuiSkills(); return;
 			case "sect": GuiSect(); return;
+			case "heat": GuiHeat(); return;
+			case "vault": GuiVault(); return;
+			case "memory": GuiMemory(); return;
 			case "weapon": GuiWeapon(); return;
 			case "meta": GuiMeta(); return;
 			case "help": GuiHelp(); return;
@@ -487,6 +490,7 @@ public partial class Game {
 		GuiSkillHud();
 		if (state == "pick") GuiPick();
 		else if (state == "event") GuiEvent();
+		else if (state == "relic") GuiRelic();
 		else if (state == "pause") GuiPause();
 		else if (state == "dead" || state == "win") GuiEnd();
 	}
@@ -496,15 +500,15 @@ public partial class Game {
 		Lab(new Rect(70, 70, 700, 110), "MẶC KIẾM LỤC", 86, ink, TextAnchor.MiddleLeft, true, false);
 		Seal(new Rect(768, 92, 56, 56), "MẶC", D.RED, 17);
 		Lab(new Rect(76, 176, 700, 34), "một kiếm · một nón lá · ngũ hành trong tay", 22, new Color(0.2f, 0.18f, 0.17f), TextAnchor.MiddleLeft, true, false);
-		string[] m = { "KHỞI HÀNH", "TUYỆT KỸ", "TU LUYỆN", "CÁCH CHƠI", "THOÁT" };
+		string[] m = { "KHỞI HÀNH", "TUYỆT KỸ", "TU LUYỆN", "BẢO KHỐ", "KÝ ỨC", "CÁCH CHƠI", "THOÁT" };
 		for (int i = 0; i < m.Length; i++) {
-			var r = new Rect(76, 256 + i * 58, 320, 50);
+			var r = new Rect(76, 236 + i * 52, 320, 46);
 			bool sel = menuI == i;
 			if (sel) { Box(new Rect(r.x - 14, r.y + 8, 6, 36), D.RED); Box(new Rect(r.x - 4, r.y + 46, 250, 3), new Color(0.07f, 0.06f, 0.06f, 0.6f)); }
-			Lab(r, m[i], sel ? 36 : 30, sel ? D.RED : ink, TextAnchor.MiddleLeft, true, false);
+			Lab(r, m[i], sel ? 32 : 27, sel ? D.RED : ink, TextAnchor.MiddleLeft, true, false);
 			if (Hit(r, i)) TitleAct(i);
 		}
-		Lab(new Rect(76, GH - 70, 800, 30), string.Format("NGỘ TÍNH {0}   ·   HẠ SƠN {1} LẦN   ·   KIẾP NẠN {2}   ·   CHUYẾN ĐI {3}", meta.ngo, meta.wins, meta.kiep, meta.runs), 17, new Color(0.25f, 0.22f, 0.2f), TextAnchor.MiddleLeft, false, false);
+		Lab(new Rect(76, GH - 70, 800, 30), string.Format("NGỘ TÍNH {0}   ·   KIẾM HỒN {1}   ·   HẠ SƠN {2} LẦN   ·   KIẾP NẠN đã mở tới {3}   ·   KÝ ỨC {4}/9", meta.ngo, meta.hon, meta.wins, meta.heatMax, meta.mem.Count), 17, new Color(0.25f, 0.22f, 0.2f), TextAnchor.MiddleLeft, false, false);
 	}
 
 	void Dim(float a) { Box(new Rect(0, 0, GW, GH), new Color(0.05f, 0.04f, 0.04f, a)); }
@@ -569,6 +573,7 @@ public partial class Game {
 			"Đánh tiếp bằng một hành KHÁC lên địch đang mang ẤN:\n" +
 			"   ·  TƯƠNG SINH (Kim-Thủy, Thủy-Mộc, Mộc-Hỏa, Hỏa-Thổ, Thổ-Kim): nổ lan ra chung quanh, hồi nội lực.\n" +
 			"   ·  TƯƠNG KHẮC (các cặp còn lại): đánh sập THẾ, làm địch khựng.\n\n" +
+			"BẢO VẬT rơi từ cửa thưởng, trùm và tinh anh. Hạ trùm được KIẾM HỒN (mở môn phái) và một mảnh KÝ ỨC. Thắng ở KIẾP NẠN cao nhất để mở tầng kế.\n" +
 			"Ba chương nối liền nhau: mỗi chương bốn ải, một trạm dừng và một trùm; cứ đi lên là tới. Ngã xuống thì mất chiêu thức, nhưng NGỘ TÍNH còn lại để TU LUYỆN.";
 		Lab(new Rect(r.x + 40, r.y + 180, r.width - 80, 400), b, 17, new Color(0.15f, 0.13f, 0.12f), TextAnchor.UpperLeft, false, false);
 		Lab(new Rect(r.x, r.yMax - 44, r.width, 30), "ENTER / ESC quay lại", 16, D.RED, TextAnchor.MiddleCenter, false, false);
@@ -634,12 +639,13 @@ public partial class Game {
 			Box(new Rect(29 + i * 13, 102, 4, 16), i < swordsHeld ? new Color(0.93f, 0.95f, 0.97f) : new Color(0.3f, 0.28f, 0.26f));
 		}
 		if (swordsHeld == 0) Lab(new Rect(34 + swordMax * 13, 97, 200, 26), "[R] THU KIẾM", 15, new Color(1f, 0.9f, 0.5f, 0.7f + 0.3f * Mathf.Sin(T * 6)), TextAnchor.MiddleLeft);
+		GuiRelicHud();
 		Lab(new Rect(28, 124, 300, 26), coins + " lượng", 18, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleLeft);
 		// chapter
 		string where = D.CH_NAME[ch] + "   ·   " + (roomKind == "boss" ? "TRÙM" : (SegAt(ppos.y).kind == "rest" ? "TRẠM DỪNG" : "ẢI " + Mathf.Min(step + 1, 4) + "/4"));
 		Lab(new Rect(GW - 520, 18, 496, 30), where, 18, D.PAPER, TextAnchor.MiddleRight, true);
 		if (!cleared && roomKind != "boss" && waves > 0) Lab(new Rect(GW - 520, 46, 496, 24), "ĐỢT " + Mathf.Max(1, wave) + "/" + waves, 15, D.PAPER, TextAnchor.MiddleRight);
-		if (meta.kiep > 0) Lab(new Rect(GW - 520, 68, 496, 22), "KIẾP NẠN " + meta.kiep, 14, new Color(0.9f, 0.5f, 0.4f), TextAnchor.MiddleRight);
+		if (meta.kiep > 0) Lab(new Rect(GW - 520, 68, 496, 22), J.HEAT[meta.kiep].name, 14, new Color(0.9f, 0.5f, 0.4f), TextAnchor.MiddleRight);
 		// learned manuals
 		int row = 0;
 		foreach (var key in D.SLOT_NAME_KEYS) {
@@ -762,9 +768,9 @@ public partial class Game {
 		Dim(0.7f * a);
 		Lab(new Rect(0, 150, GW, 90), win ? "HẠ SƠN" : "KIẾM GÃY", 76, win ? new Color(1f, 0.88f, 0.55f, a) : new Color(0.85f, 0.25f, 0.18f, a), TextAnchor.MiddleCenter, true);
 		Lab(new Rect(0, 240, GW, 34), win ? "Ba ngọn núi đã ở lại sau lưng. Giang hồ thêm một cái tên." : "Mực chưa khô, đường còn dài. Mang NGỘ TÍNH về mà luyện tiếp.", 19, new Color(0.91f, 0.86f, 0.75f, a));
-		string s = string.Format("Tới: {0}  ·  ải thứ {1}\nHạ {2} địch  ·  qua {3} ải  ·  {4} trùm\nThời gian {5}:{6:00}\n\n+{7} NGỘ TÍNH", D.CH_NAME[ch], Mathf.Min(step + 1, 6), kills, rooms, bossKills, (int)(runTime / 60), (int)(runTime % 60), earned);
+		string s = string.Format("Tới: {0}  ·  ải thứ {1}\nHạ {2} địch  ·  qua {3} ải  ·  {4} trùm\nThời gian {5}:{6:00}\n\n+{7} NGỘ TÍNH" + (honRun > 0 ? "   ·   +" + honRun + " KIẾM HỒN" : ""), D.CH_NAME[ch], Mathf.Min(step + 1, 6), kills, rooms, bossKills, (int)(runTime / 60), (int)(runTime % 60), earned);
 		Lab(new Rect(0, 300, GW, 190), s, 21, new Color(0.91f, 0.86f, 0.75f, a));
-		if (win) Lab(new Rect(0, 500, GW, 30), "KIẾP NẠN tăng lên " + meta.kiep + ": chuyến sau địch mạnh hơn.", 17, new Color(0.9f, 0.5f, 0.4f, a));
+		if (win && heatOpened) Lab(new Rect(0, 500, GW, 30), "MỞ " + J.HEAT[meta.heatMax].name + ": " + J.HEAT[meta.heatMax].desc, 17, new Color(0.9f, 0.5f, 0.4f, a));
 		if (T - endT > 1.2f) Lab(new Rect(0, 560, GW, 30), "ENTER về sơn môn", 18, new Color(1f, 0.9f, 0.5f, 0.6f + 0.4f * Mathf.Sin(T * 4)));
 	}
 }

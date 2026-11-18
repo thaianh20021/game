@@ -292,6 +292,7 @@ public static class D {
 			case "shop": return "THƯƠNG NHÂN";
 			case "tra": return "TRÀ QUÁN";
 			case "ky": return "KỲ NGỘ";
+			case "bao": return "BẢO VẬT";
 			case "boss": return "TỬ CHIẾN";
 			case "next": return "LÊN ĐƯỜNG";
 			case "end": return "HẠ SƠN";
@@ -307,6 +308,7 @@ public static class D {
 			case "shop": return "Mua thuốc và bí kíp";
 			case "tra": return "Nghỉ chân, hồi 40% sinh lực";
 			case "ky": return "Gặp cao nhân ẩn thế";
+			case "bao": return "Chọn 1 trong 3 bảo vật";
 			case "boss": return "Trùm cuối chương";
 			case "next": return "Sang chương kế";
 			case "end": return "Kết thúc chuyến đi";
@@ -322,6 +324,7 @@ public static class D {
 			case "shop": return new Color(0.75f, 0.55f, 0.30f);
 			case "tra": return new Color(0.40f, 0.62f, 0.62f);
 			case "ky": return new Color(0.45f, 0.50f, 0.85f);
+			case "bao": return new Color(0.55f, 0.32f, 0.7f);
 		}
 		return new Color(0.15f, 0.12f, 0.12f);
 	}
