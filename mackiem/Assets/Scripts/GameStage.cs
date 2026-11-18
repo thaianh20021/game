@@ -115,9 +115,9 @@ public partial class Game {
 	void BuildWorld() {
 		var r = new System.Random(seed);
 		float y = 500;
-		for (int c = 0; c < 3; c++) {
+		for (int c = 0; c < chaptersN; c++) {
 			float y0 = y - (c == 0 ? 500 : 0);
-			string[] tall = c == 0 ? new[] { "bamboo", "bamboo", "bamboo", "boulder" } : (c == 1 ? new[] { "pillar", "pillar", "lantern", "boulder" } : new[] { "pine", "pine", "boulder" });
+			string[] tall = c == 0 ? new[] { "bamboo", "bamboo", "bamboo", "boulder" } : (c == 1 ? new[] { "pillar", "pillar", "lantern", "boulder" } : (c == 2 ? new[] { "pine", "pine", "boulder" } : new[] { "pillar", "boulder", "boulder" }));
 			var set = D.CH_PROPS[c];
 			for (int s = 0; s < 5; s++) {
 				bool rest = s == 4;
@@ -238,9 +238,10 @@ public partial class Game {
 		PR = s.r;
 		yLo = s.r.yMin; yHi = s.r.yMax;
 		cleared = false; wave = 0; roomT = 0;
-		waves = 2 + (s.step >= 1 ? 1 : 0) + (s.ch >= 1 && s.step >= 3 ? 1 : 0);
+		waves = 2 + (s.step >= 1 ? 1 : 0) + (s.ch >= 1 && s.step >= 3 ? 1 : 0) + (HeatAt(13) ? 1 : 0);
 		spawnT = 0.4f;
 		stains.Clear(); doors.Clear();
+		MechInit(s.ch);
 		sfx.Battle(true);
 		if (s.kind == "boss") {
 			var b = Spawn("boss" + (s.ch + 1), new Vector2(s.r.center.x, s.r.yMax - 190), false);
@@ -253,7 +254,7 @@ public partial class Game {
 	void Populate(Seg s) {
 		Vector2 c = new Vector2(s.r.center.x - 260, s.r.center.y + 110);
 		items.Add(new Item { pos = c, kind = "npc", label = StoryNpc("merchant"), sr = NewSpr("merchant", 130) });
-		AddItem(c + new Vector2(-200, -150), "heal", "KIM SANG DƯỢC\nHồi 40 sinh lực", Mathf.RoundToInt(35 * PriceMul()), "jar", null);
+		if (!HeatAt(14)) AddItem(c + new Vector2(-200, -150), "heal", "KIM SANG DƯỢC\nHồi 40 sinh lực", Mathf.RoundToInt(35 * PriceMul()), "jar", null);
 		AddItem(c + new Vector2(-65, -185), "dan", "LINH ĐAN\n+15 sinh lực tối đa", Mathf.RoundToInt(60 * PriceMul()), "jar", null);
 		var o = MakeOffers(1);
 		if (o.Count > 0) AddItem(c + new Vector2(70, -185), "boon", o[0].b.name + " · CẤP " + o[0].lvl + "\n" + D.Desc(o[0].b, o[0].lvl), Mathf.RoundToInt(70 * PriceMul()), "chest", o[0].b);
@@ -266,6 +267,7 @@ public partial class Game {
 
 	void UpWorld(float dt) {
 		if (fight != null) {
+			MechUpdate(dt);
 			bool any = false;
 			foreach (var f in foes) if (!f.dead) any = true;
 			if (fight.kind == "boss") {
@@ -281,6 +283,7 @@ public partial class Game {
 		var s = SegAt(ppos.y);
 		PR = s.r;
 		if (s.ch != ch) { ch = s.ch; Banner(D.CH_NAME[ch], StoryChapterIntro(ch)); sfx.Play("gong", 0.6f); }
+		if (s.state == 0 && s.kind == "fight" && s.step == 0) MechIntro(s.ch);
 		if (s.state == 0) {
 			if (s.kind == "rest") { s.state = 2; Populate(s); }
 			else if (ppos.y > s.r.yMin + 150 && pickT <= 0) { StartFight(s); return; }
@@ -313,12 +316,12 @@ public partial class Game {
 			Text(ppos + new Vector2(0, 210), "+" + h + " KIẾM HỒN", new Color(0.75f, 0.85f, 1f), 26);
 			if (!HeatAt(4)) Heal(maxHp * 0.3f);
 			AddCoins(60);
-			string[] unl = s.ch == 0 ? new[] { "thuong", "dao" } : (s.ch == 1 ? new[] { "phien", "chuy" } : new[] { "cung" });
+			string[] unl = s.ch == 0 ? new[] { "thuong", "dao" } : (s.ch == 1 ? new[] { "phien", "chuy" } : (s.ch == 2 ? new[] { "cung" } : new string[0]));
 			foreach (var id in unl) if (!meta.unl.Contains(id)) { meta.unl.Add(id); Toast("MỞ KHÓA: " + D.Weapon(id).name); }
 			SaveMeta();
 			pickKind = "bikip"; pickBonus = 1; pickT = 1.4f;
 			Banner("ĐẠI THẮNG", StoryBossDefeat(s.ch));
-			if (s.ch >= 2) doors.Add(new Door { pos = new Vector2(s.r.center.x, s.r.yMax - 10), kind = "end" });
+			if (s.ch >= chaptersN - 1) doors.Add(new Door { pos = new Vector2(s.r.center.x, s.r.yMax - 10), kind = "end" });
 			else yHi = worldTop;
 			return;
 		}
@@ -478,5 +481,6 @@ public partial class Game {
 			fxInk.Line(tail + d * 10 - n * 9, tail + d * 10 + n * 9, 4, D.INK);
 		}
 		DrawSkills();
+		if (fight != null) MechDraw();
 	}
 }

@@ -1,0 +1,182 @@
+# Mặc Kiếm Lục — data shapes for content (original wuxia top-down action roguelike, Unity C#, ink-wash art)
+
+All names and text must be ORIGINAL (no characters, moves or places from existing novels/games). In-game text is Vietnamese with diacritics; names in CAPITALS.
+
+## Foes (C# in Data.cs, static class D)
+```
+new FoeDef { id = "bandit", name = "SƠN TẶC", hp = 44, pos = 40, spd = 150, r = 26, h = 125, keep = 0, cost = 1, guard = false, boss = false,
+  moves = new[] { new Move { rng = 125, min = 0, cd = 1.7f, hpBelow = 1.01f, once = false, steps = new[] { Arc(0.5f, 125, 1.9f, 11, 210) } } } },
+```
+- hp: health; pos: posture bar (stance; full = PHÁ THẾ stun); spd px/s; r body radius; h drawn height px (hero is 125); keep: preferred distance for ranged foes (0 = melee); cost: budget points per spawn (1 weak .. 3 heavy).
+- A Move is chosen when the player is between `min` and `rng` px away and its cooldown `cd` is over; `hpBelow` 0.5 = only below half health; `once` = only one time (boss phase change).
+- Steps (all have `wind` = telegraph time before it hits, `rec` = recovery after):
+  - `Arc(wind, r, w, dmg, lunge = 0, rec = 0.3f)`: melee arc of radius r and width w radians (6.3 = full circle), dashes forward `lunge` px/s while striking.
+  - `Line(wind, len, wid, dmg, dash = false, rec = 0.35f)`: straight thrust; dash = the foe travels to the end.
+  - `new Step { t = "slam", wind, r, dmg, leap = true|false, rec }`: unblockable circle (leap jumps onto the player).
+  - `new Step { t = "shoot", wind, n, spread (radians), spd, dmg, pool = true|false }`: n bullets in a fan; pool leaves a poison puddle.
+  - `new Step { t = "radial", wind, n, spd, dmg }`: n bullets in all directions.
+  - `new Step { t = "ring", wind, spd, dmg, r }`: an expanding ring to radius r (dodge by dashing or parry).
+  - `new Step { t = "rain", wind, n, r, dmg }`: n unblockable circles of radius r around the player.
+  - `Blink()`: teleports beside the player. `Wait(d)`: pause.
+  - `new Step { t = "summon", wind, id = "<foe id>", n }`.
+- Typical damage: weak foe 8-12, heavy 15-24, boss 12-24 per hit. Player has 100-200 HP.
+- Existing foes: bandit, archer, spear, assassin, brute, monk, poison, shield; bosses boss1 (HẮC HỔ TRẠI CHỦ, bandit king, broadsword), boss2 (VÔ MINH THIỀN SƯ, blind abbot, bell and beads), boss3 (BẠCH PHÁT KIẾM THÁNH, white-haired sword saint = the hero's master).
+- Chapters: I Trúc Lâm (bamboo forest), II Cổ Tự (ruined temple), III Tuyết Đỉnh (snowy summit). `D.POOLS[ch]` = foe ids that spawn in chapter ch.
+- Elite affixes exist: BẠO LIỆT (explodes on death), THẦN TỐC (fast), THIẾT GIÁP (armoured until posture break).
+
+## Story
+Hero: last disciple of the burned Mặc Kiếm Môn, chasing the pages of the ink sword manual "Mặc Kiếm Lục". Nine memory fragments: the bandit king stole the first page; the blind abbot was the master's chess friend and knows the fire started in the master's own study; the sword saint IS the master, who burned the sect himself to hide the manual and waits to see who can climb the three peaks; the last page is blank — "write the rest in your own ink". A run goes up the three chapters; death sends the hero back; the story unfolds over many runs.
+
+## Player systems (for effects)
+Five elements KIM MỘC THỦY HỎA THỔ (0..4) with marks and reactions TƯƠNG SINH / TƯƠNG KHẮC; parry (perfect parry), posture break (PHÁ THẾ); flying swords thrown and recalled; manuals (bí kíp, levels 1-3); relics (bảo vật); weapons with rarity 0-3 found in the run; NGỘ TÍNH (meta currency), KIẾM HỒN (boss currency); KIẾP NẠN difficulty tiers 0..9 chosen before a run.
+
+
+Current story data (JSON):
+{
+ "prologue": [
+  "Mặc Kiếm Môn cháy rụi trong một đêm mưa đen.",
+  "Ta tỉnh dậy giữa đống tro tàn, tay vẫn nắm chặt chuôi kiếm lạnh.",
+  "Sư phụ biệt tăm, kiếm phổ rách nát, chỉ còn ba ngọn núi trước mặt.",
+  "Một nét mực chưa khô dẫn lối ta bước vào giang hồ."
+ ],
+ "run_intro": [
+  "Sương sớm phủ kín bậc đá, chuyến đi bắt đầu.",
+  "Tro tàn dưới chân còn ấm, bóng người xưa chưa tan.",
+  "Vết kiếm cũ trên thân trúc nhắc ta đừng vội vung đao.",
+  "Kẻ giữ trang đầu liệu có biết ai châm ngòi lửa?",
+  "Mười năm một ván cờ, sao hôm nay cổ tự lại đóng cửa?",
+  "Lửa cháy từ thư phòng, nhưng chìa khóa lại nằm trong tay người.",
+  "Tuyết phủ đỉnh cao, bóng áo trắng kia quen đến lạ.",
+  "Đoạn đường này không tìm thù, chỉ tìm nét bút cuối cùng."
+ ],
+ "chapters": [
+  {
+   "name": "Trúc Lâm",
+   "intro": "Rừng trúc xào xạc tiếng gió lạnh. Sát khí lẩn khuất sau từng đốt tre.",
+   "boss_intro": [
+    "Tiểu sư đệ, đường núi này không dành cho kẻ bại trận!",
+    "Lại mò tới đây? Trang giấy này ngươi không giành nổi đâu.",
+    "Kiếm của ngươi nặng thêm rồi, nhưng vẫn thiếu một nét tàn nhẫn!"
+   ],
+   "boss_defeat": [
+    "Khụ... ta cướp trang đầu, cũng chỉ học được một nét mực...",
+    "Đêm đó ta thấy người trong thư phòng, không phải ngoại nhân...",
+    "Cầm lấy đi... sư phụ ngươi mới là kẻ đáng sợ nhất..."
+   ]
+  },
+  {
+   "name": "Cổ Tự",
+   "intro": "Chuông chùa tắt tiếng từ lâu. Mùi hương trầm quyện trong tro bụi.",
+   "boss_intro": [
+    "Thí chủ mang sát tâm lên núi, lão tăng đành ra tay cản bước.",
+    "Tâm còn động, kiếm còn lệch. Mời thí chủ thử lại.",
+    "Khá lắm, trong kiếm khí của thí chủ đã có dáng dấp cố nhân."
+   ],
+   "boss_defeat": [
+    "A Di Đà Phật... lửa từ thư phòng, ta chẳng nỡ nói sớm...",
+    "Mỗi năm một ván cờ, ván cuối ông ấy đã tự phá thế...",
+    "Kiếm ở chỗ tâm dừng. Đi tiếp đi, ông ấy đang đợi ngươi."
+   ]
+  },
+  {
+   "name": "Tuyết Đỉnh",
+   "intro": "Gió tuyết cắt da, mây mù cuộn dưới chân. Đỉnh núi chỉ còn một bóng người.",
+   "boss_intro": [
+    "Vượt qua hai ải, để ta xem kiếm của ngươi còn giữ được bản tâm?",
+    "Lại quay về đây sao? Nét kiếm lần trước vẫn còn sơ hở.",
+    "Mũi kiếm đã sạch tạp niệm. Hôm nay, hãy đánh hết sức đi."
+   ],
+   "boss_defeat": [
+    "Khá lắm... nhưng ngươi vẫn chưa đọc hết trang cuối...",
+    "Tuyết lạnh thế này, đừng để mực trong lòng ngươi đông cứng.",
+    "Ta thua rồi. Ngọn lửa năm xưa, nay có thể tắt thật rồi..."
+   ]
+  }
+ ],
+ "npc": {
+  "merchant": [
+   "Đao kiếm vô tình, giữ lấy chút lộ phí phòng thân.",
+   "Lão Hắc Hổ kia cướp hàng khắp vùng, mua thêm thuốc đi.",
+   "Nghe đồn đêm cháy núi, có kẻ vác theo giấy mực chạy xuống.",
+   "Chùa vắng người, nhưng đồ tốt thì vẫn còn giá.",
+   "Lão hòa thượng kia mù mắt, chớ coi thường tai nghe của lão.",
+   "Người ta bảo trận hỏa hoạn đó không có dấu chân kẻ lạ.",
+   "Lên tới tuyết đỉnh mà vẫn sống để mua hàng, hiếm đấy.",
+   "Mực này vẽ tranh không trôi, ngươi có cần không?",
+   "Bạch Phát Kiếm Thánh trên đỉnh kia, nhìn quen mắt lắm phải không?"
+  ],
+  "tea": [
+   "Uống chén trà nóng, lắng nhịp tim trước khi vào rừng.",
+   "Trà đắng lúc đầu, ngọt về sau, giống nét mực đầu tiên.",
+   "Kẻ bị đuổi khỏi sơn môn, uống trà cũng vội vã.",
+   "Nước suối cổ tự pha trà, tâm tĩnh tự khắc thấy đường.",
+   "Lão thiền sư xưa hay tới đây uống trà cùng một vị khách.",
+   "Người ta nói kiếm dừng ở tâm, trà cũng thế.",
+   "Giữa tuyết trắng, một chén trà ấm giữ lại chút nhân tính.",
+   "Người trên đỉnh xưa kia rất thích trà tuyết đỉnh.",
+   "Chén cuối này mời ngươi, uống xong hãy hạ bút."
+  ],
+  "hermit": [
+   "Đao pháp ngoại môn hung hãn, nhưng gốc rễ lại rỗng.",
+   "Một nét khởi bút đủ phân cao thấp, đừng học tham.",
+   "Kẻ giữ giấy chưa chắc hiểu ý người viết.",
+   "Thắng một ván cờ dễ, thắng bản thân khi cầm kiếm mới khó.",
+   "Chìa khóa thư phòng chỉ có một, lửa từ đâu mà ra?",
+   "Đánh tới đây rồi, ngươi đã biết dừng kiếm chưa?",
+   "Bức họa chính điện năm xưa, ngươi còn nhớ nét mặt người?",
+   "Đốt cả môn phái để giấu một cuốn sách, kẻ điên hay bậc thánh?",
+   "Trang cuối để trống, không phải vì viết dở."
+  ]
+ },
+ "death": [
+  "Mực nhòe trên tuyết, ngươi gục xuống trước khi kịp xuất chiêu.",
+  "Tro tàn lại gọi tên ngươi. Chuyến đi này chưa kết thúc.",
+  "Kiếm gãy, tâm loạn, đành làm lại từ chân núi.",
+  "Hơi thở tắt dần, nhưng trang giấy trong ngực vẫn còn nguyên.",
+  "Thất bại chỉ là nét mực hỏng. Hãy mài lại nghiên.",
+  "Màn đêm nuốt chửng bóng kiếm, hẹn ngày mai lên đường."
+ ],
+ "ending_normal": [
+  "Kiếm Thánh thu kiếm, xoay lưng nhìn về biển mây.",
+  "Ngươi qua được ba ngọn núi, nhưng lòng vẫn còn nhiều dấu hỏi.",
+  "Ta đứng giữa đỉnh tuyết, cảm thấy câu chuyện vẫn thiếu mảnh ghép.",
+  "Cầm kiếm xuống núi, ta biết mình sẽ còn quay lại."
+ ],
+ "ending_true": [
+  "Tuyết ngừng rơi. Lão nhân tóc bạc mỉm cười hạ thanh trường kiếm.",
+  "Chính tay người châm lửa thiêu rụi sơn môn để bảo vệ trang phổ.",
+  "Kẻ thù không ở dưới núi, thử thách lớn nhất là ta của hôm nay.",
+  "Sư phụ đưa cho ta trang giấy trắng cuối cùng của Mặc Kiếm Lục.",
+  "Chín mảnh ký ức khớp lại, mực trong nghiên bỗng hóa trong veo.",
+  "Ta nhấc kiếm lên, viết nét đầu tiên của riêng mình giữa nền tuyết."
+ ],
+ "milestones": [
+  {
+   "runs": 1,
+   "text": "Lần đầu gục ngã, mới biết đường lên đỉnh dài hơn tưởng tượng."
+  },
+  {
+   "runs": 3,
+   "text": "Ba lần đổ máu, thân thủ đã quen với nhịp gió rừng trúc."
+  },
+  {
+   "runs": 6,
+   "text": "Sáu chuyến lên xuống, những mảnh ký ức rời rạc dần nối liền."
+  },
+  {
+   "runs": 10,
+   "text": "Mười lần sinh tử, ngươi không còn là đệ tử non nớt năm xưa."
+  }
+ ]
+}
+
+# TASK B — expand the story and the game route. Answer with ONE valid JSON object only (no markdown):
+{
+ "chapter4": {"name": "VÔ TỰ THIÊN", "intro": "2 câu", "boss_intro": ["3 câu của MẶC ẢNH, theo số lần đã bị hạ 0/1/2"], "boss_defeat": ["3 câu"], "unlock_hint": "1 câu gợi ý người chơi cách mở chương IV (cần đủ 9 ký ức rồi hạ Kiếm Thánh)"},
+ "memories_extra": [ {"title": "...", "text": "1-2 câu"} x3 ]  (three more memory fragments for MẶC ẢNH, ids 9..11, they reveal that the shadow is the hero's own hesitation and anger poured into the blank page),
+ "ending_final": ["6 câu: kết cuối cùng sau khi hạ MẶC ẢNH"],
+ "events": [ x12 random roadside encounters (KỲ NGỘ). Each: {"id":"ascii", "title":"VIẾT HOA", "text":"2-3 câu bối cảnh", "chapter": -1 for any or 0..3, "choices":[ 2 or 3 of {"text":"lựa chọn ngắn", "cost_hp":0, "cost_coin":0, "effect":"one of: boon, boon_up, relic, weapon, heal_pct, maxhp, coins, memory_hint, curse_dmg, curse_hp, nothing", "value": number, "result":"1 câu kết quả"} ] } ]
+   Effects: boon = choose a manual one level higher (value ignored); boon_up = upgrade value random owned manuals; relic = choose a relic; weapon = a weapon of minimum rarity value (0-3); heal_pct = heal value percent; maxhp = +value max HP; coins = +value coins (negative = lose); memory_hint = show a line of lore (put it in result); curse_dmg = for the rest of the run foes deal +value percent damage; curse_hp = lose value max HP; nothing.
+   Balance: strong rewards need a real cost. Several events should tie into the story (the fire, the master, the bandit king, the abbot, the blank page).
+ "run_intro_extra": ["8 more run opening lines for runs 9-16, deeper and darker"]
+}

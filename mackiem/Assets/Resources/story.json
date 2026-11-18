@@ -13,7 +13,15 @@
   "Mười năm một ván cờ, sao hôm nay cổ tự lại đóng cửa?",
   "Lửa cháy từ thư phòng, nhưng chìa khóa lại nằm trong tay người.",
   "Tuyết phủ đỉnh cao, bóng áo trắng kia quen đến lạ.",
-  "Đoạn đường này không tìm thù, chỉ tìm nét bút cuối cùng."
+  "Đoạn đường này không tìm thù, chỉ tìm nét bút cuối cùng.",
+  "Gió núi rít qua khe đá như tiếng gào của những kẻ chưa kịp rút kiếm.",
+  "Lửa năm xưa đã tắt, nhưng mùi khét vẫn bám riết lấy từng bước chân ngươi.",
+  "Càng lên cao, ký ức càng rõ: kẻ hủy diệt sơn môn lại chính là người dạy ngươi cầm bút.",
+  "Máu thấm vào nền tuyết chẳng khác gì mực loang trên trang giấy cũ.",
+  "Mỗi lần ngã xuống, bóng đen trong lòng lại lớn thêm một tấc.",
+  "Nếu trang cuối vẫn bỏ trống, liệu chuyến đi này có khác gì một vòng luân hồi?",
+  "Sư phụ đợi trên đỉnh, còn cái bóng của chính ngươi đang đợi sau trang giấy.",
+  "Đừng mang lòng báo thù lên núi nữa, thứ ngươi sắp chém chính là chấp niệm của mình."
  ],
  "chapters": [
   {
@@ -56,6 +64,20 @@
     "Khá lắm... nhưng ngươi vẫn chưa đọc hết trang cuối...",
     "Tuyết lạnh thế này, đừng để mực trong lòng ngươi đông cứng.",
     "Ta thua rồi. Ngọn lửa năm xưa, nay có thể tắt thật rồi..."
+   ]
+  },
+  {
+   "name": "VÔ TỰ THIÊN",
+   "intro": "Trang giấy trắng bỗng cuốn lấy ánh nhìn, kéo tâm thức ngươi vào cõi mực đặc quánh. Nơi đây không có gió tuyết, chỉ còn tiếng kiếm vang vọng từ chính chấp niệm trong lòng.",
+   "boss_intro": [
+    "Ngươi cầm bút mà tay run, lấy gì đòi viết tiếp trang cuối của Mặc Kiếm Lục?",
+    "Lại bước vào cõi mực sao? Mọi do dự và oán hận của ngươi đều tụ thành lưỡi kiếm của ta.",
+    "Mực đã bớt đục rồi đấy, nhưng chỉ cần một thoáng chần chừ, ta vẫn sẽ nuốt chửng ngươi."
+   ],
+   "boss_defeat": [
+    "Khá lắm... ngươi dám chém thẳng vào nỗi sợ của chính mình.",
+    "Nét mực đen kịt đang tan ra... hóa ra ta chưa từng là kẻ địch bên ngoài.",
+    "Không còn do dự, không còn oán thù. Trang giấy trắng kia nay thuộc về ngươi."
    ]
   }
  ],
@@ -133,5 +155,24 @@
    "runs": 10,
    "text": "Mười lần sinh tử, ngươi không còn là đệ tử non nớt năm xưa."
   }
+ ],
+ "unlock_hint": "Hãy thu thập đủ chín mảnh ký ức rồi đánh bại Bạch Phát Kiếm Thánh để bước vào Vô Tự Thiên.",
+ "ending_final": [
+  "Mặc Ảnh tan thành làn khói nhẹ, hòa vào trang giấy trắng vừa mở ra trước mắt.",
+  "Cõi mực mịt mùng rút dần, trả lại đỉnh tuyết lặng lẽ dưới ánh bình minh.",
+  "Ngươi tra kiếm vào vỏ, không còn tiếng gào thét của đêm cháy sơn môn năm nào.",
+  "Tro tàn Mặc Kiếm Môn đã nguội, nhưng nét kiếm của môn phái chưa từng đứt đoạn.",
+  "Dùng mũi kiếm thay bút, ngươi vạch một đường dứt khoát lên nền giấy tinh khôi.",
+  "Chương cũ khép lại trong tuyết trắng, còn giang hồ phía trước mới bắt đầu từ nét mực hôm nay."
+ ],
+ "mem_extra_title": [
+  "MỰC ĐEN TRONG TÂM",
+  "NÉT BÚT DO DỰ",
+  "TRANG TRẮNG ĐỢI NGƯỜI"
+ ],
+ "mem_extra": [
+  "Khi nhìn vào trang giấy trắng, nỗi nghi ngờ sư phụ và cơn giận mất môn phái hóa thành hình hài đen kịt. Mặc Ảnh không bước ra từ cuốn sách, mà từ vết nứt trong chính đạo tâm của ngươi.",
+  "Bao lần gục ngã dưới chân núi, ngươi tự hỏi mình tìm chân tướng hay chỉ tìm cớ trả thù. Mỗi lần chùn tay là một lần ngươi tự tô thêm mực cho bóng tối đối diện.",
+  "Sư phụ để trống trang cuối vì không ai viết hộ cuộc đời kẻ khác. Chỉ khi chém tan Mặc Ảnh, nét kiếm đầu tiên mới thật sự là mực của chính ngươi."
  ]
 }

@@ -1,0 +1,2 @@
+finish=stop usage={'prompt_tokens': 8647, 'completion_tokens': 3613, 'total_tokens': 12260, 'completion_tokens_details': {'reasoning_tokens': 4315}}
+DONE

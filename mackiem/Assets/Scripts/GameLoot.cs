@@ -89,7 +89,9 @@ public partial class Game {
 		Text(at + new Vector2(0, 150), RAR_NAME[it.rar] + "!", RAR_COL[it.rar], 24);
 	}
 
+	float wpCool;
 	void PickWeaponItem(Item it) {
+		if (T < wpCool) return;
 		wOffers.Clear();
 		wOffers.Add(it.wi);
 		state = "wpick"; menuI = 0;
@@ -109,6 +111,7 @@ public partial class Game {
 			}
 		}
 		pendingGround = null;
+		wpCool = T + 2f;
 		state = "play";
 		prev.atk = true; inp.atk = false; buf = 0;
 	}

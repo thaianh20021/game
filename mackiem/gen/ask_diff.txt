@@ -1,0 +1,40 @@
+# Mặc Kiếm Lục — data shapes for content (original wuxia top-down action roguelike, Unity C#, ink-wash art)
+
+All names and text must be ORIGINAL (no characters, moves or places from existing novels/games). In-game text is Vietnamese with diacritics; names in CAPITALS.
+
+## Foes (C# in Data.cs, static class D)
+```
+new FoeDef { id = "bandit", name = "SƠN TẶC", hp = 44, pos = 40, spd = 150, r = 26, h = 125, keep = 0, cost = 1, guard = false, boss = false,
+  moves = new[] { new Move { rng = 125, min = 0, cd = 1.7f, hpBelow = 1.01f, once = false, steps = new[] { Arc(0.5f, 125, 1.9f, 11, 210) } } } },
+```
+- hp: health; pos: posture bar (stance; full = PHÁ THẾ stun); spd px/s; r body radius; h drawn height px (hero is 125); keep: preferred distance for ranged foes (0 = melee); cost: budget points per spawn (1 weak .. 3 heavy).
+- A Move is chosen when the player is between `min` and `rng` px away and its cooldown `cd` is over; `hpBelow` 0.5 = only below half health; `once` = only one time (boss phase change).
+- Steps (all have `wind` = telegraph time before it hits, `rec` = recovery after):
+  - `Arc(wind, r, w, dmg, lunge = 0, rec = 0.3f)`: melee arc of radius r and width w radians (6.3 = full circle), dashes forward `lunge` px/s while striking.
+  - `Line(wind, len, wid, dmg, dash = false, rec = 0.35f)`: straight thrust; dash = the foe travels to the end.
+  - `new Step { t = "slam", wind, r, dmg, leap = true|false, rec }`: unblockable circle (leap jumps onto the player).
+  - `new Step { t = "shoot", wind, n, spread (radians), spd, dmg, pool = true|false }`: n bullets in a fan; pool leaves a poison puddle.
+  - `new Step { t = "radial", wind, n, spd, dmg }`: n bullets in all directions.
+  - `new Step { t = "ring", wind, spd, dmg, r }`: an expanding ring to radius r (dodge by dashing or parry).
+  - `new Step { t = "rain", wind, n, r, dmg }`: n unblockable circles of radius r around the player.
+  - `Blink()`: teleports beside the player. `Wait(d)`: pause.
+  - `new Step { t = "summon", wind, id = "<foe id>", n }`.
+- Typical damage: weak foe 8-12, heavy 15-24, boss 12-24 per hit. Player has 100-200 HP.
+- Existing foes: bandit, archer, spear, assassin, brute, monk, poison, shield; bosses boss1 (HẮC HỔ TRẠI CHỦ, bandit king, broadsword), boss2 (VÔ MINH THIỀN SƯ, blind abbot, bell and beads), boss3 (BẠCH PHÁT KIẾM THÁNH, white-haired sword saint = the hero's master).
+- Chapters: I Trúc Lâm (bamboo forest), II Cổ Tự (ruined temple), III Tuyết Đỉnh (snowy summit). `D.POOLS[ch]` = foe ids that spawn in chapter ch.
+- Elite affixes exist: BẠO LIỆT (explodes on death), THẦN TỐC (fast), THIẾT GIÁP (armoured until posture break).
+
+## Story
+Hero: last disciple of the burned Mặc Kiếm Môn, chasing the pages of the ink sword manual "Mặc Kiếm Lục". Nine memory fragments: the bandit king stole the first page; the blind abbot was the master's chess friend and knows the fire started in the master's own study; the sword saint IS the master, who burned the sect himself to hide the manual and waits to see who can climb the three peaks; the last page is blank — "write the rest in your own ink". A run goes up the three chapters; death sends the hero back; the story unfolds over many runs.
+
+## Player systems (for effects)
+Five elements KIM MỘC THỦY HỎA THỔ (0..4) with marks and reactions TƯƠNG SINH / TƯƠNG KHẮC; parry (perfect parry), posture break (PHÁ THẾ); flying swords thrown and recalled; manuals (bí kíp, levels 1-3); relics (bảo vật); weapons with rarity 0-3 found in the run; NGỘ TÍNH (meta currency), KIẾM HỒN (boss currency); KIẾP NẠN difficulty tiers 0..9 chosen before a run.
+
+
+# TASK C — difficulty. Answer with ONE valid JSON object only:
+{
+ "heat_extra": [ x6 new KIẾP NẠN tiers 10..15, each {"name":"KIẾP X","desc":"Vietnamese one line","rule":"one of: foe_hp_pct, foe_dmg_pct, foe_speed_pct, elite_extra, boss_hp_pct, heal_pct_minus, no_shop_heal, reward_less, posture_pct, wave_extra","value":number} ],
+ "chapter_scaling": {"hp":[4 multipliers for chapters I-IV], "dmg":[4 multipliers]},
+ "affixes_extra": [ x3 new elite affixes {"id":"ascii","name":"VIẾT HOA","desc":"Vietnamese","behaviour":"one of: reflect_projectiles, heal_allies, split_on_death, shield_aura, teleport_when_hit, enrage_low_hp"} ],
+ "notes": "3 short sentences in Vietnamese on how the curve should feel (Warm Snow-like: early runs hard but learnable, later tiers demand builds)"
+}

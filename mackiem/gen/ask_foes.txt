@@ -1,0 +1,39 @@
+# Mặc Kiếm Lục — data shapes for content (original wuxia top-down action roguelike, Unity C#, ink-wash art)
+
+All names and text must be ORIGINAL (no characters, moves or places from existing novels/games). In-game text is Vietnamese with diacritics; names in CAPITALS.
+
+## Foes (C# in Data.cs, static class D)
+```
+new FoeDef { id = "bandit", name = "SƠN TẶC", hp = 44, pos = 40, spd = 150, r = 26, h = 125, keep = 0, cost = 1, guard = false, boss = false,
+  moves = new[] { new Move { rng = 125, min = 0, cd = 1.7f, hpBelow = 1.01f, once = false, steps = new[] { Arc(0.5f, 125, 1.9f, 11, 210) } } } },
+```
+- hp: health; pos: posture bar (stance; full = PHÁ THẾ stun); spd px/s; r body radius; h drawn height px (hero is 125); keep: preferred distance for ranged foes (0 = melee); cost: budget points per spawn (1 weak .. 3 heavy).
+- A Move is chosen when the player is between `min` and `rng` px away and its cooldown `cd` is over; `hpBelow` 0.5 = only below half health; `once` = only one time (boss phase change).
+- Steps (all have `wind` = telegraph time before it hits, `rec` = recovery after):
+  - `Arc(wind, r, w, dmg, lunge = 0, rec = 0.3f)`: melee arc of radius r and width w radians (6.3 = full circle), dashes forward `lunge` px/s while striking.
+  - `Line(wind, len, wid, dmg, dash = false, rec = 0.35f)`: straight thrust; dash = the foe travels to the end.
+  - `new Step { t = "slam", wind, r, dmg, leap = true|false, rec }`: unblockable circle (leap jumps onto the player).
+  - `new Step { t = "shoot", wind, n, spread (radians), spd, dmg, pool = true|false }`: n bullets in a fan; pool leaves a poison puddle.
+  - `new Step { t = "radial", wind, n, spd, dmg }`: n bullets in all directions.
+  - `new Step { t = "ring", wind, spd, dmg, r }`: an expanding ring to radius r (dodge by dashing or parry).
+  - `new Step { t = "rain", wind, n, r, dmg }`: n unblockable circles of radius r around the player.
+  - `Blink()`: teleports beside the player. `Wait(d)`: pause.
+  - `new Step { t = "summon", wind, id = "<foe id>", n }`.
+- Typical damage: weak foe 8-12, heavy 15-24, boss 12-24 per hit. Player has 100-200 HP.
+- Existing foes: bandit, archer, spear, assassin, brute, monk, poison, shield; bosses boss1 (HẮC HỔ TRẠI CHỦ, bandit king, broadsword), boss2 (VÔ MINH THIỀN SƯ, blind abbot, bell and beads), boss3 (BẠCH PHÁT KIẾM THÁNH, white-haired sword saint = the hero's master).
+- Chapters: I Trúc Lâm (bamboo forest), II Cổ Tự (ruined temple), III Tuyết Đỉnh (snowy summit). `D.POOLS[ch]` = foe ids that spawn in chapter ch.
+- Elite affixes exist: BẠO LIỆT (explodes on death), THẦN TỐC (fast), THIẾT GIÁP (armoured until posture break).
+
+## Story
+Hero: last disciple of the burned Mặc Kiếm Môn, chasing the pages of the ink sword manual "Mặc Kiếm Lục". Nine memory fragments: the bandit king stole the first page; the blind abbot was the master's chess friend and knows the fire started in the master's own study; the sword saint IS the master, who burned the sect himself to hide the manual and waits to see who can climb the three peaks; the last page is blank — "write the rest in your own ink". A run goes up the three chapters; death sends the hero back; the story unfolds over many runs.
+
+## Player systems (for effects)
+Five elements KIM MỘC THỦY HỎA THỔ (0..4) with marks and reactions TƯƠNG SINH / TƯƠNG KHẮC; parry (perfect parry), posture break (PHÁ THẾ); flying swords thrown and recalled; manuals (bí kíp, levels 1-3); relics (bảo vật); weapons with rarity 0-3 found in the run; NGỘ TÍNH (meta currency), KIẾM HỒN (boss currency); KIẾP NẠN difficulty tiers 0..9 chosen before a run.
+
+
+# TASK A — foes and bosses (answer with C# only, no prose, no markdown fences)
+1. Six NEW foes (two for chapter II, two for chapter III, two for the new chapter IV described below). Each a full `new FoeDef {...},` line using only the step kinds above, with 1-3 moves that create a distinct threat (e.g. a foe that punishes standing still, one that shields others, one that forces dashing). After each foe write a C# comment line: `// LOOK: <English visual description for an artist, 15-25 words, full body, what it holds>`.
+2. For each existing boss (boss1, boss2, boss3) ONE extra phase-2 move: `new Move { ... hpBelow = 0.5f ... }` as a C# line prefixed by a comment `// boss1`, `// boss2`, `// boss3`. Make phase 2 clearly harder.
+3. A new chapter IV boss `boss4` named "MẶC ẢNH" — the hero's own ink shadow (same sword style as the hero: fast slashes, dashes, thrown flying swords as `shoot` with high spd, a parry-punishing ring). hp 1350, 5-6 moves including a phase-2 move. Full `new FoeDef {...},`.
+4. A C# line: `public static readonly string[][] POOLS = {...};` with FOUR chapter pools (repeat ids to weight them) including the new foes in their chapters.
+Chapter IV: "VÔ TỰ THIÊN" (the Wordless Heaven) — a realm of blank paper and drifting ink inside the master's last page, reached only on the true route.

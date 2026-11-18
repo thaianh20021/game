@@ -1,0 +1,380 @@
+{
+ "events": [
+  {
+   "id": "burned_shrine",
+   "title": "MIẾU TRO TÀN",
+   "text": "Ngôi miếu nhỏ ven đường cháy đen phân nửa, trên vách vẫn còn ấn ký của Mặc Kiếm Môn. Dưới đống tro nguội lạnh phảng phất mùi hương trầm quen thuộc.",
+   "chapter": -1,
+   "choices": [
+    {
+     "text": "Dâng máu tế cố nhân",
+     "cost_hp": 20,
+     "cost_coin": 0,
+     "effect": "boon",
+     "value": 1,
+     "result": "Huyết khí đánh thức tàn thức trên bia đá, một trang bí kíp hiện ra."
+    },
+    {
+     "text": "Lục tìm trong lớp tro",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "memory_hint",
+     "value": 0,
+     "result": "Trong tro vẫn còn mùi trầm từ thư phòng sư phụ, không phải lửa dầu của kẻ cướp."
+    },
+    {
+     "text": "Chắp tay nghỉ một khắc",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "heal_pct",
+     "value": 15,
+     "result": "Khoảnh khắc tĩnh tâm giúp nhịp thở điều hòa, thương thế dịu bớt."
+    }
+   ]
+  },
+  {
+   "id": "bandit_stash",
+   "title": "KHO TÀNG HẮC HỔ",
+   "text": "Sau khóm trúc rậm giấu một chiếc rương sắt khắc dấu đầu hổ. Mép khóa có vết tẩm độc xanh, bên cạnh rơi vãi vài túi bạc và sổ sách cũ.",
+   "chapter": 0,
+   "choices": [
+    {
+     "text": "Phá khóa đoạt bảo vật",
+     "cost_hp": 25,
+     "cost_coin": 0,
+     "effect": "relic",
+     "value": 1,
+     "result": "Kim độc sượt qua tay, nhưng ngươi đoạt được món bảo vật cướp từ thương đội."
+    },
+    {
+     "text": "Chỉ lấy túi bạc ngoài",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "coins",
+     "value": 45,
+     "result": "Ngươi thu gọn số bạc vương vãi rồi rút lui trước khi tuần sơn tới."
+    },
+    {
+     "text": "Đọc cuốn sổ trại cướp",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "memory_hint",
+     "value": 0,
+     "result": "Trang sổ ghi rõ Hắc Hổ chỉ nhặt được tờ giấy bay ra từ đám cháy, không hề phóng hỏa."
+    }
+   ]
+  },
+  {
+   "id": "ink_peddler",
+   "title": "LÃO BÁN MỰC MÙ",
+   "text": "Một lão nhân mù ngồi bên tảng đá, bày ra vài thỏi mực tùng và ống trúc đựng kiếm. Dù không thấy đường, đôi tai lão khẽ động theo từng nhịp chân ngươi.",
+   "chapter": -1,
+   "choices": [
+    {
+     "text": "Mua thỏi mực cổ",
+     "cost_hp": 0,
+     "cost_coin": 60,
+     "effect": "boon_up",
+     "value": 2,
+     "result": "Mực mài ra tỏa hương lạnh, giúp hai môn bí kíp trong người ngươi tinh tiến."
+    },
+    {
+     "text": "Đổi máu thử kiếm",
+     "cost_hp": 30,
+     "cost_coin": 0,
+     "effect": "weapon",
+     "value": 2,
+     "result": "Lão nhân rút từ ống trúc một thanh binh khí sắc lạnh trao cho kẻ dám đổ máu."
+    },
+    {
+     "text": "Hỏi chuyện đêm cháy núi",
+     "cost_hp": 0,
+     "cost_coin": 25,
+     "effect": "memory_hint",
+     "value": 0,
+     "result": "Lão khẽ cười nói đêm đó chỉ có một người đứng trên mái thư phòng tay cầm mồi lửa."
+    }
+   ]
+  },
+  {
+   "id": "abbot_chess",
+   "title": "BÀN CỜ DANG DỞ",
+   "text": "Trước cổng cổ tự đặt một bàn cờ đá bám rêu, quân đen trắng vẫn còn dang dở. Thế cờ bức bách như cố ý dồn cả hai bên vào chỗ chết.",
+   "chapter": 1,
+   "choices": [
+    {
+     "text": "Đặt quân phá thế",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "maxhp",
+     "value": 15,
+     "result": "Thế cờ mở ra thông suốt, kinh mạch toàn thân như được khơi rộng thêm."
+    },
+    {
+     "text": "Nộp tiền công đức",
+     "cost_hp": 0,
+     "cost_coin": 50,
+     "effect": "boon",
+     "value": 1,
+     "result": "Tiếng chuông khẽ ngân, một quyển tâm pháp xuất hiện bên cạnh bàn đá."
+    },
+    {
+     "text": "Ngắm kỹ nước cờ cuối",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "memory_hint",
+     "value": 0,
+     "result": "Nước cờ tự sát này giống hệt cách sư phụ tự đốt sơn môn để giữ lại Mặc Kiếm Lục."
+    }
+   ]
+  },
+  {
+   "id": "broken_bell",
+   "title": "ĐẠI HỒNG CHUNG VỠ",
+   "text": "Quả chuông đồng lớn đổ nghiêng giữa sân chùa, thân chuông hằn sâu vết chém sắc lẹm. Chỉ cần gió thổi qua, lòng chuông lại ngân lên dư âm trầm đục.",
+   "chapter": 1,
+   "choices": [
+    {
+     "text": "Dùng nội lực rung chuông",
+     "cost_hp": 20,
+     "cost_coin": 0,
+     "effect": "boon_up",
+     "value": 1,
+     "result": "Sóng âm dội ngược làm ngực đau nhói, nhưng một môn bí kíp lập tức ngộ ra tầng mới."
+    },
+    {
+     "text": "Ngồi thiền dưới mái hiên",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "heal_pct",
+     "value": 35,
+     "result": "Tiếng gió lùa qua vết nứt chuông giúp vết thương dần khép miệng."
+    }
+   ]
+  },
+  {
+   "id": "snow_grave",
+   "title": "MỘ KIẾM TRÊN ĐỈNH",
+   "text": "Giữa triền tuyết trắng nổi lên một gò đá nhỏ, chuôi kiếm lạnh buốt cắm sâu xuống nền băng. Mặt bia bị gió bào mòn chỉ còn sót lại vài nét khắc mạnh mẽ.",
+   "chapter": 2,
+   "choices": [
+    {
+     "text": "Rút thanh kiếm đóng băng",
+     "cost_hp": 30,
+     "cost_coin": 0,
+     "effect": "weapon",
+     "value": 3,
+     "result": "Hàn khí xuyên thấu kinh mạch, nhưng ngươi giành được thanh kiếm tuyệt phẩm."
+    },
+    {
+     "text": "Lau tuyết đọc bia đá",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "memory_hint",
+     "value": 0,
+     "result": "Bia khắc lời Kiếm Thánh rằng kẻ viết tiếp trang trắng mới thật sự kế thừa Mặc Kiếm Môn."
+    },
+    {
+     "text": "Hấp thu chút linh khí sót",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "heal_pct",
+     "value": 30,
+     "result": "Hơi ấm mỏng manh từ kiếm mộ giúp sinh lực ngươi hồi phục."
+    }
+   ]
+  },
+  {
+   "id": "cursed_toll",
+   "title": "ẢI ĐỘC SƯƠNG MÙ",
+   "text": "Con đường độc đạo bị đám thảo khấu bịt mặt giăng lưới độc chắn ngang. Chúng vừa đòi bạc qua ải, vừa lăm le thả ống khói tím.",
+   "chapter": -1,
+   "choices": [
+    {
+     "text": "Nộp bạc để qua ải",
+     "cost_hp": 0,
+     "cost_coin": 50,
+     "effect": "nothing",
+     "value": 0,
+     "result": "Chúng nhường đường sau khi đếm đủ bạc, tránh được một trận hao tổn."
+    },
+    {
+     "text": "Xông thẳng qua sương độc",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "curse_hp",
+     "value": 15,
+     "result": "Khí độc ngấm vào tạng phủ khi ngươi phá vây, làm sinh mệnh tối đa suy giảm."
+    },
+    {
+     "text": "Chém hạ tên cầm đầu",
+     "cost_hp": 20,
+     "cost_coin": 0,
+     "effect": "coins",
+     "value": 80,
+     "result": "Ngươi bị chém sượt vai nhưng đánh gục tên đầu lĩnh và thu toàn bộ tiền cướp."
+    }
+   ]
+  },
+  {
+   "id": "blank_scroll_altar",
+   "title": "ĐÀN TẾ VÔ TỰ",
+   "text": "Giữa khoảng không đen đặc của Vô Tự Thiên hiện ra một bệ đá phủ giấy trắng tinh. Khi ngươi tiến lại gần, từng giọt mực từ bệ đá bỗng trào lên như biết thở.",
+   "chapter": 3,
+   "choices": [
+    {
+     "text": "Nhỏ máu lên trang trắng",
+     "cost_hp": 25,
+     "cost_coin": 0,
+     "effect": "boon_up",
+     "value": 2,
+     "result": "Máu hòa vào mực đen, khiến hai môn bí kíp bùng phát uy lực."
+    },
+    {
+     "text": "Đoạt lấy vật phẩm trong mực",
+     "cost_hp": 0,
+     "cost_coin": 45,
+     "effect": "relic",
+     "value": 1,
+     "result": "Số bạc tan biến vào trang giấy, đổi lại một món bảo vật cổ xưa trồi lên."
+    },
+    {
+     "text": "Soi mình trên mặt mực",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "memory_hint",
+     "value": 0,
+     "result": "Bóng người trong mực không phải sư phụ, mà là khuôn mặt đầy oán hận của chính ngươi."
+    }
+   ]
+  },
+  {
+   "id": "bamboo_shack",
+   "title": "LỀU THỢ SĂN BỎ HOANG",
+   "text": "Căn lều tre cũ kỹ bên sườn núi còn sót lại một bình ngọc xanh và chiếc túi vải buộc chặt. Sàn gỗ đầy vết trầy xước như từng có kẻ vội vã đặt bẫy.",
+   "chapter": 0,
+   "choices": [
+    {
+     "text": "Uống cạn bình ngọc xanh",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "maxhp",
+     "value": 12,
+     "result": "Dược lực ấm áp lan tỏa, nâng cao thể phách của ngươi."
+    },
+    {
+     "text": "Cắt dây mở túi vải",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "curse_dmg",
+     "value": 12,
+     "result": "Cơ quan bật mở phun sương độc, khiến thương thế từ đòn địch về sau nặng hơn."
+    },
+    {
+     "text": "Bỏ qua, nghỉ chân bên hiên",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "heal_pct",
+     "value": 20,
+     "result": "Ngươi không tham vật lạ, bình yên dưỡng sức một chặng."
+    }
+   ]
+  },
+  {
+   "id": "ink_well",
+   "title": "GIẾNG MỰC CỔ",
+   "text": "Miệng giếng đá sâu thẳm không chứa nước mà đầy chất lỏng đen ánh mùi khói thông. Dưới đáy giếng thấp thoáng ánh thép lạnh của thứ gì đó bị ném xuống từ lâu.",
+   "chapter": -1,
+   "choices": [
+    {
+     "text": "Ném bạc cầu kiếm",
+     "cost_hp": 0,
+     "cost_coin": 70,
+     "effect": "weapon",
+     "value": 2,
+     "result": "Khi bạc chìm xuống, một thanh binh khí đen bóng tự trồi lên khỏi mặt giếng."
+    },
+    {
+     "text": "Thò tay vớt quyển sách",
+     "cost_hp": 20,
+     "cost_coin": 0,
+     "effect": "boon",
+     "value": 1,
+     "result": "Nước giếng lạnh buốt làm máu huyết ngưng trệ, nhưng ngươi vớt được một trang bí kíp."
+    },
+    {
+     "text": "Nhìn xuống mặt giếng",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "memory_hint",
+     "value": 0,
+     "result": "Mặt giếng hiện lại cảnh sư phụ đóng chặt cửa thư phòng trước khi ngọn lửa bùng lên."
+    }
+   ]
+  },
+  {
+   "id": "frozen_tea_stall",
+   "title": "QUÁN TRÀ ĐÓNG BĂNG",
+   "text": "Quán trà nhỏ trên dốc tuyết đã bỏ hoang, nhưng ấm đất trên bếp than tàn vẫn còn hơi ấm. Trên mặt bàn gỗ phủ sương có vài nét kiếm vạch sâu thành hình chữ.",
+   "chapter": 2,
+   "choices": [
+    {
+     "text": "Pha ấm trà tuyết đỉnh",
+     "cost_hp": 0,
+     "cost_coin": 30,
+     "effect": "heal_pct",
+     "value": 45,
+     "result": "Chén trà nóng xua tan giá rét, khí huyết hồi phục rõ rệt."
+    },
+    {
+     "text": "Tìm dưới lớp tuyết sau bàn",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "relic",
+     "value": 1,
+     "result": "Dưới lớp tuyết dày là chiếc ấn tín cũ của sơn môn vẫn còn linh lực."
+    },
+    {
+     "text": "Lần theo nét kiếm trên gỗ",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "boon",
+     "value": 1,
+     "result": "Những vết chém trên mặt bàn giúp ngươi lĩnh hội thêm một môn bí kíp."
+    }
+   ]
+  },
+  {
+   "id": "shadow_mirror",
+   "title": "GƯƠNG MỰC VỠ",
+   "text": "Vô số mảnh gương đen lơ lửng giữa hư không, phản chiếu những lần ngươi gục ngã. Từ khe nứt của tấm gương lớn nhất vọng ra tiếng thì thầm quen thuộc.",
+   "chapter": 3,
+   "choices": [
+    {
+     "text": "Chém nát mảnh gương lớn",
+     "cost_hp": 20,
+     "cost_coin": 0,
+     "effect": "maxhp",
+     "value": 20,
+     "result": "Mảnh vỡ cứa rách tay áo, nhưng tâm cảnh thông suốt giúp khí huyết dồi dào hơn."
+    },
+    {
+     "text": "Lắng nghe tiếng thì thầm",
+     "cost_hp": 0,
+     "cost_coin": 0,
+     "effect": "curse_hp",
+     "value": 10,
+     "result": "Nỗi hối tiếc tràn vào tâm trí, bào mòn một phần nguyên khí của ngươi."
+    },
+    {
+     "text": "Nạp bạc hút tinh hoa mực",
+     "cost_hp": 0,
+     "cost_coin": 65,
+     "effect": "boon_up",
+     "value": 1,
+     "result": "Bạc vụn hóa thành tro khi chạm gương, đổi lấy một tầng thăng tiến cho bí kíp."
+    }
+   ]
+  }
+ ]
+}

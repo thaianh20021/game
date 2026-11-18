@@ -48,7 +48,7 @@ public partial class Game {
 			Vector2 to = ppos - f.pos;
 			float dist = to.magnitude;
 			Vector2 dir = dist > 0.01f ? to / dist : Vector2.right;
-			float sp = f.d.spd * (f.slow > 0 ? 0.55f : 1) * (f.elite ? 1.1f : 1) * (f.afx == "toc" ? 1.45f : 1);
+			float sp = f.d.spd * (f.slow > 0 ? 0.55f : 1) * (f.elite ? 1.1f : 1) * (f.afx == "toc" ? 1.45f : 1) * (f.afx == "frenzy" && f.hp < f.maxHp * 0.5f ? 1.5f : 1) * (HeatAt(15) ? 1.2f : 1);
 			if (f.mv != null) { RunStep(f, dt, dir); f.pos = Confine(f.pos, f.d.r); continue; }
 			// choose a move
 			// only a few foes wind up at once, so a crowd stays readable
@@ -66,7 +66,7 @@ public partial class Game {
 					var mv = f.d.moves[pick];
 					f.used[pick] = true;
 					float rage = f.d.boss && hpF < 0.5f ? 0.7f : 1;
-					f.mcd[pick] = mv.cd * rage * Rnd(0.9f, 1.2f) * (HeatAt(7) ? 0.8f : 1);
+					f.mcd[pick] = mv.cd * rage * Rnd(0.9f, 1.2f) * (HeatAt(7) ? 0.8f : 1) * (HeatAt(15) ? 0.85f : 1) * (f.afx == "frenzy" && f.hp < f.maxHp * 0.5f ? 0.6f : 1);
 					f.mv = mv; f.si = 0;
 					StartStep(f);
 					continue;
@@ -209,7 +209,7 @@ public partial class Game {
 			hurtFx = 0.4f;
 			Puff(ppos, D.RED, 8, 220);
 		}
-		dmg *= HurtTakenMul();
+		dmg *= HurtTakenMul() * (1f + runCurseDmg);
 		hp -= dmg;
 		inv = 0.55f;
 		pflash = 0.15f;
@@ -281,7 +281,8 @@ public partial class Game {
 		if (isCrit) dmg *= 2;
 		dmg *= DealMul();
 		if (meta.sect == "cuong") dmg *= 1 + 0.6f * (1 - Mathf.Clamp01(hp / maxHp));
-		if (f.afx == "giap" && f.broken <= 0) dmg *= 0.45f;   // armoured elites must be broken first
+		if (f.afx == "giap" && f.broken <= 0) dmg *= 0.45f;
+		if (f.afx != "ward") foreach (var w in foes) if (w != f && !w.dead && w.afx == "ward" && (w.pos - f.pos).magnitude < 230) { dmg *= 0.7f; break; }   // armoured elites must be broken first
 		if (f.broken > 0) dmg *= 1.6f + Lv("break") * 0.4f;
 		if (f.bleed > 0) dmg *= 1.25f;
 		float pos = dmg * posMul;
@@ -393,6 +394,7 @@ public partial class Game {
 				foreach (var f in foes) {
 					if (f.dead || f.spawn > 0 || s.hit.Contains(f)) continue;
 					if ((f.pos - g).magnitude < f.d.r * f.scale + s.r + 8) {
+						if (f.afx == "reflect" && f.broken <= 0 && s.mine && !s.reflected) { s.reflected = true; s.mine = false; s.vel = -s.vel; s.dmg *= 0.6f; s.life = 2; Puff(f.pos, D.PAPER, 4, 200); break; }
 						s.hit.Add(f);
 						wHit = s.wpn;
 						HurtFoe(f, s.dmg, s.el, s.lvl, 1, s.vel.normalized);
@@ -481,7 +483,9 @@ public partial class Game {
 		bool pulse = ((int)(T * 6)) % 2 == 0;
 		if (state != "play") {
 			i.ok = pulse && T > 3f && T - stateT > 4.5f && state != "dead" && state != "win";
+			if (state == "wpick") { bool better = wOffers.Count > 0 && wOffers[0].rar > wItem.rar; i.ok = better && pulse && T - stateT > 1.2f; i.back = !better && T - stateT > 1.5f; }   // takes only upgrades
 			if (state == "event") menuI = 2;
+			if (state == "kyngo" && curEvent != null && eventPicked == null) for (int q = 0; q < curEvent.choices.Length; q++) if (CanAffordChoice(curEvent.choices[q])) { menuI = q; break; }
 			return;
 		}
 		Foe best = null;

@@ -193,7 +193,7 @@ public partial class Game {
 		sr.sortingOrder = 22000 - (int)p.y;
 	}
 
-	bool InWorld() { return state == "play" || state == "pick" || state == "relic" || state == "wpick" || state == "story" || state == "event" || state == "pause" || state == "dead" || state == "win"; }
+	bool InWorld() { return state == "play" || state == "pick" || state == "relic" || state == "wpick" || state == "story" || state == "kyngo" || state == "event" || state == "pause" || state == "dead" || state == "win"; }
 
 	void Render(float rdt) {
 		bool world = InWorld();
@@ -492,6 +492,7 @@ public partial class Game {
 		GuiWeaponHud();
 		if (state == "pick") GuiPick();
 		else if (state == "event") GuiEvent();
+		else if (state == "kyngo") GuiKyNgo();
 		else if (state == "relic") GuiRelic();
 		else if (state == "wpick") GuiWeaponPick();
 		else if (state == "story") GuiStory();

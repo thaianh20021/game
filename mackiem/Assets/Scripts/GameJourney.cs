@@ -51,6 +51,12 @@ public static class J {
 		new Heat { name = "KIẾP VII", desc = "Địch ra đòn dồn dập hơn 20%." },
 		new Heat { name = "KIẾP VIII", desc = "Mỗi đợt phục kích có thêm một tinh anh." },
 		new Heat { name = "KIẾP IX", desc = "Mọi cách hồi sinh lực chỉ còn một nửa." },
+		new Heat { name = "KIẾP X", desc = "Trùm thêm 35% sinh lực." },
+		new Heat { name = "KIẾP XI", desc = "Hồi sinh lực giảm thêm 30%." },
+		new Heat { name = "KIẾP XII", desc = "THẾ của địch dày thêm 25%." },
+		new Heat { name = "KIẾP XIII", desc = "Mỗi bãi chiến thêm một đợt phục kích." },
+		new Heat { name = "KIẾP XIV", desc = "Thương nhân không còn bán thuốc hồi." },
+		new Heat { name = "KIẾP XV", desc = "Địch nhanh hơn 20%." },
 	};
 	public const float HEAT_PAY = 0.15f;   // extra NGỘ TÍNH per tier
 
@@ -60,6 +66,7 @@ public static class J {
 		"TRANG ĐẦU", "ĐỆ TỬ NGOẠI MÔN", "NÉT KHỞI BÚT",
 		"BẠN CỜ", "LỬA TRONG THƯ PHÒNG", "CHỖ TÂM DỪNG",
 		"BỨC HỌA CHÍNH ĐIỆN", "NGƯỜI ĐỐT NÚI", "TRANG ĐỂ TRỐNG",
+		"MỰC ĐEN TRONG TÂM", "NÉT BÚT DO DỰ", "TRANG TRẮNG ĐỢI NGƯỜI",
 	};
 	public static readonly string[] MEM = {
 		"Đêm Mặc Kiếm Môn cháy, ta thấy một gã khoác da hổ ôm đi trang đầu của bộ kiếm phổ. Mực trên trang ấy còn ướt.",
@@ -71,6 +78,9 @@ public static class J {
 		"Mái tóc bạc ấy ta đã thấy trong bức họa treo ở chính điện. Người trong tranh trẻ hơn, nhưng cách cầm kiếm thì không đổi.",
 		"Kiếm Thánh là sư phụ. Người tự tay đốt môn phái để giấu kiếm phổ khỏi thiên hạ, rồi đợi xem ai đủ sức đi hết ba ngọn núi.",
 		"Trang cuối để trống. Người bảo: phần còn lại ngươi tự viết, bằng mực của chính mình.",
+		"Khi nhìn vào trang giấy trắng, nỗi nghi ngờ sư phụ và cơn giận mất môn phái hóa thành hình hài đen kịt. Mặc Ảnh không bước ra từ cuốn sách, mà từ vết nứt trong chính đạo tâm của ngươi.",
+		"Bao lần gục ngã dưới chân núi, ngươi tự hỏi mình tìm chân tướng hay chỉ tìm cớ trả thù. Mỗi lần chùn tay là một lần ngươi tự tô thêm mực cho bóng tối đối diện.",
+		"Sư phụ để trống trang cuối vì không ai viết hộ cuộc đời kẻ khác. Chỉ khi chém tan Mặc Ảnh, nét kiếm đầu tiên mới thật sự là mực của chính ngươi.",
 	};
 }
 
@@ -118,6 +128,7 @@ public partial class Game {
 	}
 
 	bool Has(string id) { return relics.Contains(id); }
+	int MemN() { return meta.mem.Count >= 9 || meta.mem.Contains(9) ? 12 : 9; }
 	bool HeatAt(int n) { return meta.kiep >= n; }
 
 	// --- effects that other files call
@@ -125,7 +136,7 @@ public partial class Game {
 		if (shieldT > 0) { shieldT = 0; Text(ppos + new Vector2(0, 150), "CHẶN", D.EL_COL[D.THO], 22); return 0; }
 		return (Has("kimcang") ? 0.85f : 1) * (Has("cuongbao") ? 1.15f : 1);
 	}
-	float HealMul() { return HeatAt(9) ? 0.5f : 1; }
+	float HealMul() { return (HeatAt(9) ? 0.5f : 1) * (HeatAt(11) ? 0.7f : 1); }
 	float PriceMul() { return HeatAt(5) ? 1.5f : 1; }
 	float DealMul() { return (Has("cuongbao") ? 1.25f : 1) * (1 + satky); }
 
@@ -244,12 +255,13 @@ public partial class Game {
 		int n = Mathf.Min(meta.heatMax, J.HEAT.Length - 1);
 		for (int i = 0; i < J.HEAT.Length; i++) {
 			bool open = i <= n, sel = heatI == i, on = i <= heatI;
-			var r = new Rect(x, 116 + i * 54, w, 48);
+			float rh = Mathf.Min(48, (GH - 170f) / J.HEAT.Length - 5);
+			var r = new Rect(x, 112 + i * (rh + 5), w, rh);
 			Box(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), sel ? D.RED : new Color(0.07f, 0.06f, 0.06f, 0.6f));
 			Box(r, open ? (on ? new Color(0.97f, 0.9f, 0.78f) : D.PAPER) : new Color(0.35f, 0.33f, 0.31f));
-			Lab(new Rect(r.x + 18, r.y, 170, 48), J.HEAT[i].name, 20, open ? D.INK : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleLeft, true, false);
-			Lab(new Rect(r.x + 190, r.y, 430, 48), open ? J.HEAT[i].desc : "Chưa mở", 16, open ? D.INK : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleLeft, false, false);
-			if (i > 0) Lab(new Rect(r.xMax - 150, r.y, 132, 48), "+" + Mathf.RoundToInt(i * J.HEAT_PAY * 100) + "% NGỘ", 15, open ? D.RED : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleRight, true, false);
+			Lab(new Rect(r.x + 18, r.y, 170, rh), J.HEAT[i].name, 20, open ? D.INK : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleLeft, true, false);
+			Lab(new Rect(r.x + 190, r.y, 430, rh), open ? J.HEAT[i].desc : "Chưa mở", 16, open ? D.INK : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleLeft, false, false);
+			if (i > 0) Lab(new Rect(r.xMax - 150, r.y, 132, rh), "+" + Mathf.RoundToInt(i * J.HEAT_PAY * 100) + "% NGỘ", 15, open ? D.RED : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleRight, true, false);
 			if (open && Hit(r, i)) { heatI = i; meta.kiep = i; SaveMeta(); StartRun(); }
 		}
 		Lab(new Rect(0, GH - 40, GW, 28), "W / S chọn tầng   ·   ENTER khởi hành   ·   ESC quay lại", 16, D.PAPER);
@@ -314,6 +326,7 @@ public partial class Game {
 	void UnlockMemory(int bossCh) {
 		for (int k = 0; k < 3; k++) {
 			int id = bossCh * 3 + k;
+			if (id >= J.MEM.Length) return;
 			if (meta.mem.Contains(id)) continue;
 			meta.mem.Add(id);
 			Toast("KÝ ỨC MỚI: " + J.MEM_TITLE[id]);
@@ -322,19 +335,19 @@ public partial class Game {
 	}
 
 	void MemoryTick() {
-		if (P(inp.up, prev.up)) { memI = (memI + 8) % 9; sfx.Play("ui", 0.5f); }
-		if (P(inp.down, prev.down)) { memI = (memI + 1) % 9; sfx.Play("ui", 0.5f); }
+		if (P(inp.up, prev.up)) { memI = (memI + MemN() - 1) % MemN(); sfx.Play("ui", 0.5f); }
+		if (P(inp.down, prev.down)) { memI = (memI + 1) % MemN(); sfx.Play("ui", 0.5f); }
 		if (P(inp.back, prev.back) || (P(inp.ok, prev.ok) && T - stateT > 0.3f)) { state = "title"; menuI = 4; }
 	}
 
 	void GuiMemory() {
 		Dim(0.68f);
 		Lab(new Rect(0, 22, GW, 54), "KÝ ỨC", 42, D.PAPER, TextAnchor.MiddleCenter, true);
-		Lab(new Rect(0, 72, GW, 26), meta.mem.Count + " / 9 mảnh   ·   mỗi lần hạ một trùm mở một mảnh", 16, D.PAPER);
+		Lab(new Rect(0, 72, GW, 26), meta.mem.Count + " / " + MemN() + " mảnh   ·   mỗi lần hạ một trùm mở một mảnh", 16, D.PAPER);
 		float lx = (GW - 980) / 2;
-		for (int i = 0; i < 9; i++) {
+		for (int i = 0; i < MemN(); i++) {
 			bool open = meta.mem.Contains(i), sel = memI == i;
-			var r = new Rect(lx, 110 + i * 54, 300, 46);
+			var r = new Rect(lx, 108 + i * (MemN() > 9 ? 42 : 54), 300, MemN() > 9 ? 36 : 46);
 			Box(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), sel ? D.RED : new Color(0.07f, 0.06f, 0.06f, 0.6f));
 			Box(r, open ? D.PAPER : new Color(0.35f, 0.33f, 0.31f));
 			Lab(r, open ? J.MEM_TITLE[i] : "· · ·", 17, open ? D.INK : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleCenter, true, false);

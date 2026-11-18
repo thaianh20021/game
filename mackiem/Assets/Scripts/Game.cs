@@ -27,7 +27,7 @@ public class Foe {
 	public float animT;
 }
 public class Ghost { public SpriteRenderer sr; public float life, max; }
-public class Shot { public Vector2 pos, vel; public float dmg, r = 9, life = 3; public bool mine, pool; public int el = -1, lvl, pierce, bounce; public List<Foe> hit; public bool wpn; }
+public class Shot { public Vector2 pos, vel; public float dmg, r = 9, life = 3; public bool mine, pool, reflected; public int el = -1, lvl, pierce, bounce; public List<Foe> hit; public bool wpn; }
 public class Wave { public Vector2 pos; public float r, spd, dmg, max; public bool hit; public Color col = new Color(0.07f, 0.06f, 0.06f); }
 public class Blast { public Vector2 pos; public float r, t, wind, dmg; }
 public class Pool { public Vector2 pos; public float r, t, tick; }
@@ -55,6 +55,7 @@ public class MetaSave {
 	public List<string> relics = new List<string>(J.START);
 	public List<string> seen = new List<string>();
 	public List<int> mem = new List<int>();
+	public List<int> mechs = new List<int>();
 	public List<int> bk = new List<int> { 0, 0, 0 };   // times each boss was beaten   // the cut-out puppet looked disjointed: drawn frames are the default
 }
 
@@ -67,7 +68,7 @@ public partial class Game : MonoBehaviour {
 	public const float AW = 1920, AH = 1288, VIEW_H = 860;
 	public static Rect PR = new Rect(390, 130, 1150, 720);
 	// the open floor of each chapter's painting
-	static readonly Rect[] CH_PR = { new Rect(390, 130, 1150, 720), new Rect(330, 260, 1310, 760), new Rect(410, 400, 1110, 560) };
+	static readonly Rect[] CH_PR = { new Rect(390, 130, 1150, 720), new Rect(330, 260, 1310, 760), new Rect(410, 400, 1110, 560), new Rect(400, 330, 1120, 640) };
 
 	[RuntimeInitializeOnLoadMethod]
 	static void Boot() {
@@ -80,6 +81,8 @@ public partial class Game : MonoBehaviour {
 	public bool bot, cheat;
 	int speed = 1;
 	string shotDir, savePath, botWeapon;
+	bool allMem;
+	int chaptersN = 3;
 	float botEnd = 0;
 	MetaSave meta = new MetaSave();
 	Inp inp, prev;
@@ -141,6 +144,7 @@ public partial class Game : MonoBehaviour {
 		for (int i = 0; i < args.Length; i++) {
 			if (args[i] == "-bot") bot = true;
 			if (args[i] == "-cheat") cheat = true;
+			if (args[i] == "-allmem") allMem = true;
 			if (args[i] == "-weapon" && i + 1 < args.Length) botWeapon = args[i + 1];
 			if (args[i] == "-speed" && i + 1 < args.Length) speed = int.Parse(args[i + 1]);
 			if (args[i] == "-shots" && i + 1 < args.Length) shotDir = args[i + 1];
@@ -167,6 +171,8 @@ public partial class Game : MonoBehaviour {
 		LoadMeta();
 		LoadLoot();
 		LoadStory();
+		LoadEvents();
+		D.Init();
 		weapon = D.Weapon(weaponId);
 		Recalc();
 	}
@@ -184,8 +190,10 @@ public partial class Game : MonoBehaviour {
 		if (meta.relics == null || meta.relics.Count == 0) meta.relics = new List<string>(J.START);
 		if (meta.seen == null) meta.seen = new List<string>();
 		if (meta.mem == null) meta.mem = new List<int>();
+		if (meta.mechs == null) meta.mechs = new List<int>();
 		if (meta.bk == null) meta.bk = new List<int>();
-		while (meta.bk.Count < 3) meta.bk.Add(0);
+		while (meta.bk.Count < 4) meta.bk.Add(0);
+		if (allMem) for (int q = 0; q < 9; q++) if (!meta.mem.Contains(q)) meta.mem.Add(q);
 		meta.heatMax = Mathf.Max(meta.heatMax, meta.kiep);
 	}
 	void SaveMeta() { try { File.WriteAllText(savePath, JsonUtility.ToJson(meta)); } catch (Exception) { } }
@@ -293,6 +301,7 @@ public partial class Game : MonoBehaviour {
 			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 5; } break;
 			case "pick": Menu(offers.Count, PickAct, true); if (P(inp.recall, prev.recall)) Reroll(); break;
 			case "event": Menu(3, EventAct); break;
+			case "kyngo": EventTick(); break;
 			case "wpick": Menu(wOffers.Count, WeaponPickAct, true); if (P(inp.back, prev.back)) WeaponPickAct(99); break;
 			case "story": StoryTick(rdt); break;
 			case "pause": Menu(3, PauseAct); if (P(inp.back, prev.back)) state = "play"; break;
@@ -360,6 +369,8 @@ public partial class Game : MonoBehaviour {
 		reviveLeft = Up("revive") > 0;
 		boons.Clear(); slot.Clear();
 		honRun = 0;
+		ResetEvents();
+		chaptersN = meta.mem.Count >= 9 ? 4 : 3;
 		rerolls = Up("reroll");
 		relics.Clear(); phoenixUsed = false; satky = 0; relicPending = false;
 		seed = rng.Next();
@@ -431,14 +442,15 @@ public partial class Game : MonoBehaviour {
 
 	Foe Spawn(string id, Vector2 p, bool elite) {
 		var d = D.Foe(id);
-		float kiep = d.boss ? (HeatAt(6) ? 1.3f : 1) : (HeatAt(1) ? 1.25f : 1);
+		float kiep = d.boss ? (HeatAt(6) ? 1.3f : 1) * (HeatAt(10) ? 1.35f : 1) : (HeatAt(1) ? 1.25f : 1);
 		var f = new Foe { d = d, pos = Confine(p, d.r), elite = elite, spawn = 0.75f, cd = Rnd(0.3f, 1.2f) };
 		f.maxHp = d.hp * (d.boss ? 1.35f : D.CH_HP[ch] * 0.7f) * kiep * (elite ? 2.3f : 1);
 		f.hp = f.maxHp;
 		f.posMax = d.pos * (elite ? 1.6f : 1) * (d.boss ? 1 : 1 + ch * 0.25f);
 		f.dmgMul = 1.25f * (d.boss ? 1 : D.CH_DMG[ch]) * (HeatAt(3) ? 1.15f : 1) * (elite ? 1.3f : 1);
 		f.scale = elite ? 1.22f : 1;
-		if (elite) f.afx = new[] { "bao", "toc", "giap" }[rng.Next(3)];
+		if (elite) f.afx = new[] { "bao", "toc", "giap", "reflect", "ward", "frenzy" }[rng.Next(ch >= 1 ? 6 : 3)];
+		if (HeatAt(12)) f.posMax *= 1.25f;
 		f.mcd = new float[d.moves.Length];
 		f.used = new bool[d.moves.Length];
 		f.sr = NewSpr(d.id, d.h * f.scale);
@@ -581,7 +593,7 @@ public partial class Game : MonoBehaviour {
 			case "relic": OpenRelic(); break;
 			case "luyen": OpenPick("luyen", 0); break;
 			case "tea": Heal(maxHp * 0.4f); sfx.Play("pick"); Toast("Trà ấm, lòng tĩnh."); break;
-			case "ky": state = "event"; menuI = 0; sfx.Play("pick"); break;
+			case "ky": OpenEvent(); sfx.Play("pick"); break;
 		}
 	}
 

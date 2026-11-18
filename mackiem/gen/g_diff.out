@@ -1,0 +1,65 @@
+{
+  "heat_extra": [
+    {
+      "name": "KIẾP 10",
+      "desc": "Thủ lĩnh tăng 35% sinh lực.",
+      "rule": "boss_hp_pct",
+      "value": 35
+    },
+    {
+      "name": "KIẾP 11",
+      "desc": "Hồi phục từ đan dược và kỹ năng giảm 30%.",
+      "rule": "heal_pct_minus",
+      "value": 30
+    },
+    {
+      "name": "KIẾP 12",
+      "desc": "Thanh thế địch tăng 25%, khó phá thế hơn.",
+      "rule": "posture_pct",
+      "value": 25
+    },
+    {
+      "name": "KIẾP 13",
+      "desc": "Mỗi ải tăng thêm 1 đợt quái.",
+      "rule": "wave_extra",
+      "value": 1
+    },
+    {
+      "name": "KIẾP 14",
+      "desc": "Thương điếm không còn bán hồi phục.",
+      "rule": "no_shop_heal",
+      "value": 1
+    },
+    {
+      "name": "KIẾP 15",
+      "desc": "Kẻ địch tăng 20% tốc độ di chuyển và ra đòn.",
+      "rule": "foe_speed_pct",
+      "value": 20
+    }
+  ],
+  "chapter_scaling": {
+    "hp": [1.0, 1.45, 2.0, 2.75],
+    "dmg": [1.0, 1.25, 1.5, 1.85]
+  },
+  "affixes_extra": [
+    {
+      "id": "reflect",
+      "name": "KÍNH PHẢN",
+      "desc": "Phản lại phi kiếm và đạn đạo khi chưa bị phá thế.",
+      "behaviour": "reflect_projectiles"
+    },
+    {
+      "id": "ward",
+      "name": "HỘ TRẬN",
+      "desc": "Tỏa vòng hộ thể giảm sát thương cho đồng bọn xung quanh.",
+      "behaviour": "shield_aura"
+    },
+    {
+      "id": "frenzy",
+      "name": "HUYẾT CUỒNG",
+      "desc": "Dưới nửa máu sẽ hóa điên, tăng mạnh tốc độ đánh.",
+      "behaviour": "enrage_low_hp"
+    }
+  ],
+  "notes": "Những kiếp đầu giữ sát thương vừa phải để người chơi học nhịp đỡ đòn và phá thế qua từng lần ngã xuống. Từ Kiếp 5 trở đi, quái đông và trâu hơn buộc người chơi phải phối hợp bí kíp với phản ứng ngũ hành. Ở các kiếp cuối 10–15, tài nguyên hồi phục bị siết chặt nên chỉ những bộ chiêu thức hoàn chỉnh mới đủ sức chạm đỉnh."
+}

@@ -13,6 +13,7 @@ using UnityEngine;
 	public string[] prologue, run_intro, death, ending_normal, ending_true;
 	public ChapterStory[] chapters;
 	public NpcStory npc;
+	public string unlock_hint; public string[] ending_final;
 	public Milestone[] milestones;
 }
 
@@ -29,6 +30,7 @@ public partial class Game {
 		if (ta != null) story = JsonUtility.FromJson<StoryData>(ta.text);
 	}
 
+	static string[] Append(string[] a, string s) { var r = new string[a.Length + 1]; a.CopyTo(r, 0); r[a.Length] = s; return r; }
 	static string Pick(string[] a, int i) { return a == null || a.Length == 0 ? "" : a[Mathf.Clamp(i, 0, a.Length - 1)]; }
 
 	int BossBeaten(int c) { return meta.bk != null && c < meta.bk.Count ? meta.bk[c] : 0; }
@@ -69,7 +71,7 @@ public partial class Game {
 	string StoryBossIntro(int c) { return story == null ? D.CH_NAME[c] : Pick(story.chapters[c].boss_intro, BossBeaten(c)); }
 
 	string StoryBossDefeat(int c) {
-		while (meta.bk.Count < 3) meta.bk.Add(0);
+		while (meta.bk.Count < 4) meta.bk.Add(0);
 		string s = story == null ? "Trùm đã ngã" : Pick(story.chapters[c].boss_defeat, meta.bk[c]);
 		meta.bk[c]++;
 		return s;
@@ -88,8 +90,10 @@ public partial class Game {
 		if (!win) deathLine = Pick(story.death, meta.runs % Mathf.Max(1, story.death.Length));
 		if (story.milestones != null) foreach (var m in story.milestones) if (m.runs == meta.runs) milestoneLine = m.text;
 		if (win) {
-			bool trueEnd = meta.mem.Count >= 9;
-			ShowStory(trueEnd ? "TRANG CUỐI" : "HẠ SƠN", trueEnd ? story.ending_true : story.ending_normal, "win");
+			bool trueEnd = meta.mem.Count >= 9, last = chaptersN >= 4;
+			string[] lines = last ? story.ending_final : (trueEnd ? story.ending_true : story.ending_normal);
+			if (!last && trueEnd && story.unlock_hint != null) lines = Append(lines, story.unlock_hint);
+			ShowStory(last ? "VÔ TỰ" : (trueEnd ? "TRANG CUỐI" : "HẠ SƠN"), lines, "win");
 		}
 	}
 }

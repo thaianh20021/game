@@ -139,7 +139,7 @@ public static class D {
 		new SectDef { id = "hanh", name = "NGŨ HÀNH CỐC", motto = "Vạn vật sinh khắc, ta chỉ mượn tay.", desc = "Khởi hành với một bí kíp ĐÒN ĐÁNH ngẫu nhiên.\nẤN ngũ hành tồn tại lâu gấp đôi.\nTƯƠNG SINH và TƯƠNG KHẮC mạnh hơn 50%." },
 	};
 	public static SectDef Sect(string id) { foreach (var k in SECTS) if (k.id == id) return k; return SECTS[0]; }
-	public static string AfxName(string a) { return a == "bao" ? "BẠO LIỆT" : (a == "toc" ? "THẦN TỐC" : (a == "giap" ? "THIẾT GIÁP" : "")); }
+	public static string AfxName(string a) { switch (a) { case "bao": return "BẠO LIỆT"; case "toc": return "THẦN TỐC"; case "giap": return "THIẾT GIÁP"; case "reflect": return "KÍNH PHẢN"; case "ward": return "HỘ TRẬN"; case "frenzy": return "HUYẾT CUỒNG"; } return ""; }
 
 	public static readonly int[] SK_COST = { 15, 20, 35, 60 };
 	public static readonly SkillDef[] SKILLS = {
@@ -183,6 +183,54 @@ public static class D {
 		new FoeDef { id = "shield", name = "THUẪN BINH", hp = 72, pos = 95, spd = 112, h = 113, guard = true, cost = 2,
 			moves = new[] { new Move { rng = 120, cd = 1.9f, steps = new[] { Line(0.5f, 150, 42, 12) } } } },
 
+		// designed with Gemini
+		new FoeDef { id = "lamptang", name = "CỔ ĐĂNG TĂNG", hp = 78, pos = 55, spd = 125, r = 25, h = 132, keep = 240, cost = 2, guard = false, boss = false,
+		  moves = new[] {
+		    new Move { rng = 420, min = 90, cd = 3.2f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "rain", wind = 0.75f, n = 3, r = 68, dmg = 14 } } },
+		    new Move { rng = 360, min = 0, cd = 2.6f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "shoot", wind = 0.55f, n = 3, spread = 0.5f, spd = 290, dmg = 11, pool = true } } }
+		  } },
+		// LOOK: Gaunt temple monk in tattered grey robes and straw sandals, hunched full body, holding a long iron polearm with a swinging bronze oil lantern.
+		new FoeDef { id = "bellguard", name = "THIẾT CHUNG VỆ", hp = 135, pos = 95, spd = 95, r = 34, h = 148, keep = 0, cost = 3, guard = true, boss = false,
+		  moves = new[] {
+		    new Move { rng = 260, min = 0, cd = 3.8f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "ring", wind = 0.7f, spd = 240, dmg = 16, r = 260 } } },
+		    new Move { rng = 135, min = 0, cd = 2.4f, hpBelow = 1.01f, once = false, steps = new[] { Arc(0.65f, 130, 6.3f, 18, 0, 0.45f) } },
+		    new Move { rng = 380, min = 140, cd = 7.5f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "summon", wind = 0.8f, id = "shield", n = 1 } } }
+		  } },
+		// LOOK: Broad-shouldered guardian in cracked bronze lamellar armor and iron greaves, full body stance, gripping a heavy cracked temple bell and short iron mallet.
+		new FoeDef { id = "frostsword", name = "HÀN SƯƠNG KIẾM SĨ", hp = 96, pos = 65, spd = 195, r = 24, h = 128, keep = 0, cost = 2, guard = false, boss = false,
+		  moves = new[] {
+		    new Move { rng = 320, min = 110, cd = 2.8f, hpBelow = 1.01f, once = false, steps = new[] { Blink(), Line(0.45f, 220, 42, 16, true, 0.25f), Arc(0.32f, 125, 2.2f, 13, 180, 0.35f) } },
+		    new Move { rng = 130, min = 0, cd = 1.8f, hpBelow = 1.01f, once = false, steps = new[] { Arc(0.4f, 130, 2.1f, 15, 220, 0.3f) } }
+		  } },
+		// LOOK: Lean swordsman in ragged frost-rimmed indigo cloak and fur-wrapped boots, full body, holding a slender pale steel jian coated in rime ice.
+		new FoeDef { id = "cloudtao", name = "NGƯNG TUYẾT ĐẠO NHÂN", hp = 105, pos = 60, spd = 115, r = 26, h = 136, keep = 280, cost = 3, guard = false, boss = false,
+		  moves = new[] {
+		    new Move { rng = 460, min = 80, cd = 3.6f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "radial", wind = 0.65f, n = 10, spd = 270, dmg = 14 }, Wait(0.25f), new Step { t = "ring", wind = 0.6f, spd = 280, dmg = 17, r = 300 } } },
+		    new Move { rng = 440, min = 0, cd = 4.0f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "rain", wind = 0.7f, n = 4, r = 72, dmg = 16 } } }
+		  } },
+		// LOOK: Tall white-bearded hermit in layered snow-stained hemp robes and wooden clogs, full body, raising a gnarled pine staff tied with blank talisman strips.
+		new FoeDef { id = "inkwraith", name = "MẶC VỤ ẢNH", hp = 92, pos = 55, spd = 215, r = 23, h = 125, keep = 0, cost = 2, guard = false, boss = false,
+		  moves = new[] {
+		    new Move { rng = 360, min = 90, cd = 2.5f, hpBelow = 1.01f, once = false, steps = new[] { Blink(), Arc(0.35f, 118, 2.3f, 15, 240, 0.2f), new Step { t = "shoot", wind = 0.3f, n = 3, spread = 0.6f, spd = 410, dmg = 12, pool = true } } },
+		    new Move { rng = 260, min = 0, cd = 2.2f, hpBelow = 1.01f, once = false, steps = new[] { Line(0.4f, 240, 38, 17, true, 0.3f) } }
+		  } },
+		// LOOK: Dripping silhouette of living black ink wearing torn scholar sleeves and barefoot legs, full body, clutching three jagged brush-stroke daggers in both hands.
+		new FoeDef { id = "scrollguard", name = "BẠCH CHỈ HỘ VỆ", hp = 165, pos = 115, spd = 105, r = 36, h = 155, keep = 0, cost = 3, guard = true, boss = false,
+		  moves = new[] {
+		    new Move { rng = 340, min = 100, cd = 4.2f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "slam", wind = 0.75f, r = 110, dmg = 22, leap = true, rec = 0.45f }, new Step { t = "ring", wind = 0.5f, spd = 300, dmg = 18, r = 280 } } },
+		    new Move { rng = 150, min = 0, cd = 2.6f, hpBelow = 1.01f, once = false, steps = new[] { Arc(0.6f, 145, 3.2f, 21, 140, 0.4f) } },
+		    new Move { rng = 400, min = 0, cd = 8.0f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "summon", wind = 0.85f, id = "inkwraith", n = 1 } } }
+		  } },
+		// LOOK: Towering armored figure forged from folded blank parchment and ink plates, full body, bearing a massive unrolled stone-weighted scroll shield and ink halberd.
+		new FoeDef { id = "boss4", name = "MẶC ẢNH", hp = 1350, pos = 180, spd = 230, r = 34, h = 170, keep = 0, cost = 3, guard = false, boss = true,
+		  moves = new[] {
+		    new Move { rng = 170, min = 0, cd = 2.2f, hpBelow = 1.01f, once = false, steps = new[] { Arc(0.35f, 135, 2.2f, 15, 250, 0.15f), Line(0.3f, 210, 40, 17, true, 0.15f), Arc(0.32f, 145, 2.8f, 18, 220, 0.3f) } },
+		    new Move { rng = 340, min = 110, cd = 3.0f, hpBelow = 1.01f, once = false, steps = new[] { Line(0.4f, 280, 44, 19, true, 0.15f), Wait(0.15f), Arc(0.3f, 140, 3.1f, 17, 160, 0.3f) } },
+		    new Move { rng = 460, min = 140, cd = 3.4f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "shoot", wind = 0.45f, n = 5, spread = 0.9f, spd = 540, dmg = 14, pool = false }, Wait(0.3f), new Step { t = "shoot", wind = 0.35f, n = 3, spread = 0.35f, spd = 600, dmg = 16, pool = false } } },
+		    new Move { rng = 320, min = 0, cd = 4.5f, hpBelow = 1.01f, once = false, steps = new[] { new Step { t = "ring", wind = 0.55f, spd = 360, dmg = 20, r = 340 }, Blink(), Arc(0.35f, 135, 2.4f, 18, 220, 0.3f) } },
+		    new Move { rng = 420, min = 180, cd = 5.2f, hpBelow = 1.01f, once = false, steps = new[] { Blink(), new Step { t = "slam", wind = 0.55f, r = 95, dmg = 21, leap = false, rec = 0.25f }, new Step { t = "radial", wind = 0.4f, n = 8, spd = 430, dmg = 14 } } },
+		    new Move { rng = 480, min = 0, cd = 6.2f, hpBelow = 0.5f, once = false, steps = new[] { Blink(), Line(0.32f, 290, 46, 20, true, 0.15f), new Step { t = "shoot", wind = 0.35f, n = 7, spread = 1.3f, spd = 610, dmg = 15, pool = false }, new Step { t = "ring", wind = 0.45f, spd = 420, dmg = 22, r = 380 }, Arc(0.3f, 155, 3.2f, 22, 320, 0.35f) } }
+		  } },
 		new FoeDef { id = "boss1", name = "HẮC HỔ TRẠI CHỦ", boss = true, hp = 640, pos = 260, spd = 150, r = 46, h = 200,
 			moves = new[] {
 				new Move { rng = 200, cd = 2.6f, steps = new[] { Arc(0.55f, 180, 2.3f, 16, 260, 0.12f), Arc(0.32f, 180, 2.3f, 16, 260, 0.12f), Arc(0.5f, 205, 3.2f, 22, 320, 0.6f) } },
@@ -209,17 +257,23 @@ public static class D {
 					new Step { t = "radial", wind = 0.35f, n = 8, spd = 470, dmg = 12, rec = 0.5f } } },
 				new Move { rng = 190, cd = 2.0f, steps = new[] { Arc(0.38f, 175, 2.4f, 15, 240, 0.08f), Arc(0.26f, 175, 2.4f, 15, 240, 0.08f), Arc(0.26f, 175, 2.4f, 15, 240, 0.08f), Arc(0.45f, 200, 6.3f, 20, 0, 0.6f) } } } },
 	};
+	public static void Init() {
+		if (inited) return;
+		inited = true;
+		AddMove("boss1", new Move { rng = 360, min = 0, cd = 5.0f, hpBelow = 0.5f, once = false, steps = new[] { new Step { t = "slam", wind = 0.65f, r = 115, dmg = 22, leap = true, rec = 0.25f }, Arc(0.35f, 165, 3.4f, 20, 290, 0.2f), Line(0.45f, 260, 56, 23, true, 0.4f) } });
+		AddMove("boss2", new Move { rng = 480, min = 0, cd = 5.5f, hpBelow = 0.5f, once = false, steps = new[] { new Step { t = "ring", wind = 0.55f, spd = 310, dmg = 18, r = 360 }, new Step { t = "rain", wind = 0.6f, n = 5, r = 75, dmg = 17 }, new Step { t = "radial", wind = 0.45f, n = 12, spd = 340, dmg = 15 } } });
+		AddMove("boss3", new Move { rng = 450, min = 0, cd = 4.8f, hpBelow = 0.5f, once = false, steps = new[] { Blink(), Line(0.35f, 280, 44, 21, true, 0.15f), Arc(0.28f, 150, 2.8f, 19, 260, 0.15f), Blink(), new Step { t = "shoot", wind = 0.35f, n = 5, spread = 0.9f, spd = 500, dmg = 16, pool = false }, new Step { t = "ring", wind = 0.45f, spd = 380, dmg = 22, r = 340 } } });
+	}
+	static bool inited;
+	static void AddMove(string id, Move m) { var f = Foe(id); var a = new Move[f.moves.Length + 1]; System.Array.Copy(f.moves, a, f.moves.Length); a[a.Length - 1] = m; f.moves = a; }
+
 	public static FoeDef Foe(string id) { foreach (var f in FOES) if (f.id == id) return f; return FOES[0]; }
 
-	public static readonly string[][] POOLS = {
-		new[] { "bandit", "bandit", "archer", "spear", "brute" },
-		new[] { "bandit", "archer", "spear", "monk", "shield", "poison", "assassin" },
-		new[] { "spear", "monk", "shield", "poison", "assassin", "assassin", "brute", "archer" },
-	};
-	public static readonly string[] CH_NAME = { "CHƯƠNG I · TRÚC LÂM", "CHƯƠNG II · CỔ TỰ", "CHƯƠNG III · TUYẾT ĐỈNH" };
-	public static readonly float[] CH_HP = { 1f, 1.45f, 2.0f };
-	public static readonly float[] CH_DMG = { 1f, 1.25f, 1.5f };
-	public static readonly string[][] CH_PROPS = { new[] { "boulder", "bamboo", "lantern" }, new[] { "pillar", "lantern", "jar", "shrine" }, new[] { "pine", "boulder", "pillar" } };
+			public static readonly string[][] POOLS = { new[] { "bandit", "bandit", "bandit", "archer", "archer", "spear", "poison" }, new[] { "monk", "monk", "bellguard", "bellguard", "lamptang", "brute", "shield" }, new[] { "frostsword", "frostsword", "cloudtao", "cloudtao", "assassin", "spear", "shield" }, new[] { "inkwraith", "inkwraith", "inkwraith", "scrollguard", "scrollguard", "frostsword", "bellguard", "assassin" } };
+	public static readonly string[] CH_NAME = { "CHƯƠNG I · TRÚC LÂM", "CHƯƠNG II · CỔ TỰ", "CHƯƠNG III · TUYẾT ĐỈNH", "CHƯƠNG IV · VÔ TỰ THIÊN" };
+	public static readonly float[] CH_HP = { 1f, 1.45f, 2.0f, 2.75f };
+	public static readonly float[] CH_DMG = { 1f, 1.25f, 1.5f, 1.85f };
+	public static readonly string[][] CH_PROPS = { new[] { "boulder", "bamboo", "bamboo_mist_cluster", "mossy_forest_stone" }, new[] { "pillar", "jar", "shrine", "cracked_bronze_bell", "stone_incense_censer" }, new[] { "pine", "boulder", "blizzard_fire_brazier", "jagged_ice_spire" }, new[] { "floating_blank_scroll", "giant_inkstone_pool", "pillar" } };
 
 	static Boon BS(string sect, string id, string name, string desc) { return new Boon { id = id, el = -1, slot = "pas", name = name, desc = desc, sect = sect }; }
 	static Boon B(string id, int el, string slot, string name, string desc) { return new Boon { id = id, el = el, slot = slot, name = name, desc = desc }; }

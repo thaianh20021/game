@@ -1,0 +1,2391 @@
+# Mặc Kiếm Lục — data shapes for content (original wuxia top-down action roguelike, Unity C#, ink-wash art)
+
+All names and text must be ORIGINAL (no characters, moves or places from existing novels/games). In-game text is Vietnamese with diacritics; names in CAPITALS.
+
+## Foes (C# in Data.cs, static class D)
+```
+new FoeDef { id = "bandit", name = "SƠN TẶC", hp = 44, pos = 40, spd = 150, r = 26, h = 125, keep = 0, cost = 1, guard = false, boss = false,
+  moves = new[] { new Move { rng = 125, min = 0, cd = 1.7f, hpBelow = 1.01f, once = false, steps = new[] { Arc(0.5f, 125, 1.9f, 11, 210) } } } },
+```
+- hp: health; pos: posture bar (stance; full = PHÁ THẾ stun); spd px/s; r body radius; h drawn height px (hero is 125); keep: preferred distance for ranged foes (0 = melee); cost: budget points per spawn (1 weak .. 3 heavy).
+- A Move is chosen when the player is between `min` and `rng` px away and its cooldown `cd` is over; `hpBelow` 0.5 = only below half health; `once` = only one time (boss phase change).
+- Steps (all have `wind` = telegraph time before it hits, `rec` = recovery after):
+  - `Arc(wind, r, w, dmg, lunge = 0, rec = 0.3f)`: melee arc of radius r and width w radians (6.3 = full circle), dashes forward `lunge` px/s while striking.
+  - `Line(wind, len, wid, dmg, dash = false, rec = 0.35f)`: straight thrust; dash = the foe travels to the end.
+  - `new Step { t = "slam", wind, r, dmg, leap = true|false, rec }`: unblockable circle (leap jumps onto the player).
+  - `new Step { t = "shoot", wind, n, spread (radians), spd, dmg, pool = true|false }`: n bullets in a fan; pool leaves a poison puddle.
+  - `new Step { t = "radial", wind, n, spd, dmg }`: n bullets in all directions.
+  - `new Step { t = "ring", wind, spd, dmg, r }`: an expanding ring to radius r (dodge by dashing or parry).
+  - `new Step { t = "rain", wind, n, r, dmg }`: n unblockable circles of radius r around the player.
+  - `Blink()`: teleports beside the player. `Wait(d)`: pause.
+  - `new Step { t = "summon", wind, id = "<foe id>", n }`.
+- Typical damage: weak foe 8-12, heavy 15-24, boss 12-24 per hit. Player has 100-200 HP.
+- Existing foes: bandit, archer, spear, assassin, brute, monk, poison, shield; bosses boss1 (HẮC HỔ TRẠI CHỦ, bandit king, broadsword), boss2 (VÔ MINH THIỀN SƯ, blind abbot, bell and beads), boss3 (BẠCH PHÁT KIẾM THÁNH, white-haired sword saint = the hero's master).
+- Chapters: I Trúc Lâm (bamboo forest), II Cổ Tự (ruined temple), III Tuyết Đỉnh (snowy summit). `D.POOLS[ch]` = foe ids that spawn in chapter ch.
+- Elite affixes exist: BẠO LIỆT (explodes on death), THẦN TỐC (fast), THIẾT GIÁP (armoured until posture break).
+
+## Story
+Hero: last disciple of the burned Mặc Kiếm Môn, chasing the pages of the ink sword manual "Mặc Kiếm Lục". Nine memory fragments: the bandit king stole the first page; the blind abbot was the master's chess friend and knows the fire started in the master's own study; the sword saint IS the master, who burned the sect himself to hide the manual and waits to see who can climb the three peaks; the last page is blank — "write the rest in your own ink". A run goes up the three chapters; death sends the hero back; the story unfolds over many runs.
+
+## Player systems (for effects)
+Five elements KIM MỘC THỦY HỎA THỔ (0..4) with marks and reactions TƯƠNG SINH / TƯƠNG KHẮC; parry (perfect parry), posture break (PHÁ THẾ); flying swords thrown and recalled; manuals (bí kíp, levels 1-3); relics (bảo vật); weapons with rarity 0-3 found in the run; NGỘ TÍNH (meta currency), KIẾM HỒN (boss currency); KIẾP NẠN difficulty tiers 0..9 chosen before a run.
+
+
+# TASK — a distinct identity for each of the 4 chapters (the owner: "do not repeat; every chapter has different scenery, story, foes, and unlocks one NEW game mechanic that you invent").
+Design, in Vietnamese names, then implement. Return ONE JSON object only (no markdown fences) with keys:
+{
+ "chapters":[ x4 {
+   "id":0..3, "setting": "2-3 câu mô tả bối cảnh/bầu không khí khác biệt (Trúc Lâm rừng trúc sương, Cổ Tự chùa đổ, Tuyết Đỉnh bão tuyết, Vô Tự Thiên giấy trắng và mực)",
+   "foe_roles": "which foes belong ONLY to this chapter (use existing ids: bandit archer spear assassin brute monk poison shield lamptang bellguard frostsword cloudtao inkwraith scrollguard) — no foe id may appear in more than two chapters' pools",
+   "mechanic": { "name":"VIẾT HOA", "unlock":"when it unlocks: entering this chapter the first time", "desc":"Vietnamese 2 sentences telling the player what it does", "kind": "environment or player_power", "tutorial":"one Vietnamese line shown as a banner" },
+   "mech_code": "C# METHOD BODIES as a string. Provide a partial class Game fragment `public partial class Game { ... }` with: `void MechInit(int c)` (called when a fight segment starts in chapter c), `void MechUpdate(float dt)` (called every simulation frame in a fight of chapter c, after foes update), `void MechDraw()` (called from the draw pass: use `ground` and `fxInk` Ink meshes: Circle(pos,r,col), Ring(pos,r,w,col), Rect(x,y,w,h,col), Brush(a,b,w,col), Line(a,b,w,col) in logic pixels with y up). Available fields: ppos (Vector2), hp, maxHp, qi, foes (List<Foe> with pos, hp, maxHp, dead, spawn, afx, d.boss, kb, slow, burn), shots, T, Rnd(), Rnd(a,b), HitPlayer(float dmg, Foe src, bool parryable, Vector2 from), HurtFoe(f,dmg,el,lvl,posMul,dir), Burst(pos,r,dmg,el,lvl,react), AddPosture(f,v), Heal(v), Text(pos,string,Color,size), PR (Rect play area of the current segment), act, inv, dashes, dashMax, fight (Seg or null), ch. Keep each mechanic under 90 lines. It must be fun and readable, e.g. bamboo thickets that conceal foes, bell tolls that charge the player's parry, a blizzard that cools the hero but burning foes warm him, blank-paper tiles that the hero can paint with ink to create walls. Invent your own. Use distinct class-level field names prefixed with mech<Chapter> (e.g. mech0Timer) to avoid collisions."
+ } ],
+ "pools":"C# line: public static readonly string[][] POOLS = {...}; four pools with mostly DIFFERENT foes per chapter and some weighting by repetition; the chapter-4 pool should be mostly inkwraith/scrollguard plus echoes of earlier foes",
+ "images":[ x8 {"file":"snake_case","what":"English prompt for an ink-wash game illustration of an environment decoration for a chapter (e.g. 'a bamboo thicket cluster', 'a bronze bell on a stand', 'a snow drift', 'a blank paper wall'), single object centred, isolated","w":"approx logical px"} ],
+ "boss_lines":"2 extra Vietnamese boss taunts per boss that reference the chapter mechanic"
+}
+Keep code compilable C# 8 (Unity 2021). Escape the JSON properly (use 
+ in strings). Do not redefine existing members.
+
+Reference code of the game (read-only, to learn the style and names):
+
+=== Game.cs ===
+using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+// Mac Kiem Luc: the whole game is built from code at runtime (no scene objects, no prefabs).
+// Game.cs: boot, input, the player, rooms and the run. GameFoes.cs: foes and combat.
+// GameDraw.cs: sprites, ink meshes, HUD and menus. Logic space is pixels, y up, 100 px = 1 unit.
+
+public class Foe {
+	public FoeDef d;
+	public Vector2 pos, kb, aim, aimPos, from;
+	public float hp, maxHp, posv, posMax, posT, broken, stun, flash, spawn, cd, stT, z, dmgMul = 1, scale = 1;
+	public Move mv;
+	public int si, mark = -1;
+	public bool resolved, dead, elite;
+	public string afx = "";
+	public float markT, bleed, poison, poisonD, slow, burn, burnD, dotT, deadT;
+	public float[] mcd;
+	public bool[] used;
+	public SpriteRenderer sr;
+	// frame animation (null when the foe only has its single picture)
+	public Sprite[] walk;
+	public Sprite wind, hit;
+	public Sprite[] react;   // hit, staggered, falling, lying
+	public bool moving;
+	public float animT;
+}
+public class Ghost { public SpriteRenderer sr; public float life, max; }
+public class Shot { public Vector2 pos, vel; public float dmg, r = 9, life = 3; public bool mine, pool, reflected; public int el = -1, lvl, pierce, bounce; public List<Foe> hit; public bool wpn; }
+public class Wave { public Vector2 pos; public float r, spd, dmg, max; public bool hit; public Color col = new Color(0.07f, 0.06f, 0.06f); }
+public class Blast { public Vector2 pos; public float r, t, wind, dmg; }
+public class Pool { public Vector2 pos; public float r, t, tick; }
+public class Part { public Vector2 pos, vel; public float r, life, max, grav; public Color col; }
+public class Slash { public Vector2 pos, dir; public float r, w, t, len, wid; public bool line; public Color col; }
+public class FText { public Vector2 pos; public string s; public Color col; public float t; public int size; }
+public class Door { public Vector2 pos; public string kind; }
+public class Item { public Vector2 pos; public string kind, label; public int cost; public Boon boon; public bool gone; public SpriteRenderer sr; public WeaponItem wi; }
+public class Prop { public Vector2 pos; public float r, shake; public SpriteRenderer sr; }
+public class Offer { public Boon b; public int lvl; public bool replace; }
+
+[Serializable]
+public class MetaSave {
+	public int ngo, wins, kiep, runs, best;
+	public List<string> upIds = new List<string>();
+	public List<int> upLv = new List<int>();
+	public List<string> unl = new List<string> { "kiem" };
+	public List<string> skIds = new List<string> { "kiemvu" };
+	public List<int> skLv = new List<int> { 1 };
+	public string tk = "kiemvu";
+	public string sect = "kiem";
+	public bool rigOn = false;
+	public int hon, heatMax;   // KIẾM HỒN; highest KIẾP NẠN tier opened (kiep is the one chosen)
+	public List<string> sects = new List<string> { "kiem" };
+	public List<string> relics = new List<string>(J.START);
+	public List<string> seen = new List<string>();
+	public List<int> mem = new List<int>();
+	public List<int> bk = new List<int> { 0, 0, 0 };   // times each boss was beaten   // the cut-out puppet looked disjointed: drawn frames are the default
+}
+
+public struct Inp {
+	public Vector2 mv, aim;
+	public bool atk, parry, dash, skill, thr, recall, tk, use, up, down, left, right, ok, back;
+}
+
+public partial class Game : MonoBehaviour {
+	public const float AW = 1920, AH = 1288, VIEW_H = 860;
+	public static Rect PR = new Rect(390, 130, 1150, 720);
+	// the open floor of each chapter's painting
+	static readonly Rect[] CH_PR = { new Rect(390, 130, 1150, 720), new Rect(330, 260, 1310, 760), new Rect(410, 400, 1110, 560), new Rect(400, 330, 1120, 640) };
+
+	[RuntimeInitializeOnLoadMethod]
+	static void Boot() {
+		if (FindObjectOfType<Game>() == null) new GameObject("Game").AddComponent<Game>();
+	}
+
+	// --- shared state
+	public string state = "title";   // title, weapon, meta, help, play, pick, event, pause, dead, win
+	public float T;
+	public bool bot, cheat;
+	int speed = 1;
+	string shotDir, savePath, botWeapon;
+	bool allMem;
+	int chaptersN = 3;
+	float botEnd = 0;
+	MetaSave meta = new MetaSave();
+	Inp inp, prev;
+	int menuI;
+	Camera cam;
+	Sfx sfx;
+	System.Random rng = new System.Random();
+
+	// --- run
+	string weaponId = "kiem";
+	WeaponDef weapon;
+	int ch, step, coins, kills, rooms, bossKills, earned;
+	bool reviveLeft;
+	float runTime;
+	Dictionary<string, int> boons = new Dictionary<string, int>();
+	Dictionary<string, Boon> slot = new Dictionary<string, Boon>();
+	int seed;
+
+	// --- room
+	string roomKind = "";
+	int wave, waves;
+	bool cleared;
+	float spawnT, pickT, roomT;
+	string pickKind = "";
+	int pickBonus;
+	List<Offer> offers = new List<Offer>();
+	string banner = "", bannerSub = "";
+	float bannerT;
+	string toast = "";
+	float toastT;
+
+	// --- player
+	Vector2 ppos, aimDir = Vector2.right, adir, ddir;
+	float hp, maxHp, bonusHp, qi, inv, pflash, acd, pcd, comboT, buf, at, dashCd, gt, whirlT, whirlTick, hurtFx, moveAmt;
+	int ci, dashes, dashMax, face = 1;
+	string act = "";
+	bool hitDone, guard, riposte, moving;
+	float dmgMul, qiMul, pwin, crit, coinMul;
+
+	// --- world lists
+	List<Foe> foes = new List<Foe>();
+	List<Shot> shots = new List<Shot>();
+	List<Wave> wavesFx = new List<Wave>();
+	List<Blast> blasts = new List<Blast>();
+	List<Pool> pools = new List<Pool>();
+	List<Part> parts = new List<Part>();
+	List<Slash> slashes = new List<Slash>();
+	List<FText> texts = new List<FText>();
+	List<Door> doors = new List<Door>();
+	List<Item> items = new List<Item>();
+	List<Prop> props = new List<Prop>();
+	List<Vector3> stains = new List<Vector3>();   // x, y, radius
+	float stop, slow, shake, ghostT;
+	int lastStep;
+	List<Ghost> ghosts = new List<Ghost>();
+
+	void Awake() {
+		var args = Environment.GetCommandLineArgs();
+		for (int i = 0; i < args.Length; i++) {
+			if (args[i] == "-bot") bot = true;
+			if (args[i] == "-cheat") cheat = true;
+			if (args[i] == "-allmem") allMem = true;
+			if (args[i] == "-weapon" && i + 1 < args.Length) botWeapon = args[i + 1];
+			if (args[i] == "-speed" && i + 1 < args.Length) speed = int.Parse(args[i + 1]);
+			if (args[i] == "-shots" && i + 1 < args.Length) shotDir = args[i + 1];
+			if (args[i] == "-end" && i + 1 < args.Length) botEnd = float.Parse(args[i + 1]);
+		}
+		savePath = Path.Combine(Application.persistentDataPath, bot ? "test.json" : "mackiem.json");
+		if (bot && File.Exists(savePath)) File.Delete(savePath);
+		Application.targetFrameRate = 120;
+		cam = Camera.main;
+		if (cam == null) {
+			var go = new GameObject("Camera");
+			go.tag = "MainCamera";
+			cam = go.AddComponent<Camera>();
+			go.AddComponent<AudioListener>();
+		}
+		cam.orthographic = true;
+		cam.orthographicSize = VIEW_H * 0.005f;
+		cam.clearFlags = CameraClearFlags.SolidColor;
+		cam.backgroundColor = new Color(0.08f, 0.08f, 0.09f);
+		cam.transform.position = new Vector3(AW * 0.005f, AH * 0.005f, -10);
+		sfx = new GameObject("Sfx").AddComponent<Sfx>();
+		if (bot) sfx.volume = 0.0f;
+		InitDraw();
+		LoadMeta();
+		LoadLoot();
+		LoadStory();
+		LoadEvents();
+		D.Init();
+		weapon = D.Weapon(weaponId);
+		Recalc();
+	}
+
+	// --- meta
+	void LoadMeta() {
+		try { if (File.Exists(savePath)) meta = JsonUtility.FromJson<MetaSave>(File.ReadAllText(savePath)); } catch (Exception) { meta = new MetaSave(); }
+		if (meta == null) meta = new MetaSave();
+		if (!meta.unl.Contains("kiem")) meta.unl.Add("kiem");
+		if (meta.skIds == null || meta.skIds.Count == 0) { meta.skIds = new List<string> { "kiemvu" }; meta.skLv = new List<int> { 1 }; }
+		if (string.IsNullOrEmpty(meta.tk)) meta.tk = "kiemvu";
+		if (string.IsNullOrEmpty(meta.sect)) meta.sect = "kiem";
+		if (meta.sects == null || meta.sects.Count == 0) meta.sects = new List<string> { "kiem" };
+		if (!meta.sects.Contains(meta.sect)) meta.sect = meta.sects[0];
+		if (meta.relics == null || meta.relics.Count == 0) meta.relics = new List<string>(J.START);
+		if (meta.seen == null) meta.seen = new List<string>();
+		if (meta.mem == null) meta.mem = new List<int>();
+		if (meta.bk == null) meta.bk = new List<int>();
+		while (meta.bk.Count < 4) meta.bk.Add(0);
+		if (allMem) for (int q = 0; q < 9; q++) if (!meta.mem.Contains(q)) meta.mem.Add(q);
+		meta.heatMax = Mathf.Max(meta.heatMax, meta.kiep);
+	}
+	void SaveMeta() { try { File.WriteAllText(savePath, JsonUtility.ToJson(meta)); } catch (Exception) { } }
+	int Up(string id) { int i = meta.upIds.IndexOf(id); return i < 0 ? 0 : meta.upLv[i]; }
+	void SetUp(string id, int v) { int i = meta.upIds.IndexOf(id); if (i < 0) { meta.upIds.Add(id); meta.upLv.Add(v); } else meta.upLv[i] = v; }
+	int Lv(string id) { int v; return boons.TryGetValue(id, out v) ? v : 0; }
+	int SlotEl(string s) { Boon b; return slot.TryGetValue(s, out b) ? b.el : -1; }
+	int SlotLv(string s) { Boon b; return slot.TryGetValue(s, out b) ? Lv(b.id) : 0; }
+	float Rnd() { return (float)rng.NextDouble(); }
+	float Rnd(float a, float b) { return a + (b - a) * (float)rng.NextDouble(); }
+	Vector2 RndDir() { float a = Rnd(0, Mathf.PI * 2); return new Vector2(Mathf.Cos(a), Mathf.Sin(a)); }
+
+	void Recalc() {
+		maxHp = 100 + Up("hp") * 12 + Lv("hp") * 25 + bonusHp + (meta.sect == "thiet" ? 30 : 0);
+		dmgMul = 1 + Up("dmg") * 0.05f;
+		qiMul = (1 + Up("qi") * 0.12f + Lv("qi") * 0.35f) * (1 + Afx("qi_gain") / 100f);
+		dashMax = 1 + Lv("dash");
+		int sm = 4 + Lv("kiem") + (weapon != null && weapon.mech == "sword" ? 2 : 0) + (meta.sect == "kiem" ? 2 : 0) + (Has("thattinh") ? 2 : 0) + (int)Afx("sword_count");
+		swordsHeld += sm - swordMax; swordMax = sm;
+		pwin = Mathf.Min(0.35f, 0.2f * (1 + Lv("calm") * 0.3f) * (meta.sect == "thiet" ? 1.6f : 1));   // capped: stacked windows made parrying free
+		crit = Lv("crit") * 0.12f + Afx("crit_chance") / 100f;
+		coinMul = 1 + Lv("coin") * 0.4f;
+		RelicRecalc();
+		hp = Mathf.Min(hp, maxHp);
+	}
+
+	// --- input
+	bool P(bool now, bool before) { return now && !before; }
+	Vector2 lastMouse;
+	bool padAim;
+
+	void ReadInput() {
+		prev = inp;
+		var i = new Inp();
+		if (bot) { BotInput(ref i); inp = i; return; }
+		i.mv = new Vector2((Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) ? 1 : 0) - (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1 : 0),
+			(Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) ? 1 : 0) - (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) ? 1 : 0));
+		i.atk = Input.GetMouseButton(0) || Input.GetKey(KeyCode.J);
+		i.parry = Input.GetKey(KeyCode.K) || Input.GetKey(KeyCode.LeftShift);
+		i.thr = Input.GetMouseButton(1) || Input.GetKey(KeyCode.I);
+		i.recall = Input.GetKey(KeyCode.R) || Input.GetMouseButton(2) || Input.GetKey(KeyCode.O);
+		i.dash = Input.GetKey(KeyCode.Space);
+		i.skill = Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.L);
+		i.use = Input.GetKey(KeyCode.E);
+		i.tk = Input.GetKey(KeyCode.F) || Input.GetKey(KeyCode.JoystickButton9);
+		i.ok = Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.E);
+		i.back = Input.GetKey(KeyCode.Escape);
+		// gamepad (Xbox layout): left stick move, right stick aim, X attack, A dash, LB/RB guard, Y skill, B use
+		bool pad = Input.GetJoystickNames().Length > 0;
+		Vector2 rs = Vector2.zero;
+		if (pad) {
+			Vector2 ls = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+			if (ls.magnitude > 0.3f && i.mv == Vector2.zero) i.mv = ls;
+			i.atk |= Input.GetKey(KeyCode.JoystickButton2);
+			i.dash |= Input.GetKey(KeyCode.JoystickButton0);
+			i.parry |= Input.GetKey(KeyCode.JoystickButton4);
+			i.thr |= Input.GetKey(KeyCode.JoystickButton5);
+			i.skill |= Input.GetKey(KeyCode.JoystickButton3);
+			i.use |= Input.GetKey(KeyCode.JoystickButton1);
+			i.ok |= Input.GetKey(KeyCode.JoystickButton0);
+			i.back |= Input.GetKey(KeyCode.JoystickButton7);
+			if (Input.GetKey(KeyCode.JoystickButton0) || Input.GetKey(KeyCode.JoystickButton2) || ls.magnitude > 0.5f) padAim = true;
+		}
+		if ((Vector2)Input.mousePosition != lastMouse || Input.GetMouseButton(0)) padAim = false;
+		lastMouse = Input.mousePosition;
+		i.up = i.mv.y > 0.5f; i.down = i.mv.y < -0.5f; i.left = i.mv.x < -0.5f; i.right = i.mv.x > 0.5f;
+		if (i.mv.sqrMagnitude > 1) i.mv.Normalize();
+		if (padAim) i.aim = ppos + (i.mv.sqrMagnitude > 0.1f ? i.mv.normalized : aimDir) * 200;
+		else {
+			Vector3 w = cam.ScreenToWorldPoint(Input.mousePosition);
+			i.aim = new Vector2(w.x, w.y) * 100f;
+		}
+		inp = i;
+	}
+
+	void Update() {
+		float rdt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+		for (int k = 0; k < speed; k++) Tick(rdt);
+		Render(rdt);
+		if (bot) BotShots();
+	}
+
+	void Tick(float rdt) {
+		T += rdt;
+		if (state != lastState) { lastState = state; stateT = T; }
+		ReadInput();
+		toastT -= rdt; bannerT -= rdt;
+		switch (state) {
+			case "play": {
+				if (P(inp.back, prev.back)) { state = "pause"; menuI = 0; break; }
+				float dt = rdt;
+				if (stop > 0) { stop -= rdt; dt = 0; } else if (slow > 0) { slow -= rdt; dt = rdt * 0.3f; }
+				if (dt > 0) Sim(dt);
+				break;
+			}
+			case "title": Menu(7, TitleAct); break;
+			case "relic": Menu(relicOffers.Count, RelicAct, true); if (P(inp.recall, prev.recall)) Reroll(); break;
+			case "heat": HeatTick(); break;
+			case "vault": VaultTick(); break;
+			case "memory": MemoryTick(); break;
+			case "skills": SkillsTick(); break;
+			case "sect": Menu(D.SECTS.Length, SectAct, true); if (P(inp.back, prev.back)) state = "weapon"; break;
+			case "weapon": Menu(D.WEAPONS.Length, WeaponAct, true); if (P(inp.back, prev.back)) state = "title"; break;
+			case "meta": Menu(D.META.Length, MetaAct); if (P(inp.back, prev.back)) { state = "title"; menuI = 2; } break;
+			case "help": if (P(inp.back, prev.back) || P(inp.ok, prev.ok)) { state = "title"; menuI = 5; } break;
+			case "pick": Menu(offers.Count, PickAct, true); if (P(inp.recall, prev.recall)) Reroll(); break;
+			case "event": Menu(3, EventAct); break;
+			case "kyngo": EventTick(); break;
+			case "wpick": Menu(wOffers.Count, WeaponPickAct, true); if (P(inp.back, prev.back)) WeaponPickAct(99); break;
+			case "story": StoryTick(rdt); break;
+			case "pause": Menu(3, PauseAct); if (P(inp.back, prev.back)) state = "play"; break;
+			case "dead":
+			case "win": if (T - endT > 1.2f && P(inp.ok, prev.ok)) { state = "title"; menuI = 0; ClearRoom(); sfx.Battle(false); } break;
+		}
+	}
+	float endT, stateT;
+	bool heatOpened;
+	int honRun;
+	string lastState = "";
+
+	void Menu(int n, Action<int> act, bool horiz = false) {
+		if (n <= 0) return;
+		if (P(horiz ? inp.left : inp.up, horiz ? prev.left : prev.up)) { menuI = (menuI + n - 1) % n; sfx.Play("ui", 0.5f); }
+		if (P(horiz ? inp.right : inp.down, horiz ? prev.right : prev.down)) { menuI = (menuI + 1) % n; sfx.Play("ui", 0.5f); }
+		menuI = Mathf.Clamp(menuI, 0, n - 1);
+		if (P(inp.ok, prev.ok) && T - stateT > 0.3f) act(menuI);
+	}
+
+	void TitleAct(int i) {
+		sfx.Play("pick", 0.7f);
+		if (i == 0) { weaponId = bot && botWeapon != null ? botWeapon : "kiem"; state = "sect"; menuI = Mathf.Max(0, Array.FindIndex(D.SECTS, k => k.id == meta.sect)); }
+		else if (i == 1) { state = "skills"; skCol = Mathf.Max(0, Array.FindIndex(D.SKILLS, k => k.id == meta.tk)); skRow = 0; }
+		else if (i == 2) { state = "meta"; menuI = 0; }
+		else if (i == 3) { state = "vault"; vaultI = 0; }
+		else if (i == 4) { state = "memory"; memI = meta.mem.Count > 0 ? meta.mem[meta.mem.Count - 1] : 0; }
+		else if (i == 5) state = "help";
+		else Application.Quit();
+	}
+	void WeaponAct(int i) {
+		if (bot && botWeapon != null) { i = Mathf.Max(0, Array.FindIndex(D.WEAPONS, w => w.id == botWeapon)); if (!meta.unl.Contains(botWeapon)) meta.unl.Add(botWeapon); }
+		if (!meta.unl.Contains(D.WEAPONS[i].id)) { sfx.Play("block", 0.6f); return; }
+		weaponId = D.WEAPONS[i].id;
+		state = "sect";
+		menuI = Mathf.Max(0, Array.FindIndex(D.SECTS, k => k.id == meta.sect));
+	}
+	void SectAct(int i) {
+		if (!TryUnlockSect(i)) return;
+		meta.sect = D.SECTS[i].id;
+		SaveMeta();
+		state = "heat";
+		heatI = Mathf.Min(meta.kiep, meta.heatMax);
+	}
+	void MetaAct(int i) {
+		var m = D.META[i];
+		int lv = Up(m.id);
+		if (lv >= m.cost.Length || meta.ngo < m.cost[lv]) { sfx.Play("block", 0.6f); return; }
+		meta.ngo -= m.cost[lv];
+		SetUp(m.id, lv + 1);
+		SaveMeta();
+		sfx.Play("pick");
+	}
+	void PauseAct(int i) {
+		if (i == 2) { meta.rigOn = !meta.rigOn; SaveMeta(); sfx.Play("ui"); return; }
+		if (i == 0) state = "play";
+		else { state = "title"; menuI = 0; ClearRoom(); sfx.Battle(false); }
+	}
+
+	// --- run flow
+	void StartRun() {
+		weapon = D.Weapon(weaponId);
+		ch = 0; step = 0; kills = 0; rooms = 0; bossKills = 0; runTime = 0; bonusHp = 0;
+		coins = Up("coin") * 25;
+		reviveLeft = Up("revive") > 0;
+		boons.Clear(); slot.Clear();
+		honRun = 0;
+		ResetEvents();
+		chaptersN = meta.mem.Count >= 9 ? 4 : 3;
+		rerolls = Up("reroll");
+		relics.Clear(); phoenixUsed = false; satky = 0; relicPending = false;
+		seed = rng.Next();
+		hp = 9999; qi = 0;
+		Recalc();
+		hp = maxHp;
+		meta.runs++;
+		ClearRoom();
+		BuildWorld();
+		swordsHeld = swordMax;
+		ppos = new Vector2(CX, segs[0].r.yMin + 70);
+		camPos = ppos;
+		act = ""; guard = false; whirlT = 0; inv = 0.5f; tkCd = 0;
+		if (rigOk) ResetRig();
+		ci = 0; comboT = 0; buf = 0; acd = 0;   // a combo left over from the last run may not exist on this weapon
+		wItem = new WeaponItem { id = weaponId, rar = 0, name = D.Weapon(weaponId).name };
+		Recalc();
+		dashes = dashMax;
+		cleared = true; wave = 0; waves = 0; roomKind = "fight"; pickT = 0; pickKind = "";
+		chain = 0;
+		if (meta.sect == "hanh") Learn(D.BoonById("a" + rng.Next(5)), 1);
+		state = "play";
+		Banner(D.CH_NAME[0], "Chuột trái đánh · chuột phải phi kiếm · R thu kiếm · SHIFT đỡ · SPACE lướt · F tuyệt kỹ");
+	}
+
+	void Banner(string a, string b = "") { banner = a; bannerSub = b; bannerT = 3.2f; }
+	void Toast(string s) { toast = s; toastT = 2.4f; }
+
+	void ClearRoom() {
+		foreach (var f in foes) if (f.sr != null) Destroy(f.sr.gameObject);
+		foreach (var it in items) if (it.sr != null) Destroy(it.sr.gameObject);
+		foreach (var pr in props) if (pr.sr != null) Destroy(pr.sr.gameObject);
+		foes.Clear(); items.Clear(); props.Clear(); shots.Clear(); wavesFx.Clear(); blasts.Clear(); pools.Clear();
+		parts.Clear(); slashes.Clear(); texts.Clear(); doors.Clear(); stains.Clear();
+		foreach (var g in ghosts) if (g.sr != null) Destroy(g.sr.gameObject);
+		ghosts.Clear();
+		ClearStage();
+	}
+
+
+	void AddItem(Vector2 p, string kind, string label, int cost, string spr, Boon b) {
+		items.Add(new Item { pos = p, kind = kind, label = label, cost = cost, boon = b, sr = spr == null ? null : NewSpr(spr, kind == "luyen" ? 100 : 70) });
+	}
+
+	void SpawnWave() {
+		wave++;
+		// many weak foes rather than a few strong ones
+		float budget = (2.6f + ch * 1.3f + step * 0.7f + meta.kiep * 0f + wave * 0.4f) * 2.1f;
+		bool forceElite = HeatAt(8);
+		float sy0 = PR.yMin + 70, sy1 = PR.yMax - 70;
+		var pool = D.POOLS[ch];
+		int n = 0;
+		while (budget > 0.4f && n < 14) {
+			var d = D.Foe(pool[rng.Next(pool.Length)]);
+			if (d.cost > budget + 0.6f) { if (n > 0 && Rnd() < 0.5f) break; d = D.Foe(pool[0]); }
+			bool elite = (forceElite || Rnd() < (0.1f + ch * 0.06f) * (HeatAt(2) ? 2 : 1)) && budget > d.cost * 2;
+			if (elite) forceElite = false;
+			Vector2 p = Vector2.zero;
+			for (int tries = 0; tries < 15; tries++) {
+				p = new Vector2(Rnd(PR.xMin + 60, PR.xMax - 60), Rnd(sy0, sy1));
+				if ((p - ppos).magnitude > 330) break;
+			}
+			Spawn(d.id, p, elite);
+			budget -= d.cost * (elite ? 2 : 1);
+			n++;
+		}
+		sfx.Play("drum", 0.8f);
+	}
+
+	Foe Spawn(string id, Vector2 p, bool elite) {
+		var d = D.Foe(id);
+		float kiep = d.boss ? (HeatAt(6) ? 1.3f : 1) * (HeatAt(10) ? 1.35f : 1) : (HeatAt(1) ? 1.25f : 1);
+		var f = new Foe { d = d, pos = Confine(p, d.r), elite = elite, spawn = 0.75f, cd = Rnd(0.3f, 1.2f) };
+		f.maxHp = d.hp * (d.boss ? 1.35f : D.CH_HP[ch] * 0.7f) * kiep * (elite ? 2.3f : 1);
+		f.hp = f.maxHp;
+		f.posMax = d.pos * (elite ? 1.6f : 1) * (d.boss ? 1 : 1 + ch * 0.25f);
+		f.dmgMul = 1.25f * (d.boss ? 1 : D.CH_DMG[ch]) * (HeatAt(3) ? 1.15f : 1) * (elite ? 1.3f : 1);
+		f.scale = elite ? 1.22f : 1;
+		if (elite) f.afx = new[] { "bao", "toc", "giap", "reflect", "ward", "frenzy" }[rng.Next(ch >= 1 ? 6 : 3)];
+		if (HeatAt(12)) f.posMax *= 1.25f;
+		f.mcd = new float[d.moves.Length];
+		f.used = new bool[d.moves.Length];
+		f.sr = NewSpr(d.id, d.h * f.scale);
+		var wf = Frames(d.id + "_walk");
+		if (wf.Length > 0) {
+			f.walk = wf; f.wind = Spr(d.id + "_wind"); f.hit = Spr(d.id + "_hit");
+			var rf = Frames(d.id + "_react");
+			if (rf.Length >= 4) f.react = rf;
+			f.sr.sprite = wf[0];
+			f.sr.transform.localScale = Vector3.one * f.scale;
+		}
+		foes.Add(f);
+		Puff(f.pos, D.INK, 14, 180);
+		return f;
+	}
+
+
+
+
+	void Heal(float v) {
+		if (v <= 0 || hp <= 0) return;
+		v *= HealMul();
+		if (SectHeal(v)) return;
+		float before = hp;
+		hp = Mathf.Min(maxHp, hp + v);
+		if (hp - before >= 1) Text(ppos + new Vector2(0, 130), "+" + Mathf.RoundToInt(hp - before), new Color(0.5f, 0.9f, 0.5f), 22);
+	}
+	void AddCoins(int c) { coins += Mathf.RoundToInt(c * coinMul); sfx.Play("coin", 0.6f); }
+
+	// --- offers
+	List<Offer> MakeOffers(int n, int bonus = 0) {
+		var cand = new List<Boon>();
+		var wt = new List<float>();
+		foreach (var b in D.BOONS) {
+			int lv = Lv(b.id);
+			if (lv >= 3) continue;
+			if (b.sect != "" && b.sect != meta.sect) continue;
+			float w = 2;
+			if (b.slot != "pas") {
+				Boon cur;
+				if (!slot.TryGetValue(b.slot, out cur)) w = 3;
+				else if (cur.id == b.id) w = 2.2f;
+				else w = 0.5f;
+			} else if (lv > 0) w = 1.5f;
+			// the first manuals of a run should put phases in the hands: reactions need two of them
+			if (b.slot == "pas" && slot.Count < 2) w = 0.35f;
+			if (b.sect != "") w *= 2;
+			cand.Add(b); wt.Add(w);
+		}
+		var res = new List<Offer>();
+		while (res.Count < n && cand.Count > 0) {
+			float tot = 0;
+			foreach (var w in wt) tot += w;
+			float x = Rnd() * tot;
+			int k = 0;
+			for (; k < cand.Count - 1; k++) { x -= wt[k]; if (x <= 0) break; }
+			var b = cand[k];
+			Boon cur;
+			bool rep = b.slot != "pas" && slot.TryGetValue(b.slot, out cur) && cur.id != b.id;
+			res.Add(new Offer { b = b, lvl = Mathf.Min(3, Lv(b.id) + 1 + bonus), replace = rep });
+			cand.RemoveAt(k); wt.RemoveAt(k);
+		}
+		return res;
+	}
+
+	void OpenPick(string kind, int bonus) {
+		offers.Clear();
+		if (kind == "luyen") {
+			var own = new List<string>(boons.Keys);
+			own.RemoveAll(id => boons[id] >= 3);
+			while (own.Count > 3) own.RemoveAt(rng.Next(own.Count));
+			foreach (var id in own) offers.Add(new Offer { b = D.BoonById(id), lvl = boons[id] + 1 });
+			if (offers.Count == 0) { AddCoins(40); Toast("Không còn gì để luyện: nhận ngân lượng"); return; }
+		} else offers = MakeOffers(3, bonus);
+		if (offers.Count == 0) return;
+		pickKind = kind;
+		state = "pick";
+		menuI = 0;
+		sfx.Play("pick", 0.8f);
+	}
+
+	void PickAct(int i) {
+		if (i < 0 || i >= offers.Count) return;
+		Learn(offers[i].b, offers[i].lvl);
+		state = "play";
+		if (relicPending) { relicPending = false; OpenRelic(); }
+		prev.atk = true; inp.atk = false; buf = 0;
+	}
+
+	void Learn(Boon b, int lvl) {
+		if (b.slot != "pas") {
+			Boon cur;
+			if (slot.TryGetValue(b.slot, out cur) && cur.id != b.id) boons.Remove(cur.id);
+			slot[b.slot] = b;
+		}
+		boons[b.id] = Mathf.Clamp(lvl, 1, 3);
+		float before = maxHp;
+		Recalc();
+		if (maxHp > before) hp += maxHp - before;
+		sfx.Play("pick");
+		Toast("LĨNH NGỘ: " + b.name + " · CẤP " + boons[b.id]);
+	}
+
+	void EventAct(int i) {
+		if (i == 0) {
+			if (hp <= 21) { sfx.Play("block"); return; }
+			hp -= 20;
+			state = "play";
+			OpenPick("bikip", 1);
+		} else if (i == 1) {
+			if (coins < 40 || boons.Count == 0) { sfx.Play("block"); return; }
+			coins -= 40;
+			var own = new List<string>(boons.Keys);
+			own.RemoveAll(id => boons[id] >= 3);
+			for (int k = 0; k < 2 && own.Count > 0; k++) {
+				int j = rng.Next(own.Count);
+				Learn(D.BoonById(own[j]), boons[own[j]] + 1);
+				own.RemoveAt(j);
+			}
+			state = "play";
+		} else state = "play";
+	}
+
+	void UseItem(Item it) {
+		if (it.kind == "npc" || it.gone) return;
+		if (coins < it.cost) { sfx.Play("block"); Toast("Không đủ ngân lượng"); return; }
+		if (it.kind == "luyen") {
+			bool any = false;
+			foreach (var kv in boons) if (kv.Value < 3) any = true;
+			if (!any) { sfx.Play("block"); Toast("Chưa có chiêu nào để luyện"); return; }
+		}
+		if (it.kind == "weapon") { PickWeaponItem(it); return; }
+		coins -= it.cost;
+		it.gone = true;
+		if (it.sr != null) { Destroy(it.sr.gameObject); it.sr = null; }
+		switch (it.kind) {
+			case "heal": Heal(40); sfx.Play("pick"); break;
+			case "dan": bonusHp += 15; Recalc(); Heal(15); sfx.Play("pick"); break;
+			case "boon": Learn(it.boon, Lv(it.boon.id) + 1); break;
+			case "relic": OpenRelic(); break;
+			case "luyen": OpenPick("luyen", 0); break;
+			case "tea": Heal(maxHp * 0.4f); sfx.Play("pick"); Toast("Trà ấm, lòng tĩnh."); break;
+			case "ky": OpenEvent(); sfx.Play("pick"); break;
+		}
+	}
+
+	void Die() {
+		if (cheat) { hp = maxHp; return; }
+		if (RelicRevive()) return;
+		if (reviveLeft) {
+			reviveLeft = false;
+			hp = maxHp * 0.4f; inv = 2f;
+			Burst(ppos, 320, 40, -1, 0, false);
+			Banner("BẤT TỬ PHÙ", "Đứng dậy lần nữa");
+			return;
+		}
+		EndRun(false);
+	}
+	void Win() { EndRun(true); }
+
+	void EndRun(bool win) {
+		earned = Mathf.RoundToInt((rooms * 2 + bossKills * 10 + (win ? 25 : 0)) * (1 + meta.kiep * J.HEAT_PAY));
+		heatOpened = false;
+		meta.ngo += earned;
+		meta.best = Mathf.Max(meta.best, ch * 6 + step + (win ? 6 : 0));
+		if (win) {
+			meta.wins++;
+			if (meta.kiep >= meta.heatMax && meta.heatMax < J.HEAT.Length - 1) { meta.heatMax++; heatOpened = true; }
+		}
+		SaveMeta();
+		state = win ? "win" : "dead";
+		endT = T;
+		sfx.Battle(false);
+		sfx.Play("gong");
+		StoryEnd(win);
+	}
+
+	// --- simulation
+	void Sim(float dt) {
+		runTime += dt;
+		roomT += dt;
+		UpPlayer(dt);
+		UpSwords(dt);
+		UpSkills(dt);
+		UpFoes(dt);
+		UpShots(dt);
+		UpFx(dt);
+		UpWorld(dt);
+		if (hp <= 0 && state == "play") Die();
+	}
+
+
+	void UpPlayer(float dt) {
+		inv -= dt; pflash -= dt; acd -= dt; pcd -= dt; comboT -= dt; hurtFx -= dt;
+		if (comboT <= 0 && act != "atk") ci = 0;
+		if (dashes < dashMax) { dashCd -= dt; if (dashCd <= 0) { dashes++; dashCd = 0.75f; } }
+		Vector2 av = inp.aim - ppos;
+		if (av.sqrMagnitude > 4) aimDir = av.normalized;
+		if (inp.atk) buf = 0.18f; else buf -= dt;
+		bool canGuard = act != "dash" && act != "skill";
+		if (P(inp.parry, prev.parry) && canGuard && pcd <= 0) { guard = true; gt = 0; pcd = 0.42f; if (act == "atk") act = ""; }
+		if (!inp.parry || !canGuard) guard = false;
+		if (guard) gt += dt;
+		if (P(inp.dash, prev.dash) && dashes > 0 && act != "skill") {
+			ddir = inp.mv.sqrMagnitude > 0.1f ? inp.mv.normalized : aimDir;
+			if (dashes == dashMax) dashCd = 0.75f;
+			dashes--;
+			act = "dash"; at = 0; guard = false;
+			dashHit.Clear();
+			inv = Mathf.Max(inv, 0.3f);
+			sfx.Play("dash", 0.7f);
+			DashBurst();
+		}
+		if (P(inp.skill, prev.skill) && qi >= 50 && act != "dash" && act != "skill") StartSkill();
+		moving = false;
+		switch (act) {
+			case "dash":
+				at += dt;
+				ppos += ddir * 1250 * dt;
+				ghostT -= dt;
+				RelicDash();
+				if (ghostT <= 0) { ghostT = 0.028f; AddGhost(heroSr, ppos, new Color(0.07f, 0.06f, 0.08f, 0.55f), 0.22f); }
+				if (Rnd() < 0.8f) parts.Add(new Part { pos = ppos + new Vector2(0, 50) + RndDir() * 20, vel = -ddir * 60, r = Rnd(8, 18), life = 0.3f, max = 0.3f, col = new Color(0.07f, 0.06f, 0.06f, 0.5f) });
+				if (ddir.x != 0) face = ddir.x > 0 ? 1 : -1;
+				if (at >= 0.17f) { act = ""; DashBurst(); skidT = 0.13f; }
+				break;
+			case "atk": {
+				var s = weapon.combo[ci];
+				at += dt * (1 + frenzy * 0.07f) * (1 + Afx("atk_speed") / 100f);
+				if (at < s.dur * 0.5f) ppos += adir * s.lunge * (1 - at / s.dur) * dt * 2;
+				if (!hitDone && at >= s.dur * 0.3f) { hitDone = true; Strike(s); }
+				if (at >= s.dur) {
+					act = ""; comboT = 0.55f; ci++;
+					if (ci >= weapon.combo.Length) { ci = 0; acd = 0.16f; }
+				}
+				break;
+			}
+			case "skill":
+				at += dt;
+				if (weapon.skill == "charge") {
+					ppos += adir * 2300 * dt;
+					AddGhost(heroSr, ppos, new Color(0.07f, 0.06f, 0.08f, 0.6f), 0.3f);
+					inv = Mathf.Max(inv, 0.1f);
+					parts.Add(new Part { pos = ppos + new Vector2(0, 50), vel = Vector2.zero, r = 22, life = 0.3f, max = 0.3f, col = new Color(0.07f, 0.06f, 0.06f, 0.5f) });
+					if (at >= 0.2f) act = "";
+				} else if (at >= 0.28f) act = "";
+				break;
+			default:
+				if (weapon.mech == "charge") {
+					buf = 0;
+					if (inp.atk && !guard && acd <= 0) chargeT = Mathf.Min(1.1f, chargeT + dt);
+					else if (chargeT > 0) FireBow();
+				}
+				if (buf > 0 && acd <= 0 && !guard) {
+					act = "atk"; at = 0; hitDone = false; adir = aimDir;
+					face = adir.x >= 0 ? 1 : -1;
+					break;
+				}
+				Vector2 v = inp.mv * 370 * (guard ? 0.45f : 1) * (chargeT > 0 ? 0.6f : 1) * (1 + frenzy * 0.02f) * (Has("phonghai") ? 1.15f : 1);
+				ppos += v * dt;
+				moving = v.sqrMagnitude > 100;
+				if (moving) {
+					moveAmt += dt * (guard ? 0.5f : 1);
+					// a puff of dust each time a foot lands (frames 0 and 4 of the run cycle)
+					int fr = (int)(moveAmt * 15) % 8;
+					if (fr != lastStep && (fr == 0 || fr == 4)) parts.Add(new Part { pos = ppos + new Vector2(-face * 14, 4), vel = new Vector2(-face * 40, 30), r = Rnd(7, 11), life = 0.32f, max = 0.32f, col = new Color(0.07f, 0.06f, 0.06f, 0.22f) });
+					lastStep = fr;
+				}
+				if (guard || !moving) face = aimDir.x >= 0 ? 1 : -1;
+				else if (Mathf.Abs(v.x) > 10) face = v.x > 0 ? 1 : -1;
+				break;
+		}
+		if (whirlT > 0) {
+			whirlT -= dt; whirlTick -= dt;
+			if (whirlTick <= 0) {
+				whirlTick = 0.22f;
+				float mult = dmgMul * (1 + SlotLv("skill") * 0.3f);
+				foreach (var f in foes) {
+					if (f.dead || f.spawn > 0) continue;
+					Vector2 d = ppos - f.pos;
+					if (d.magnitude < 250 + f.d.r) {
+						if (!f.d.boss) f.kb += d.normalized * 260;
+						HurtFoe(f, 9 * mult, SlotEl("skill"), SlotLv("skill"), 1, -d.normalized, true, false);
+					}
+				}
+				sfx.Play("slash", 0.4f, 1.3f);
+			}
+		}
+		ppos = Confine(ppos, 22);
+	}
+
+	void DashBurst() {
+		if (Afx("on_dash_dmg") > 0) Burst(ppos, 110, Afx("on_dash_dmg") * dmgMul, -1, 0, false);
+		int el = SlotEl("dash");
+		if (el < 0) return;
+		Burst(ppos, 125, 16 * SlotLv("dash") * dmgMul, el, SlotLv("dash"), true);
+	}
+
+	void StartSkill() {
+		qi -= 50;
+		act = "skill"; at = 0; guard = false;
+		adir = aimDir;
+		face = adir.x >= 0 ? 1 : -1;
+		int el = SlotEl("skill"), lv = SlotLv("skill");
+		float mult = dmgMul * (1 + lv * 0.3f);
+		Color col = el >= 0 ? D.EL_COL[el] : D.INK;
+		sfx.Play("skill");
+		shake = Mathf.Max(shake, 6);
+		Text(ppos + new Vector2(0, 150), weapon.skillName, D.PAPER, 24);
+		if (weapon.skill == "quake") {
+			Burst(ppos, 350, 60 * mult, el, lv, true);
+			foreach (var f in foes) if (!f.dead && (f.pos - ppos).magnitude < 350) AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 1));
+			shake = 16;
+		} else if (weapon.skill == "fan") {
+			for (int i = 0; i < 7; i++) {
+				float a = Mathf.Atan2(adir.y, adir.x) + (i - 3) * 0.15f;
+				shots.Add(new Shot { pos = ppos + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 1050, dmg = 22 * mult, mine = true, el = el, lvl = lv, pierce = 3, r = 14, life = 0.9f, hit = new List<Foe>() });
+			}
+		} else if (weapon.skill == "charge") {
+			inv = Mathf.Max(inv, 0.35f);
+			slashes.Add(new Slash { pos = ppos + new Vector2(0, 45), dir = adir, line = true, len = 540, wid = 90, col = col });
+			foreach (var f in foes) {
+				if (f.dead || f.spawn > 0) continue;
+				if (LineHit(ppos, adir, 540, 90, f.pos, f.d.r)) HurtFoe(f, 55 * mult, el, lv, 1.5f, adir);
+			}
+		} else {
+			whirlT = 2.2f; whirlTick = 0;
+		}
+	}
+
+	void Strike(AtkStep s) {
+		float rg = 1 + Afx("range_mul") / 100f;
+		int el = SlotEl("atk"), lv = SlotLv("atk");
+		float mult = dmgMul * (1 + lv * 0.15f);
+		bool last = ci == weapon.combo.Length - 1;
+		if (last) mult *= (1 + Lv("fin") * 0.4f) * (1 + Afx("combo_last_mul") / 100f);
+		bool taiji = last && Has("thaicuc");
+		if (riposte) { mult *= 1 + Lv("ripo") * 1.0f; riposte = false; }
+		Color col = el >= 0 ? D.EL_COL[el] : D.INK;
+		Vector2 o = ppos;
+		sfx.Play("slash", 0.55f, last ? 0.85f : 1.1f);
+		LegendStrike(last);
+		if (s.t == "shot") {
+			for (int i = 0; i < s.n; i++) {
+				float a = Mathf.Atan2(adir.y, adir.x) + (s.n == 1 ? 0 : Mathf.Lerp(-s.spread, s.spread, i / (float)(s.n - 1)));
+				shots.Add(new Shot { pos = o + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * s.spd, dmg = s.dmg * mult, mine = true, el = el, lvl = lv, pierce = 1, wpn = true, bounce = weapon.mech == "bounce" ? (Legend() ? 5 : 2) : 0, r = 12, life = 0.62f, hit = new List<Foe>() });
+			}
+			return;
+		}
+		bool arc = s.t == "arc";
+		slashes.Add(new Slash { pos = o + new Vector2(0, 45), dir = adir, r = s.r * rg, w = s.w, line = !arc, len = s.len * rg, wid = s.wid, col = col });
+		bool any = false;
+		foreach (var f in foes) {
+			if (f.dead || f.spawn > 0) continue;
+			bool h = arc ? ArcHit(o, adir, s.r * rg, s.w, f.pos, f.d.r * f.scale) : LineHit(o, adir, s.len * rg, s.wid, f.pos, f.d.r * f.scale);
+			if (!h) continue;
+			if (taiji) { int ke = f.mark >= 0 ? KhacOf(f.mark) : rng.Next(5); HurtFoe(f, 0.01f, ke, Mathf.Max(1, lv), 0, adir, true, false); }
+			float fm = 1;
+			// the spear rewards hitting with the last third of its reach
+			if (weapon.mech == "tip" && (f.pos - o).magnitude > (arc ? s.r * rg : s.len * rg) * 0.6f) { fm = 1.6f; Text(f.pos + new Vector2(0, f.d.h + 34), "MŨI THƯƠNG", new Color(1f, 0.9f, 0.5f), 15); }
+			wHit = true;
+			HurtFoe(f, s.dmg * mult * fm, el, lv, weapon.mech == "heavy" ? 2.2f : 1, adir);
+			any = true;
+		}
+		for (int pi = props.Count - 1; pi >= 0; pi--) {
+			var pr = props[pi];
+			if (arc ? ArcHit(o, adir, s.r * rg, s.w, pr.pos, pr.r) : LineHit(o, adir, s.len * rg, s.wid, pr.pos, pr.r)) HitProp(pi);
+		}
+		// blades cut arrows out of the air
+		foreach (var sh in shots) {
+			if (sh.mine || sh.life <= 0) continue;
+			bool h = arc ? ArcHit(o, adir, s.r * rg, s.w, sh.pos - new Vector2(0, 50), 10) : LineHit(o, adir, s.len * rg, s.wid, sh.pos - new Vector2(0, 50), 10);
+			if (h) { sh.life = 0; Puff(sh.pos, D.INK, 4, 120); }
+		}
+		if (any && weapon.mech == "frenzy") { frenzy = Mathf.Min(10, frenzy + 1); frenzyT = 2.5f; }
+		if (last && weapon.mech == "heavy") { Burst(o + adir * 110, 200, 20 * mult, el, lv, false); shake = Mathf.Max(shake, 10); }
+		if (any) { stop = Mathf.Max(stop, last ? 0.07f : 0.035f); shake = Mathf.Max(shake, last ? 7 : 3); }
+	}
+
+	public static bool ArcHit(Vector2 o, Vector2 dir, float r, float w, Vector2 t, float tr) {
+		Vector2 d = t - o;
+		float m = d.magnitude;
+		if (m > r + tr) return false;
+		if (w >= 6.2f || m < tr + 20) return true;
+		return Vector2.Angle(dir, d) * Mathf.Deg2Rad <= w * 0.5f + Mathf.Atan2(tr, m);
+	}
+	public static bool LineHit(Vector2 o, Vector2 dir, float len, float wid, Vector2 t, float tr) {
+		Vector2 d = t - o;
+		float along = Vector2.Dot(d, dir);
+		if (along < -tr || along > len + tr) return false;
+		return Mathf.Abs(d.x * dir.y - d.y * dir.x) <= wid * 0.5f + tr;
+	}
+
+	void Text(Vector2 p, string s, Color c, int size = 20) { texts.Add(new FText { pos = p + new Vector2(Rnd(-14, 14), 0), s = s, col = c, size = size }); }
+
+	public void Puff(Vector2 p, Color c, int n, float spd) {
+		for (int i = 0; i < n; i++) {
+			float l = Rnd(0.25f, 0.6f);
+			parts.Add(new Part { pos = p + new Vector2(0, 40) + RndDir() * 8, vel = RndDir() * Rnd(spd * 0.3f, spd), r = Rnd(3, 9), life = l, max = l, col = c, grav = 300 });
+		}
+	}
+}
+
+=== GameFoes.cs ===
+using System.Collections.Generic;
+using UnityEngine;
+
+// Foes, bosses, the five-phase reactions, shots and the test bot.
+public partial class Game {
+
+	void UpFoes(float dt) {
+		for (int i = foes.Count - 1; i >= 0; i--) {
+			var f = foes[i];
+			if (f.dead) {
+				f.deadT += dt;
+				if (f.deadT > (f.react != null ? 1.4f : 0.45f)) { if (f.sr != null) Destroy(f.sr.gameObject); foes.RemoveAt(i); }
+				continue;
+			}
+			f.flash -= dt;
+			f.moving = false;
+			if (f.spawn > 0) { f.spawn -= dt; continue; }
+			// statuses
+			f.bleed -= dt; f.slow -= dt; f.markT -= dt;
+			if (f.markT <= 0) f.mark = -1;
+			f.dotT -= dt;
+			if (f.dotT <= 0) {
+				f.dotT = 0.5f;
+				float dot = 0;
+				if (f.poison > 0) dot += f.poisonD * 0.5f;
+				if (f.burn > 0) dot += f.burnD * 0.5f;
+				if (dot > 0) {
+					f.hp -= dot;
+					Text(f.pos + new Vector2(0, f.d.h * 0.8f), Mathf.CeilToInt(dot).ToString(), f.burn > 0 ? D.EL_COL[3] : D.EL_COL[1], 15);
+					if (f.hp <= 0) { Kill(f); continue; }
+				}
+			}
+			f.poison -= dt; f.burn -= dt;
+			// posture recovers when left alone
+			f.posT -= dt;
+			if (f.posT <= 0 && f.broken <= 0) f.posv = Mathf.Max(0, f.posv - f.posMax * 0.25f * dt);
+			f.pos += f.kb * dt;
+			f.kb = Vector2.MoveTowards(f.kb, Vector2.zero, 1800 * dt);
+			if (f.broken > 0) {
+				f.broken -= dt;
+				if (f.broken <= 0) f.posv = 0;
+				f.pos = Confine(f.pos, f.d.r);
+				continue;
+			}
+			if (f.stun > 0) { f.stun -= dt; f.pos = Confine(f.pos, f.d.r); continue; }
+			for (int m = 0; m < f.mcd.Length; m++) f.mcd[m] -= dt;
+			f.cd -= dt;
+			Vector2 to = ppos - f.pos;
+			float dist = to.magnitude;
+			Vector2 dir = dist > 0.01f ? to / dist : Vector2.right;
+			float sp = f.d.spd * (f.slow > 0 ? 0.55f : 1) * (f.elite ? 1.1f : 1) * (f.afx == "toc" ? 1.45f : 1) * (f.afx == "frenzy" && f.hp < f.maxHp * 0.5f ? 1.5f : 1) * (HeatAt(15) ? 1.2f : 1);
+			if (f.mv != null) { RunStep(f, dt, dir); f.pos = Confine(f.pos, f.d.r); continue; }
+			// choose a move
+			// only a few foes wind up at once, so a crowd stays readable
+			if (f.cd <= 0 && (f.d.boss || Busy() < 4 + ch)) {
+				int pick = -1, seen = 0;
+				float hpF = f.hp / f.maxHp;
+				for (int m = 0; m < f.d.moves.Length; m++) {
+					var mv = f.d.moves[m];
+					if (f.mcd[m] > 0 || dist > mv.rng || dist < mv.min || hpF > mv.hpBelow || (mv.once && f.used[m])) continue;
+					if (mv.once) { pick = m; break; }
+					seen++;
+					if (rng.Next(seen) == 0) pick = m;
+				}
+				if (pick >= 0) {
+					var mv = f.d.moves[pick];
+					f.used[pick] = true;
+					float rage = f.d.boss && hpF < 0.5f ? 0.7f : 1;
+					f.mcd[pick] = mv.cd * rage * Rnd(0.9f, 1.2f) * (HeatAt(7) ? 0.8f : 1) * (HeatAt(15) ? 0.85f : 1) * (f.afx == "frenzy" && f.hp < f.maxHp * 0.5f ? 0.6f : 1);
+					f.mv = mv; f.si = 0;
+					StartStep(f);
+					continue;
+				}
+			}
+			// walk
+			Vector2 want;
+			if (f.d.keep > 0) {
+				if (dist < f.d.keep * 0.7f) want = -dir;
+				else if (dist > f.d.keep * 1.15f) want = dir;
+				else want = new Vector2(-dir.y, dir.x) * (((foes.IndexOf(f) & 1) == 0) ? 1 : -1) * 0.6f;
+			} else {
+				float near = f.d.moves[f.d.moves.Length > 1 && f.d.boss ? 0 : f.d.moves.Length - 1].rng * 0.75f;
+				if (f.d.boss) near = 150;
+				want = dist > near ? dir : Vector2.zero;
+			}
+			foreach (var o in foes) {
+				if (o == f || o.dead) continue;
+				Vector2 d = f.pos - o.pos;
+				float need = f.d.r + o.d.r + 14;
+				if (d.sqrMagnitude < need * need && d.sqrMagnitude > 0.01f) want += d.normalized * 0.9f;
+			}
+			f.pos += Vector2.ClampMagnitude(want, 1) * sp * dt;
+			f.moving = want.sqrMagnitude > 0.04f;
+			if (f.moving) f.animT += dt * sp / 150f;
+			f.pos = Confine(f.pos, f.d.r);
+		}
+	}
+
+	void StartStep(Foe f) {
+		var s = f.mv.steps[f.si];
+		f.stT = 0; f.resolved = false;
+		f.from = f.pos;
+		Vector2 to = ppos - f.pos;
+		f.aim = to.sqrMagnitude > 1 ? to.normalized : Vector2.right;
+		f.aimPos = ppos;
+		if (s.t == "blink") {
+			Puff(f.pos, D.INK, 12, 200);
+			AddGhost(f.sr, f.pos, new Color(0.07f, 0.06f, 0.08f, 0.6f), 0.35f);
+			Vector2 side = RndDir();
+			f.pos = Confine(ppos + side * 230, f.d.r);
+			Puff(f.pos, D.INK, 12, 200);
+			sfx.Play("dash", 0.5f, 1.4f);
+		} else if (s.t == "slam") {
+			Vector2 at = s.leap ? ppos : f.pos + f.aim * 60;
+			f.aimPos = Confine(at, f.d.r);
+			blasts.Add(new Blast { pos = f.aimPos, r = s.r, wind = s.wind, dmg = s.dmg * f.dmgMul });
+		}
+	}
+
+	void RunStep(Foe f, float dt, Vector2 dirNow) {
+		var s = f.mv.steps[f.si];
+		f.stT += dt * (f.slow > 0 ? 0.75f : 1);
+		if (f.stT < s.wind * 0.65f && (s.t == "arc" || s.t == "line" || s.t == "shoot")) f.aim = dirNow;
+		if (s.t == "slam" && s.leap && f.stT < s.wind) {
+			float u = f.stT / s.wind;
+			f.pos = Vector2.Lerp(f.from, f.aimPos, u * u * (3 - 2 * u));
+			f.z = Mathf.Sin(u * Mathf.PI) * 220;
+		} else f.z = 0;
+		if (!f.resolved && f.stT >= s.wind) {
+			f.resolved = true;
+			Resolve(f, s);
+			if (f.dead) return;
+		}
+		if (f.resolved && s.t == "arc" && s.lunge > 0 && f.stT < s.wind + 0.12f) f.pos += f.aim * s.lunge * dt;
+		if (f.stT >= s.wind + s.rec) {
+			f.si++;
+			if (f.si >= f.mv.steps.Length) { f.mv = null; f.cd = f.d.boss ? (f.hp < f.maxHp * 0.5f ? 0.35f : 0.6f) : Rnd(0.4f, 0.9f); }
+			else StartStep(f);
+		}
+	}
+
+	void Resolve(Foe f, Step s) {
+		float dmg = s.dmg * f.dmgMul;
+		float a0 = Mathf.Atan2(f.aim.y, f.aim.x);
+		switch (s.t) {
+			case "arc":
+				slashes.Add(new Slash { pos = f.pos + new Vector2(0, 45), dir = f.aim, r = s.r, w = s.w, col = D.RED });
+				sfx.Play("slash", 0.4f, 0.8f);
+				if (ArcHit(f.pos, f.aim, s.r, s.w, ppos, 18)) HitPlayer(dmg, f, true, f.pos);
+				break;
+			case "line":
+				slashes.Add(new Slash { pos = f.pos + new Vector2(0, 45), dir = f.aim, line = true, len = s.len, wid = s.wid, col = D.RED });
+				sfx.Play("slash", 0.45f, 0.7f);
+				if (LineHit(f.pos, f.aim, s.len, s.wid, ppos, 18)) HitPlayer(dmg, f, true, f.pos);
+				if (s.dash && !f.dead && f.broken <= 0) {
+					Vector2 end = Confine(f.pos + f.aim * (s.len - 50), f.d.r);
+					for (int gi = 0; gi < 5; gi++) AddGhost(f.sr, Vector2.Lerp(f.pos, end, gi / 5f), new Color(0.07f, 0.06f, 0.08f, 0.2f + gi * 0.08f), 0.2f + gi * 0.05f);
+					f.pos = end;
+				}
+				break;
+			case "shoot":
+				for (int i = 0; i < s.n; i++) {
+					float a = a0 + (s.n == 1 ? 0 : Mathf.Lerp(-s.spread, s.spread, i / (float)(s.n - 1)));
+					shots.Add(new Shot { pos = f.pos + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * s.spd, dmg = dmg, pool = s.pool });
+				}
+				sfx.Play("shoot", 0.5f);
+				break;
+			case "radial":
+				for (int i = 0; i < s.n; i++) {
+					float a = a0 + f.si * 0.22f + i * Mathf.PI * 2 / s.n;
+					shots.Add(new Shot { pos = f.pos + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * s.spd, dmg = dmg, life = 4 });
+				}
+				sfx.Play("shoot", 0.6f, 0.7f);
+				break;
+			case "ring":
+				wavesFx.Add(new Wave { pos = f.pos, r = 30, spd = s.spd, dmg = dmg, max = s.r });
+				sfx.Play("gong", 0.5f, 1.3f);
+				shake = Mathf.Max(shake, 5);
+				break;
+			case "rain":
+				for (int i = 0; i < s.n; i++) {
+					Vector2 p = i == 0 ? ppos : ppos + RndDir() * Rnd(60, 330);
+					blasts.Add(new Blast { pos = Confine(p, 10), r = s.r, wind = 0.75f + i * 0.14f, dmg = dmg });
+				}
+				break;
+			case "summon":
+				for (int i = 0; i < s.n; i++) Spawn(s.id, f.pos + RndDir() * 180, false);
+				sfx.Play("gong", 0.7f);
+				Banner(f.d.name, "gọi viện binh!");
+				break;
+		}
+	}
+
+	// returns true when the hit landed on the body
+	bool HitPlayer(float dmg, Foe src, bool parryable, Vector2 from) {
+		if (inv > 0 || act == "dash" || state != "play") return false;
+		if (act == "atk" && weapon.mech == "heavy") dmg *= 0.6f;   // the mace does not flinch
+		if (parryable && guard) {
+			if (gt <= pwin) { Parried(src); return false; }
+			dmg *= 0.3f;
+			sfx.Play("block", 0.7f);
+			Text(ppos + new Vector2(0, 140), "ĐỠ", D.PAPER, 18);
+			qi = Mathf.Min(100, qi + 3 * qiMul);
+			if (src != null) AddPosture(src, src.posMax * 0.1f);
+		} else {
+			sfx.Play("hurt", 0.8f);
+			shake = Mathf.Max(shake, 10);
+			stop = Mathf.Max(stop, 0.06f);
+			hurtFx = 0.4f;
+			Puff(ppos, D.RED, 8, 220);
+		}
+		dmg *= HurtTakenMul() * (1f + runCurseDmg);
+		hp -= dmg;
+		inv = 0.55f;
+		pflash = 0.15f;
+		Text(ppos + new Vector2(0, 120), "-" + Mathf.CeilToInt(dmg), new Color(1f, 0.4f, 0.3f), 22);
+		return true;
+	}
+
+	void Parried(Foe src) {
+		sfx.Play("clang", 0.9f);
+		stop = Mathf.Max(stop, 0.09f);
+		slow = 0.25f;
+		shake = Mathf.Max(shake, 8);
+		qi = Mathf.Min(100, qi + 15 * qiMul);
+		inv = Mathf.Max(inv, 0.3f);
+		riposte = Lv("ripo") > 0;
+		if (meta.sect == "thiet" && T - thietT > 1.5f) { thietT = T; Heal(4); }
+		RelicParry();
+		SectParry(src);
+		if (Afx("on_parry_dmg") > 0 && src != null && !src.dead) HurtFoe(src, Afx("on_parry_dmg") * dmgMul, -1, 0, 1.5f, (src.pos - ppos).normalized);
+		if (Has("tumau")) {
+			Vector2 at = src != null && !src.dead ? (src.pos - ppos).normalized : aimDir;
+			for (int k = 0; k < 2; k++) swords.Add(new FSword { pos = ppos + new Vector2(0, 55), vel = (Vector2)(Quaternion.Euler(0, 0, k * 14 - 7) * at) * 1700 });
+			RecallSwords();
+		}
+		Text(ppos + new Vector2(0, 150), "PHẢN!", new Color(1f, 0.9f, 0.5f), 30);
+		for (int i = 0; i < 10; i++) {
+			float l = Rnd(0.15f, 0.35f);
+			parts.Add(new Part { pos = ppos + new Vector2(0, 60) + aimDir * 30, vel = RndDir() * Rnd(200, 520), r = Rnd(2, 5), life = l, max = l, col = new Color(1f, 0.92f, 0.6f) });
+		}
+		if (src != null && !src.dead) {
+			AddPosture(src, src.posMax * (src.d.boss ? 0.24f : 0.5f));
+			if (!src.d.boss && src.broken <= 0) { src.stun = 0.5f; src.mv = null; src.z = 0; }
+		}
+		int el = SlotEl("parry");
+		if (el >= 0) Burst(ppos, 210, 26 * SlotLv("parry") * dmgMul, el, SlotLv("parry"), true);
+	}
+
+	void AddPosture(Foe f, float v) {
+		if (f.dead || f.broken > 0) return;
+		if (Has("toaithach")) v *= 1.3f;
+		f.posv += v;
+		f.posT = 2.2f;
+		if (f.posv >= f.posMax) {
+			f.broken = f.d.boss ? 3.0f : 2.2f;
+			f.mv = null; f.z = 0;
+			f.posv = f.posMax;
+			sfx.Play("gong", 0.8f, 1.5f);
+			Text(f.pos + new Vector2(0, f.d.h + 40), "PHÁ THẾ!", new Color(1f, 0.85f, 0.4f), 28);
+			if (Has("thienquan") && !spreading) {
+				spreading = true;
+				foreach (var o in new List<Foe>(foes)) {
+					if (o == f || o.dead || o.d.boss || (o.pos - f.pos).magnitude > 220) continue;
+					o.kb += (f.pos - o.pos).normalized * 320;
+					AddPosture(o, v * 0.8f);
+				}
+				spreading = false;
+			}
+			Puff(f.pos, D.PAPER, 12, 260);
+			stop = Mathf.Max(stop, 0.08f);
+		}
+	}
+
+	public void HurtFoe(Foe f, float dmg, int el, int lvl, float posMul, Vector2 dir, bool react = true, bool gain = true) {
+		if (f.dead || f.spawn > 0) return;
+		bool isW = wHit && wItem != null;
+		wHit = false;   // anything this hit sets off (bursts, reactions) is not a weapon hit
+		if (isW) dmg *= WeaponHitMul(f, ref posMul);
+		bool isCrit = crit > 0 && Rnd() < crit;
+		if (isCrit) dmg *= 2;
+		dmg *= DealMul();
+		if (meta.sect == "cuong") dmg *= 1 + 0.6f * (1 - Mathf.Clamp01(hp / maxHp));
+		if (f.afx == "giap" && f.broken <= 0) dmg *= 0.45f;
+		if (f.afx != "ward") foreach (var w in foes) if (w != f && !w.dead && w.afx == "ward" && (w.pos - f.pos).magnitude < 230) { dmg *= 0.7f; break; }   // armoured elites must be broken first
+		if (f.broken > 0) dmg *= 1.6f + Lv("break") * 0.4f;
+		if (f.bleed > 0) dmg *= 1.25f;
+		float pos = dmg * posMul;
+		if (f.d.guard && f.broken <= 0 && f.stun <= 0) {
+			// shield bearers shrug off blows from the side they face (they always face the player)
+			if (Vector2.Dot(dir, (f.pos - ppos).normalized) > 0.2f) { dmg *= 0.3f; pos *= 1.6f; sfx.Play("block", 0.4f); }
+		}
+		f.hp -= dmg;
+		f.flash = 0.12f;
+		if (!f.d.boss) f.kb += dir * 150;
+		AddPosture(f, pos * (el == D.THO ? 2 : 1));
+		if (gain) qi = Mathf.Min(100, qi + 4 * qiMul);
+		sfx.Play("hit", 0.5f, isCrit ? 0.8f : 1f);
+		Text(f.pos + new Vector2(0, f.d.h * f.scale + 10), Mathf.CeilToInt(dmg).ToString(), isCrit ? new Color(1f, 0.8f, 0.2f) : Color.white, isCrit ? 26 : 18);
+		Puff(f.pos, D.INK, 3, 200);
+		if (el >= 0 && react) SectElement(f, el, lvl);
+		if (el >= 0) ApplyEl(f, el, Mathf.Max(1, lvl), react);
+		if (gain) SectHit(f);
+		if (Has("hoalinh") && el != D.HOA && Rnd() < 0.12f && !f.dead) { f.burn = 3; f.burnD = Mathf.Max(f.burnD, 12); }
+		if (isW) WeaponHitAfter(f, dmg);
+		if (f.hp <= 0) Kill(f);
+	}
+
+	void ApplyEl(Foe f, int el, int lvl, bool react) {
+		if (f.dead) return;
+		switch (el) {
+			case D.KIM: f.bleed = 4; break;
+			case D.MOC: f.poison = 4; f.poisonD = 5 + 4 * lvl; break;
+			case D.THUY: f.slow = 3; break;
+			case D.HOA: f.burn = 3; f.burnD = 8 + 5 * lvl; break;
+			case D.THO: if (!f.d.boss && f.broken <= 0 && f.mv == null) f.stun = Mathf.Max(f.stun, 0.2f); break;
+		}
+		if (!react) return;
+		if (f.mark < 0 || f.mark == el) { f.mark = el; f.markT = meta.sect == "hanh" ? 12 : 6; return; }
+		int rel = D.Relation(f.mark, el);
+		if (Has("nghichhanh")) rel = rel == 1 ? 2 : 1;   // NGHỊCH HÀNH ẤN turns the cycle inside out
+		int old = f.mark;
+		f.mark = -1;
+		if (rel == 1) {
+			// tuong sinh: the two phases feed each other and burst
+			Text(f.pos + new Vector2(0, f.d.h + 60), "TƯƠNG SINH", Color.Lerp(D.EL_COL[old], D.EL_COL[el], 0.5f), 26);
+			float dmg = (26 + 12 * lvl) * dmgMul * (1 + Lv("sinh") * 0.5f) * (meta.sect == "hanh" ? 1.5f : 1) * (Has("amduong") ? 1.35f : 1) * (1 + Afx("element_react_mul") / 100f);
+			qi = Mathf.Min(100, qi + 8 * qiMul);
+			Heal(Lv("sinh") * 3);
+			if (Has("nghichhanh")) dmg *= 1.4f;
+			Burst(f.pos, 165, dmg, el, lvl, false);
+			SinhExtra(f, el, lvl);
+			if (Lv("h_luu") > 0) foreach (var o in new List<Foe>(foes)) if (o != f && !o.dead && (o.pos - f.pos).magnitude < 110 * Lv("h_luu")) ApplyEl(o, (el + 1) % 5, 1, false);
+			sfx.Play("burst", 0.8f);
+		} else {
+			// tuong khac: one phase overcomes the other and shatters the stance
+			Text(f.pos + new Vector2(0, f.d.h + 60), "TƯƠNG KHẮC", D.EL_COL[el], 26);
+			AddPosture(f, f.posMax * (f.d.boss ? 0.3f : 0.6f) * (meta.sect == "hanh" ? 1.5f : 1) * (Has("amduong") ? 1.35f : 1) * (1 + Afx("element_react_mul") / 100f));
+			if (!f.d.boss && f.broken <= 0) { f.stun = Mathf.Max(f.stun, 0.6f); f.mv = null; f.z = 0; }
+			wavesFx.Add(new Wave { pos = f.pos, r = 10, spd = 500, dmg = 0, max = 110, hit = true });
+			sfx.Play("clang", 0.6f, 0.7f);
+			if (Lv("khac") > 0 && !f.dead) {
+				f.hp -= Lv("khac") * 15 * dmgMul;
+				if (f.hp <= 0) Kill(f);
+			}
+		}
+	}
+
+	// a round blast from the player's side
+	public void Burst(Vector2 p, float r, float dmg, int el, int lvl, bool react) {
+		Color c = el >= 0 ? D.EL_COL[el] : D.INK;
+		wavesFx.Add(new Wave { pos = p, r = r * 0.3f, spd = r * 4, max = r, hit = true, col = c });
+		Puff(p, c, 10, 300);
+		var list = new List<Foe>(foes);
+		foreach (var f in list) {
+			if (f.dead || f.spawn > 0) continue;
+			Vector2 d = f.pos - p;
+			if (d.magnitude <= r + f.d.r) HurtFoe(f, dmg, el, lvl, 1, d.sqrMagnitude > 1 ? d.normalized : Vector2.up, react, false);
+		}
+	}
+
+	void Kill(Foe f) {
+		if (f.dead) return;
+		f.dead = true; f.deadT = 0; f.mv = null;
+		kills++;
+		Puff(f.pos, D.INK, f.d.boss ? 40 : 14, f.d.boss ? 420 : 260);
+		Puff(f.pos, D.RED, 5, 200);
+		if (stains.Count < 60) stains.Add(new Vector3(f.pos.x, f.pos.y, f.d.r * 1.6f));
+		int c = f.d.boss ? 0 : (f.elite ? 12 : 2 + rng.Next(4));
+		if (c > 0) { coins += Mathf.RoundToInt(c * coinMul); }
+		Heal(Lv("leech") * 2 + (meta.sect == "cuong" ? 1 : 0));
+		if (f.afx == "bao") blasts.Add(new Blast { pos = f.pos, r = 190, wind = 0.9f, dmg = 20 * f.dmgMul });
+		// a streak of quick kills pays out every tenth
+		chain++; chainT = 3.2f;
+		if (chain % 10 == 0) { Heal(2); qi = Mathf.Min(100, qi + 12); Text(ppos + new Vector2(0, 190), "LIÊN TRẢM ×" + chain, new Color(1f, 0.6f, 0.3f), 30); }
+		RelicKill(f);
+		if (Afx("on_kill_heal") > 0) Heal(Afx("on_kill_heal"));
+		qi = Mathf.Min(100, qi + Afx("on_kill_qi"));
+		if (f.d.boss) DropWeapon(f.pos, 2);
+		else if (f.elite && Rnd() < 0.16f) DropWeapon(f.pos, 1);
+		SectKill(f);
+		if (f.d.boss) { stop = 0.25f; slow = 1.2f; shake = 18; sfx.Play("gong"); }
+		else sfx.Play("hit", 0.7f, 0.6f);
+	}
+
+	void UpShots(float dt) {
+		for (int i = shots.Count - 1; i >= 0; i--) {
+			var s = shots[i];
+			s.life -= dt;
+			s.pos += s.vel * dt;
+			Vector2 g = s.pos - new Vector2(0, 55);   // where it is over the ground
+			bool gone = s.life <= 0 || g.x < PR.xMin - 60 || g.x > PR.xMax + 60 || g.y < PR.yMin - 60 || g.y > PR.yMax + 80;
+			if (!gone && s.mine) {
+				foreach (var f in foes) {
+					if (f.dead || f.spawn > 0 || s.hit.Contains(f)) continue;
+					if ((f.pos - g).magnitude < f.d.r * f.scale + s.r + 8) {
+						if (f.afx == "reflect" && f.broken <= 0 && s.mine && !s.reflected) { s.reflected = true; s.mine = false; s.vel = -s.vel; s.dmg *= 0.6f; s.life = 2; Puff(f.pos, D.PAPER, 4, 200); break; }
+						s.hit.Add(f);
+						wHit = s.wpn;
+						HurtFoe(f, s.dmg, s.el, s.lvl, 1, s.vel.normalized);
+						if (s.bounce > 0) {
+							// the fan's darts skip on to the nearest foe not yet hit
+							Foe nb = null;
+							foreach (var o in foes) if (!o.dead && o.spawn <= 0 && !s.hit.Contains(o) && (o.pos - g).magnitude < 400 && (nb == null || (o.pos - g).sqrMagnitude < (nb.pos - g).sqrMagnitude)) nb = o;
+							if (nb != null) { s.bounce--; s.vel = (nb.pos - g).normalized * s.vel.magnitude; s.life = Mathf.Max(s.life, 0.45f); break; }
+						}
+						s.pierce--;
+						if (s.pierce > 0) s.dmg *= 0.75f;
+						if (s.pierce < 0) { gone = true; break; }
+					}
+				}
+			} else if (!gone) {
+				if ((ppos - g).magnitude < 20 + s.r) {
+					if (guard && gt <= pwin && inv <= 0 && act != "dash") {
+						// a clean parry sends it back
+						Parried(null);
+						s.mine = true; s.vel = -s.vel * 1.5f; s.dmg *= 3; s.life = 2; s.hit = new List<Foe>(); s.pool = false;
+						s.el = SlotEl("parry"); s.lvl = SlotLv("parry");
+					} else {
+						if (HitPlayer(s.dmg, null, true, s.pos) || guard) gone = true;
+					}
+				}
+			}
+			if (gone) {
+				if (s.pool && !s.mine) pools.Add(new Pool { pos = g, r = 70, t = 4 });
+				shots.RemoveAt(i);
+			}
+		}
+	}
+
+	void UpFx(float dt) {
+		for (int i = wavesFx.Count - 1; i >= 0; i--) {
+			var w = wavesFx[i];
+			w.r += w.spd * dt;
+			if (!w.hit && Mathf.Abs((ppos - w.pos).magnitude - w.r) < 20) { w.hit = true; HitPlayer(w.dmg, null, true, w.pos); }
+			if (w.r >= w.max) wavesFx.RemoveAt(i);
+		}
+		for (int i = blasts.Count - 1; i >= 0; i--) {
+			var b = blasts[i];
+			b.t += dt;
+			if (b.t >= b.wind) {
+				if ((ppos - b.pos).magnitude < b.r + 12) HitPlayer(b.dmg, null, false, b.pos);
+				Puff(b.pos, D.INK, 10, 320);
+				wavesFx.Add(new Wave { pos = b.pos, r = b.r * 0.5f, spd = b.r * 3, max = b.r * 1.15f, hit = true });
+				shake = Mathf.Max(shake, 7);
+				sfx.Play("drum", 0.7f);
+				blasts.RemoveAt(i);
+			}
+		}
+		for (int i = pools.Count - 1; i >= 0; i--) {
+			var p = pools[i];
+			p.t -= dt; p.tick -= dt;
+			if (p.tick <= 0 && (ppos - p.pos).magnitude < p.r && act != "dash") {
+				p.tick = 0.5f;
+				hp -= 3; pflash = 0.1f;
+				Text(ppos + new Vector2(0, 120), "-3", D.EL_COL[1], 16);
+			}
+			if (p.t <= 0) pools.RemoveAt(i);
+		}
+		for (int i = parts.Count - 1; i >= 0; i--) {
+			var p = parts[i];
+			p.life -= dt;
+			p.pos += p.vel * dt;
+			p.vel *= 1 - 3 * dt;
+			p.vel.y -= p.grav * dt;
+			if (p.life <= 0) parts.RemoveAt(i);
+		}
+		for (int i = slashes.Count - 1; i >= 0; i--) { slashes[i].t += dt; if (slashes[i].t > 0.26f) slashes.RemoveAt(i); }
+		for (int i = texts.Count - 1; i >= 0; i--) { texts[i].t += dt; texts[i].pos.y += 50 * dt; if (texts[i].t > 0.9f) texts.RemoveAt(i); }
+		shake = Mathf.Max(0, shake - 40 * dt);
+		for (int i = ghosts.Count - 1; i >= 0; i--) {
+			ghosts[i].life -= dt;
+			if (ghosts[i].life <= 0) { Destroy(ghosts[i].sr.gameObject); ghosts.RemoveAt(i); }
+		}
+	}
+
+	// --- test bot: plays the game by itself (used with -bot on the command line)
+	float botShotT;
+	int botShotN;
+	string botLast = "";
+
+	void BotInput(ref Inp i) {
+		bool pulse = ((int)(T * 6)) % 2 == 0;
+		if (state != "play") {
+			i.ok = pulse && T > 3f && T - stateT > 4.5f && state != "dead" && state != "win";
+			if (state == "wpick") { i.ok = false; i.back = T - stateT > 2f; }   // the bot never swaps a weapon in hand
+			if (state == "event") menuI = 2;
+			if (state == "kyngo" && curEvent != null && eventPicked == null) for (int q = 0; q < curEvent.choices.Length; q++) if (CanAffordChoice(curEvent.choices[q])) { menuI = q; break; }
+			return;
+		}
+		Foe best = null;
+		float bd = 1e9f;
+		foreach (var f in foes) {
+			if (f.dead) continue;
+			float d = (f.pos - ppos).magnitude;
+			if (d < bd) { bd = d; best = f; }
+		}
+		if (best != null) {
+			Vector2 to = best.pos - ppos;
+			i.aim = best.pos;
+			float want = weaponId == "phien" ? 330 : 95;
+			i.mv = bd > want ? to.normalized : (bd < want * 0.6f ? -to.normalized : new Vector2(-to.y, to.x).normalized * 0.5f);
+			i.atk = bd < want + 90;
+			i.skill = qi >= 50 && pulse;
+			i.thr = pulse && bd > 140 && bd < 700;
+			i.tk = pulse && bd < 500;
+			if (weapon.mech == "charge") { i.atk = ((int)(T * 1.2f)) % 2 == 0; i.mv = bd < 300 ? -to.normalized : Vector2.zero; }
+			bool threat = false;
+			foreach (var f in foes) if (!f.dead && f.mv != null && !f.resolved && f.stT > f.mv.steps[f.si].wind - 0.14f && (f.pos - ppos).magnitude < 320) threat = true;
+			i.parry = threat;
+			if (threat) i.atk = false;
+			foreach (var b in blasts) if ((b.pos - ppos).magnitude < b.r + 30 && b.t > b.wind - 0.25f) { i.dash = pulse; i.mv = (ppos - b.pos).normalized; }
+		} else if (cleared && pickT <= 0) {
+			Vector2 target = ppos;
+			bool found = false;
+			foreach (var it in items) if (!it.gone && it.kind != "npc" && coins >= it.cost && it.kind != "luyen" && (it.wi == null || it.wi.rar > wItem.rar)) { target = it.pos; found = true; break; }
+			if (!found && doors.Count > 0) target = doors[(int)(seed & 1) % doors.Count].pos;
+			else if (!found) target = new Vector2(SegAt(ppos.y + 260).r.center.x + Mathf.Sin(T * 1.7f) * 150, ppos.y + 260);
+			Vector2 to = target - ppos;
+			i.mv = to.magnitude > 40 ? to.normalized : Vector2.zero;
+			i.aim = target;
+			i.use = pulse && to.magnitude < 85;
+		}
+	}
+
+	void BotShots() {
+		if (shotDir == null) return;
+		botShotT -= Time.unscaledDeltaTime;
+		string key = state + ":" + ch + ":" + roomKind;
+		bool newState = key != botLast;
+		if ((newState && botShotT < 1.2f && T > 1.0f) || botShotT <= 0) {
+			if (newState) { botLast = key; botShotT = 0.9f; return; }
+			botShotT = 7f;
+			botShotN++;
+			System.IO.Directory.CreateDirectory(shotDir);
+			ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(shotDir, string.Format("s{0:00}_{1}_{2}_{3}.png", botShotN, state, ch, roomKind)));
+		}
+		if ((botEnd > 0 && Time.realtimeSinceStartup > botEnd) || ((state == "win" || state == "dead") && T - endT > 4)) {
+			Debug.Log(string.Format("BOT END state={0} ch={1} step={2} rooms={3} kills={4} boons={5} hp={6} relics={7} hon={8} mem={9} heatMax={10}", state, ch, step, rooms, kills, boons.Count, hp, string.Join("+", relics), meta.hon, meta.mem.Count, meta.heatMax));
+			Application.Quit();
+		}
+	}
+}
+
+=== GameStage.cs ===
+using System.Collections.Generic;
+using UnityEngine;
+
+// The world is one continuous map walked from the bottom up: for each chapter four fight grounds,
+// a rest stop and a painted boss arena, joined without loading. Also the flying swords.
+public class Seg {
+	public string kind;         // fight, rest, pass, boss
+	public int ch, step, state; // state: 0 untouched, 1 being fought, 2 done
+	public Rect r;
+}
+
+public class FSword {
+	public Vector2 pos, vel, off;
+	public int st;              // 0 flying out, 1 stuck (in a foe or the ground), 2 flying home
+	public Foe host;
+	public float t;
+	public List<Foe> hit = new List<Foe>();
+}
+
+public partial class Game {
+	public const float CX = 2000;                          // every segment is centred on this x
+	public static Rect VR = new Rect(0, 0, 1920, 1288);   // what the camera may show
+	bool stage = true;
+	float capY = 1e9f;
+	float yLo, yHi = 1e9f, worldTop;                      // how far down and up anyone may walk right now
+	readonly List<Seg> segs = new List<Seg>();
+	readonly List<Rect> paints = new List<Rect>();
+	Seg fight;                                             // the segment being fought, or null
+	readonly List<SpriteRenderer> deco = new List<SpriteRenderer>();
+	readonly List<SpriteRenderer> tiles = new List<SpriteRenderer>();
+	readonly List<FSword> swords = new List<FSword>();
+	int swordMax = 4, swordsHeld = 4;
+	float thrCd;
+
+	int Busy() { int n = 0; foreach (var f in foes) if (!f.dead && f.mv != null) n++; return n; }
+
+	int SegIndex(float y) {
+		for (int i = 0; i < segs.Count; i++) if (y < segs[i].r.yMax) return i;
+		return segs.Count - 1;
+	}
+	Seg SegAt(float y) { return segs[SegIndex(y)]; }
+
+	void ClearStage() {
+		foreach (var d in deco) if (d != null) Destroy(d.gameObject);
+		foreach (var t in tiles) if (t != null) Destroy(t.gameObject);
+		deco.Clear(); tiles.Clear(); swords.Clear(); segs.Clear(); paints.Clear(); pblasts.Clear();
+		swordsHeld = swordMax;
+		fight = null;
+		bellT = 0; kvT = 0; chargeT = 0; frenzy = 0;
+	}
+
+	void AddProp(string n, Vector2 p) {
+		float h = n == "bamboo" || n == "pine" ? 190 : (n == "jar" ? 80 : 120);
+		props.Add(new Prop { pos = p, r = n == "bamboo" || n == "jar" ? 30 : 46, sr = NewSpr(n, h) });
+	}
+
+	// scenery answers a blade: jars break and spill coins, plants shake and shed leaves
+	void HitProp(int i) {
+		var pr = props[i];
+		string n = pr.sr.gameObject.name;
+		pr.shake = 0.35f;
+		if (n == "jar") {
+			int c = Mathf.RoundToInt((2 + rng.Next(4)) * coinMul);
+			coins += c;
+			Text(pr.pos + new Vector2(0, 90), "+" + c + " lượng", new Color(1f, 0.85f, 0.4f), 17);
+			Puff(pr.pos, new Color(0.45f, 0.36f, 0.28f), 12, 280);
+			sfx.Play("hit", 0.6f, 0.7f); sfx.Play("coin", 0.5f);
+			Destroy(pr.sr.gameObject);
+			props.RemoveAt(i);
+		} else if (n == "bamboo" || n == "pine") {
+			Color leaf = n == "bamboo" ? new Color(0.4f, 0.55f, 0.3f) : new Color(0.85f, 0.9f, 0.95f);
+			for (int k = 0; k < 6; k++) parts.Add(new Part { pos = pr.pos + new Vector2(Rnd(-40, 40), Rnd(90, 180)), vel = new Vector2(Rnd(-90, 90), Rnd(20, 90)), r = Rnd(3, 6), life = 0.9f, max = 0.9f, col = leaf, grav = 240 });
+			sfx.Play("slash", 0.25f, 1.6f);
+		} else sfx.Play("block", 0.25f, 1.3f);
+	}
+
+	// wind in the plants, flame in the lanterns, smoke from the shrines
+	void DrawLife(float rdt) {
+		foreach (var pr in props) {
+			string n = pr.sr.gameObject.name;
+			float rot = 0;
+			if (n == "bamboo" || n == "pine") rot = Mathf.Sin(T * 1.4f + pr.pos.x * 0.013f) * 1.8f + Mathf.Sin(T * 3.1f + pr.pos.y * 0.02f) * 0.6f;
+			if (pr.shake > 0) { pr.shake -= rdt; rot += Mathf.Sin(T * 55) * pr.shake * 16; }
+			pr.sr.transform.rotation = Quaternion.Euler(0, 0, rot);
+			if (Mathf.Abs(pr.pos.y - camPos.y) > 700) continue;
+			if (n == "lantern") {
+				float f = 0.75f + 0.15f * Mathf.Sin(T * 9 + pr.pos.x) + 0.1f * Mathf.Sin(T * 23);
+				ground.Ellipse(pr.pos, 120, 60, new Color(1f, 0.75f, 0.35f, 0.10f * f));
+				fxInk.Circle(pr.pos + new Vector2(0, 76), 13 * f, new Color(1f, 0.7f, 0.3f, 0.35f), 12);
+				fxInk.Circle(pr.pos + new Vector2(0, 76), 6 * f, new Color(1f, 0.92f, 0.65f, 0.8f), 10);
+			} else if (n == "shrine" && Random.value < rdt * 5)
+				parts.Add(new Part { pos = pr.pos + new Vector2(Random.Range(-6f, 6f), 20), vel = new Vector2(Random.Range(-14f, 14f), 55), r = Random.Range(5f, 9f), life = 1.6f, max = 1.6f, col = new Color(0.8f, 0.8f, 0.8f, 0.25f), grav = -25 });
+		}
+		foreach (var d in deco) {
+			if (d == null) continue;
+			string n = d.gameObject.name;
+			if (n != "bamboo" && n != "pine") continue;
+			Vector3 p = d.transform.position;
+			if (Mathf.Abs(p.y * 100 - camPos.y) > 800) continue;
+			d.transform.rotation = Quaternion.Euler(0, 0, Mathf.Sin(T * 1.2f + p.x * 1.3f) * 2.2f + Mathf.Sin(T * 2.7f + p.y * 2f) * 0.7f);
+		}
+	}
+
+	void Deco(string[] set, System.Random r, Vector2 p) {
+		string n = set[r.Next(set.Length)];
+		float h = n == "bamboo" || n == "pine" ? 200 + r.Next(70) : (n == "pillar" ? 150 : 130);
+		var sr = NewSpr(n, h);
+		sr.flipX = r.Next(2) == 0;
+		sr.color = new Color(0.8f, 0.8f, 0.83f);
+		Place(sr, p);
+		deco.Add(sr);
+	}
+
+	// Lays out the whole run. Depends only on `seed`.
+	void BuildWorld() {
+		var r = new System.Random(seed);
+		float y = 500;
+		for (int c = 0; c < chaptersN; c++) {
+			float y0 = y - (c == 0 ? 500 : 0);
+			string[] tall = c == 0 ? new[] { "bamboo", "bamboo", "bamboo", "boulder" } : (c == 1 ? new[] { "pillar", "pillar", "lantern", "boulder" } : (c == 2 ? new[] { "pine", "pine", "boulder" } : new[] { "pillar", "boulder", "boulder" }));
+			var set = D.CH_PROPS[c];
+			for (int s = 0; s < 5; s++) {
+				bool rest = s == 4;
+				float w = rest ? 1300 : 1700 + r.Next(4) * 120, h = rest ? 650 : 950;
+				var sg = new Seg { kind = rest ? "rest" : "fight", ch = c, step = s, r = new Rect(CX - w / 2, y, w, h) };
+				segs.Add(sg);
+				for (float yy = y + h - 20; yy > y - 40; yy -= 100) {
+					Deco(tall, r, new Vector2(sg.r.xMin - 75 - r.Next(40), yy));
+					Deco(tall, r, new Vector2(sg.r.xMax + 75 + r.Next(40), yy));
+					Deco(tall, r, new Vector2(sg.r.xMin - 200 - r.Next(50), yy + 40));
+					Deco(tall, r, new Vector2(sg.r.xMax + 200 + r.Next(50), yy + 40));
+				}
+				if (c == 0 && s == 0) for (float x = sg.r.xMin - 40; x < sg.r.xMax + 60; x += 115) Deco(tall, r, new Vector2(x, y - 95 - r.Next(40)));
+				if (!rest) {
+					// inside: scatter, a colonnade of three lanes, or a ring around the middle
+					int layout = r.Next(3), scatter = layout == 0 ? 7 + r.Next(4) : 3 + r.Next(3);
+					int first = props.Count;
+					if (layout == 1) {
+						for (float yy = y + 260; yy < y + h - 200; yy += 240) {
+							AddProp(set[0], new Vector2(CX - 330, yy));
+							AddProp(set[0], new Vector2(CX + 330, yy));
+						}
+					} else if (layout == 2) {
+						for (int k = 0; k < 6; k++) {
+							float a = k * Mathf.PI / 3 + 0.5f;
+							AddProp(set[k % set.Length], new Vector2(CX + Mathf.Cos(a) * 330, y + h / 2 + Mathf.Sin(a) * 250));
+						}
+					}
+					for (int i = 0; i < scatter; i++) {
+						Vector2 p = Vector2.zero;
+						bool ok = false;
+						for (int tries = 0; tries < 20 && !ok; tries++) {
+							p = new Vector2(sg.r.xMin + 110 + (float)r.NextDouble() * (w - 220), y + 200 + (float)r.NextDouble() * (h - 400));
+							ok = true;
+							for (int k = first; k < props.Count; k++) if ((props[k].pos - p).magnitude < 230) ok = false;
+						}
+						if (ok) AddProp(set[r.Next(set.Length)], p);
+					}
+				}
+				y += h;
+			}
+			// the boss arena is the chapter's painting laid into the map, entered and left by a narrow pass
+			Rect pr = CH_PR[c];
+			var paint = new GameObject("paint").AddComponent<SpriteRenderer>();
+			paint.sprite = Spr("bg" + (c + 1));
+			paint.sortingOrder = -99;
+			if (paint.sprite != null) {
+				float k = AW * 0.01f / paint.sprite.bounds.size.x;
+				paint.transform.localScale = new Vector3(k, k, 1);
+			}
+			paint.transform.position = new Vector3(CX * 0.01f, (y + AH / 2) * 0.01f, 0);
+			deco.Add(paint);
+			paints.Add(new Rect(CX - AW / 2, y, AW, AH));
+			segs.Add(new Seg { kind = "pass", ch = c, step = 5, state = 2, r = new Rect(CX - 210, y, 420, pr.yMin) });
+			segs.Add(new Seg { kind = "boss", ch = c, step = 5, r = new Rect(CX - AW / 2 + pr.x, y + pr.yMin, pr.width, pr.height) });
+			segs.Add(new Seg { kind = "pass", ch = c, step = 5, state = 2, r = new Rect(CX - 210, y + pr.yMax, 420, AH - pr.yMax) });
+			y += AH;
+			// ground of the chapter: the tile mirrored on every other column and row, so the joins never show
+			var gs = Spr("bg_g" + (c + 1));
+			if (gs != null) {
+				float tw = gs.bounds.size.x * 100, th = gs.bounds.size.y * 100;
+				int ix = 0;
+				for (float x = CX - 1650; x < CX + 1650; x += tw, ix++) {
+					int iy = 0;
+					for (float yy = y0; yy < y; yy += th, iy++) {
+						var sr = new GameObject("tile").AddComponent<SpriteRenderer>();
+						sr.sprite = gs; sr.sortingOrder = -100;
+						sr.flipX = (ix & 1) == 1; sr.flipY = (iy & 1) == 1;
+						sr.transform.position = new Vector3((x + tw / 2) * 0.01f, (yy + th / 2) * 0.01f, 0);
+						tiles.Add(sr);
+					}
+				}
+			}
+		}
+		worldTop = y;
+		yLo = segs[0].r.yMin; yHi = worldTop;
+		VR = new Rect(CX - 1250, segs[0].r.yMin - 200, 2500, worldTop - segs[0].r.yMin + 200);
+		PR = segs[0].r;
+	}
+
+	// Walls: stay inside the segment you are in; cross to the next only where the two overlap.
+	public Vector2 Confine(Vector2 p, float r) {
+		if (segs.Count == 0) return p;
+		p.y = Mathf.Clamp(p.y, yLo + r * 0.5f, yHi - r * 0.5f);
+		int i = SegIndex(p.y);
+		Rect s = segs[i].r;
+		if (p.x < s.xMin + r || p.x > s.xMax - r) {
+			float cx = Mathf.Clamp(p.x, s.xMin + r, s.xMax - r);
+			float best = Mathf.Abs(cx - p.x);
+			Vector2 q = new Vector2(cx, p.y);
+			for (int k = -1; k <= 1; k += 2) {
+				int j = i + k;
+				if (j < 0 || j >= segs.Count) continue;
+				Rect n = segs[j].r;
+				if (p.x < n.xMin + r || p.x > n.xMax - r) continue;
+				float ny = k < 0 ? n.yMax - 0.5f : n.yMin;
+				if (ny < yLo || ny > yHi) continue;
+				if (Mathf.Abs(ny - p.y) < best) { best = Mathf.Abs(ny - p.y); q = new Vector2(p.x, ny); }
+			}
+			p = q;
+		}
+		foreach (var pr in props) {
+			if (Mathf.Abs(pr.pos.y - p.y) > 150) continue;
+			Vector2 d = p - pr.pos;
+			d.y *= 1.6f;   // props block an ellipse wider than deep
+			float m = d.magnitude, need = pr.r + r;
+			if (m < need && m > 0.01f) { Vector2 push = d / m * (need - m); push.y /= 1.6f; p += push; }
+		}
+		return p;
+	}
+
+	void StartFight(Seg s) {
+		fight = s; s.state = 1;
+		satky = 0;
+		if (Has("dandien")) qi = Mathf.Max(qi, 50);
+		step = s.step;
+		roomKind = s.kind == "boss" ? "boss" : "fight";
+		PR = s.r;
+		yLo = s.r.yMin; yHi = s.r.yMax;
+		cleared = false; wave = 0; roomT = 0;
+		waves = 2 + (s.step >= 1 ? 1 : 0) + (s.ch >= 1 && s.step >= 3 ? 1 : 0) + (HeatAt(13) ? 1 : 0);
+		spawnT = 0.4f;
+		stains.Clear(); doors.Clear();
+		sfx.Battle(true);
+		if (s.kind == "boss") {
+			var b = Spawn("boss" + (s.ch + 1), new Vector2(s.r.center.x, s.r.yMax - 190), false);
+			b.spawn = 1.3f;
+			Banner(b.d.name, StoryBossIntro(s.ch));
+			sfx.Play("gong");
+		} else sfx.Play("drum");
+	}
+
+	void Populate(Seg s) {
+		Vector2 c = new Vector2(s.r.center.x - 260, s.r.center.y + 110);
+		items.Add(new Item { pos = c, kind = "npc", label = StoryNpc("merchant"), sr = NewSpr("merchant", 130) });
+		if (!HeatAt(14)) AddItem(c + new Vector2(-200, -150), "heal", "KIM SANG DƯỢC\nHồi 40 sinh lực", Mathf.RoundToInt(35 * PriceMul()), "jar", null);
+		AddItem(c + new Vector2(-65, -185), "dan", "LINH ĐAN\n+15 sinh lực tối đa", Mathf.RoundToInt(60 * PriceMul()), "jar", null);
+		var o = MakeOffers(1);
+		if (o.Count > 0) AddItem(c + new Vector2(70, -185), "boon", o[0].b.name + " · CẤP " + o[0].lvl + "\n" + D.Desc(o[0].b, o[0].lvl), Mathf.RoundToInt(70 * PriceMul()), "chest", o[0].b);
+		AddItem(c + new Vector2(205, -150), "luyen", "LUYỆN KHÍ\nNâng cấp một chiêu đã học", Mathf.RoundToInt(80 * PriceMul()), "shrine", null);
+		Vector2 t = new Vector2(s.r.center.x + 330, s.r.center.y + 110);
+		items.Add(new Item { pos = t, kind = "npc", label = StoryNpc("tea"), sr = NewSpr("tea", 95) });
+		AddItem(t + new Vector2(0, -120), "tea", "THƯỞNG TRÀ\nHồi 40% sinh lực", 0, null, null);
+		Banner("TRẠM DỪNG", "Thương nhân và trà quán trước cửa ải cuối");
+	}
+
+	void UpWorld(float dt) {
+		if (fight != null) {
+			bool any = false;
+			foreach (var f in foes) if (!f.dead) any = true;
+			if (fight.kind == "boss") {
+				bool bossAlive = false;
+				foreach (var f in foes) if (!f.dead && f.d.boss) bossAlive = true;
+				if (!bossAlive) { foreach (var f in foes) if (!f.dead) Kill(f); RoomCleared(); }
+			} else if (!any) {
+				if (wave < waves) { spawnT -= dt; if (spawnT <= 0) { SpawnWave(); spawnT = 0.7f; } }
+				else RoomCleared();
+			}
+			return;
+		}
+		var s = SegAt(ppos.y);
+		PR = s.r;
+		if (s.ch != ch) { ch = s.ch; Banner(D.CH_NAME[ch], StoryChapterIntro(ch)); sfx.Play("gong", 0.6f); }
+		if (s.state == 0) {
+			if (s.kind == "rest") { s.state = 2; Populate(s); }
+			else if (ppos.y > s.r.yMin + 150 && pickT <= 0) { StartFight(s); return; }
+		}
+		if (pickKind != "" && pickT > 0) { pickT -= dt; if (pickT <= 0) { string k = pickKind; pickKind = ""; OpenPick(k, pickBonus); } }
+		if (P(inp.use, prev.use) && pickT <= 0) {
+			foreach (var d in doors) if ((d.pos - ppos).magnitude < 120) { UseDoor(d); return; }
+			foreach (var it in items) if (!it.gone && it.kind != "npc" && (it.pos - ppos).magnitude < 90) { UseItem(it); break; }
+		}
+	}
+
+	void RoomCleared() {
+		var s = fight;
+		fight = null; s.state = 2;
+		cleared = true;
+		rooms++;
+		sfx.Battle(false);
+		sfx.Play("gong", 0.7f);
+		shots.RemoveAll(x => !x.mine);
+		if (!HeatAt(4)) Heal(Up("heal") * 3);
+		slow = 0.5f;
+		yLo = segs[0].r.yMin; yHi = s.r.yMax;
+		doors.Clear();
+		if (s.kind == "boss") {
+			bossKills++;
+			int h = 1 + s.ch + meta.kiep / 3;
+			meta.hon += h; honRun += h;
+			UnlockMemory(s.ch);
+			relicPending = true;
+			Text(ppos + new Vector2(0, 210), "+" + h + " KIẾM HỒN", new Color(0.75f, 0.85f, 1f), 26);
+			if (!HeatAt(4)) Heal(maxHp * 0.3f);
+			AddCoins(60);
+			string[] unl = s.ch == 0 ? new[] { "thuong", "dao" } : (s.ch == 1 ? new[] { "phien", "chuy" } : (s.ch == 2 ? new[] { "cung" } : new string[0]));
+			foreach (var id in unl) if (!meta.unl.Contains(id)) { meta.unl.Add(id); Toast("MỞ KHÓA: " + D.Weapon(id).name); }
+			SaveMeta();
+			pickKind = "bikip"; pickBonus = 1; pickT = 1.4f;
+			Banner("ĐẠI THẮNG", StoryBossDefeat(s.ch));
+			if (s.ch >= chaptersN - 1) doors.Add(new Door { pos = new Vector2(s.r.center.x, s.r.yMax - 10), kind = "end" });
+			else yHi = worldTop;
+			return;
+		}
+		// two offerings at the far end: take one and the seal opens
+		string[] pool = { "bikip", "bikip", "bikip", "luyen", "dan", "ngan", "bao", "binh", "binh" };
+		string a = pool[rng.Next(pool.Length)], b = a;
+		while (b == a) b = pool[rng.Next(pool.Length)];
+		if (boons.Count == 0) { a = "bikip"; if (b == "luyen" || b == "bikip") b = "ngan"; }
+		if (s.step >= 1 && Rnd() < 0.25f) b = "ky";
+		doors.Add(new Door { pos = new Vector2(s.r.center.x - 210, s.r.yMax - 10), kind = a });
+		doors.Add(new Door { pos = new Vector2(s.r.center.x + 210, s.r.yMax - 10), kind = b });
+	}
+
+	void UseDoor(Door d) {
+		string k = d.kind;
+		sfx.Play("drum");
+		doors.Clear();
+		if (k == "end") { Win(); return; }
+		yHi = worldTop;
+		switch (k) {
+			case "bikip": case "luyen": OpenPick(k, 0); break;
+			case "bao": OpenRelic(); break;
+			case "binh": OpenWeaponChoice(2, 0); break;
+			case "dan": bonusHp += 15; Recalc(); Heal(25); Toast("LINH ĐAN: +15 sinh lực tối đa"); break;
+			case "ngan": AddCoins(45 + ch * 15 + rng.Next(20)); Toast("NHẬN MỘT TÚI NGÂN LƯỢNG"); break;
+			case "ky": state = "event"; menuI = 0; sfx.Play("pick"); break;
+		}
+	}
+
+	// --- flying swords: thrown one at a time, they stay in what they hit until called home
+	void ThrowSword() {
+		throwT = 0.2f;
+		swordsHeld--;
+		thrCd = 0.13f;
+		swords.Add(new FSword { pos = ppos + new Vector2(0, 55), vel = aimDir * 1700 });
+		face = aimDir.x >= 0 ? 1 : -1;
+		sfx.Play("shoot", 0.45f, 1.35f);
+	}
+
+	void RecallSwords() {
+		bool any = false;
+		if (Lv("k_no") > 0) foreach (var s in swords) if (s.st == 1 && s.host != null && !s.host.dead) Burst(s.host.pos, 95, 18 * Lv("k_no") * dmgMul, -1, 1, false);
+		if (Lv("k_phan") > 0 && inParry) foreach (var s in swords) if (s.st == 1 && s.host != null && !s.host.dead) AddPosture(s.host, 15 * Lv("k_phan"));
+		foreach (var s in swords) {
+			if (s.st != 1) continue;
+			s.st = 2; s.hit.Clear(); any = true;
+			if (s.host != null && !s.host.dead) { s.hit.Add(s.host); s.vel = (ppos - s.host.pos).normalized; SwordHit(s, s.host, true); }
+			s.host = null;
+		}
+		if (any) { sfx.Play("dash", 0.6f, 1.5f); recallT = 0.25f; }
+	}
+
+	void SwordHit(FSword s, Foe f, bool back) {
+		int el = SlotEl("atk"), lv = SlotLv("atk");
+		// going out a sword carries the element of the attack, coming home that of the ultimate: one throw can react
+		if (back && SlotEl("skill") >= 0) { el = SlotEl("skill"); lv = SlotLv("skill"); }
+		float dmg = (back ? 15 * (1 + Lv("hoi") * 0.4f) * (Has("tumau") ? 1.5f : 1) : 8) * dmgMul * (meta.sect == "kiem" ? 1.3f : 1);
+		HurtFoe(f, dmg, el, lv, back ? 1.4f : 0.8f, s.vel.sqrMagnitude > 0.01f ? s.vel.normalized : Vector2.up);
+	}
+
+	void UpSwords(float dt) {
+		thrCd -= dt;
+		bool can = act != "dash" && act != "skill" && !guard;
+		if (inp.thr && can && thrCd <= 0 && swordsHeld > 0) ThrowSword();
+		else if (P(inp.thr, prev.thr) && swordsHeld == 0) RecallSwords();
+		if (P(inp.recall, prev.recall)) RecallSwords();
+		Vector2 up = new Vector2(0, 55);
+		for (int i = swords.Count - 1; i >= 0; i--) {
+			var s = swords[i];
+			s.t += dt;
+			if (s.st == 0) {
+				s.pos += s.vel * dt;
+				Vector2 g = s.pos - up;
+				Foe hitF = null;
+				foreach (var f in foes) if (!f.dead && f.spawn <= 0 && (f.pos - g).magnitude < f.d.r * f.scale + 16) { hitF = f; break; }
+				if (hitF != null) {
+					SwordHit(s, hitF, false);
+					s.st = 1; s.t = 0;
+					s.host = hitF.dead ? null : hitF;
+					s.off = (g - hitF.pos) * 0.5f;
+				} else if (s.t > 0.4f || g.y < yLo || g.y > yHi || (Confine(g, 4) - g).sqrMagnitude > 1) { s.st = 1; s.t = 0; }
+			} else if (s.st == 1) {
+				if (s.host != null) {
+					if (s.host.dead) s.host = null;
+					else s.pos = s.host.pos + s.off + new Vector2(0, 55 + s.host.z);
+				}
+				if (s.t > (meta.sect == "kiem" ? 2f : 8f)) {
+					s.st = 2; s.hit.Clear();
+					if (s.host != null && !s.host.dead) { s.hit.Add(s.host); s.vel = (ppos - s.host.pos).normalized; SwordHit(s, s.host, true); }
+					s.host = null;
+				}
+			} else {
+				Vector2 to = ppos + up - s.pos;
+				float m = to.magnitude;
+				if (m < 46 + 2300 * dt) {
+					swords.RemoveAt(i);
+					catchT = 0.14f; recallT = 0;
+					swordsHeld = Mathf.Min(swordMax, swordsHeld + 1);
+					qi = Mathf.Min(100, qi + 1.5f * qiMul);
+					continue;
+				}
+				s.vel = to / m * 2300;
+				s.pos += s.vel * dt;
+				Vector2 g = s.pos - up;
+				foreach (var f in foes) {
+					if (f.dead || f.spawn > 0 || s.hit.Contains(f) || (f.pos - g).magnitude > f.d.r * f.scale + 28) continue;
+					s.hit.Add(f);
+					SwordHit(s, f, true);
+				}
+			}
+		}
+	}
+
+	void Seal(float y, float x0, float x1) {
+		float a = 0.55f + 0.15f * Mathf.Sin(T * 5);
+		for (float x = x0; x < x1; x += 150) {
+			ground.Brush(new Vector2(x - 20, y + Mathf.Sin(x) * 8), new Vector2(x + 170, y + Mathf.Sin(x + 2) * 8), 34, new Color(0.07f, 0.06f, 0.06f, a));
+			ground.Brush(new Vector2(x, y), new Vector2(x + 150, y), 7, new Color(0.78f, 0.18f, 0.12f, a));
+		}
+	}
+
+	// called from Render
+	void DrawStage() {
+		Color dark = new Color(0.05f, 0.05f, 0.06f, 0.5f), clear = new Color(0.05f, 0.05f, 0.06f, 0), black = new Color(0.05f, 0.05f, 0.06f, 0.94f);
+		foreach (var s in segs) {
+			if (s.kind == "pass" || s.kind == "boss" || Mathf.Abs(s.r.center.y - camPos.y) > s.r.height / 2 + 700) continue;
+			Rect r = s.r;
+			ground.Rect(CX - 3000, r.yMin, r.xMin - 30 - (CX - 3000), r.height, dark);
+			ground.Rect(r.xMax + 30, r.yMin, CX + 3000 - r.xMax - 30, r.height, dark);
+			ground.Quad(new Vector2(r.xMin - 30, r.yMin), new Vector2(r.xMin - 30, r.yMax), new Vector2(r.xMin + 110, r.yMax), new Vector2(r.xMin + 110, r.yMin), dark, clear);
+			ground.Quad(new Vector2(r.xMax + 30, r.yMin), new Vector2(r.xMax + 30, r.yMax), new Vector2(r.xMax - 110, r.yMax), new Vector2(r.xMax - 110, r.yMin), dark, clear);
+		}
+		foreach (var p in paints) {
+			if (Mathf.Abs(p.center.y - camPos.y) > p.height / 2 + 700) continue;
+			ground.Rect(CX - 3000, p.yMin, p.xMin - (CX - 3000), p.height, black);
+			ground.Rect(p.xMax, p.yMin, CX + 3000 - p.xMax, p.height, black);
+			// ink mist over the joins between the painting and the tiled ground
+			for (int k = 0; k < 2; k++) {
+				float ey = k == 0 ? p.yMin : p.yMax;
+				ground.Quad(new Vector2(p.xMin, ey), new Vector2(p.xMax, ey), new Vector2(p.xMax, ey + 170), new Vector2(p.xMin, ey + 170), black, clear);
+				ground.Quad(new Vector2(p.xMin, ey), new Vector2(p.xMax, ey), new Vector2(p.xMax, ey - 170), new Vector2(p.xMin, ey - 170), black, clear);
+			}
+		}
+		if (segs.Count > 0) ground.Rect(CX - 3000, segs[0].r.yMin - 900, 6000, 860, dark);
+		if (fight != null) {
+			if (yLo > segs[0].r.yMin + 1) Seal(yLo - 16, fight.r.xMin, fight.r.xMax);
+			if (fight.kind != "boss" || fight.ch < 2) Seal(yHi + 16, fight.r.xMin, fight.r.xMax);
+		} else if (doors.Count > 0 && yHi < worldTop - 1) Seal(yHi + 16, PR.xMin, PR.xMax);
+
+		foreach (var s in swords) {
+			Vector2 d = s.st == 1 ? new Vector2(0.35f, -0.94f) : s.vel.normalized;
+			Vector2 c = s.st == 1 && s.host == null ? s.pos - new Vector2(0, 28) : s.pos;
+			Vector2 n = new Vector2(-d.y, d.x), tip = c + d * 30, tail = c - d * 34;
+			if (s.st != 1) fxInk.Brush(c - d * 130, c, 9, new Color(0.07f, 0.06f, 0.06f, 0.3f));
+			fxInk.Brush(tail, tip, 13, D.INK);
+			fxInk.Brush(tail + d * 8, tip - d * 4, 5, new Color(0.93f, 0.95f, 0.97f));
+			fxInk.Line(tail + d * 10 - n * 9, tail + d * 10 + n * 9, 4, D.INK);
+		}
+		DrawSkills();
+	}
+}
+
+=== GameJourney.cs ===
+using System.Collections.Generic;
+using UnityEngine;
+
+// Progression between and during runs:
+// - BẢO VẬT: relics taken during a run (reward gates, bosses, elites); the pool grows in the BẢO KHỐ.
+// - KIẾP NẠN: difficulty tiers chosen before a run; each adds one rule and pays more NGỘ TÍNH.
+// - KIẾM HỒN: dropped by bosses, opens the other sects.
+// - KÝ ỨC: nine fragments of the story, one per boss kill, three per boss.
+public class Relic { public string id, name, desc; public int rare; }
+public class Heat { public string name, desc; }
+
+public static class J {
+	static Relic R(string id, int rare, string name, string desc) { return new Relic { id = id, rare = rare, name = name, desc = desc }; }
+	public static readonly Relic[] RELICS = {
+		R("huyetngoc", 0, "HUYẾT NGỌC", "Hạ một địch hồi 1 sinh lực."),
+		R("phonghai", 0, "THANH PHONG HÀI", "Chạy nhanh hơn 15%."),
+		R("kimcang", 0, "KIM CANG PHÙ", "Nhận ít hơn 15% sát thương."),
+		R("phongan", 0, "PHONG ẤN TỬ", "Thêm 1 lần khinh công."),
+		R("thattinh", 0, "THẤT TINH HẠP", "Mang thêm 2 phi kiếm."),
+		R("dandien", 0, "ĐAN ĐIỀN LÔ", "Vào mỗi bãi chiến với ít nhất 50 nội lực."),
+		R("toaithach", 0, "TOÁI THẠCH QUYỀN", "Mọi đòn phá THẾ mạnh hơn 30%."),
+		R("hoalinh", 0, "HỎA LINH CHÂU", "Mỗi đòn có 12% cơ hội gây THIÊU."),
+		R("bangtam", 1, "BĂNG TÂM KÍNH", "Đỡ chuẩn làm chậm mọi địch quanh mình."),
+		R("ngoctuy", 1, "NGỌC TỦY", "TUYỆT KỸ hồi nhanh hơn 30%."),
+		R("satky", 1, "HUYẾT SÁT KỲ", "Mỗi 10 LIÊN TRẢM: +5% sát thương tới hết bãi (tối đa 30%)."),
+		R("phuongvu", 1, "PHƯỢNG VŨ LINH", "Gục ngã thì đứng dậy một lần với 30% sinh lực."),
+		R("thamlang", 1, "THAM LANG ẤN", "Ngân lượng +50%, sinh lực tối đa -10."),
+		R("lieudiep", 1, "LIỄU DIỆP TIÊU", "Khinh công xuyên qua địch, chém 14 sát thương."),
+		R("amduong", 1, "ÂM DƯƠNG BÀN", "TƯƠNG SINH và TƯƠNG KHẮC mạnh hơn 35%."),
+		R("cuongbao", 1, "CUỒNG BẠO ĐAN", "Gây thêm 25% sát thương, nhận thêm 15%."),
+		// from the design review with Gemini: relics that change how a build plays, not just its numbers
+		R("nghichhanh", 1, "NGHỊCH HÀNH ẤN", "Đảo ngũ hành: cặp khắc nhau nổ TƯƠNG SINH (+40%), cặp sinh nhau gây TƯƠNG KHẮC."),
+		R("tumau", 1, "TỬ MẪU KIẾM HẠP", "Đỡ chuẩn phóng 2 phi kiếm vào kẻ đánh và gọi mọi phi kiếm về; kiếm về mạnh hơn 50%."),
+		R("thienquan", 1, "THIÊN QUÂN XÍCH", "Địch bị PHÁ THẾ truyền 80% THẾ sang địch quanh nó và kéo chúng lại gần."),
+		R("thaicuc", 1, "THÁI CỰC NGỌC BỘI", "Nhát cuối liên hoàn tự mang hành KHẮC với ẤN trên địch."),
+		R("thoathe", 0, "THỔ THẦN GIÁP", "TƯƠNG SINH kết thúc bằng THỔ cho một lớp giáp chặn 1 đòn."),
+	};
+	// open from the first run; the rest are bought in the BẢO KHỐ
+	public static readonly string[] START = { "huyetngoc", "phonghai", "kimcang", "phongan", "thattinh", "dandien", "toaithach", "hoalinh" };
+	public const int RELIC_COST = 25;
+	public static Relic Get(string id) { foreach (var r in RELICS) if (r.id == id) return r; return null; }
+
+	public static readonly Heat[] HEAT = {
+		new Heat { name = "THANH TỊNH", desc = "Không thêm gì." },
+		new Heat { name = "KIẾP I", desc = "Địch thường thêm 25% sinh lực." },
+		new Heat { name = "KIẾP II", desc = "Tinh anh xuất hiện nhiều gấp đôi." },
+		new Heat { name = "KIẾP III", desc = "Địch gây thêm 15% sát thương." },
+		new Heat { name = "KIẾP IV", desc = "Không còn hồi sinh lực sau mỗi bãi chiến." },
+		new Heat { name = "KIẾP V", desc = "Thương nhân bán đắt hơn 50%." },
+		new Heat { name = "KIẾP VI", desc = "Trùm thêm 30% sinh lực." },
+		new Heat { name = "KIẾP VII", desc = "Địch ra đòn dồn dập hơn 20%." },
+		new Heat { name = "KIẾP VIII", desc = "Mỗi đợt phục kích có thêm một tinh anh." },
+		new Heat { name = "KIẾP IX", desc = "Mọi cách hồi sinh lực chỉ còn một nửa." },
+		new Heat { name = "KIẾP X", desc = "Trùm thêm 35% sinh lực." },
+		new Heat { name = "KIẾP XI", desc = "Hồi sinh lực giảm thêm 30%." },
+		new Heat { name = "KIẾP XII", desc = "THẾ của địch dày thêm 25%." },
+		new Heat { name = "KIẾP XIII", desc = "Mỗi bãi chiến thêm một đợt phục kích." },
+		new Heat { name = "KIẾP XIV", desc = "Thương nhân không còn bán thuốc hồi." },
+		new Heat { name = "KIẾP XV", desc = "Địch nhanh hơn 20%." },
+	};
+	public const float HEAT_PAY = 0.15f;   // extra NGỘ TÍNH per tier
+
+	public static readonly int[] SECT_COST = { 0, 2, 3, 4 };   // KIẾM HỒN, same order as D.SECTS
+
+	public static readonly string[] MEM_TITLE = {
+		"TRANG ĐẦU", "ĐỆ TỬ NGOẠI MÔN", "NÉT KHỞI BÚT",
+		"BẠN CỜ", "LỬA TRONG THƯ PHÒNG", "CHỖ TÂM DỪNG",
+		"BỨC HỌA CHÍNH ĐIỆN", "NGƯỜI ĐỐT NÚI", "TRANG ĐỂ TRỐNG",
+		"MỰC ĐEN TRONG TÂM", "NÉT BÚT DO DỰ", "TRANG TRẮNG ĐỢI NGƯỜI",
+	};
+	public static readonly string[] MEM = {
+		"Đêm Mặc Kiếm Môn cháy, ta thấy một gã khoác da hổ ôm đi trang đầu của bộ kiếm phổ. Mực trên trang ấy còn ướt.",
+		"Hắc Hổ vốn là đệ tử ngoại môn. Sư phụ đuổi hắn xuống núi vì hắn học kiếm chỉ để cướp. Hắn chưa từng quên ngày đó.",
+		"Trang giấy hắn giữ chỉ có một nét mực, đậm ở đầu và nhạt dần. Đó là nét khởi đầu của mọi chiêu trong Mặc Kiếm Lục.",
+		"Lão thiền sư mù từng là bạn cờ của sư phụ. Mười năm, mỗi mùa xuân, hai người đánh đúng một ván rồi chia tay.",
+		"Lão nói lửa không do người ngoài mang tới. Nó bắt đầu trong thư phòng, nơi chỉ sư phụ có chìa khóa.",
+		"Trang thứ hai viết: kiếm không ở trong tay, kiếm ở chỗ tâm dừng lại. Ai chưa dừng được thì kiếm chỉ là sắt.",
+		"Mái tóc bạc ấy ta đã thấy trong bức họa treo ở chính điện. Người trong tranh trẻ hơn, nhưng cách cầm kiếm thì không đổi.",
+		"Kiếm Thánh là sư phụ. Người tự tay đốt môn phái để giấu kiếm phổ khỏi thiên hạ, rồi đợi xem ai đủ sức đi hết ba ngọn núi.",
+		"Trang cuối để trống. Người bảo: phần còn lại ngươi tự viết, bằng mực của chính mình.",
+		"Khi nhìn vào trang giấy trắng, nỗi nghi ngờ sư phụ và cơn giận mất môn phái hóa thành hình hài đen kịt. Mặc Ảnh không bước ra từ cuốn sách, mà từ vết nứt trong chính đạo tâm của ngươi.",
+		"Bao lần gục ngã dưới chân núi, ngươi tự hỏi mình tìm chân tướng hay chỉ tìm cớ trả thù. Mỗi lần chùn tay là một lần ngươi tự tô thêm mực cho bóng tối đối diện.",
+		"Sư phụ để trống trang cuối vì không ai viết hộ cuộc đời kẻ khác. Chỉ khi chém tan Mặc Ảnh, nét kiếm đầu tiên mới thật sự là mực của chính ngươi.",
+	};
+}
+
+public partial class Game {
+	readonly List<string> relics = new List<string>();
+	readonly List<Relic> relicOffers = new List<Relic>();
+	bool relicPending, phoenixUsed;
+	float satky;              // HUYẾT SÁT KỲ bonus for the current fight
+	int heatI;                // cursor on the heat screen
+	int vaultI, memI;
+	readonly HashSet<Foe> dashHit = new HashSet<Foe>();
+	int rerolls;
+	bool spreading;
+	float thietT = -9, shieldT;
+
+	static int KhacOf(int el) {
+		for (int k = 0; k < 5; k++) if (k != el && D.Relation(el, k) == 2) return k;
+		return (el + 2) % 5;
+	}
+
+	// what the finishing element of a TƯƠNG SINH adds to the burst
+	void SinhExtra(Foe f, int el, int lvl) {
+		switch (el) {
+			case D.KIM:   // three blades of sword energy fly out of the burst
+				for (int k = 0; k < 3; k++) {
+					float a = Rnd(0, Mathf.PI * 2);
+					shots.Add(new Shot { pos = f.pos + new Vector2(0, 55), vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 900, dmg = 18 * dmgMul, mine = true, pierce = 3, r = 12, life = 0.6f, hit = new List<Foe>() });
+				}
+				break;
+			case D.MOC: Heal(3); break;   // the burst draws life
+			case D.THUY: tkCd = Mathf.Max(0, tkCd - 1.5f); qi = Mathf.Min(100, qi + 15); break;
+			case D.HOA: pblasts.Add(new PBlast { pos = f.pos, wind = 0.6f, r = 110, dmg = 45 * dmgMul }); break;   // a pillar of fire a moment later
+			case D.THO:
+				if (Has("thoathe") || lvl >= 2) { shieldT = 4; Text(ppos + new Vector2(0, 160), "THỔ GIÁP", D.EL_COL[D.THO], 20); }
+				break;
+		}
+	}
+
+	void Reroll() {
+		if (rerolls <= 0) { sfx.Play("block", 0.5f); return; }
+		rerolls--;
+		if (state == "relic") OpenRelic();
+		else OpenPick(pickKind, pickBonus);
+		Toast("NGHỊCH MỆNH: còn " + rerolls + " lần đổi");
+	}
+
+	bool Has(string id) { return relics.Contains(id); }
+	int MemN() { return meta.mem.Count >= 9 || meta.mem.Contains(9) ? 12 : 9; }
+	bool HeatAt(int n) { return meta.kiep >= n; }
+
+	// --- effects that other files call
+	float HurtTakenMul() {
+		if (shieldT > 0) { shieldT = 0; Text(ppos + new Vector2(0, 150), "CHẶN", D.EL_COL[D.THO], 22); return 0; }
+		return (Has("kimcang") ? 0.85f : 1) * (Has("cuongbao") ? 1.15f : 1);
+	}
+	float HealMul() { return (HeatAt(9) ? 0.5f : 1) * (HeatAt(11) ? 0.7f : 1); }
+	float PriceMul() { return HeatAt(5) ? 1.5f : 1; }
+	float DealMul() { return (Has("cuongbao") ? 1.25f : 1) * (1 + satky); }
+
+	void RelicRecalc() {
+		if (Has("thamlang")) { maxHp -= 10; coinMul *= 1.5f; }
+		if (Has("phongan")) dashMax += 1;
+	}
+
+	void RelicKill(Foe f) {
+		if (Has("huyetngoc")) Heal(1);
+		if (Has("satky") && chain % 10 == 0) satky = Mathf.Min(0.3f, satky + 0.05f);
+		// elites sometimes drop a relic shrine
+		if (f.elite && Rnd() < 0.22f && state == "play") {
+			AddItem(f.pos, "relic", "BẢO VẬT\nNhặt để chọn một trong ba", 0, "chest", null);
+			Text(f.pos + new Vector2(0, 140), "BẢO VẬT!", new Color(1f, 0.85f, 0.4f), 22);
+		}
+	}
+
+	void RelicParry() {
+		if (!Has("bangtam")) return;
+		foreach (var f in foes) if (!f.dead && (f.pos - ppos).magnitude < 260) f.slow = 3;
+		wavesFx.Add(new Wave { pos = ppos, r = 30, spd = 900, max = 260, hit = true, col = D.EL_COL[D.THUY] });
+	}
+
+	void RelicDash() {
+		if (!Has("lieudiep")) return;
+		foreach (var f in foes) {
+			if (f.dead || f.spawn > 0 || dashHit.Contains(f) || (f.pos - ppos).magnitude > f.d.r + 40) continue;
+			dashHit.Add(f);
+			HurtFoe(f, 14 * dmgMul, SlotEl("dash"), SlotLv("dash"), 1, ddir);
+		}
+	}
+
+	bool RelicRevive() {
+		if (!Has("phuongvu") || phoenixUsed) return false;
+		phoenixUsed = true;
+		hp = maxHp * 0.3f; inv = 2f;
+		Burst(ppos, 300, 30, D.HOA, 1, false);
+		Banner("PHƯỢNG VŨ LINH", "Lửa không tắt");
+		return true;
+	}
+
+	// --- relic choice (gate reward, boss, elite drop)
+	void OpenRelic() {
+		var pool = new List<Relic>();
+		foreach (var r in J.RELICS) if (meta.relics.Contains(r.id) && !Has(r.id)) pool.Add(r);
+		relicOffers.Clear();
+		while (relicOffers.Count < 3 && pool.Count > 0) { int k = rng.Next(pool.Count); relicOffers.Add(pool[k]); pool.RemoveAt(k); }
+		if (relicOffers.Count == 0) { AddCoins(60); Toast("Đã có đủ bảo vật: nhận ngân lượng"); return; }
+		state = "relic";
+		menuI = 0;
+		sfx.Play("pick", 0.8f);
+	}
+
+	void RelicAct(int i) {
+		if (i < 0 || i >= relicOffers.Count) return;
+		var r = relicOffers[i];
+		relics.Add(r.id);
+		if (!meta.seen.Contains(r.id)) meta.seen.Add(r.id);
+		float before = maxHp;
+		Recalc();
+		if (maxHp > before) hp += maxHp - before;
+		hp = Mathf.Min(hp, maxHp);
+		Toast("BẢO VẬT: " + r.name);
+		sfx.Play("pick");
+		state = "play";
+		prev.atk = true; inp.atk = false; buf = 0;
+	}
+
+	void GuiRelic() {
+		Dim(0.6f);
+		Lab(new Rect(0, 40, GW, 56), "CHỌN BẢO VẬT", 42, D.PAPER, TextAnchor.MiddleCenter, true);
+		Lab(new Rect(0, 94, GW, 28), "A / D chọn   ·   ENTER nhận" + (rerolls > 0 ? "   ·   R đổi lựa chọn (" + rerolls + ")" : ""), 16, D.PAPER);
+		float w = 300, gap = 28, x0 = (GW - (w * relicOffers.Count + gap * (relicOffers.Count - 1))) / 2;
+		for (int i = 0; i < relicOffers.Count; i++) {
+			var r = relicOffers[i];
+			bool sel = menuI == i;
+			var rc = new Rect(x0 + i * (w + gap), sel ? 150 : 166, w, 360);
+			Panel(rc, sel);
+			var ric = Spr("icon_" + r.id);
+			if (ric != null) DrawIcon(ric, new Rect(rc.x + w / 2 - 46, rc.y + 14, 92, 80));
+			else Seal(new Rect(rc.x + w / 2 - 40, rc.y + 26, 80, 62), r.name.Substring(0, 1), r.rare > 0 ? new Color(0.55f, 0.32f, 0.7f) : new Color(0.62f, 0.45f, 0.2f), 18);
+			Lab(new Rect(rc.x, rc.y + 96, w, 26), r.rare > 0 ? "QUÝ" : "THƯỜNG", 14, D.RED, TextAnchor.MiddleCenter, false, false);
+			Lab(new Rect(rc.x + 10, rc.y + 122, w - 20, 40), r.name, 24, D.INK, TextAnchor.MiddleCenter, true, false);
+			Box(new Rect(rc.x + 40, rc.y + 170, w - 80, 2), new Color(0.07f, 0.06f, 0.06f, 0.4f));
+			Lab(new Rect(rc.x + 24, rc.y + 186, w - 48, 120), r.desc, 18, D.INK, TextAnchor.UpperCenter, false, false);
+			if (Hit(rc, i)) RelicAct(i);
+		}
+	}
+
+	void GuiRelicHud() {
+		for (int i = 0; i < relics.Count; i++) {
+			var r = J.Get(relics[i]);
+			var rc = new Rect(28 + (i % 8) * 34, 154 + (i / 8) * 34, 30, 30);
+			var hic = Spr("icon_" + r.id);
+			Box(rc, new Color(0.07f, 0.06f, 0.06f, 0.55f));
+			if (hic != null) DrawIcon(hic, new Rect(rc.x + 1, rc.y + 1, rc.width - 2, rc.height - 2));
+			else Seal(rc, r.name.Substring(0, 1), r.rare > 0 ? new Color(0.55f, 0.32f, 0.7f) : new Color(0.62f, 0.45f, 0.2f), 14);
+		}
+	}
+
+	// --- heat (KIẾP NẠN) choice before a run
+	void HeatTick() {
+		int n = Mathf.Min(meta.heatMax, J.HEAT.Length - 1) + 1;
+		if (P(inp.up, prev.up)) { heatI = (heatI + n - 1) % n; sfx.Play("ui", 0.5f); }
+		if (P(inp.down, prev.down)) { heatI = (heatI + 1) % n; sfx.Play("ui", 0.5f); }
+		if (P(inp.ok, prev.ok) && T - stateT > 0.3f) { meta.kiep = heatI; SaveMeta(); StartRun(); }
+		if (P(inp.back, prev.back)) { state = "sect"; menuI = Mathf.Max(0, System.Array.FindIndex(D.SECTS, k => k.id == meta.sect)); }
+	}
+
+	void GuiHeat() {
+		Dim(0.65f);
+		Lab(new Rect(0, 26, GW, 56), "KIẾP NẠN", 42, D.PAPER, TextAnchor.MiddleCenter, true);
+		Lab(new Rect(0, 78, GW, 26), "Mỗi tầng giữ mọi luật của các tầng trước. Thắng ở tầng cao nhất để mở tầng kế.", 16, D.PAPER);
+		float w = 760, x = (GW - w) / 2;
+		int n = Mathf.Min(meta.heatMax, J.HEAT.Length - 1);
+		for (int i = 0; i < J.HEAT.Length; i++) {
+			bool open = i <= n, sel = heatI == i, on = i <= heatI;
+			float rh = Mathf.Min(48, (GH - 170f) / J.HEAT.Length - 5);
+			var r = new Rect(x, 112 + i * (rh + 5), w, rh);
+			Box(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), sel ? D.RED : new Color(0.07f, 0.06f, 0.06f, 0.6f));
+			Box(r, open ? (on ? new Color(0.97f, 0.9f, 0.78f) : D.PAPER) : new Color(0.35f, 0.33f, 0.31f));
+			Lab(new Rect(r.x + 18, r.y, 170, rh), J.HEAT[i].name, 20, open ? D.INK : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleLeft, true, false);
+			Lab(new Rect(r.x + 190, r.y, 430, rh), open ? J.HEAT[i].desc : "Chưa mở", 16, open ? D.INK : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleLeft, false, false);
+			if (i > 0) Lab(new Rect(r.xMax - 150, r.y, 132, rh), "+" + Mathf.RoundToInt(i * J.HEAT_PAY * 100) + "% NGỘ", 15, open ? D.RED : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleRight, true, false);
+			if (open && Hit(r, i)) { heatI = i; meta.kiep = i; SaveMeta(); StartRun(); }
+		}
+		Lab(new Rect(0, GH - 40, GW, 28), "W / S chọn tầng   ·   ENTER khởi hành   ·   ESC quay lại", 16, D.PAPER);
+	}
+
+	// --- sect unlocks with KIẾM HỒN (on the sect screen)
+	bool SectOpen(int i) { return meta.sects.Contains(D.SECTS[i].id); }
+	bool TryUnlockSect(int i) {
+		if (SectOpen(i)) return true;
+		int c = J.SECT_COST[Mathf.Min(i, J.SECT_COST.Length - 1)];
+		if (meta.hon < c) { sfx.Play("block", 0.6f); Toast("Cần " + c + " KIẾM HỒN"); return false; }
+		meta.hon -= c;
+		meta.sects.Add(D.SECTS[i].id);
+		SaveMeta();
+		sfx.Play("gong", 0.7f);
+		Toast("MỞ MÔN PHÁI: " + D.SECTS[i].name);
+		return false;   // a fresh unlock is shown before the run starts
+	}
+
+	// --- BẢO KHỐ: the relic codex; buy relics into the pool
+	void VaultTick() {
+		int n = J.RELICS.Length;
+		if (P(inp.left, prev.left)) { vaultI = (vaultI + n - 1) % n; sfx.Play("ui", 0.5f); }
+		if (P(inp.right, prev.right)) { vaultI = (vaultI + 1) % n; sfx.Play("ui", 0.5f); }
+		if (P(inp.up, prev.up)) { vaultI = (vaultI + n - 5) % n; sfx.Play("ui", 0.5f); }
+		if (P(inp.down, prev.down)) { vaultI = (vaultI + 5) % n; sfx.Play("ui", 0.5f); }
+		if (P(inp.ok, prev.ok) && T - stateT > 0.3f) VaultAct(vaultI);
+		if (P(inp.back, prev.back)) { state = "title"; menuI = 3; }
+	}
+
+	void VaultAct(int i) {
+		var r = J.RELICS[i];
+		if (meta.relics.Contains(r.id)) return;
+		if (meta.ngo < J.RELIC_COST) { sfx.Play("block", 0.6f); return; }
+		meta.ngo -= J.RELIC_COST;
+		meta.relics.Add(r.id);
+		SaveMeta();
+		sfx.Play("pick");
+	}
+
+	void GuiVault() {
+		Dim(0.62f);
+		Lab(new Rect(0, 22, GW, 54), "BẢO KHỐ", 42, D.PAPER, TextAnchor.MiddleCenter, true);
+		Lab(new Rect(0, 72, GW, 26), "NGỘ TÍNH: " + meta.ngo + "   ·   mở một bảo vật vào kho: " + J.RELIC_COST + " NGỘ", 18, new Color(1f, 0.85f, 0.5f));
+		float w = 220, h = 106, gap = 10, x0 = (GW - (w * 5 + gap * 4)) / 2;
+		for (int i = 0; i < J.RELICS.Length; i++) {
+			var r = J.RELICS[i];
+			bool open = meta.relics.Contains(r.id), sel = vaultI == i;
+			var rc = new Rect(x0 + (i % 5) * (w + gap), 108 + (i / 5) * (h + gap), w, h);
+			Panel(rc, sel);
+			if (!open) Box(rc, new Color(0.07f, 0.06f, 0.06f, 0.3f));
+			DrawIcon(Spr("icon_" + r.id), new Rect(rc.x + 6, rc.y + 6, 34, 34));
+			Lab(new Rect(rc.x + 40, rc.y + 8, w - 46, 28), r.name, 16, open ? D.INK : new Color(0.35f, 0.33f, 0.31f), TextAnchor.MiddleCenter, true, false);
+			Lab(new Rect(rc.x + 10, rc.y + 34, w - 20, 50), r.desc, 12, open ? D.INK : new Color(0.3f, 0.28f, 0.27f), TextAnchor.UpperCenter, false, false);
+			Lab(new Rect(rc.x, rc.y + h - 26, w, 22), open ? (meta.seen.Contains(r.id) ? "ĐÃ DÙNG" : "TRONG KHO") : "MỞ: " + J.RELIC_COST + " NGỘ", 13, open ? new Color(0.3f, 0.5f, 0.3f) : D.RED, TextAnchor.MiddleCenter, false, false);
+			if (Hit(rc, i)) VaultAct(i);
+		}
+		Lab(new Rect(0, GH - 40, GW, 28), "WASD chọn   ·   ENTER mở   ·   ESC quay lại", 16, D.PAPER);
+	}
+
+	// --- KÝ ỨC: story fragments
+	void UnlockMemory(int bossCh) {
+		for (int k = 0; k < 3; k++) {
+			int id = bossCh * 3 + k;
+			if (id >= J.MEM.Length) return;
+			if (meta.mem.Contains(id)) continue;
+			meta.mem.Add(id);
+			Toast("KÝ ỨC MỚI: " + J.MEM_TITLE[id]);
+			return;
+		}
+	}
+
+	void MemoryTick() {
+		if (P(inp.up, prev.up)) { memI = (memI + MemN() - 1) % MemN(); sfx.Play("ui", 0.5f); }
+		if (P(inp.down, prev.down)) { memI = (memI + 1) % MemN(); sfx.Play("ui", 0.5f); }
+		if (P(inp.back, prev.back) || (P(inp.ok, prev.ok) && T - stateT > 0.3f)) { state = "title"; menuI = 4; }
+	}
+
+	void GuiMemory() {
+		Dim(0.68f);
+		Lab(new Rect(0, 22, GW, 54), "KÝ ỨC", 42, D.PAPER, TextAnchor.MiddleCenter, true);
+		Lab(new Rect(0, 72, GW, 26), meta.mem.Count + " / " + MemN() + " mảnh   ·   mỗi lần hạ một trùm mở một mảnh", 16, D.PAPER);
+		float lx = (GW - 980) / 2;
+		for (int i = 0; i < MemN(); i++) {
+			bool open = meta.mem.Contains(i), sel = memI == i;
+			var r = new Rect(lx, 108 + i * (MemN() > 9 ? 42 : 54), 300, MemN() > 9 ? 36 : 46);
+			Box(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), sel ? D.RED : new Color(0.07f, 0.06f, 0.06f, 0.6f));
+			Box(r, open ? D.PAPER : new Color(0.35f, 0.33f, 0.31f));
+			Lab(r, open ? J.MEM_TITLE[i] : "· · ·", 17, open ? D.INK : new Color(0.55f, 0.52f, 0.5f), TextAnchor.MiddleCenter, true, false);
+			if (!bot && Event.current.type == EventType.MouseDown && r.Contains(Event.current.mousePosition)) memI = i;
+		}
+		var page = new Rect(lx + 330, 110, 650, 480);
+		Panel(page);
+		bool o = meta.mem.Contains(memI);
+		Lab(new Rect(page.x, page.y + 24, page.width, 44), o ? J.MEM_TITLE[memI] : "CHƯA MỞ", 28, D.INK, TextAnchor.MiddleCenter, true, false);
+		Box(new Rect(page.x + 120, page.y + 76, page.width - 240, 2), D.RED);
+		Lab(new Rect(page.x + 50, page.y + 100, page.width - 100, 340), o ? J.MEM[memI] : "Hạ " + D.Foe("boss" + (memI / 3 + 1)).name + " để đọc trang này.", 21, D.INK, TextAnchor.UpperLeft, true, false);
+		Lab(new Rect(0, GH - 40, GW, 28), "W / S chọn   ·   ESC quay lại", 16, D.PAPER);
+	}
+
+	// --- sect manuals (see Data.cs, "sect manuals")
+	bool inParry, inSectBurst;
+	float lienT;
+
+	// a heal can become a blast instead (HUYẾT NGUYỆT) or spill over into one (THIẾT Y); true = the heal was used up
+	bool SectHeal(float v) {
+		if (inSectBurst) return false;
+		if (Lv("c_hien") > 0 && hp < maxHp * 0.5f) {
+			inSectBurst = true;
+			Burst(ppos, 145, v * 5 * Lv("c_hien"), -1, 1, false);
+			inSectBurst = false;
+			return true;
+		}
+		float over = hp + v - maxHp;
+		if (Lv("t_huyet") > 0 && over > 0.5f) {
+			inSectBurst = true;
+			Burst(ppos, 150, over * 4 * Lv("t_huyet"), -1, 1, false);
+			inSectBurst = false;
+		}
+		return false;
+	}
+
+	void SectParry(Foe src) {
+		if (Lv("t_tinh") > 0) { tkCd = Mathf.Max(0, tkCd - 2 * Lv("t_tinh")); qi = Mathf.Min(100, qi + 6 * Lv("t_tinh")); }
+		if (Lv("t_xuyen") > 0 && src != null && !src.dead) {
+			bool was = src.broken > 0;
+			AddPosture(src, 20 * Lv("t_xuyen"));
+			if (!was && src.broken > 0) Heal(5 * Lv("t_xuyen"));
+		}
+		if (Lv("k_phan") > 0) { inParry = true; RecallSwords(); inParry = false; }
+	}
+
+	void SectKill(Foe f) {
+		if (Lv("k_truy") > 0) {
+			foreach (var s in swords) {
+				if (s.st != 1 || s.host != f) continue;
+				Foe next = null;
+				foreach (var o in foes) if (!o.dead && o != f && o.spawn <= 0 && (next == null || (o.pos - f.pos).sqrMagnitude < (next.pos - f.pos).sqrMagnitude)) next = o;
+				s.host = null;
+				if (next == null) continue;
+				s.st = 0; s.t = 0; s.hit.Clear();
+				s.vel = (next.pos - f.pos).normalized * 1700;
+				qi = Mathf.Min(100, qi + 4 * Lv("k_truy"));
+			}
+		}
+		if (Lv("h_truyen") > 0 && f.mark >= 0) {
+			var near = new List<Foe>();
+			foreach (var o in foes) if (!o.dead && o != f) near.Add(o);
+			near.Sort((a, b) => (a.pos - f.pos).sqrMagnitude.CompareTo((b.pos - f.pos).sqrMagnitude));
+			for (int k = 0; k < near.Count && k < 2 * Lv("h_truyen"); k++) ApplyEl(near[k], f.mark, 1, true);
+			qi = Mathf.Min(100, qi + 5 * Lv("h_truyen"));
+		}
+	}
+
+	// before the element lands: hitting a mark with the same element resonates
+	void SectElement(Foe f, int el, int lvl) {
+		if (Lv("h_dong") <= 0 || f.mark != el || inSectBurst) return;
+		inSectBurst = true;
+		Burst(f.pos, 90, 12 * Lv("h_dong") * dmgMul, -1, lvl, false);
+		AddPosture(f, 15 * Lv("h_dong"));
+		inSectBurst = false;
+	}
+
+	// after a direct hit (not splash): kill-streak shockwaves and last-stand inner force
+	void SectHit(Foe f) {
+		if (Lv("c_lien") > 0 && chain > 0 && !inSectBurst && T - lienT > 0.35f) {
+			lienT = T;
+			int c = Mathf.Min(chain, 15);
+			inSectBurst = true;
+			Burst(f.pos, 80 + c * 8, 4 * c * Lv("c_lien") * dmgMul, -1, 1, false);
+			inSectBurst = false;
+		}
+		if (Lv("c_tuyet") > 0 && hp <= maxHp * 0.35f) { qi = Mathf.Min(100, qi + 3 * Lv("c_tuyet")); tkCd = Mathf.Max(0, tkCd - 1 * Lv("c_tuyet")); }
+	}
+
+	// --- icons drawn with Gemini (tools/icons.sh); manuals of the sects share one
+	Sprite BoonIcon(Boon b) { return b.sect != "" ? Spr("icon_sect") : Spr("icon_" + b.id); }
+
+	Sprite GateIcon(string kind) {
+		switch (kind) {
+			case "bikip": return Spr("icon_bikip");
+			case "luyen": return Spr("icon_lantern");
+			case "dan": return Spr("icon_hp");
+			case "ngan": return Spr("icon_ngan");
+			case "bao": return Spr("icon_thaicuc");
+			case "binh": return WeaponIcon("kiem");
+			case "ky": return Spr("icon_tra");
+		}
+		return null;
+	}
+}

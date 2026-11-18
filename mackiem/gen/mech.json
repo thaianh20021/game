@@ -1,0 +1,117 @@
+{
+ "chapters": [
+  {
+   "id": 0,
+   "setting": "Rừng trúc ngàn năm phủ kín sương mù xanh thẫm, lá rơi xào xạc theo từng cơn gió lạnh. Kẻ thù ẩn hiện giữa bóng râm dày đặc, hơi ẩm thấm lạnh vào lưỡi kiếm sắt.",
+   "foe_roles": "Exclusive: bandit, archer, poison. Shared: spear (with Ch2).",
+   "mechanic": {
+    "name": "TRÚC VỤ ẨN SÁT",
+    "unlock": "entering this chapter the first time",
+    "desc": "Các bụi sương mù trong rừng trúc che khuất tầm nhìn nhưng nạp sát ý cho người bước vào. Đứng trong sương đủ lâu giúp đòn đánh kế tiếp của ngươi hóa thành nhát chém bạo kích phá thế.",
+    "kind": "environment",
+    "tutorial": "Ẩn mình trong vòng sương mù để tích tụ SÁT Ý cho nhát kiếm kế tiếp"
+   },
+   "mech_code": "public partial class Game {\n\treadonly List<Vector2> mech0Mist = new List<Vector2>();\n\tfloat mech0Hide;\n\tbool mech0Charged;\n\tvoid MechInit(int c) {\n\t\tif (c != 0) return;\n\t\tmech0Mist.Clear(); mech0Hide = 0; mech0Charged = false;\n\t\tfor (int i = 0; i < 3; i++) mech0Mist.Add(new Vector2(Rnd(PR.xMin + 160, PR.xMax - 160), Rnd(PR.yMin + 140, PR.yMax - 140)));\n\t}\n\tvoid MechUpdate(float dt) {\n\t\tif (ch != 0 || fight == null) return;\n\t\tbool inside = false;\n\t\tfor (int i = 0; i < mech0Mist.Count; i++) {\n\t\t\tif ((ppos - mech0Mist[i]).sqrMagnitude < 130 * 130) inside = true;\n\t\t\tforeach (var f in foes) if (!f.dead && (f.pos - mech0Mist[i]).sqrMagnitude < 130 * 130) f.cd -= dt * 0.25f;\n\t\t}\n\t\tif (inside && act != \"atk\") {\n\t\t\tmech0Hide += dt;\n\t\t\tif (mech0Hide >= 0.85f && !mech0Charged) {\n\t\t\t\tmech0Charged = true;\n\t\t\t\tText(ppos + new Vector2(0, 145), \"ẨN SÁT\", new Color(0.5f, 0.9f, 0.65f), 22);\n\t\t\t}\n\t\t} else if (!inside) mech0Hide = Mathf.Max(0, mech0Hide - dt * 0.5f);\n\t\tif (mech0Charged && act == \"atk\" && hitDone) {\n\t\t\tmech0Charged = false; mech0Hide = 0;\n\t\t\tBurst(ppos + adir * 95, 140, 26 * dmgMul, D.MOC, 1, true);\n\t\t}\n\t}\n\tvoid MechDraw() {\n\t\tif (ch != 0 || fight == null) return;\n\t\tforeach (var m in mech0Mist) {\n\t\t\tfloat r = 130 + Mathf.Sin(T * 2f + m.x) * 6;\n\t\t\tground.Circle(m, r, new Color(0.18f, 0.28f, 0.22f, 0.28f));\n\t\t\tground.Ring(m, r, 4, new Color(0.45f, 0.65f, 0.5f, 0.45f));\n\t\t}\n\t\tif (mech0Charged) fxInk.Ring(ppos + new Vector2(0, 45), 38, 4, new Color(0.5f, 0.95f, 0.65f, 0.85f));\n\t}\n}"
+  },
+  {
+   "id": 1,
+   "setting": "Ngôi cổ tự đổ nát chìm trong tro tàn và mùi hương trầm mục nát từ biến cố năm xưa. Tiếng chuông đồng tự ngân vang giữa những hàng cột đá nứt vỡ, vọng lại nghiệp chướng chưa tan.",
+   "foe_roles": "Exclusive: monk, bellguard, lamptang, brute. Shared: shield (with Ch3).",
+   "mechanic": {
+    "name": "CHUÔNG VỌNG TỊNH TÂM",
+    "unlock": "entering this chapter the first time",
+    "desc": "Chuông cổ định kỳ ngân vang phát ra sóng âm chấn động toàn bộ bãi chiến. Đỡ đòn đúng nhịp chuông điểm sẽ hóa giải sát thương, hồi nội lực và làm choáng kẻ địch xung quanh.",
+    "kind": "environment",
+    "tutorial": "Nhấn ĐỠ (SHIFT) đúng lúc vòng sóng âm chạm người để chấn ngược kẻ địch"
+   },
+   "mech_code": "public partial class Game {\n\tVector2 mech1Bell;\n\tfloat mech1T, mech1Wave = -1;\n\tbool mech1Hit;\n\tvoid MechInit(int c) {\n\t\tif (c != 1) return;\n\t\tmech1Bell = PR.center; mech1T = 3.2f; mech1Wave = -1; mech1Hit = false;\n\t}\n\tvoid MechUpdate(float dt) {\n\t\tif (ch != 1 || fight == null) return;\n\t\tmech1T -= dt;\n\t\tif (mech1T <= 0) { mech1T = 5.5f; mech1Wave = 20; mech1Hit = false; sfx.Play(\"gong\", 0.6f, 0.9f); }\n\t\tif (mech1Wave >= 0) {\n\t\t\tmech1Wave += 520 * dt;\n\t\t\tfloat d = (ppos - mech1Bell).magnitude;\n\t\t\tif (!mech1Hit && Mathf.Abs(d - mech1Wave) < 28) {\n\t\t\t\tmech1Hit = true;\n\t\t\t\tif (guard && gt <= pwin + 0.12f) {\n\t\t\t\t\tqi = Mathf.Min(100, qi + 25 * qiMul); Heal(4);\n\t\t\t\t\tText(ppos + new Vector2(0, 150), \"TỊNH TÂM!\", new Color(1f, 0.85f, 0.4f), 26);\n\t\t\t\t\tforeach (var f in foes) if (!f.dead) AddPosture(f, f.posMax * 0.25f);\n\t\t\t\t} else if (act != \"dash\" && inv <= 0) HitPlayer(10, null, false, mech1Bell);\n\t\t\t}\n\t\t\tif (mech1Wave > 950) mech1Wave = -1;\n\t\t}\n\t}\n\tvoid MechDraw() {\n\t\tif (ch != 1 || fight == null) return;\n\t\tground.Circle(mech1Bell, 36, new Color(0.55f, 0.42f, 0.18f, 0.5f));\n\t\tif (mech1T < 1.0f) ground.Ring(mech1Bell, 36 + (1 - mech1T) * 25, 4, new Color(0.95f, 0.75f, 0.3f, 0.7f));\n\t\tif (mech1Wave >= 0) fxInk.Ring(mech1Bell, mech1Wave, 8, new Color(0.95f, 0.8f, 0.35f, 0.75f));\n\t}\n}"
+  },
+  {
+   "id": 2,
+   "setting": "Đỉnh núi tuyết trắng xóa gào thét trong cuồng phong cắt da cắt thịt, đá băng sắc lẻm dựng đứng giữa trời mây. Hơi thở đóng băng ngay đầu mũi, mọi bước chân đều nặng trĩu dưới cái lạnh thấu xương.",
+   "foe_roles": "Exclusive: frostsword, cloudtao, assassin. Shared: spear (with Ch1), shield (with Ch4).",
+   "mechanic": {
+    "name": "HÀN PHONG NHẬP CỐT",
+    "unlock": "entering this chapter the first time",
+    "desc": "Gió tuyết liên tục tích tụ Hàn Khí làm tê cóng gân cốt nếu ngươi đứng yên chịu trận. Đứng gần lò lửa hoặc liên tục tung kiếm vung chiêu sẽ đốt cháy Hàn Khí thành Hỏa Kình bùng nổ.",
+    "kind": "environment",
+    "tutorial": "Đứng gần LÒ LỬA hoặc tấn công liên tục để xua tan HÀN KHÍ đóng băng"
+   },
+   "mech_code": "public partial class Game {\n\tVector2 mech2Brazier;\n\tfloat mech2Chill;\n\tvoid MechInit(int c) {\n\t\tif (c != 2) return;\n\t\tmech2Brazier = PR.center + new Vector2(Rnd(-180, 180), Rnd(-100, 100));\n\t\tmech2Chill = 0;\n\t}\n\tvoid MechUpdate(float dt) {\n\t\tif (ch != 2 || fight == null) return;\n\t\tbool warm = (ppos - mech2Brazier).sqrMagnitude < 165 * 165 || act == \"atk\" || act == \"skill\";\n\t\tforeach (var f in foes) if (!f.dead && f.burn > 0 && (f.pos - ppos).sqrMagnitude < 180 * 180) warm = true;\n\t\tif (warm) {\n\t\t\tif (mech2Chill >= 65 && act == \"atk\" && hitDone) {\n\t\t\t\tmech2Chill = 0;\n\t\t\t\tBurst(ppos, 170, 28 * dmgMul, D.HOA, 1, true);\n\t\t\t\tText(ppos + new Vector2(0, 145), \"PHÁ HÀN!\", D.EL_COL[D.HOA], 24);\n\t\t\t}\n\t\t\tmech2Chill = Mathf.Max(0, mech2Chill - dt * 32);\n\t\t} else {\n\t\t\tmech2Chill += dt * 16;\n\t\t\tif (mech2Chill >= 100) {\n\t\t\t\tmech2Chill = 40; dashes = 0;\n\t\t\t\tHitPlayer(12, null, false, ppos);\n\t\t\t\tText(ppos + new Vector2(0, 145), \"ĐÓNG BĂNG!\", D.EL_COL[D.THUY], 24);\n\t\t\t}\n\t\t}\n\t}\n\tvoid MechDraw() {\n\t\tif (ch != 2 || fight == null) return;\n\t\tground.Circle(mech2Brazier, 165, new Color(0.95f, 0.45f, 0.15f, 0.16f));\n\t\tfxInk.Circle(mech2Brazier, 22 + Mathf.Sin(T * 12) * 3, new Color(1f, 0.55f, 0.15f, 0.85f));\n\t\tif (mech2Chill > 5) fxInk.Ring(ppos + new Vector2(0, 45), 34, 5 * (mech2Chill / 100f), new Color(0.45f, 0.8f, 1f, 0.8f));\n\t}\n}"
+  },
+  {
+   "id": 3,
+   "setting": "Không gian hư vô trải rộng như một trang giấy tuyên thành trắng muốt chưa từng vương bụi trần. Mọi đường kiếm và bước chân đều vẩy ra mực ướt, hóa thành hình hài sống động giữa cõi tâm tưởng.",
+   "foe_roles": "Exclusive: inkwraith, scrollguard. Echoes (2nd chapter max): frostsword, bellguard, assassin.",
+   "mechanic": {
+    "name": "MẶC HỌA KIẾM NGẤN",
+    "unlock": "entering this chapter the first time",
+    "desc": "Mỗi lần khinh công lướt đi trên trang giấy trắng sẽ để lại một vệt mực ướt chặn đạn và cắt xé kẻ địch đi ngang. Gom đủ ba nét mực trên mặt đất sẽ tự động kết ấn nổ tung thành Mặc Trận.",
+    "kind": "player_power",
+    "tutorial": "Lướt (SPACE) để vẽ KIẾM NGẤN bằng mực; đủ 3 nét sẽ phát nổ MẶC TRẬN"
+   },
+   "mech_code": "public partial class Game {\n\tstruct Mech3Line { public Vector2 a, b; public float t; }\n\treadonly List<Mech3Line> mech3Ink = new List<Mech3Line>();\n\tVector2 mech3DashStart;\n\tbool mech3WasDash;\n\tvoid MechInit(int c) {\n\t\tif (c != 3) return;\n\t\tmech3Ink.Clear(); mech3WasDash = false;\n\t}\n\tvoid MechUpdate(float dt) {\n\t\tif (ch != 3 || fight == null) return;\n\t\tif (act == \"dash\" && !mech3WasDash) { mech3WasDash = true; mech3DashStart = ppos; }\n\t\telse if (act != \"dash\" && mech3WasDash) {\n\t\t\tmech3WasDash = false;\n\t\t\tmech3Ink.Add(new Mech3Line { a = mech3DashStart, b = ppos, t = 5.5f });\n\t\t\tif (mech3Ink.Count >= 3) {\n\t\t\t\tVector2 mid = (mech3Ink[0].a + mech3Ink[1].b + ppos) / 3f;\n\t\t\t\tBurst(mid, 240, 42 * dmgMul, -1, 1, false);\n\t\t\t\tText(mid + new Vector2(0, 120), \"MẶC TRẬN!\", D.INK, 28);\n\t\t\t\tmech3Ink.Clear();\n\t\t\t}\n\t\t}\n\t\tfor (int i = mech3Ink.Count - 1; i >= 0; i--) {\n\t\t\tvar ln = mech3Ink[i]; ln.t -= dt; mech3Ink[i] = ln;\n\t\t\tVector2 dir = ln.b - ln.a; float len = dir.magnitude;\n\t\t\tif (len > 5) {\n\t\t\t\tdir /= len;\n\t\t\t\tforeach (var sh in shots) if (!sh.mine && LineHit(ln.a, dir, len, 26, sh.pos - new Vector2(0, 55), sh.r)) sh.life = 0;\n\t\t\t\tif (((int)(T * 10)) != ((int)((T - dt) * 10))) foreach (var f in foes) if (!f.dead && LineHit(ln.a, dir, len, 28, f.pos, f.d.r)) HurtFoe(f, 7 * dmgMul, -1, 0, 0.5f, dir, false, false);\n\t\t\t}\n\t\t\tif (ln.t <= 0) mech3Ink.RemoveAt(i);\n\t\t}\n\t}\n\tvoid MechDraw() {\n\t\tif (ch != 3 || fight == null) return;\n\t\tforeach (var ln in mech3Ink) ground.Brush(ln.a, ln.b, 24, new Color(0.06f, 0.05f, 0.06f, Mathf.Min(0.85f, ln.t)));\n\t}\n}"
+  }
+ ],
+ "pools": "public static readonly string[][] POOLS = { new[] { \"bandit\", \"bandit\", \"bandit\", \"archer\", \"archer\", \"spear\", \"poison\" }, new[] { \"monk\", \"monk\", \"bellguard\", \"bellguard\", \"lamptang\", \"brute\", \"shield\" }, new[] { \"frostsword\", \"frostsword\", \"cloudtao\", \"cloudtao\", \"assassin\", \"spear\", \"shield\" }, new[] { \"inkwraith\", \"inkwraith\", \"inkwraith\", \"scrollguard\", \"scrollguard\", \"frostsword\", \"bellguard\", \"assassin\" } };",
+ "images": [
+  {
+   "file": "bamboo_mist_cluster",
+   "what": "Traditional Chinese ink-wash sumi-e game illustration of a dense bamboo thicket cluster shrouded in swirling low ground mist, single object centred, isolated on white background",
+   "w": 190
+  },
+  {
+   "file": "mossy_forest_stone",
+   "what": "Traditional ink-wash sumi-e game illustration of a weathered jagged boulder covered in dark ink moss and fallen bamboo leaves, single object centred, isolated on white background",
+   "w": 140
+  },
+  {
+   "file": "cracked_bronze_bell",
+   "what": "Traditional ink-wash sumi-e game illustration of an ancient heavy bronze temple bell hanging on a charred wooden stand, single object centred, isolated on white background",
+   "w": 160
+  },
+  {
+   "file": "stone_incense_censer",
+   "what": "Traditional ink-wash sumi-e game illustration of a ruined temple stone incense burner with faint wisps of grey smoke, single object centred, isolated on white background",
+   "w": 110
+  },
+  {
+   "file": "blizzard_fire_brazier",
+   "what": "Traditional ink-wash sumi-e game illustration of an iron mountain brazier burning with bright vermilion embers amidst frost, single object centred, isolated on white background",
+   "w": 120
+  },
+  {
+   "file": "jagged_ice_spire",
+   "what": "Traditional ink-wash sumi-e game illustration of a sharp frozen rock spire encrusted with heavy snow and icicles, single object centred, isolated on white background",
+   "w": 150
+  },
+  {
+   "file": "floating_blank_scroll",
+   "what": "Traditional ink-wash sumi-e game illustration of an unrolled blank xuan paper scroll floating upright and dripping black ink, single object centred, isolated on white background",
+   "w": 160
+  },
+  {
+   "file": "giant_inkstone_pool",
+   "what": "Traditional ink-wash sumi-e game illustration of a cracked antique carved inkstone overflowing with glossy black liquid ink, single object centred, isolated on white background",
+   "w": 150
+  }
+ ],
+ "boss_lines": {
+  "boss1": [
+   "Sương mù Trúc Lâm là nhà của ta, ngươi trốn đi đâu cho thoát!",
+   "Núp trong bụi trúc rình mò ư? Đao của lão tử chém toạc cả màn sương!"
+  ],
+  "boss2": [
+   "Tiếng chuông vừa điểm, sát tâm của thí chủ đã lộ rõ mồn một.",
+   "Nghe cho kỹ nhịp chuông cổ tự, một niệm sai lầm là vạn kiếp bất phục."
+  ],
+  "boss3": [
+   "Tuyết lạnh trên đỉnh núi này cũng không nguội bằng kiếm tâm của người đốt phái.",
+   "Lò lửa kia sưởi được xác phàm, nhưng có sưởi nổi lưỡi kiếm đang run rẩy của con không?"
+  ],
+  "boss4": [
+   "Mỗi nét mực ngươi vạch ra đều là do dự mà chính ngươi tự trói lấy mình!",
+   "Trang giấy này trắng tinh, để xem kiếm ngấn của ngươi đậm được mấy phần!"
+  ]
+ }
+}
