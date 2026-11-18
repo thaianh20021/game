@@ -22,6 +22,7 @@ public class Foe {
 	// frame animation (null when the foe only has its single picture)
 	public Sprite[] walk;
 	public Sprite wind, hit;
+	public Sprite[] react;   // hit, staggered, falling, lying
 	public bool moving;
 	public float animT;
 }
@@ -408,6 +409,8 @@ public partial class Game : MonoBehaviour {
 		var wf = Frames(d.id + "_walk");
 		if (wf.Length > 0) {
 			f.walk = wf; f.wind = Spr(d.id + "_wind"); f.hit = Spr(d.id + "_hit");
+			var rf = Frames(d.id + "_react");
+			if (rf.Length >= 4) f.react = rf;
 			f.sr.sprite = wf[0];
 			f.sr.transform.localScale = Vector3.one * f.scale;
 		}

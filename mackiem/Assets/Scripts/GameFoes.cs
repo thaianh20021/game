@@ -9,7 +9,7 @@ public partial class Game {
 			var f = foes[i];
 			if (f.dead) {
 				f.deadT += dt;
-				if (f.deadT > 0.45f) { if (f.sr != null) Destroy(f.sr.gameObject); foes.RemoveAt(i); }
+				if (f.deadT > (f.react != null ? 1.4f : 0.45f)) { if (f.sr != null) Destroy(f.sr.gameObject); foes.RemoveAt(i); }
 				continue;
 			}
 			f.flash -= dt;

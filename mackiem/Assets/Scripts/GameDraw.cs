@@ -97,6 +97,20 @@ public partial class Game {
 		return idle[b < 4 ? b : 6 - b];
 	}
 
+	// short in-between poses: starting and stopping a run, turning, settling after a slash, a dash or a hit
+	bool tPrevMoving; string tPrevAct = ""; int tPrevFace = 1;
+	float tStart, tStop, tTurn, tRecover;
+	void TrackTransitions(float rdt) {
+		tStart -= rdt; tStop -= rdt; tTurn -= rdt; tRecover -= rdt;
+		if (moving && !tPrevMoving && act == "") tStart = 0.12f;
+		if (!moving && tPrevMoving && act == "") tStop = 0.15f;
+		if (face != tPrevFace && act == "" && !guard) tTurn = 0.08f;
+		if (tPrevAct == "atk" && act == "" && buf <= 0) tRecover = 0.16f;
+		if (act != "") { tStart = tStop = tTurn = 0; }
+		if (act == "atk") tRecover = 0;
+		tPrevMoving = moving; tPrevAct = act; tPrevFace = face;
+	}
+
 	Sprite HeroPose() {
 		if (!heroAnim) return Spr(act == "dash" ? "hero_dash" : (act == "atk" || act == "skill" || whirlT > 0 ? "hero_slash" : (moving ? "hero_run" : "hero_idle")));
 		var ws = WSet();
@@ -116,6 +130,9 @@ public partial class Game {
 			return hAtk[(last || s.w > 3 ? 8 : (ci % 2) * 4) + k];
 		}
 		if (hurtFx > 0.22f) return hAct[2];
+		var tr = Frames("hero_trans");
+		bool hasT = tr.Length >= 12;
+		if (hasT && hurtFx > 0.04f && !guard && !moving) return tr[hurtFx > 0.13f ? 10 : 11];
 		if (guard) return pflash > 0 ? hAct[1] : hAct[0];
 		var th = Frames("hero_throw");
 		if (th.Length >= 12) {
@@ -130,7 +147,13 @@ public partial class Game {
 			if (recallT > 0) return hAct[8];
 		}
 		if (chargeT > 0) return hAct[10];
-		if (skidT > 0) return hAct[6];
+		if (skidT > 0) return hasT ? tr[skidT > 0.065f ? 8 : 9] : hAct[6];
+		if (hasT) {
+			if (tTurn > 0) return tr[4];
+			if (moving && tStart > 0) return tr[tStart > 0.06f ? 0 : 1];
+			if (!moving && tStop > 0) return tr[tStop > 0.075f ? 2 : 3];
+			if (!moving && tRecover > 0) return tr[tRecover > 0.08f ? 6 : 7];
+		}
 		if (moving) return hRun[(int)(moveAmt * 15) % hRun.Length];
 		int b = (int)(T * 3.2f) % 6;   // breathe in and out: 0 1 2 3 2 1
 		return hIdleF[b < 4 ? b : 6 - b];
@@ -199,6 +222,7 @@ public partial class Game {
 		cam.transform.position = new Vector3((camPos.x + sh.x) * 0.01f, (camPos.y + sh.y) * 0.01f, -10);
 
 		// --- hero
+		TrackTransitions(rdt);
 		var hs = HeroPose();
 		if (hs != null) heroSr.sprite = hs;
 		heroSr.flipX = face < 0;
@@ -314,6 +338,11 @@ public partial class Game {
 				Sprite fs = f.walk[0];
 				if (f.mv != null && f.mv.steps[f.si].t != "wait" && f.mv.steps[f.si].t != "blink") fs = f.resolved ? (f.hit != null ? f.hit : fs) : (f.wind != null ? f.wind : fs);
 				else if (f.moving) fs = f.walk[(int)(f.animT * 7) % f.walk.Length];
+				if (f.react != null) {
+					if (f.dead) fs = f.react[f.deadT < 0.2f ? 2 : 3];
+					else if (f.broken > 0 || f.stun > 0.25f) fs = f.react[1];
+					else if (f.flash > 0.02f && f.mv == null) fs = f.react[0];
+				}
 				f.sr.sprite = fs;
 			} else if (f.moving) walkBob = Mathf.Abs(Mathf.Sin(f.animT * 9)) * 7;
 			float k = f.walk != null ? f.scale : f.d.h * f.scale / (f.sr.sprite != null ? f.sr.sprite.bounds.size.y * 100f : f.d.h);
@@ -327,9 +356,11 @@ public partial class Game {
 				rot = (right ? 1 : -1) * 6 * u;
 				if (u > 0.7f) { flash = 0.4f; fc = new Color(1f, 0.25f, 0.2f); }
 			} else if (f.mv != null && f.stT < f.mv.steps[f.si].wind + 0.12f) rot = (right ? -1 : 1) * 9;
-			if (f.broken > 0) { rot = 14 + Mathf.Sin(T * 12) * 4; flash = 0.25f; fc = new Color(1f, 0.9f, 0.5f); }
+			if (f.broken > 0 && f.react != null) { flash = 0.15f + 0.1f * Mathf.Sin(T * 12); fc = new Color(1f, 0.9f, 0.5f); }
+			else if (f.broken > 0) { rot = 14 + Mathf.Sin(T * 12) * 4; flash = 0.25f; fc = new Color(1f, 0.9f, 0.5f); }
 			if (f.flash > 0) { flash = 0.6f; fc = Color.white; }
-			if (f.dead) { alpha = 1 - f.deadT / 0.45f; flash = 0.9f; fc = D.INK; sy *= 1 - f.deadT; sx *= 1 + f.deadT * 0.6f; }
+			if (f.dead && f.react != null) { alpha = 1 - Mathf.Clamp01((f.deadT - 0.9f) / 0.5f); flash = f.deadT < 0.1f ? 0.7f : 0; fc = Color.white; rot = 0; }
+			else if (f.dead) { alpha = 1 - f.deadT / 0.45f; flash = 0.9f; fc = D.INK; sy *= 1 - f.deadT; sx *= 1 + f.deadT * 0.6f; }
 			if (f.walk == null && f.moving && rot == 0) rot = Mathf.Sin(f.animT * 9) * 4;
 			Place(f.sr, f.pos, f.z + walkBob);
 			f.sr.flipX = !right;

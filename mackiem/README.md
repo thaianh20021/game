@@ -62,6 +62,11 @@ Tay cầm (kiểu Xbox, chưa thử trên máy thật): cần trái đi, X đán
 - `Game.HeroPose()` chọn khung cho nhân vật chính; đoạn vẽ địch trong `GameDraw.Render` chọn khung cho địch. Bóng mờ khi lướt là `AddGhost`.
 - Gemini vẽ đúng nền hồng; các model GPT image chỉ chịu nền trắng (và đôi lúc vẫn ra nền tối, khi đó phải vẽ lại).
 
+## Khung chuyển tiếp và phản ứng
+
+- Nhân vật (kiếm): `hero_trans_0..11` từ `tools/more.sh hero`: bắt đầu chạy, phanh, quay người, thu kiếm sau nhát chém, đáp sau khi lướt, gượng dậy sau đòn. Chọn trong `GameDraw.TrackTransitions` / `HeroPose`.
+- Mọi địch và trùm: `<id>_react_0..3` (trúng đòn, choáng khi PHÁ THẾ, đang ngã, nằm). Xác nằm lại khoảng một giây rồi mờ dần. Cắt bằng `tools/cutmore.sh`.
+
 ## Nhân vật ghép xương
 
 Với kiếm, nhân vật chính là con rối ghép từ bộ phận (`GameRig.cs`): đầu, thân, vạt áo, hai cánh tay hai đoạn, hai chân hai đoạn và thanh kiếm,
